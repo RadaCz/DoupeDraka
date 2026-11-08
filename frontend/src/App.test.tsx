@@ -328,7 +328,7 @@ describe('Telegram Mini App', () => {
     ensureBottomNav();
     fireEvent.click(screen.getByRole('button', { name: 'Open character sheet' }));
     expect(await screen.findByRole('heading', { name: /character sheet/i })).toBeInTheDocument();
-    expect(screen.getByText('ABILITY SCORES')).toBeInTheDocument();
+    expect(screen.getByText('Ability scores')).toBeInTheDocument();
     expect(screen.getByText('Longbow')).toBeInTheDocument();
     expect(screen.queryByText('LEGACY CHARACTER MANA')).not.toBeInTheDocument();
     const legacyMana = screen.getByText('Mana (historical)');

@@ -11,6 +11,8 @@ import type {
   Spell,
 } from './types';
 import { useI18n } from './i18n';
+import { CHAPTER_ONE_LAYOUT, mapEdges, mapNodeState, routeOpen } from './chapterOneMap';
+import { chapterOneQuestProgress } from './questProgress';
 
 const ABILITIES = ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'];
 const MONSTERS = ['kobold', 'goblin', 'wolf', 'bandit', 'ghoul', 'ogre'];
@@ -150,14 +152,8 @@ function suggestedActions(
   actions.push({ label: t('Search the area'), action: `search ${character.location}` });
   actions.push({ label: 'Listen for movement', action: 'listen for movement' });
   actions.push({ label: 'Inspect the stonework', action: 'inspect the stonework' });
-  const routeOpen = (route: string) => {
-    if (route === 'The Vault of Echoes' || route === "The Bell Warden's Pit") {
-      return !!(quests.vault_unlocked || quests.vault_hint_given);
-    }
-    return true;
-  };
   const node = locations.find(location => location.name === character.location);
-  const nextLocation = node?.connections.find(route => routeOpen(route));
+  const nextLocation = node?.connections.find(route => routeOpen(route, quests));
   if (nextLocation) {
     actions.push({ label: t(`Travel to ${nextLocation}`), action: `travel to ${nextLocation}` });
     return [...actions.slice(0, 2), actions[actions.length - 1]];
@@ -607,8 +603,16 @@ export function CharacterScreen({
   return (
     <section className="screen">
       <div className="page-title"><p className="eyebrow">{t('YOUR ADVENTURER')}</p><h1>{t('Character sheet')}</h1><p>{t('All the details you need before stepping into danger.')}</p></div>
-      <article className="profile-card">
+      <article className="profile-card character-summary">
         <div className="profile-heading"><span className="hero-portrait">{character.name.charAt(0).toUpperCase()}</span><div><h2>{character.name}</h2><p>{t(titleCase(character.race))} {t(titleCase(character.character_class))}</p><span className="level-chip">{t('LEVEL')} {character.level}</span></div></div>
+        <p className="stat-block-line">
+          <span>{t('AC')} {character.armor_class}</span>
+          <span>{t('HP')} {character.hp}/{character.max_hp}</span>
+          <span>{character.gold} {t('gp')}</span>
+        </p>
+      </article>
+      <details className="character-panel" open>
+        <summary>{t('Combat & resources')}</summary>
         <div className="profile-vitals">
           <div><small>{t('HIT POINTS')}</small><strong>{character.hp} <i>/ {character.max_hp}</i></strong><HpBar character={character} /></div>
           <div><small>{t('ARMOR CLASS')}</small><strong>{character.armor_class}</strong></div>
@@ -622,22 +626,22 @@ export function CharacterScreen({
           <div><small>{t('Spell slots')}</small><strong><SpellSlots character={character} t={t} /></strong></div>
           {character.invisible && <div><small>{t('Condition')}</small><strong>{t('Invisible')}</strong></div>}
         </div>
-      </article>
-      <section className="section-block">
-        <div className="section-heading"><div><p className="eyebrow">{t('ABILITY SCORES')}</p><h2>{t('Your strengths')}</h2></div></div>
+      </details>
+      <details className="character-panel" open>
+        <summary>{t('Ability scores')}</summary>
         <div className="ability-grid">
           {ABILITIES.map(ability => {
             const score = character.abilities?.[ability] ?? 10;
             return <article className="ability-card" key={ability}><small>{ability.slice(0, 3).toUpperCase()}</small><strong>{score}</strong><span>{modifier(score)}</span></article>;
           })}
         </div>
-      </section>
-      <section className="section-block">
-        <div className="section-heading"><div><p className="eyebrow">{t('PACK & PROGRESS')}</p><h2>{t('What you carry')}</h2></div></div>
+      </details>
+      <details className="character-panel" open>
+        <summary>{t('Inventory')}</summary>
         <div className="inventory-card">
           {(character.inventory?.length ? character.inventory : [t('Your pack is empty')]).map((item, index) => <div key={`${item}-${index}`}><span aria-hidden="true">◇</span>{item}</div>)}
         </div>
-      </section>
+      </details>
       {characters.length > 1 && (
         <section className="section-block">
           <div className="section-heading"><div><p className="eyebrow">{t('ROSTER')}</p><h2>{t('Switch adventurer')}</h2></div></div>
@@ -830,67 +834,134 @@ export function MapScreen({
     return <section className="screen"><p>{t('Choose or create an adventurer to see the map.')}</p></section>;
   }
   const node = locations.find(item => item.name === character.location);
-  const visited = new Set(character.visited_locations ?? [character.location]);
   const quests = character.quest_flags ?? {};
-  const routeOpen = (route: string) => {
-    if (route === 'The Vault of Echoes' || route === "The Bell Warden's Pit") {
-      return !!(quests.vault_unlocked || quests.vault_hint_given);
-    }
-    return true;
+  const edges = mapEdges(locations);
+  const chapterPlaces = Object.keys(CHAPTER_ONE_LAYOUT);
+
+  const edgeVisible = (from: string, to: string) => {
+    const a = mapNodeState(from, character, locations);
+    const b = mapNodeState(to, character, locations);
+    return a !== 'hidden' && b !== 'hidden';
   };
+
+  const shortLabel = (name: string) => name.replace(/^The /, '').replace(/'/g, '');
+
   return (
-    <section className="screen">
+    <section className="screen map-screen">
       <div className="page-title"><p className="eyebrow">{t('WORLD')}</p><h1>{t('Map')}</h1><p>{t('You are here')}: <strong>{character.location}</strong></p></div>
-      <ul className="map-list">
-        {locations.map(place => (
-          <li key={place.name} className={`map-node ${place.name === character.location ? 'current' : ''} ${visited.has(place.name) ? 'discovered' : 'hidden'}`}>
-            <strong>{place.name}</strong>
-            {place.name === character.location && node && (
-              <>
-                <h3>{t('Open routes')}</h3>
-                <ol>
-                  {node.connections.filter(route => routeOpen(route)).map(route => (
-                    <li key={route}><button type="button" onClick={() => onTravel(`travel to ${route}`)}>{route}</button></li>
-                  ))}
-                </ol>
-              </>
-            )}
-          </li>
-        ))}
+      <div className="map-graph-wrap" aria-label={t('Campaign map')}>
+        <svg className="map-graph" viewBox="0 0 100 100" role="img" aria-hidden="true">
+          {edges.filter(edge => edgeVisible(edge.from, edge.to)).map(edge => {
+            const a = CHAPTER_ONE_LAYOUT[edge.from];
+            const b = CHAPTER_ONE_LAYOUT[edge.to];
+            if (!a || !b) return null;
+            const locked = !routeOpen(edge.to, quests) || !routeOpen(edge.from, quests);
+            return (
+              <line
+                key={`${edge.from}-${edge.to}`}
+                x1={a.x}
+                y1={a.y}
+                x2={b.x}
+                y2={b.y}
+                className={locked ? 'map-edge locked' : 'map-edge'}
+              />
+            );
+          })}
+        </svg>
+        <div className="map-graph-nodes">
+          {chapterPlaces.map(place => {
+            const pos = CHAPTER_ONE_LAYOUT[place];
+            const state = mapNodeState(place, character, locations);
+            if (state === 'hidden') return null;
+            const canTravel = Boolean(
+              node?.connections.includes(place)
+              && place !== character.location
+              && routeOpen(place, quests)
+              && state !== 'locked',
+            );
+            return (
+              <button
+                type="button"
+                key={place}
+                className={`map-graph-node ${state}`}
+                style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
+                disabled={!canTravel}
+                title={place}
+                onClick={() => onTravel(`travel to ${place}`)}
+              >
+                <span className="map-node-glyph" aria-hidden="true">
+                  {state === 'current' ? '◉' : state === 'locked' ? '🔒' : state === 'visited' ? '◎' : '○'}
+                </span>
+                <span className="map-node-label">{shortLabel(place)}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      <ul className="map-legend" aria-label={t('Map legend')}>
+        <li><span className="legend-dot current" /> {t('You are here')}</li>
+        <li><span className="legend-dot adjacent" /> {t('Next stop')}</li>
+        <li><span className="legend-dot visited" /> {t('Visited')}</li>
+        <li><span className="legend-dot locked" /> {t('Locked route')}</li>
       </ul>
+      {node && (
+        <section className="map-routes-card">
+          <h2>{t('Open routes')}</h2>
+          <ol className="map-route-list">
+            {node.connections.filter(route => routeOpen(route, quests)).map(route => (
+              <li key={route}>
+                <button type="button" className="text-button" onClick={() => onTravel(`travel to ${route}`)}>{route}</button>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
     </section>
   );
 }
 
-const QUEST_LABELS: Record<string, string> = {
-  bell_quest_accepted: 'Recover the stolen shrine bell',
-  bell_acquired: 'Obtain the bell from Nib',
-  bell_quest_complete: 'Return the bell to Caldus',
-  vault_hint_given: 'Learn about the Vault of Echoes',
-  chapter_one_complete: 'Defeat the Bell Warden',
-};
-
 export function QuestScreen({ character }: { character: Character | null }) {
   const { t } = useI18n();
-  const flags = character?.quest_flags ?? {};
-  const questDone = (key: string) => {
-    if (key === 'bell_acquired') {
-      return Boolean(flags.bell_acquired || flags.bell_found);
-    }
-    return Boolean(flags[key]);
-  };
-  const entries = Object.entries(QUEST_LABELS);
+  if (!character) {
+    return <section className="screen"><p>{t('Choose or create an adventurer to track quests.')}</p></section>;
+  }
+  const { steps, next } = chapterOneQuestProgress(character.quest_flags ?? {});
+  const atNextLocation = next?.location && character.location === next.location;
   return (
-    <section className="screen">
+    <section className="screen quest-screen">
       <div className="page-title"><p className="eyebrow">{t('CAMPAIGN')}</p><h1>{t('Quests')}</h1></div>
-      <ul className="quest-list">
-        {entries.map(([key, label]) => (
-          <li key={key} className={questDone(key) ? 'done' : 'open'}>
-            <strong>{t(label)}</strong>
-            <small>{questDone(key) ? t('Complete') : t('In progress or not started')}</small>
-          </li>
-        ))}
-      </ul>
+      {next ? (
+        <article className={`quest-next-card ${atNextLocation ? 'here' : ''}`}>
+          <p className="eyebrow">{t('NEXT STEP')}</p>
+          <h2>{t(next.label)}</h2>
+          <p>{t(next.hint)}</p>
+          {next.location && (
+            <p className="quest-next-meta">
+              {atNextLocation ? t('You are at the right location.') : `${t('Head to')}: ${next.location}`}
+            </p>
+          )}
+        </article>
+      ) : (
+        <article className="quest-next-card done">
+          <p className="eyebrow">{t('CHAPTER ONE')}</p>
+          <h2>{t('Bell quest complete')}</h2>
+          <p>{t('The shrine bell is home and the Bell Warden is defeated.')}</p>
+        </article>
+      )}
+      <ol className="quest-step-list">
+        {steps.map(step => {
+          const active = next?.id === step.id;
+          return (
+            <li key={step.id} className={`quest-step ${step.status} ${active ? 'active' : ''}`}>
+              <span className="quest-step-marker" aria-hidden="true">{step.status === 'done' ? '✓' : active ? '→' : '·'}</span>
+              <div>
+                <strong>{t(step.label)}</strong>
+                <small>{step.status === 'done' ? t('Complete') : active ? t('Current objective') : t('Not started')}</small>
+              </div>
+            </li>
+          );
+        })}
+      </ol>
     </section>
   );
 }

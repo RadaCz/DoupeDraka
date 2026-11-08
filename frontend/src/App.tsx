@@ -22,6 +22,8 @@ import type {
   ReferenceCatalog,
   Spell,
 } from './types';
+import { MORE_HUB_SCREENS } from './types';
+import { applyTelegramTheme, haptic, syncTelegramBackButton } from './telegramWebApp';
 import { LocaleProvider, useI18n } from './i18n';
 import {
   clearPendingAction,
@@ -41,6 +43,23 @@ declare global {
         expand?: () => void;
         setHeaderColor?: (color: string) => void;
         setBackgroundColor?: (color: string) => void;
+        themeParams?: {
+          bg_color?: string;
+          secondary_bg_color?: string;
+          text_color?: string;
+          hint_color?: string;
+          button_color?: string;
+        };
+        BackButton?: {
+          show: () => void;
+          hide: () => void;
+          onClick: (handler: () => void) => void;
+          offClick: (handler: () => void) => void;
+        };
+        HapticFeedback?: {
+          impactOccurred: (style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft') => void;
+          notificationOccurred: (type: 'error' | 'success' | 'warning') => void;
+        };
       };
     };
   }
@@ -202,12 +221,24 @@ function AppContent() {
     }
   }, [character?.id]);
 
+  const telegramBack = useCallback(() => {
+    if (MORE_HUB_SCREENS.includes(screen) && screen !== 'more') {
+      setScreen('more');
+    } else if (screen === 'create') {
+      setScreen('home');
+    } else {
+      setScreen('game');
+    }
+    setError(null);
+  }, [screen]);
+
+  useEffect(() => syncTelegramBackButton(screen, telegramBack), [screen, telegramBack]);
+
   useEffect(() => {
     const telegram = window.Telegram?.WebApp;
     telegram?.ready?.();
     telegram?.expand?.();
-    telegram?.setHeaderColor?.('#101611');
-    telegram?.setBackgroundColor?.('#101611');
+    applyTelegramTheme();
 
     const initData = telegram?.initData;
     if (!initData) {
@@ -348,6 +379,7 @@ function AppContent() {
           if (typeof event.data.narration === 'string') streamedNarration = event.data.narration;
           updatePendingNarration(streamedNarration, resolvedFacts);
           setNarrationStatus(event.data.narration_status === 'narrated' ? 'narrated' : 'fallback');
+          haptic('success');
           clearPendingAction();
           setTurnPhase('idle');
         }

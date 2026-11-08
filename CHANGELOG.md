@@ -2,6 +2,11 @@
 
 ## Unreleased (2026-11-08)
 
+### Mini App UI-3 – UI-6
+- Graph map for chapter-one locations with locked vault routes and travel from adjacent nodes.
+- Quest screen highlights the next objective from quest flags.
+- Character sheet panels; Telegram theme sync, BackButton, and haptics on completed turns.
+
 ### Mini App UI-1 / UI-2
 - Bottom nav: Play, Map, Quests, Hero, More (hidden on Home and character creation).
 - More hub: Journal, Settings, Rules & spells, Campaign mood.
