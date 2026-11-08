@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     database_url: str = "sqlite+aiosqlite:///./data/dnd.db"
     db_pool_size: int = Field(default=10, validation_alias=AliasChoices("DB_POOL_SIZE", "db_pool_size"))
     db_max_overflow: int = Field(default=20, validation_alias=AliasChoices("DB_MAX_OVERFLOW", "db_max_overflow"))
+    db_bootstrap: str = Field(
+        default="create_all",
+        validation_alias=AliasChoices("DB_BOOTSTRAP", "db_bootstrap"),
+    )
     load_test_enabled: bool = Field(default=False, validation_alias=AliasChoices("LOAD_TEST_ENABLED", "load_test_enabled"))
     api_url: str = "http://127.0.0.1:8000"
     mini_app_url: str = Field(default="", validation_alias=AliasChoices("MINI_APP_URL", "mini_app_url"))
@@ -121,6 +125,14 @@ class Settings(BaseSettings):
     admin_token: str = Field(default="", validation_alias=AliasChoices(
         "ADMIN_TOKEN", "admin_token", "ADMIN_API_KEY", "admin_api_key",
     ))
+
+    @field_validator("db_bootstrap")
+    @classmethod
+    def validate_db_bootstrap(cls, value: str) -> str:
+        normalized = value.strip().lower()
+        if normalized not in {"create_all", "none"}:
+            raise ValueError("DB_BOOTSTRAP must be create_all or none")
+        return normalized
 
     @field_validator("cors_origins")
     @classmethod

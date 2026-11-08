@@ -9,9 +9,10 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .db import AnalyticsEvent, CharacterRecord
+from .schemas import AdminStatsResponse, ShopItemStat
 
 
-async def aggregate_admin_stats(session: AsyncSession) -> dict:
+async def aggregate_admin_stats(session: AsyncSession) -> AdminStatsResponse:
     total_characters = await session.scalar(select(func.count()).select_from(CharacterRecord)) or 0
     death_count = await session.scalar(
         select(func.count())
@@ -55,16 +56,16 @@ async def aggregate_admin_stats(session: AsyncSession) -> dict:
     deaths_per_character = round(death_count / total_characters, 4) if total_characters else 0.0
     llm_fallback_rate = round(narration_fallback / narration_total, 4) if narration_total else 0.0
 
-    return {
-        "total_active_characters": total_characters,
-        "total_deaths": death_count,
-        "average_deaths_per_character": deaths_per_character,
-        "top_shop_items": [
-            {"item_name": name, "purchases": count}
+    return AdminStatsResponse(
+        total_active_characters=total_characters,
+        total_deaths=death_count,
+        average_deaths_per_character=deaths_per_character,
+        top_shop_items=[
+            ShopItemStat(item_name=name, purchases=count)
             for name, count in shop_counter.most_common(10)
         ],
-        "llm_narration_turns": narration_total,
-        "llm_narration_fallback_turns": narration_fallback,
-        "llm_gateway_fallback_events": provider_fallbacks,
-        "llm_fallback_rate": llm_fallback_rate,
-    }
+        llm_narration_turns=narration_total,
+        llm_narration_fallback_turns=narration_fallback,
+        llm_gateway_fallback_events=provider_fallbacks,
+        llm_fallback_rate=llm_fallback_rate,
+    )

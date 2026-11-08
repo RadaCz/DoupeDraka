@@ -10,6 +10,7 @@ from .ai.base import NarrationContext, NarrationRequest
 from .ai.offline import OfflineProvider, narrate_offline as render_offline
 from .ai.ollama import PROVIDER_ERRORS
 from .ai.registry import narration_gateway_for
+from .ai.stream_frames import StreamReplaceFrame
 from .engine.models import SAFE_RESPAWN_LOCATION
 from .narration_language import LANGUAGE_NAMES, language_output_instruction, normalize_narration_language
 from .settings import get_settings
@@ -104,7 +105,7 @@ class Narrator:
         except PROVIDER_ERRORS:
             return await OfflineProvider().complete(request), "fallback"
 
-    async def stream(self, context: NarrationContext) -> AsyncIterator[str]:
+    async def stream(self, context: NarrationContext) -> AsyncIterator[str | StreamReplaceFrame]:
         """Yield narration chunks after mechanics have already been committed."""
         settings = get_settings()
         gateway = narration_gateway_for(settings)

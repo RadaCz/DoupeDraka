@@ -63,3 +63,19 @@ class TopUpRequest(BaseModel):
 class CombatCalculatorRequest(BaseModel):
     party_levels: list[int] = Field(min_length=1, max_length=8)
     monsters: list[str] = Field(min_length=1, max_length=12)
+
+
+class ShopItemStat(BaseModel):
+    item_name: str
+    purchases: int
+
+
+class AdminStatsResponse(BaseModel):
+    total_active_characters: int
+    total_deaths: int
+    average_deaths_per_character: float
+    top_shop_items: list[ShopItemStat]
+    llm_narration_turns: int
+    llm_narration_fallback_turns: int
+    llm_gateway_fallback_events: int
+    llm_fallback_rate: float

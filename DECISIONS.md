@@ -30,3 +30,4 @@
 | D26 | Campaign routes and location encounter/discovery tables are engine-owned data | Keeps travel and random encounters deterministic and independently testable; narrative text cannot unlock or alter a route. |
 | D27 | Narration providers implement an isolated complete/stream protocol | Provider-specific I/O stays outside prompt orchestration; offline fallback and post-commit streaming remain available without changing engine authority. |
 | D28 | NPC quest flags and rewards are engine-owned character state | Quest choices and rewards must persist deterministically and cannot be invented by narration. |
+| D29 | Pre-launch DB bootstrap and stream fallback | Production sets `DB_BOOTSTRAP=none` so Alembic is the only schema writer (no `create_all` race on startup). Mid-stream provider aborts emit a `StreamReplaceFrame` / SSE `replace` event with full offline prose so partial LLM tokens are discarded instead of duplicated in the client. |

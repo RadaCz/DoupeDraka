@@ -3,8 +3,9 @@ import asyncio
 import pytest
 
 from app.ai.base import NarrationContext, NarrationRequest
-from app.ai.errors import ProviderRateLimitError
+from app.ai.errors import ProviderRateLimitError, ProviderStreamAbortedError
 from app.ai.gateway import NamedProvider, NarrationGateway
+from app.ai.stream_frames import StreamReplaceFrame
 
 
 def _request() -> NarrationRequest:
@@ -64,5 +65,41 @@ def test_gateway_streams_from_second_provider_when_first_fails():
         chunks = [chunk async for chunk in gateway.stream(_request())]
         assert chunks == ["streamed"]
         assert first.calls == 1
+
+    asyncio.run(run())
+
+
+class PartialThenAbortProvider:
+    def __init__(self, partial: str, message: str = "connection reset"):
+        self.partial = partial
+        self.message = message
+
+    async def complete(self, request: NarrationRequest) -> str:
+        raise ProviderStreamAbortedError(self.message, provider="NVIDIA NIM", partial=self.partial)
+
+    async def stream(self, request: NarrationRequest):
+        if self.partial:
+            yield self.partial
+        raise ProviderStreamAbortedError(self.message, provider="NVIDIA NIM", partial=self.partial)
+
+
+def test_gateway_mid_stream_abort_yields_replace_not_duplicate_chunks():
+    async def run():
+        token = "ZZZ_PARTIAL_TOKEN "
+        gateway = NarrationGateway([NamedProvider("NVIDIA NIM", PartialThenAbortProvider(token))])
+        frames = [frame async for frame in gateway.stream(_request())]
+        assert frames[0] == token
+        assert isinstance(frames[-1], StreamReplaceFrame)
+        assert token.strip() not in frames[-1].narration
+        # API must clear buffered deltas when it sees StreamReplaceFrame (no partial + offline concat).
+        buffered = ""
+        final = ""
+        for frame in frames:
+            if isinstance(frame, StreamReplaceFrame):
+                buffered = frame.narration
+            else:
+                buffered += frame
+        final = buffered
+        assert token.strip() not in final
 
     asyncio.run(run())

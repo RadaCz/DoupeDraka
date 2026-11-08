@@ -32,7 +32,21 @@ from .telemetry import (
 )
 from .narrator import NarrationContext, Narrator
 from .ai.registry import narration_gateway_for
-from .schemas import ActionRequest, ActionResponse, CharacterCreate, CharacterSettings, CharacterTier, CombatCalculatorRequest, TelegramAuthRequest, Token, TopUpRequest, UserCreate, UserResponse
+from .ai.stream_frames import StreamReplaceFrame
+from .schemas import (
+    ActionRequest,
+    ActionResponse,
+    AdminStatsResponse,
+    CharacterCreate,
+    CharacterSettings,
+    CharacterTier,
+    CombatCalculatorRequest,
+    TelegramAuthRequest,
+    Token,
+    TopUpRequest,
+    UserCreate,
+    UserResponse,
+)
 from .settings import get_settings
 from .logging import logger
 import secrets
@@ -104,7 +118,9 @@ async def ready() -> dict:
         raise HTTPException(503, "Database unavailable") from error
 
 @app.on_event("startup")
-async def startup() -> None: await init_db()
+async def startup() -> None:
+    if get_settings().db_bootstrap == "create_all":
+        await init_db()
 
 def require_admin(token: str) -> None:
     """Guard for money-shaped routes. No configured token means no access."""
@@ -366,8 +382,8 @@ async def set_tier(request: CharacterTier, user: User = Depends(get_user_by_toke
     logger.info(f"Tier changed for {user.username}: {request.tier}")
     return {"tier": tier.key, "cost": economy.to_units(tier.cost_tenths), "label": tier.label}
 
-@app.get("/admin/stats")
-async def admin_stats(x_admin_token: str = Header(default="", alias="X-Admin-Token")) -> dict:
+@app.get("/admin/stats", response_model=AdminStatsResponse)
+async def admin_stats(x_admin_token: str = Header(default="", alias="X-Admin-Token")) -> AdminStatsResponse:
     """Aggregated product telemetry (admin token required)."""
     require_admin(x_admin_token)
     async with Session() as session:
@@ -628,7 +644,12 @@ async def action_stream(
                 narration = response.narration
             else:
                 async for chunk in narrator.stream(context):
-                    if chunk:
+                    if isinstance(chunk, StreamReplaceFrame):
+                        chunks.clear()
+                        chunks.append(chunk.narration)
+                        status = "fallback"
+                        yield sse_message("replace", {"narration": chunk.narration})
+                    elif chunk:
                         chunks.append(chunk)
                         yield sse_message("delta", {"text": chunk})
                 narration = "".join(chunks).strip()

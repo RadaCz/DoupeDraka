@@ -17,6 +17,7 @@ _RETRYABLE = RETRYABLE_PROVIDER_ERRORS + (httpx.ConnectError, httpx.ReadError)
 from .gateway_metrics import record_fallback as record_gateway_fallback
 from .gateway_metrics import record_provider_success
 from .offline import OfflineProvider
+from .stream_frames import StreamReplaceFrame
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +69,7 @@ class NarrationGateway:
         record_provider_success("offline")
         return text, "fallback"
 
-    async def stream(self, request: NarrationRequest) -> AsyncIterator[str]:
+    async def stream(self, request: NarrationRequest) -> AsyncIterator[str | StreamReplaceFrame]:
         """Stream narration; switch providers only before the first token."""
         for index, entry in enumerate(self.providers):
             try:
@@ -79,13 +80,15 @@ class NarrationGateway:
                 return
             except ProviderStreamAbortedError as exc:
                 logger.warning(
-                    "%s failed mid-stream (%s); switching to offline fallback",
+                    "%s failed mid-stream (%s); replacing buffer with offline fallback",
                     entry.name,
                     exc,
                 )
                 self._telemetry_fallback(entry.name, "offline")
-                async for chunk in self.offline.stream(request):
-                    yield chunk
+                record_gateway_fallback(entry.name, "offline")
+                fallback = (await self.offline.complete(request)).strip()
+                record_provider_success("offline")
+                yield StreamReplaceFrame(fallback)
                 return
             except _RETRYABLE as exc:
                 fallback = self.providers[index + 1].name if index + 1 < len(self.providers) else "offline"

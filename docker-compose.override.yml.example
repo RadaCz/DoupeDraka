@@ -10,6 +10,7 @@ services:
   api:
     environment:
       DATABASE_URL: sqlite+aiosqlite:///./data/dnd.db
+      DB_BOOTSTRAP: create_all
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs

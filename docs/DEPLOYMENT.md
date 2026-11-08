@@ -52,7 +52,10 @@ Use asyncpg:
 DATABASE_URL=postgresql+asyncpg://doupe:doupe@localhost:5432/doupedraka
 DB_POOL_SIZE=10
 DB_MAX_OVERFLOW=20
+DB_BOOTSTRAP=none
 ```
+
+Set `DB_BOOTSTRAP=none` in production so startup does not run `create_all`; apply schema with Alembic only. Local SQLite dev keeps the default `create_all`.
 
 Docker Compose includes Postgres 16 (persistent volume `pgdata`):
 
