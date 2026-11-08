@@ -31,3 +31,9 @@
 | D27 | Narration providers implement an isolated complete/stream protocol | Provider-specific I/O stays outside prompt orchestration; offline fallback and post-commit streaming remain available without changing engine authority. |
 | D28 | NPC quest flags and rewards are engine-owned character state | Quest choices and rewards must persist deterministically and cannot be invented by narration. |
 | D29 | Pre-launch DB bootstrap and stream fallback | Production sets `DB_BOOTSTRAP=none` so Alembic is the only schema writer (no `create_all` race on startup). Mid-stream provider aborts emit a `StreamReplaceFrame` / SSE `replace` event with full offline prose so partial LLM tokens are discarded instead of duplicated in the client. |
+| D30 | UI: Adventure Mana → **Kredity vypravěče** | Account-level ⚡ pays optional narration tiers only; never spell slots or legacy character mana (extends D4). Spec: `design/DICE_AND_ECONOMY_V1.md` §B–C. |
+| D31 | Closed beta default tier **Lite** | New accounts start Lite; free core play must not spend narrator credits. Paid tiers only when an online provider can deliver them. Implement after GDS01 sign-off. |
+| D32 | Narrator billing on delivery | No charge (or refund) when paid tier falls back to offline or stream is replaced mid-flight — player must not lose credit without promised narration quality. Spec: §C.4. |
+| D33 | Pro tier ≠ shipped product | `1.4` cost in `MODEL_TIERS` is a placeholder; `/economy/tier` rejects `pro` until OpenRouter (or equivalent) is live. |
+| D34 | GDS01 dice exploration | Keep D6/D20; adopt exploration **variant A** (differentiated 5/6) after playtest unless data favors B. Variable DC table 5–20+. Spec: `design/DICE_AND_ECONOMY_V1.md` §A. |
+| D35 | Monetization pillars | Sell premium narration and story chapters, not play energy or mechanical advantage. No pay-to-win on rolls/loot/stats. Hypothesis pricing in `design/ECONOMY_MODEL_V1.md` only. |

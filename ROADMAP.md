@@ -2,6 +2,13 @@
 
 Updated 2026-11-08. Chapter one is a gated six-location slice on `clean-main`. ActionIntent routes player commands; Pro narration tier is disabled until OpenRouter exists.
 
+## GDS01 — Dice, Resources & Economy (design complete, implementation pending)
+
+- [x] [`design/DICE_AND_ECONOMY_V1.md`](design/DICE_AND_ECONOMY_V1.md) — kostky, zdroje, billing contract, D6 doporučení
+- [x] [`design/ECONOMY_MODEL_V1.md`](design/ECONOMY_MODEL_V1.md) — session model, náklady (známé/hypotézy)
+- [x] [`design/CHAPTER_ONE_PLAYTEST_V1.md`](design/CHAPTER_ONE_PLAYTEST_V1.md) — closed beta 10–15 hráčů
+- [ ] Produktové sign-off GDS01 → epiky E1–E6 (viz hlavní spec)
+
 ## Priority 0 - Ship chapter one branch
 - [x] ActionIntent routing with negation, shop/item/quest intents, ability-check DC rules, class weapon proficiency.
 - [x] Mini App UI-1–UI-6: nav, quick actions, graph map, quest next step, hero panels, Telegram chrome.
