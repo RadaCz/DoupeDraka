@@ -1130,10 +1130,12 @@ summary:focus-visible {
 
 .bottom-nav button {
   min-width: 0;
+  min-height: 48px;
   display: grid;
   align-content: center;
   justify-items: center;
-  gap: 1px;
+  gap: 2px;
+  padding: 4px 2px;
   border: 0;
   border-radius: 12px;
   background: transparent;
@@ -1142,14 +1144,15 @@ summary:focus-visible {
 }
 
 .bottom-nav button > span {
-  font-size: 19px;
+  font-size: 20px;
   line-height: 1.1;
 }
 
 .bottom-nav button > small {
   overflow: hidden;
   max-width: 100%;
-  font-size: 9px;
+  font-size: 12px;
+  line-height: 1.2;
   text-overflow: ellipsis;
 }
 
@@ -1951,15 +1954,99 @@ summary:focus-visible {
   scrollbar-width: none;
 }
 
+.quick-actions-heading {
+  margin: 0 0 8px;
+  color: #85b991;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.quick-action-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.quick-action-card {
+  min-height: 72px;
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid #334837;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #1a261c 0%, #141c16 100%);
+  color: #d8e6d8;
+  text-align: left;
+  cursor: pointer;
+}
+
+.quick-action-card:disabled {
+  opacity: 0.55;
+}
+
+.quick-action-glyph {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.quick-action-label {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.quick-action-card small {
+  color: #8fa893;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.more-link-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.more-link-card {
+  width: 100%;
+  min-height: 56px;
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid #2f3d32;
+  border-radius: 14px;
+  background: #161d18;
+  color: #d3e2d4;
+  text-align: left;
+  cursor: pointer;
+}
+
+.more-link-card strong {
+  display: block;
+  font-size: 15px;
+}
+
+.more-link-card small {
+  color: #8fa893;
+  font-size: 12px;
+}
+
 .suggested-actions button {
   flex: 0 0 auto;
-  min-height: 27px;
-  padding: 5px 9px;
+  min-height: 44px;
+  padding: 8px 12px;
   border: 1px solid #334837;
   border-radius: 999px;
   background: #172219;
   color: #bed2be;
-  font-size: 9px;
+  font-size: 12px;
 }
 
 .suggested-actions button:disabled {

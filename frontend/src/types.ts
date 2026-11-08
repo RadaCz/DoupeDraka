@@ -120,4 +120,7 @@ export type AppScreen =
   | 'settings'
   | 'map'
   | 'quests'
-  | 'journal';
+  | 'journal'
+  | 'more';
+
+export const MORE_HUB_SCREENS: AppScreen[] = ['more', 'journal', 'settings', 'tools', 'campaign'];

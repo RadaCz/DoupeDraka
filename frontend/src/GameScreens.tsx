@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { TurnPhase } from './pendingTurn';
 import type {
   AppScreen,
@@ -39,6 +39,74 @@ function titleCase(value: string) {
 interface SuggestedAction {
   label: string;
   action: string;
+}
+
+interface QuickAction {
+  id: string;
+  label: string;
+  description: string;
+  glyph: string;
+  action?: string;
+  mode: 'submit' | 'map' | 'custom' | 'spells';
+}
+
+function buildQuickActions(
+  character: Character,
+  events: JournalEvent[],
+  locations: LocationReference[],
+  t: (value: string) => string,
+  hasSpells: boolean,
+  hasPotion: boolean,
+): QuickAction[] {
+  const enemy = character.combatant?.name ?? 'the enemy';
+  if (character.in_combat) {
+    const actions: QuickAction[] = [
+      { id: 'attack', label: t('Attack'), description: t('Strike the enemy'), glyph: '⚔', action: `attack ${enemy}`, mode: 'submit' },
+      { id: 'defend', label: t('Defend'), description: t('Brace against the next hit'), glyph: '🛡', action: 'defend', mode: 'submit' },
+      { id: 'flee', label: t('Flee'), description: t('Try to break away'), glyph: '↩', action: 'flee', mode: 'submit' },
+    ];
+    if (hasSpells) {
+      actions.push({ id: 'spell', label: t('Cast spell'), description: t('Choose a spell to cast'), glyph: '✦', mode: 'spells' });
+    }
+    if (hasPotion) {
+      actions.push({ id: 'potion', label: t('Use potion'), description: t('Drink a healing potion'), glyph: '⚗', action: 'use potion', mode: 'submit' });
+    }
+    return actions;
+  }
+  const contextual = suggestedActions(character, events, locations, t);
+  const talk = contextual.find(item => /talk|ask|return|caldus|nib|bell/i.test(item.action));
+  return [
+    {
+      id: 'explore',
+      label: t('Explore'),
+      description: t('Search the area for tracks or loot'),
+      glyph: '⌕',
+      action: `search ${character.location}`,
+      mode: 'submit',
+    },
+    {
+      id: 'talk',
+      label: t('Talk'),
+      description: talk ? t(talk.label) : t('Speak or persuade'),
+      glyph: '♙',
+      action: talk?.action ?? 'listen for movement',
+      mode: 'submit',
+    },
+    {
+      id: 'travel',
+      label: t('Travel'),
+      description: t('Pick the next location on the map'),
+      glyph: '⌖',
+      mode: 'map',
+    },
+    {
+      id: 'custom',
+      label: t('Custom action'),
+      description: t('Describe your own intent in words'),
+      glyph: '✎',
+      mode: 'custom',
+    },
+  ];
 }
 
 function suggestedActions(
@@ -279,6 +347,7 @@ export function GameScreen(props: {
   onAction: (action: string) => void;
   onResumePending?: () => void;
   onOpenSheet: () => void;
+  onOpenMap?: () => void;
   onOpenSettings?: () => void;
   onCancelTurn?: () => void;
 }) {
@@ -294,10 +363,12 @@ export function GameScreen(props: {
   onAction,
   onResumePending,
   onOpenSheet,
+  onOpenMap,
   onOpenSettings,
   onCancelTurn,
 } = props;
   const { t } = useI18n();
+  const actionInputRef = useRef<HTMLInputElement>(null);
   const [action, setAction] = useState('');
   const [selectedSpell, setSelectedSpell] = useState('');
   const [errorHidden, setErrorHidden] = useState(false);
@@ -310,12 +381,32 @@ export function GameScreen(props: {
     const timer = window.setInterval(() => setThinkingSeconds(Math.floor((Date.now() - started) / 1000)), 1000);
     return () => window.clearInterval(timer);
   }, [busy]);
-  const suggestions = suggestedActions(character, events, locations, t);
   const enemy = character.in_combat ? character.combatant : null;
   const accessibleSpells = new Set([...(character.known_spells ?? []), ...(character.prepared_spells ?? [])]);
   const characterSpells = spells
     .filter(spell => accessibleSpells.has(spell.name))
     .sort((left, right) => left.level - right.level || left.name.localeCompare(right.name));
+  const hasPotion = character.inventory.some(item => item.toLowerCase().includes('potion'));
+  const quickActions = buildQuickActions(character, events, locations, t, characterSpells.length > 0, hasPotion);
+
+  const runQuickAction = (quick: QuickAction) => {
+    if (busy) return;
+    if (quick.mode === 'map') {
+      onOpenMap?.();
+      return;
+    }
+    if (quick.mode === 'custom') {
+      actionInputRef.current?.focus();
+      return;
+    }
+    if (quick.mode === 'spells') {
+      document.getElementById('cast-spell')?.focus();
+      return;
+    }
+    if (quick.action) {
+      onAction(quick.action);
+    }
+  };
   const actionSpellName = action.match(/^(?:cast|kouzli(?:t)?)\s+(.+?)(?:\s+at\s+.+)?$/i)?.[1]?.trim().replace(/\s+/g, ' ').toLowerCase();
   const actionSpell = characterSpells.find(spell => spell.name.toLowerCase() === actionSpellName);
   const spellWarning = actionSpell && !actionSpell.effect_modeled
@@ -425,16 +516,24 @@ export function GameScreen(props: {
         </div>
       )}
       <div className="action-composer-wrap">
-        {suggestions.length > 0 && (
-          <div className="suggested-actions" aria-label={t('Suggested next moves')}>
-            <span className="suggestion-heading">{character.in_combat ? t('YOUR MOVE') : t('YOU COULD')}</span>
-            {suggestions.map(suggestion => (
-              <button type="button" key={suggestion.action} disabled={busy} onClick={() => setAction(suggestion.action)}>{t(suggestion.label)}</button>
-            ))}
-          </div>
-        )}
+        <p className="quick-actions-heading">{character.in_combat ? t('YOUR MOVE') : t('What do you want to do?')}</p>
+        <div className="quick-action-grid" aria-label={t('Quick actions')}>
+          {quickActions.map(quick => (
+            <button
+              type="button"
+              key={quick.id}
+              className="quick-action-card"
+              disabled={busy}
+              onClick={() => runQuickAction(quick)}
+            >
+              <span className="quick-action-glyph" aria-hidden="true">{quick.glyph}</span>
+              <span className="quick-action-label">{quick.label}</span>
+              <small>{quick.description}</small>
+            </button>
+          ))}
+        </div>
         <form className="action-box" onSubmit={handleSubmit}>
-          <input value={action} onChange={event => setAction(event.target.value)} placeholder={busy ? t('The narrator is writing…') : t('What do you do?')} disabled={busy} aria-label={t('Your action')} />
+          <input ref={actionInputRef} value={action} onChange={event => setAction(event.target.value)} placeholder={busy ? t('The narrator is writing…') : t('What do you do?')} disabled={busy} aria-label={t('Your action')} />
           <button type="submit" className="primary" disabled={busy || !action.trim() || Boolean(spellWarning)} aria-label={t('Send action')}>→</button>
         </form>
         {characterSpells.length > 0 && (
@@ -896,20 +995,63 @@ export function SettingsScreen({
   );
 }
 
+export function MoreScreen({ onNavigate }: { onNavigate: (screen: AppScreen) => void }) {
+  const { t } = useI18n();
+  const links: Array<{ key: AppScreen; label: string; description: string; glyph: string }> = [
+    { key: 'journal', label: t('Journal'), description: t('Story and action history'), glyph: '📜' },
+    { key: 'settings', label: t('Settings'), description: t('Language, narrator and game'), glyph: '⚙' },
+    { key: 'tools', label: t('Rules & spells'), description: t('SRD reference and encounter tools'), glyph: '⬡' },
+    { key: 'campaign', label: t('Campaign mood'), description: t('Difficulty, tone and humor'), glyph: '◇' },
+  ];
+  return (
+    <section className="screen more-screen">
+      <div className="page-title"><p className="eyebrow">{t('MENU')}</p><h1>{t('More')}</h1></div>
+      <ul className="more-link-list">
+        {links.map(link => (
+          <li key={link.key}>
+            <button type="button" className="more-link-card" onClick={() => onNavigate(link.key)}>
+              <span aria-hidden="true">{link.glyph}</span>
+              <div><strong>{link.label}</strong><small>{link.description}</small></div>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 export function BottomNav({ screen, onNavigate }: { screen: AppScreen; onNavigate: (screen: AppScreen) => void }) {
   const { t } = useI18n();
-  const active = screen === 'create' ? 'home' : screen === 'game' ? 'game' : screen;
+  const moreScreens: AppScreen[] = ['more', 'journal', 'settings', 'tools', 'campaign'];
+  const active: AppScreen =
+    screen === 'create' || screen === 'home'
+      ? 'home'
+      : screen === 'game'
+        ? 'game'
+        : moreScreens.includes(screen)
+          ? 'more'
+          : screen;
   const items: Array<{ key: AppScreen; label: string; glyph: string }> = [
-    { key: 'game', label: t('Adventure'), glyph: '✦' },
-    { key: 'map', label: t('Map'), glyph: '🗺' },
-    { key: 'character', label: t('Character'), glyph: '♙' },
-    { key: 'quests', label: t('Quests'), glyph: '⬡' },
-    { key: 'journal', label: t('Journal'), glyph: '📜' },
-    { key: 'settings', label: t('Settings'), glyph: '⚙' },
+    { key: 'game', label: t('Play'), glyph: '⚔' },
+    { key: 'map', label: t('Map'), glyph: '⌖' },
+    { key: 'quests', label: t('Quests'), glyph: '◇' },
+    { key: 'character', label: t('Hero'), glyph: '♙' },
+    { key: 'more', label: t('More'), glyph: '•••' },
   ];
   return (
     <nav className="bottom-nav" aria-label={t('Main navigation')}>
-      {items.map(item => <button type="button" className={active === item.key ? 'active' : ''} aria-current={active === item.key ? 'page' : undefined} key={item.key} onClick={() => onNavigate(item.key)}><span aria-hidden="true">{item.glyph}</span><small>{item.label}</small></button>)}
+      {items.map(item => (
+        <button
+          type="button"
+          className={active === item.key ? 'active' : ''}
+          aria-current={active === item.key ? 'page' : undefined}
+          key={item.key}
+          onClick={() => onNavigate(item.key)}
+        >
+          <span aria-hidden="true">{item.glyph}</span>
+          <small>{item.label}</small>
+        </button>
+      ))}
     </nav>
   );
 }

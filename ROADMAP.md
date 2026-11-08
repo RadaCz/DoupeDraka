@@ -4,6 +4,7 @@ Updated 2026-11-08. Chapter one is a gated six-location slice on `clean-main`. A
 
 ## Priority 0 - Ship chapter one branch
 - [x] ActionIntent routing with negation, shop/item/quest intents, ability-check DC rules, class weapon proficiency.
+- [x] Mini App UI-1/UI-2: five-item bottom nav + More hub; quick actions submit turns directly.
 - [x] Vault/pit travel gating, `bell_acquired` quest persistence, Map/Quest UI.
 - [x] CI on `clean-main`: pytest, Vitest/build, Postgres `alembic upgrade` + concurrency, Playwright E2E.
 - [ ] Confirm GitHub Actions green on latest `origin/clean-main`.

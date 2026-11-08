@@ -2,6 +2,12 @@
 
 ## Unreleased (2026-11-08)
 
+### Mini App UI-1 / UI-2
+- Bottom nav: Play, Map, Quests, Hero, More (hidden on Home and character creation).
+- More hub: Journal, Settings, Rules & spells, Campaign mood.
+- Game screen quick-action grid submits turns immediately; Travel opens the map; contextual Talk uses quest/NPC hints.
+- Vitest updated for the new navigation and action labels.
+
 ### Chapter one stabilization
 - ActionIntent: `rejected`, `shop`, `use_item`, and `quest` routing; per-clause CS/EN negation; no substring shop/quest triggers.
 - PostgreSQL CI uses matching `DATABASE_URL` and `PYTEST_DATABASE_URL`, `alembic check`, and skips `create_all` when pytest uses Postgres.

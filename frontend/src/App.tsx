@@ -8,6 +8,7 @@ import {
   HomeScreen,
   JournalScreen,
   MapScreen,
+  MoreScreen,
   QuestScreen,
   SettingsScreen,
   ToolsScreen,
@@ -489,7 +490,23 @@ function AppContent() {
       <main className="main-content" key={screen}>
         {screen === 'home' && <HomeScreen character={character} characters={characters} presets={presets} economy={economy} onContinue={() => navigate('game')} onCreate={() => navigate('create')} onPreset={createPreset} onSelect={selectCharacter} />}
         {screen === 'create' && <CharacterWizard catalog={catalog} presets={presets} busy={busy} error={error} onCreate={createCharacter} onPreset={createPreset} onCancel={() => navigate('home')} />}
-        {screen === 'game' && character && <GameScreen character={character} events={events} spells={spells} locations={catalog?.locations ?? []} busy={busy} turnPhase={turnPhase} error={error} narrationStatus={narrationStatus} onAction={takeAction} onResumePending={resumePendingTurn} onOpenSheet={() => navigate('character')} />}
+        {screen === 'game' && character && (
+          <GameScreen
+            character={character}
+            events={events}
+            spells={spells}
+            locations={catalog?.locations ?? []}
+            busy={busy}
+            turnPhase={turnPhase}
+            error={error}
+            narrationStatus={narrationStatus}
+            onAction={takeAction}
+            onResumePending={resumePendingTurn}
+            onOpenSheet={() => navigate('character')}
+            onOpenMap={() => navigate('map')}
+          />
+        )}
+        {screen === 'more' && <MoreScreen onNavigate={navigate} />}
         {screen === 'map' && <MapScreen character={character} locations={catalog?.locations ?? []} onTravel={action => { navigate('game'); void takeAction(action); }} />}
         {screen === 'quests' && <QuestScreen character={character} />}
         {screen === 'journal' && <JournalScreen events={events} />}
@@ -510,7 +527,9 @@ function AppContent() {
         {screen === 'game' && !character && <div className="empty-screen"><p role="alert">{t('Choose or create an adventurer before beginning the story.')}</p><button className="primary" onClick={() => navigate('home')}>{t('Back to home')}</button></div>}
       </main>
 
-      <BottomNav screen={screen} onNavigate={navigate} />
+      {character && screen !== 'home' && screen !== 'create' && (
+        <BottomNav screen={screen} onNavigate={navigate} />
+      )}
     </div>
   );
 }
