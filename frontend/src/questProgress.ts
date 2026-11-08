@@ -66,3 +66,25 @@ export function chapterOneQuestProgress(flags: Record<string, boolean> = {}) {
   }
   return { steps, next: null as QuestStep | null };
 }
+
+/** Player-visible steps only — no spoilers for future objectives. */
+export function visibleQuestTimeline(flags: Record<string, boolean> = {}) {
+  const { steps, next } = chapterOneQuestProgress(flags);
+  const done = steps.filter(step => step.status === 'done');
+  if (!next) {
+    return { done, active: null as QuestStep | null, teaser: null as string | null };
+  }
+  const quests = flags;
+  let active = { ...next };
+  let teaser: string | null = null;
+  if (!quests.bell_quest_accepted) {
+    active = {
+      ...next,
+      label: 'Find out what happened to the shrine bell',
+      hint: 'Explore the cellar and follow clues deeper underground.',
+      location: undefined,
+    };
+    teaser = 'Further objectives unlock as you meet people along the way.';
+  }
+  return { done, active, teaser };
+}

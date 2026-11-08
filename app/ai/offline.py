@@ -13,6 +13,9 @@ class OfflineProvider:
 
 def narrate_offline(context: NarrationContext) -> str:
     """Turn resolved engine facts into varied prose without changing them."""
+    if context.language == "cs":
+        from .offline_cs import narrate_offline_cs
+        return narrate_offline_cs(context)
     facts = " ".join(context.events).lower()
     action = context.action.strip().rstrip(".!?")
     seed = sum(ord(char) for char in "|".join(context.events))

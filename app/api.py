@@ -291,7 +291,11 @@ async def get_reference() -> dict:
         "backgrounds": reference.background_list(),
         "draconic_ancestry": reference.draconic_ancestry(),
         "locations": [
-            {"name": location.name, "connections": list(location.connections)}
+            {
+                "name": location.name,
+                "connections": list(location.connections),
+                "arrival_beat": location.arrival_beat,
+            }
             for location in LOCATIONS.values()
         ],
     }
@@ -754,6 +758,36 @@ async def commit_action_turn(
         return response, context, event_id, key, False
 
     raise HTTPException(409, "Character state changed during the turn; retry")
+
+def e2e_hooks_enabled() -> bool:
+    """Playwright E2E runs the API with a dedicated bot token; never enable in production."""
+    return get_settings().bot_token == "123456:e2e-test-token"
+
+
+@app.post("/characters/{character_id}/__e2e/fallen")
+async def e2e_force_fallen(character_id: str, user: User = Depends(get_user_by_token)) -> dict:
+    """Set hp to 0 so browser tests can exercise revive without simulating combat death."""
+    if not e2e_hooks_enabled():
+        raise HTTPException(404, "Not found")
+    async with Session() as session:
+        record = await session.get(CharacterRecord, character_id)
+        if not record or record.owner_id != user.id:
+            raise HTTPException(404, "Character not found")
+        character = CharacterState(**decode_character_state(record.payload))
+        character.hp = 0
+        character.in_combat = False
+        character.combatant = None
+        character.death_state = "fallen"
+        claimed = await session.execute(update(CharacterRecord).where(
+            CharacterRecord.id == character_id,
+            CharacterRecord.owner_id == user.id,
+            CharacterRecord.version == record.version,
+        ).values(payload=encode_character_state(asdict(character)), version=record.version + 1, updated_at=datetime.utcnow()))
+        if claimed.rowcount != 1:
+            raise HTTPException(409, "Character changed while updating; retry")
+        await session.commit()
+        return {"character": asdict(character)}
+
 
 @app.post("/characters/{character_id}/revive")
 async def revive_character(character_id: str, user: User = Depends(get_user_by_token)) -> dict:

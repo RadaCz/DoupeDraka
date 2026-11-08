@@ -22,8 +22,11 @@ import type {
   ReferenceCatalog,
   Spell,
 } from './types';
-import { MORE_HUB_SCREENS } from './types';
-import { applyTelegramTheme, haptic, syncTelegramBackButton } from './telegramWebApp';
+import { CHARACTER_HUB_SCREENS, MORE_HUB_SCREENS } from './types';
+import { isFallenError } from './game/gameActions';
+import { formatTurnDelta } from './game/turnDelta';
+import { FallenScreen } from './screens/FallenScreen';
+import { applyTelegramTheme, applyTelegramViewport, haptic, syncTelegramBackButton, syncTelegramMainButton } from './telegramWebApp';
 import { LocaleProvider, useI18n } from './i18n';
 import {
   clearPendingAction,
@@ -177,7 +180,7 @@ function App() {
 }
 
 function AppContent() {
-  const { t } = useI18n();
+  const { t, locale, setLocale } = useI18n();
   const [characters, setCharacters] = useState<Character[]>([]);
   const [character, setCharacter] = useState<Character | null>(null);
   const [presets, setPresets] = useState<HeroPreset[]>([]);
@@ -194,6 +197,7 @@ function AppContent() {
   const [calculating, setCalculating] = useState(false);
   const [calculation, setCalculation] = useState<Record<string, unknown> | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [turnDelta, setTurnDelta] = useState<string | null>(null);
 
   const refreshEvents = useCallback(async (characterId: string) => {
     const history = await request<JournalEvent[]>(`/characters/${characterId}/events`);
@@ -222,7 +226,9 @@ function AppContent() {
   }, [character?.id]);
 
   const telegramBack = useCallback(() => {
-    if (MORE_HUB_SCREENS.includes(screen) && screen !== 'more') {
+    if (CHARACTER_HUB_SCREENS.includes(screen) && screen !== 'character') {
+      setScreen('character');
+    } else if (MORE_HUB_SCREENS.includes(screen) && screen !== 'more') {
       setScreen('more');
     } else if (screen === 'create') {
       setScreen('home');
@@ -235,10 +241,27 @@ function AppContent() {
   useEffect(() => syncTelegramBackButton(screen, telegramBack), [screen, telegramBack]);
 
   useEffect(() => {
+    if (screen !== 'game' || !character || character.hp <= 0) return;
+    const readDraft = () => (document.getElementById('adventure-action-input') as HTMLInputElement | null)?.value ?? '';
+    const sendDraft = () => {
+      const text = readDraft().trim();
+      if (text && !busy) void takeAction(text);
+    };
+    const paint = () => syncTelegramMainButton(readDraft, sendDraft, !busy);
+    paint();
+    document.addEventListener('input', paint);
+    return () => {
+      document.removeEventListener('input', paint);
+      syncTelegramMainButton(() => '', () => {}, false);
+    };
+  }, [screen, character?.id, character?.hp, busy]);
+
+  useEffect(() => {
     const telegram = window.Telegram?.WebApp;
     telegram?.ready?.();
     telegram?.expand?.();
     applyTelegramTheme();
+    applyTelegramViewport();
 
     const initData = telegram?.initData;
     if (!initData) {
@@ -294,6 +317,30 @@ function AppContent() {
     setCharacters(previous => previous.map(item => item.id === updated.id ? updated : item));
   };
 
+  const refreshCharacter = async (characterId: string) => {
+    const list = await request<Character[]>('/characters');
+    setCharacters(list);
+    const fresh = list.find(item => item.id === characterId);
+    if (fresh) setCharacter(fresh);
+  };
+
+  const reviveCharacter = async () => {
+    if (!character || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const result = await request<{ character: Character; gold_lost: number }>(`/characters/${character.id}/revive`, { method: 'POST' });
+      updateCharacter(result.character);
+      setTurnDelta(null);
+      await refreshEvents(character.id);
+      haptic('success');
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : t('Could not revive the hero.'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const createCharacter = async (draft: CharacterDraft) => {
     setBusy(true);
     setError(null);
@@ -333,9 +380,11 @@ function AppContent() {
   };
 
   const takeAction = async (action: string) => {
-    if (!character || busy) return;
+    if (!character || busy || character.hp <= 0) return;
     setBusy(true);
     setError(null);
+    setTurnDelta(null);
+    const snapshot = character;
     const pendingEventId = -Date.now();
     let committed = false;
     let streamCompleted = false;
@@ -359,7 +408,13 @@ function AppContent() {
           setTurnPhase('resolved');
           const result = event.data as unknown as ActionResponse;
           resolvedFacts = result.events;
+          const delta = formatTurnDelta(snapshot, result.character);
+          if (delta) setTurnDelta(delta);
           updateCharacter(result.character);
+          const narrationBlob = `${result.events.join('\n')} ${streamedNarration}`;
+          if (/critical hit|misses|miss\b/i.test(narrationBlob)) {
+            haptic(/miss/i.test(narrationBlob) ? 'warning' : 'heavy');
+          }
           setEconomy(previous => previous ? { ...previous, balance: result.energy, balance_tenths: result.energy_tenths, tier: result.tier } : previous);
           setEvents(previous => [...previous, {
             id: pendingEventId,
@@ -405,7 +460,16 @@ function AppContent() {
         setEvents(previous => previous.filter(event => event.id !== pendingEventId));
         const message = reason instanceof Error ? reason.message : t('The turn could not be completed.');
         if (reason instanceof ApiError && reason.status === 402) setScreen('settings');
-        setError(message);
+        if (reason instanceof ApiError && reason.status === 409 && isFallenError(message)) {
+          setError(null);
+          try {
+            await refreshCharacter(character.id);
+          } catch {
+            updateCharacter({ ...character, hp: 0, in_combat: false, combatant: null });
+          }
+        } else {
+          setError(message);
+        }
       }
     } finally {
       setBusy(false);
@@ -453,6 +517,34 @@ function AppContent() {
     }
   };
 
+  const syncNarrationLanguage = useCallback(async (language: 'en' | 'cs') => {
+    if (!character) return;
+    try {
+      const updated = await request<Character>(`/characters/${character.id}/settings`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ language }),
+      });
+      updateCharacter(updated);
+    } catch {
+      // UI locale still updates even if the character patch fails.
+    }
+  }, [character]);
+
+  useEffect(() => {
+    const tgLang = window.Telegram?.WebApp?.initDataUnsafe?.user?.language_code;
+    if (tgLang === 'cs' && localStorage.getItem('app_locale') !== 'en') {
+      setLocale('cs');
+    }
+  }, [setLocale]);
+
+  useEffect(() => {
+    if (!character) return;
+    const target = locale === 'cs' ? 'cs' : 'en';
+    if ((character.narration_language ?? 'en') === target) return;
+    void syncNarrationLanguage(target);
+  }, [character?.id, character?.narration_language, locale, syncNarrationLanguage]);
+
   const calculateEncounter = async (level: number, monsters: string[]) => {
     setCalculating(true);
     setCalculation(null);
@@ -496,22 +588,8 @@ function AppContent() {
     setError(null);
   };
 
-  const syncNarrationLanguage = async (language: 'en' | 'cs') => {
-    if (!character) return;
-    try {
-      const updated = await request<Character>(`/characters/${character.id}/settings`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ language }),
-      });
-      updateCharacter(updated);
-    } catch {
-      // UI locale still updates even if the character patch fails.
-    }
-  };
-
   return (
-    <div className="app-shell">
+    <div className={`app-shell${screen === 'game' ? ' play-active' : ''}`}>
       <header className="app-header">
         <button type="button" className="brand-mark" onClick={() => navigate('home')} aria-label={t('Go to home')}>
           <span className="brand-sigil">✦</span><span>A.U.R.I.O.N.<small>{t('ADVENTURE COMPANION')}</small></span>
@@ -535,7 +613,15 @@ function AppContent() {
           />
         )}
         {screen === 'create' && <CharacterWizard catalog={catalog} presets={presets} busy={busy} error={error} onCreate={createCharacter} onPreset={createPreset} onCancel={() => navigate('home')} />}
-        {screen === 'game' && character && (
+        {screen === 'game' && character && character.hp <= 0 && (
+          <FallenScreen
+            character={character}
+            busy={busy}
+            onRevive={reviveCharacter}
+            onGoHub={() => navigate('home')}
+          />
+        )}
+        {screen === 'game' && character && character.hp > 0 && (
           <GameScreen
             character={character}
             events={events}
@@ -544,18 +630,29 @@ function AppContent() {
             busy={busy}
             turnPhase={turnPhase}
             error={error}
+            turnDelta={turnDelta}
             narrationStatus={narrationStatus}
             onAction={takeAction}
             onResumePending={resumePendingTurn}
             onOpenSheet={() => navigate('character')}
             onOpenMap={() => navigate('map')}
+            onOpenSettings={() => navigate('settings')}
           />
         )}
         {screen === 'more' && <MoreScreen onNavigate={navigate} />}
         {screen === 'map' && <MapScreen character={character} locations={catalog?.locations ?? []} onTravel={action => { navigate('game'); void takeAction(action); }} />}
         {screen === 'quests' && <QuestScreen character={character} />}
         {screen === 'journal' && <JournalScreen events={events} />}
-        {screen === 'character' && <CharacterScreen character={character} characters={characters} onSelect={selectCharacter} onCreate={() => navigate('create')} />}
+        {screen === 'character' && (
+          <CharacterScreen
+            character={character}
+            characters={characters}
+            spells={spells}
+            onSelect={selectCharacter}
+            onCreate={() => navigate('create')}
+            onOpenMap={() => navigate('map')}
+          />
+        )}
         {screen === 'campaign' && <CampaignScreen character={character} events={events} busy={busy} onUpdate={updateCampaign} />}
         {screen === 'tools' && <ToolsScreen character={character} catalog={catalog} spells={spells} calculating={calculating} calculation={calculation} error={error} onCalculate={calculateEncounter} />}
         {screen === 'settings' && (

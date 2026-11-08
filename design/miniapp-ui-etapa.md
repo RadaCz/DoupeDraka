@@ -40,6 +40,14 @@
 - **Hub** bottom-nav tab; map/quest shortcuts and invite on home.
 - **Quick generate** + step-by-step wizard on character path.
 
+## Sprint plan (see `design/miniapp-screens.md`)
+
+- [x] Fáze 0 design doc + engine truth
+- [x] Sprint 1 — Fallen/revive, Adventure layout (`AdventureScreen`)
+- [x] Sprint 2 — Map location sheet, `arrival_beat` v `/reference`
+- [x] Sprint 3 — Hlavní quest karta, Hero kouzla, delta strip
+- [x] Sprint 4 — `CombatScreen`, roll highlight, Telegram MainButton + safe-area
+
 ## Deferred
 
 - Full design/direction.md parchment theme migration (palette typography overhaul).

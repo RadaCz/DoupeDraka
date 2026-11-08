@@ -76,6 +76,7 @@ export interface ReferenceCatalog {
 export interface LocationReference {
   name: string;
   connections: string[];
+  arrival_beat?: string;
 }
 
 export interface HeroPreset {
@@ -123,4 +124,5 @@ export type AppScreen =
   | 'journal'
   | 'more';
 
-export const MORE_HUB_SCREENS: AppScreen[] = ['more', 'journal', 'settings', 'tools', 'campaign'];
+export const MORE_HUB_SCREENS: AppScreen[] = ['more', 'journal', 'settings', 'tools', 'campaign', 'map'];
+export const CHARACTER_HUB_SCREENS: AppScreen[] = ['character', 'quests'];

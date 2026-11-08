@@ -1,0 +1,235 @@
+import type { Character, JournalEvent, LocationReference } from '../types';
+import { routeOpen } from '../chapterOneMap';
+
+export interface SuggestedAction {
+  label: string;
+  action: string;
+}
+
+export interface QuickAction {
+  id: string;
+  label: string;
+  description: string;
+  glyph: string;
+  action?: string;
+  mode: 'submit' | 'map' | 'custom' | 'spells' | 'prefill';
+}
+
+export function buildQuickActions(
+  character: Character,
+  events: JournalEvent[],
+  locations: LocationReference[],
+  t: (value: string) => string,
+  hasSpells: boolean,
+  hasPotion: boolean,
+): QuickAction[] {
+  const enemy = character.combatant?.name ?? 'the enemy';
+  if (character.in_combat) {
+    const actions: QuickAction[] = [
+      { id: 'attack', label: t('Attack'), description: t('Strike the enemy'), glyph: '⚔', action: `attack ${enemy}`, mode: 'submit' },
+      { id: 'defend', label: t('Defend'), description: t('Brace against the next hit'), glyph: '🛡', action: 'defend', mode: 'submit' },
+      { id: 'flee', label: t('Flee'), description: t('Try to break away'), glyph: '↩', action: 'flee', mode: 'submit' },
+    ];
+    if (hasSpells) {
+      actions.push({ id: 'spell', label: t('Cast spell'), description: t('Choose a spell to cast'), glyph: '✦', mode: 'spells' });
+    }
+    if (hasPotion) {
+      actions.push({ id: 'potion', label: t('Use potion'), description: t('Drink a healing potion'), glyph: '⚗', action: 'use potion', mode: 'submit' });
+    }
+    return actions;
+  }
+  const contextual = suggestedActions(character, events, locations, t);
+  const talk = contextual.find(item => /talk|ask|return|caldus|nib|bell/i.test(item.action));
+  const talkMode: QuickAction['mode'] = talk ? 'submit' : 'prefill';
+  return [
+    {
+      id: 'explore',
+      label: t('Explore'),
+      description: t('Search the area for tracks or loot'),
+      glyph: '⌕',
+      action: `search ${character.location}`,
+      mode: 'submit',
+    },
+    {
+      id: 'talk',
+      label: t('Talk'),
+      description: talk ? t(talk.label) : t('Speak or persuade'),
+      glyph: '♙',
+      action: talk?.action ?? 'listen for movement',
+      mode: talkMode,
+    },
+    {
+      id: 'travel',
+      label: t('Travel'),
+      description: t('Pick the next location on the map'),
+      glyph: '⌖',
+      mode: 'map',
+    },
+    {
+      id: 'custom',
+      label: t('Custom action'),
+      description: t('Describe your own intent in words'),
+      glyph: '✎',
+      mode: 'custom',
+    },
+  ];
+}
+
+export function suggestedActions(
+  character: Character,
+  events: JournalEvent[],
+  locations: LocationReference[],
+  t: (value: string) => string,
+): SuggestedAction[] {
+  if (character.hp <= 0) return [];
+  const injured = character.hp < character.max_hp;
+
+  if (character.in_combat) {
+    const enemy = character.combatant?.name ?? 'the enemy';
+    const escape = { label: 'Try to escape', action: 'flee' };
+    const attack = { label: 'Attack', action: `attack ${enemy}` };
+    return injured && character.hp / character.max_hp <= 0.3
+      ? [escape, attack]
+      : [attack, escape];
+  }
+
+  const latest = events[events.length - 1]?.result.toLowerCase() ?? '';
+  const actions: SuggestedAction[] = [];
+  const quests = character.quest_flags ?? {};
+  if (character.location === 'The Shrine of the Forgotten' && (quests.bell_found || quests.bell_acquired) && !quests.bell_quest_complete) {
+    actions.push({ label: t('Return the shrine bell'), action: 'return the shrine bell to Caldus' });
+  } else if (character.location === 'The Shrine of the Forgotten' && !quests.bell_quest_accepted && !quests.bell_quest_complete) {
+    actions.push({ label: t('Talk to Caldus'), action: 'talk to Caldus about the shrine bell' });
+  } else if (character.location === 'The Goblin Market' && quests.bell_quest_accepted && !quests.bell_found && !quests.bell_acquired && !quests.bell_quest_complete) {
+    actions.push({ label: t('Ask Nib about the shrine bell'), action: 'ask Nib about the shrine bell' });
+  }
+  if (injured) actions.push({ label: 'Recover your strength', action: 'rest' });
+
+  if (latest.includes('tracks')) {
+    actions.push({ label: 'Study the fresh tracks', action: 'inspect the fresh tracks' });
+  } else if (latest.includes('panel') || latest.includes('scratches')) {
+    actions.push({ label: 'Inspect the stone panel', action: 'inspect the stone panel' });
+  } else if (latest.includes('gold pieces')) {
+    actions.push({ label: 'Search for more clues', action: `search ${character.location}` });
+  }
+
+  actions.push({ label: t('Search the area'), action: `search ${character.location}` });
+  actions.push({ label: 'Listen for movement', action: 'listen for movement' });
+  actions.push({ label: 'Inspect the stonework', action: 'inspect the stonework' });
+  const node = locations.find(location => location.name === character.location);
+  const questsFlags = character.quest_flags ?? {};
+  const nextLocation = node?.connections.find(route => routeOpen(route, questsFlags));
+  if (nextLocation) {
+    actions.push({ label: t(`Travel to ${nextLocation}`), action: `travel to ${nextLocation}` });
+    return [...actions.slice(0, 2), actions[actions.length - 1]];
+  }
+  return actions.slice(0, 3);
+}
+
+export function contextualChips(
+  character: Character,
+  events: JournalEvent[],
+  locations: LocationReference[],
+  t: (value: string) => string,
+) {
+  const chips = suggestedActions(character, events, locations, t);
+  const talk = chips.find(item => /talk|ask|return|caldus|nib|bell/i.test(item.action));
+  return chips.filter(item => {
+    if (item.action === `search ${character.location}`) return false;
+    if (talk && item.action === talk.action) return false;
+    if (character.in_combat) {
+      if (item.action === 'flee' || item.action.startsWith('attack ')) return false;
+    }
+    return true;
+  }).slice(0, 4);
+}
+
+export interface PlayActionChip {
+  key: string;
+  label: string;
+  action?: string;
+  run?: 'map' | 'focus';
+}
+
+/** Horizontal quick chips for the text-first composer (replaces the old 2×2 grid). */
+export function playActionChips(
+  character: Character,
+  events: JournalEvent[],
+  locations: LocationReference[],
+  t: (value: string) => string,
+  hasSpells: boolean,
+  hasPotion: boolean,
+): PlayActionChip[] {
+  const seen = new Set<string>();
+  const out: PlayActionChip[] = [];
+  const push = (key: string, label: string, action?: string, run?: PlayActionChip['run']) => {
+    const dedupe = (action ?? run ?? key).toLowerCase();
+    if (seen.has(dedupe)) return;
+    seen.add(dedupe);
+    out.push({ key, label, action, run });
+  };
+
+  for (const item of suggestedActions(character, events, locations, t)) {
+    push(item.action, typeof item.label === 'string' ? item.label : t(item.label), item.action);
+  }
+
+  if (character.in_combat) {
+    for (const quick of buildQuickActions(character, events, locations, t, hasSpells, hasPotion)) {
+      if (quick.action) push(quick.id, quick.label, quick.action);
+    }
+    return out.slice(0, 10);
+  }
+
+  const quick = buildQuickActions(character, events, locations, t, hasSpells, hasPotion);
+  const explore = quick.find(item => item.id === 'explore');
+  if (explore?.action) push('explore', explore.label, explore.action);
+  const talk = quick.find(item => item.id === 'talk');
+  if (talk?.action) push('talk', talk.label, talk.action);
+  push('travel', t('Travel'), undefined, 'map');
+  push('custom', t('Custom action'), undefined, 'focus');
+  return out.slice(0, 12);
+}
+
+export function scenePrompt(character: Character, events: JournalEvent[], t: (value: string) => string) {
+  if (character.hp <= 0) return t('You have fallen. The cellar falls quiet around you.');
+  if (character.in_combat) return t('A hostile creature is in front of you. Fight or make a run for it.');
+  if (character.hp < character.max_hp) return t('The immediate danger has passed. Catch your breath or press on.');
+
+  const latest = events[events.length - 1]?.result.toLowerCase() ?? '';
+  if (latest.includes('tracks')) {
+    return character.location === 'The Whispering Cellar'
+      ? t('Fresh tracks cross the dust and lead farther into the cellar.')
+      : t('Fresh tracks lead onward from this place.');
+  }
+  if (latest.includes('panel') || latest.includes('scratches')) {
+    return character.location === 'The Whispering Cellar'
+      ? t('Scratches mark a stone panel nearby. It may be worth a closer look.')
+      : t('Something nearby bears marks worth a closer look.');
+  }
+  if (latest.includes('return the shrine bell')) return t('Caldus welcomes the shrine bell back into the quiet shrine.');
+  if (latest.includes('gold pieces tucked beneath loose stones')) {
+    return character.location === 'The Whispering Cellar'
+      ? t('The loose stones conceal a few coins. There may be more to find.')
+      : t('You find a few coins here. There may be more to uncover.');
+  }
+  if (latest.includes('defeated') || latest.includes('escape')) return t('For now, the passage is quiet. You have a moment to choose your next move.');
+  return character.location === 'The Whispering Cellar'
+    ? t('The cellar is quiet for now. Search, listen, or inspect what catches your eye.')
+    : t('This place is quiet for now. Search, listen, or travel onward.');
+}
+
+const SCENE_FACT_LINE = /^(Attack roll:|Saving throw:|LEVEL UP|\d+ damage)/i;
+
+export function latestSceneNarration(events: JournalEvent[]) {
+  const last = events[events.length - 1];
+  if (!last) return '';
+  const parts = last.result.split('\n\n').map(part => part.trim()).filter(Boolean);
+  for (let index = parts.length - 1; index >= 0; index -= 1) {
+    if (!SCENE_FACT_LINE.test(parts[index])) return parts[index];
+  }
+  return '';
+}
+
+export function isFallenError(message: string | null) {
+  return Boolean(message && /fallen|can no longer act/i.test(message));
+}

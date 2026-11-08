@@ -2,6 +2,19 @@
 
 ## Unreleased (2026-11-08)
 
+### Text-first play screen
+- Adventure/combat play view: journal uses ~70% height; slim HP/Mana chrome; scrollable action chips; inline composer icons (no 2×2 grid).
+
+### UX & E2E follow-up
+- Bottom nav 4 tabs; slim composer; quest fog; Czech diacritics layer; offline narrator `cs` branch.
+- Playwright: `fallen.spec.ts`, `locale.spec.ts`, shared `e2e/telegram.ts`; navigation assertions in adventure flow.
+- E2E-only `POST /characters/{id}/__e2e/fallen` (guarded by E2E bot token); Playwright `workers: 1` for stable DB; all four specs green.
+
+### Mini App screens (sprints 1–4)
+- Design reference `design/miniapp-screens.md`; Fallen overlay with `POST .../revive` (no narrator error on 409 fallen).
+- `AdventureScreen` / `CombatScreen`, map location sheet, main quest card, hero spell roster, post-turn delta strip.
+- Journal roll highlighting; Telegram MainButton for composer; safe-area CSS variables; `/reference` `arrival_beat`.
+
 ### Playability & viral hub pass
 - Suggested action chips return on the game screen (instant submit); Talk prefills when no NPC quest cue.
 - Hub tab in bottom nav; shortcuts to map/quests; invite share stub; Quick generate in character creation.

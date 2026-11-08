@@ -1,7 +1,47 @@
 import type { AppScreen } from './types';
 import { MORE_HUB_SCREENS } from './types';
 
-const PRIMARY_TABS: AppScreen[] = ['game', 'map', 'quests', 'character', 'more'];
+const PRIMARY_TABS: AppScreen[] = ['home', 'game', 'character', 'more'];
+
+export function applyTelegramViewport() {
+  const tg = window.Telegram?.WebApp;
+  if (!tg) return;
+  tg.expand?.();
+  const root = document.documentElement;
+  const extended = tg as typeof tg & { contentSafeAreaInset?: { top?: number; bottom?: number }; safeAreaInset?: { top?: number; bottom?: number } };
+  const inset = extended.contentSafeAreaInset ?? extended.safeAreaInset;
+  if (inset) {
+    root.style.setProperty('--tg-safe-top', `${inset.top ?? 0}px`);
+    root.style.setProperty('--tg-safe-bottom', `${inset.bottom ?? 0}px`);
+  }
+}
+
+export function syncTelegramMainButton(
+  getDraft: () => string,
+  onSend: () => void,
+  active: boolean,
+) {
+  const btn = window.Telegram?.WebApp?.MainButton;
+  if (!btn) return () => {};
+  const text = getDraft().trim();
+  const show = active && text.length > 0;
+  if (show) {
+    btn.setText?.('Send');
+    btn.color?.('#2d6b3a');
+    btn.show?.();
+    btn.enable?.();
+  } else {
+    btn.hide?.();
+  }
+  const handler = () => {
+    if (getDraft().trim()) onSend();
+  };
+  btn.onClick?.(handler);
+  return () => {
+    btn.offClick?.(handler);
+    btn.hide?.();
+  };
+}
 
 export function applyTelegramTheme() {
   const tg = window.Telegram?.WebApp;

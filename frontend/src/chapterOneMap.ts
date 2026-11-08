@@ -17,6 +17,15 @@ export function routeOpen(route: string, quests: Record<string, boolean>) {
   return true;
 }
 
+export function mapLockReason(route: string, quests: Record<string, boolean>) {
+  if (route === 'The Vault of Echoes' || route === "The Bell Warden's Pit") {
+    if (quests.vault_unlocked) return null;
+    if (quests.vault_hint_given) return 'The vault stirs, but the last seal still holds.';
+    return 'Locked — learn what lies beneath the Sunken Corridor first.';
+  }
+  return 'This path is not open yet.';
+}
+
 export type MapNodeState = 'current' | 'adjacent' | 'visited' | 'locked' | 'hidden' | 'known';
 
 export function mapNodeState(

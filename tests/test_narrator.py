@@ -92,6 +92,21 @@ def test_fallback_describes_resolved_shrine_bell_quest_facts():
     assert "5 gold" in narration or "reward recorded" in narration
 
 
+def test_offline_narrates_checks_in_czech_when_configured():
+    context = NarrationContext(
+        action="inspect the old door",
+        events=("Intelligence check: 15 vs DC 12 — success.",),
+        location="The Whispering Cellar",
+        memories=(),
+        language="cs",
+    )
+
+    narration = Narrator.narrate_offline(context)
+
+    assert "inspect" in narration.lower() or "dveř" in narration.lower() or "pokus" in narration.lower()
+    assert "you try to" not in narration.lower()
+
+
 def test_offline_stream_yields_fallback_prose():
     context = NarrationContext(
         action="look around",

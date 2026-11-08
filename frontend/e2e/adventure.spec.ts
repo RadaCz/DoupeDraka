@@ -1,20 +1,5 @@
-import { createHmac } from 'node:crypto';
 import { expect, test } from '@playwright/test';
-import { E2E_BOT_TOKEN } from './test-config.ts';
-
-function signedTelegramInitData(userId: number) {
-  const fields = {
-    auth_date: Math.floor(Date.now() / 1000).toString(),
-    user: JSON.stringify({ id: userId, first_name: 'E2E Adventurer' }),
-  };
-  const checkString = Object.keys(fields)
-    .sort()
-    .map(key => `${key}=${fields[key as keyof typeof fields]}`)
-    .join('\n');
-  const secret = createHmac('sha256', 'WebAppData').update(E2E_BOT_TOKEN).digest();
-  const hash = createHmac('sha256', secret).update(checkString).digest('hex');
-  return new URLSearchParams({ ...fields, hash }).toString();
-}
+import { completeWizardFighter, mockTelegramWebApp, signedTelegramInitData } from './telegram.ts';
 
 test('requires Telegram initData outside Telegram', async ({ page }) => {
   const apiRequests: string[] = [];
@@ -40,26 +25,11 @@ test('creates a hero, completes a real game turn, and restores its journal after
       if (!response.ok()) void response.text().then(text => actionErrors.push(text));
     }
   });
-  await page.route('https://telegram.org/js/telegram-web-app.js', route => route.fulfill({
-    contentType: 'application/javascript',
-    body: `window.Telegram = { WebApp: { initData: ${JSON.stringify(initData)}, ready() {}, expand() {} } };`,
-  }));
+  await mockTelegramWebApp(page, initData);
 
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'An adventure awaits.' })).toBeVisible();
-
-  await page.getByRole('button', { name: 'Create your character' }).click();
-  await page.getByRole('button', { name: 'Step-by-step wizard' }).click();
-  await page.getByRole('button', { name: 'Human' }).click();
-  await page.getByRole('button', { name: 'Continue', exact: true }).click();
-  await page.getByRole('button', { name: 'Fighter' }).click();
-  await page.getByRole('button', { name: 'Continue', exact: true }).click();
-  await page.getByLabel('Character name').fill('E2E Arin');
-  await page.getByRole('button', { name: 'Continue', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Meet your adventurer' })).toBeVisible();
-  await page.getByRole('button', { name: 'Enter the adventure' }).click();
-
-  await expect(page.getByRole('heading', { name: 'The Whispering Cellar' })).toBeVisible();
+  await completeWizardFighter(page, 'E2E Arin');
   await page.getByRole('textbox', { name: 'Your action' }).fill('inspect the old door');
   await page.getByRole('button', { name: 'Send action' }).click();
   await expect.poll(() => actionStatuses.length).toBe(1);
@@ -77,4 +47,18 @@ test('creates a hero, completes a real game turn, and restores its journal after
   const restoredJournal = page.getByRole('log', { name: 'Adventure journal' });
   await expect(restoredJournal.locator('.journal-action')).toContainText('inspect the old door');
   await expect(restoredJournal.getByText(/Intelligence check:/)).toBeVisible();
+
+  const nav = page.getByRole('navigation', { name: 'Main navigation' });
+  await expect(nav.getByRole('button')).toHaveCount(4);
+  await expect(nav.getByRole('button', { name: /^Hub$/i })).toBeVisible();
+  await expect(nav.getByRole('button', { name: /^Play$/i })).toBeVisible();
+  await expect(nav.getByRole('button', { name: /^Character$/i })).toBeVisible();
+  await expect(nav.getByRole('button', { name: /^More$/i })).toBeVisible();
+  await expect(page.locator('.quick-action-grid')).toHaveCount(0);
+  await nav.getByRole('button', { name: /^More$/i }).click();
+  await expect(page.getByRole('heading', { name: /^More$/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Map/i })).toBeVisible();
+  await nav.getByRole('button', { name: /^Character$/i }).click();
+  await page.getByRole('tab', { name: /Quests/i }).click();
+  await expect(page.getByRole('heading', { name: /^Quests$/i })).toBeVisible();
 });

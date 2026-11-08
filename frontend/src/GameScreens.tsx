@@ -11,8 +11,11 @@ import type {
   Spell,
 } from './types';
 import { useI18n } from './i18n';
-import { CHAPTER_ONE_LAYOUT, mapEdges, mapNodeState, routeOpen } from './chapterOneMap';
-import { chapterOneQuestProgress } from './questProgress';
+import { CHAPTER_ONE_LAYOUT, mapEdges, mapLockReason, mapNodeState, routeOpen } from './chapterOneMap';
+import { chapterOneQuestProgress, visibleQuestTimeline } from './questProgress';
+import { JournalResultBody } from './components/journalBlocks';
+import { HpBar, SpellSlots, titleCase } from './components/characterVitals';
+import { GameScreenRouter } from './screens/GameScreenRouter';
 
 const ABILITIES = ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'];
 const MONSTERS = ['kobold', 'goblin', 'wolf', 'bandit', 'ghoul', 'ogre'];
@@ -32,202 +35,6 @@ function highestSpellLevel(character: Character | null) {
     return Math.min(5, Math.ceil(level / 2));
   }
   return 0;
-}
-
-function titleCase(value: string) {
-  return value.replace(/_/g, ' ').replace(/\b\w/g, letter => letter.toUpperCase());
-}
-
-interface SuggestedAction {
-  label: string;
-  action: string;
-}
-
-interface QuickAction {
-  id: string;
-  label: string;
-  description: string;
-  glyph: string;
-  action?: string;
-  mode: 'submit' | 'map' | 'custom' | 'spells' | 'prefill';
-}
-
-function buildQuickActions(
-  character: Character,
-  events: JournalEvent[],
-  locations: LocationReference[],
-  t: (value: string) => string,
-  hasSpells: boolean,
-  hasPotion: boolean,
-): QuickAction[] {
-  const enemy = character.combatant?.name ?? 'the enemy';
-  if (character.in_combat) {
-    const actions: QuickAction[] = [
-      { id: 'attack', label: t('Attack'), description: t('Strike the enemy'), glyph: '⚔', action: `attack ${enemy}`, mode: 'submit' },
-      { id: 'defend', label: t('Defend'), description: t('Brace against the next hit'), glyph: '🛡', action: 'defend', mode: 'submit' },
-      { id: 'flee', label: t('Flee'), description: t('Try to break away'), glyph: '↩', action: 'flee', mode: 'submit' },
-    ];
-    if (hasSpells) {
-      actions.push({ id: 'spell', label: t('Cast spell'), description: t('Choose a spell to cast'), glyph: '✦', mode: 'spells' });
-    }
-    if (hasPotion) {
-      actions.push({ id: 'potion', label: t('Use potion'), description: t('Drink a healing potion'), glyph: '⚗', action: 'use potion', mode: 'submit' });
-    }
-    return actions;
-  }
-  const contextual = suggestedActions(character, events, locations, t);
-  const talk = contextual.find(item => /talk|ask|return|caldus|nib|bell/i.test(item.action));
-  const talkMode: QuickAction['mode'] = talk ? 'submit' : 'prefill';
-  return [
-    {
-      id: 'explore',
-      label: t('Explore'),
-      description: t('Search the area for tracks or loot'),
-      glyph: '⌕',
-      action: `search ${character.location}`,
-      mode: 'submit',
-    },
-    {
-      id: 'talk',
-      label: t('Talk'),
-      description: talk ? t(talk.label) : t('Speak or persuade'),
-      glyph: '♙',
-      action: talk?.action ?? 'listen for movement',
-      mode: talkMode,
-    },
-    {
-      id: 'travel',
-      label: t('Travel'),
-      description: t('Pick the next location on the map'),
-      glyph: '⌖',
-      mode: 'map',
-    },
-    {
-      id: 'custom',
-      label: t('Custom action'),
-      description: t('Describe your own intent in words'),
-      glyph: '✎',
-      mode: 'custom',
-    },
-  ];
-}
-
-function suggestedActions(
-  character: Character,
-  events: JournalEvent[],
-  locations: LocationReference[],
-  t: (value: string) => string,
-): SuggestedAction[] {
-  if (character.hp <= 0) return [];
-  const injured = character.hp < character.max_hp;
-
-  if (character.in_combat) {
-    const enemy = character.combatant?.name ?? 'the enemy';
-    const escape = { label: 'Try to escape', action: 'flee' };
-    const attack = { label: 'Attack', action: `attack ${enemy}` };
-    return injured && character.hp / character.max_hp <= 0.3
-      ? [escape, attack]
-      : [attack, escape];
-  }
-
-  const latest = events[events.length - 1]?.result.toLowerCase() ?? '';
-  const actions: SuggestedAction[] = [];
-  const quests = character.quest_flags ?? {};
-  if (character.location === 'The Shrine of the Forgotten' && (quests.bell_found || quests.bell_acquired) && !quests.bell_quest_complete) {
-    actions.push({ label: t('Return the shrine bell'), action: 'return the shrine bell to Caldus' });
-  } else if (character.location === 'The Shrine of the Forgotten' && !quests.bell_quest_accepted && !quests.bell_quest_complete) {
-    actions.push({ label: t('Talk to Caldus'), action: 'talk to Caldus about the shrine bell' });
-  } else if (character.location === 'The Goblin Market' && quests.bell_quest_accepted && !quests.bell_found && !quests.bell_acquired && !quests.bell_quest_complete) {
-    actions.push({ label: t('Ask Nib about the shrine bell'), action: 'ask Nib about the shrine bell' });
-  }
-  if (injured) actions.push({ label: 'Recover your strength', action: 'rest' });
-
-  if (latest.includes('tracks')) {
-    actions.push({ label: 'Study the fresh tracks', action: 'inspect the fresh tracks' });
-  } else if (latest.includes('panel') || latest.includes('scratches')) {
-    actions.push({ label: 'Inspect the stone panel', action: 'inspect the stone panel' });
-  } else if (latest.includes('gold pieces')) {
-    actions.push({ label: 'Search for more clues', action: `search ${character.location}` });
-  }
-
-  actions.push({ label: t('Search the area'), action: `search ${character.location}` });
-  actions.push({ label: 'Listen for movement', action: 'listen for movement' });
-  actions.push({ label: 'Inspect the stonework', action: 'inspect the stonework' });
-  const node = locations.find(location => location.name === character.location);
-  const nextLocation = node?.connections.find(route => routeOpen(route, quests));
-  if (nextLocation) {
-    actions.push({ label: t(`Travel to ${nextLocation}`), action: `travel to ${nextLocation}` });
-    return [...actions.slice(0, 2), actions[actions.length - 1]];
-  }
-  return actions.slice(0, 3);
-}
-
-function contextualChips(
-  character: Character,
-  events: JournalEvent[],
-  locations: LocationReference[],
-  t: (value: string) => string,
-) {
-  const chips = suggestedActions(character, events, locations, t);
-  const talk = chips.find(item => /talk|ask|return|caldus|nib|bell/i.test(item.action));
-  return chips.filter(item => {
-    if (item.action === `search ${character.location}`) return false;
-    if (talk && item.action === talk.action) return false;
-    if (character.in_combat) {
-      if (item.action === 'flee' || item.action.startsWith('attack ')) return false;
-    }
-    return true;
-  }).slice(0, 4);
-}
-
-function scenePrompt(character: Character, events: JournalEvent[], t: (value: string) => string) {
-  if (character.hp <= 0) return t('You have fallen. The cellar falls quiet around you.');
-  if (character.in_combat) return t('A hostile creature is in front of you. Fight or make a run for it.');
-  if (character.hp < character.max_hp) return t('The immediate danger has passed. Catch your breath or press on.');
-
-  const latest = events[events.length - 1]?.result.toLowerCase() ?? '';
-  if (latest.includes('tracks')) {
-    return character.location === 'The Whispering Cellar'
-      ? t('Fresh tracks cross the dust and lead farther into the cellar.')
-      : t('Fresh tracks lead onward from this place.');
-  }
-  if (latest.includes('panel') || latest.includes('scratches')) {
-    return character.location === 'The Whispering Cellar'
-      ? t('Scratches mark a stone panel nearby. It may be worth a closer look.')
-      : t('Something nearby bears marks worth a closer look.');
-  }
-  if (latest.includes('return the shrine bell')) return t('Caldus welcomes the shrine bell back into the quiet shrine.');
-  if (latest.includes('gold pieces tucked beneath loose stones')) {
-    return character.location === 'The Whispering Cellar'
-      ? t('The loose stones conceal a few coins. There may be more to find.')
-      : t('You find a few coins here. There may be more to uncover.');
-  }
-  if (latest.includes('defeated') || latest.includes('escape')) return t('For now, the passage is quiet. You have a moment to choose your next move.');
-  return character.location === 'The Whispering Cellar'
-    ? t('The cellar is quiet for now. Search, listen, or inspect what catches your eye.')
-    : t('This place is quiet for now. Search, listen, or travel onward.');
-}
-
-function HpBar({ character }: { character: Character }) {
-  const { t } = useI18n();
-  const percent = character.max_hp > 0 ? Math.max(0, Math.min(100, (character.hp / character.max_hp) * 100)) : 0;
-  return (
-    <div className="resource-bar">
-      <div className="resource-bar-label"><span>{t('Hit points')}</span><strong>{character.hp} / {character.max_hp}</strong></div>
-      <div className="hp-track" role="progressbar" aria-label={t('Hit points')} aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100}>
-        <span className={percent <= 25 ? 'critical' : ''} style={{ width: `${percent}%` }} />
-      </div>
-    </div>
-  );
-}
-
-function SpellSlots({ character, t }: { character: Character; t: (value: string) => string }) {
-  const maximum = Object.entries(character.max_spell_slots ?? {})
-    .map(([level, count]) => [Number(level), count] as const)
-    .filter(([, count]) => count > 0)
-    .sort(([left], [right]) => left - right);
-  if (!maximum.length) return <>{t('None')}</>;
-  return <>{maximum.map(([level, count]) => `L${level}: ${character.spell_slots?.[level] ?? 0}/${count}`).join(' · ')}</>;
 }
 
 function ManaHelp() {
@@ -394,6 +201,7 @@ export function GameScreen(props: {
   turnPhase?: TurnPhase;
   error: string | null;
   narrationStatus: 'narrated' | 'fallback' | null;
+  turnDelta?: string | null;
   onAction: (action: string) => void;
   onResumePending?: () => void;
   onOpenSheet: () => void;
@@ -401,275 +209,42 @@ export function GameScreen(props: {
   onOpenSettings?: () => void;
   onCancelTurn?: () => void;
 }) {
-  const {
-  character,
-  events,
-  spells,
-  locations,
-  busy,
-  turnPhase = 'idle',
-  error,
-  narrationStatus,
-  onAction,
-  onResumePending,
-  onOpenSheet,
-  onOpenMap,
-  onOpenSettings,
-  onCancelTurn,
-} = props;
-  const { t } = useI18n();
-  const actionInputRef = useRef<HTMLInputElement>(null);
-  const [action, setAction] = useState('');
-  const [selectedSpell, setSelectedSpell] = useState('');
-  const [errorHidden, setErrorHidden] = useState(false);
-  const [thinkingSeconds, setThinkingSeconds] = useState(0);
-  useEffect(() => { setErrorHidden(false); }, [error]);
-  useEffect(() => {
-    if (!busy) { setThinkingSeconds(0); return; }
-    setThinkingSeconds(0);
-    const started = Date.now();
-    const timer = window.setInterval(() => setThinkingSeconds(Math.floor((Date.now() - started) / 1000)), 1000);
-    return () => window.clearInterval(timer);
-  }, [busy]);
-  const enemy = character.in_combat ? character.combatant : null;
-  const accessibleSpells = new Set([...(character.known_spells ?? []), ...(character.prepared_spells ?? [])]);
-  const characterSpells = spells
-    .filter(spell => accessibleSpells.has(spell.name))
-    .sort((left, right) => left.level - right.level || left.name.localeCompare(right.name));
-  const hasPotion = character.inventory.some(item => item.toLowerCase().includes('potion'));
-  const quickActions = buildQuickActions(character, events, locations, t, characterSpells.length > 0, hasPotion);
-  const extraChips = contextualChips(character, events, locations, t);
-
-  const runQuickAction = (quick: QuickAction) => {
-    if (busy) return;
-    if (quick.mode === 'map') {
-      onOpenMap?.();
-      return;
-    }
-    if (quick.mode === 'custom') {
-      actionInputRef.current?.focus();
-      return;
-    }
-    if (quick.mode === 'prefill') {
-      if (quick.action) setAction(quick.action);
-      actionInputRef.current?.focus();
-      return;
-    }
-    if (quick.mode === 'spells') {
-      document.getElementById('cast-spell')?.focus();
-      return;
-    }
-    if (quick.action) {
-      onAction(quick.action);
-    }
-  };
-  const actionSpellName = action.match(/^(?:cast|kouzli(?:t)?)\s+(.+?)(?:\s+at\s+.+)?$/i)?.[1]?.trim().replace(/\s+/g, ' ').toLowerCase();
-  const actionSpell = characterSpells.find(spell => spell.name.toLowerCase() === actionSpellName);
-  const spellWarning = actionSpell && !actionSpell.effect_modeled
-    ? t('This spell has no modeled effect yet. It will not be sent and no spell slot will be spent.')
-    : null;
-  const spellNotice = actionSpell?.name === 'Healing Word'
-    ? t('Healing Word is a bonus-action spell in the SRD; this MVP uses your main action.')
-    : null;
-  const handleSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    const text = action.trim();
-    if (text && !busy && !spellWarning) {
-      onAction(text);
-      setAction('');
-      setSelectedSpell('');
-    }
-  };
-  return (
-    <section className="screen game-screen">
-      <div className="scene-heading">
-        <div><p className="eyebrow">{character.in_combat ? t('DANGER') : t('CHAPTER ONE')}</p><h1>{character.location || t('The Whispering Cellar')}</h1><p>{scenePrompt(character, events, t)}</p></div>
-        <button type="button" className="icon-button" aria-label={t('Open character sheet')} onClick={onOpenSheet}>☷</button>
-      </div>
-      <article className="game-hud">
-        <div className="game-hud-identity"><span className="mini-portrait large">{character.name.charAt(0).toUpperCase()}</span><div><strong>{character.name}</strong><small>{t(titleCase(character.race))} {t(titleCase(character.character_class))} · {t('Lv.')} {character.level}</small></div></div>
-        <div className="hud-vitals">
-          <div><span>HP</span><strong>{character.hp}<small> / {character.max_hp}</small></strong></div>
-          <div><span>{t('Spell slots')}</span><strong className="spell-slots"><SpellSlots character={character} t={t} /></strong></div>
-          <div><span>{t('Armor')}</span><strong>{character.armor_class}</strong></div>
-          {character.invisible && <div><span>{t('Condition')}</span><strong>{t('Invisible')}</strong></div>}
-        </div>
-        <HpBar character={character} />
-        {enemy && (
-          <div className="enemy-card" role="group" aria-label={t('Current threat')}>
-            <div className="enemy-card-heading"><span aria-hidden="true">⚔</span><div><small>{t('CURRENT THREAT')}</small><strong>{enemy.name}</strong></div><b>{t('AC')} {enemy.armor_class}</b></div>
-            <div className="resource-bar-label"><span>{t('Enemy hit points')}</span><strong>{enemy.hp} / {enemy.max_hp}</strong></div>
-            <div className="hp-track enemy-hp-track" role="progressbar" aria-label={t('Enemy hit points')} aria-valuenow={enemy.max_hp > 0 ? Math.max(0, Math.min(100, (enemy.hp / enemy.max_hp) * 100)) : 0} aria-valuemin={0} aria-valuemax={100}>
-              <span style={{ width: `${enemy.max_hp > 0 ? Math.max(0, Math.min(100, (enemy.hp / enemy.max_hp) * 100)) : 0}%` }} />
-            </div>
-          </div>
-        )}
-      </article>
-      <div className="journal-scene" role="log" aria-label={t('Adventure journal')} aria-live="polite">
-        {events.length === 0 && <div className="scene-empty"><span aria-hidden="true">✦</span>        <p>{t(character.location === 'The Whispering Cellar'
-          ? 'The cellar waits in silence. Describe what you try — explore, talk, attack, flee or rest.'
-          : 'This place waits in silence. Describe what you try — explore, talk, attack, flee or rest.')}</p></div>}
-        {narrationStatus === 'fallback' && (
-          <p className="storyteller-status" role="status">
-            {t('Offline storyteller is active. Set up Ollama in `.env` for AI-written narration.')}
-          </p>
-        )}
-        {events.map(event => (
-          <article className={`journal-beat ${event.result.includes('LEVEL UP!') ? 'level-up-entry' : ''}`} key={event.id}>
-            <time>{new Date(event.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</time>
-            <p className="journal-action"><span aria-hidden="true">›</span> {event.action}</p>
-            {event.result.includes('LEVEL UP!') && <strong className="level-up-banner">{t('LEVEL UP')}</strong>}
-            {event.action.toLowerCase().includes('rest') && event.result.toLowerCase().includes('cannot rest') && (
-              <strong className="spell-warning" role="status">{t('Rest unavailable during combat')}</strong>
-            )}
-            <p className="journal-narration">{event.result}</p>
-          </article>
-        ))}
-        {turnPhase === 'recovering' && !busy && onResumePending && (
-          <p className="storyteller-status" role="status">
-            {t('A turn may have been interrupted. Retry with the same idempotency key.')}
-            <button type="button" className="link-button" onClick={onResumePending}>{t('Recover last action')}</button>
-          </p>
-        )}
-        {busy && (
-          <div className="thinking" role="status">
-            <div key={thinkingSeconds >= 12 ? 'long' : thinkingSeconds >= 5 ? 'mid' : 'short'}>
-              <span className="thinking-die" aria-hidden="true">◆</span>
-              <span className="thinking-elapsed">
-                {turnPhase === 'sending'
-                  ? t('Sending your action…')
-                  : turnPhase === 'resolved'
-                    ? t('The dice have spoken. The narrator continues…')
-                    : turnPhase === 'recovering'
-                      ? t('Restoring the saved result…')
-                      : thinkingSeconds >= 12
-                        ? t('Still weaving. Local models can take a moment.')
-                        : thinkingSeconds >= 5
-                          ? t('A.U.R.I.O.N. is weighing your fate…')
-                          : t('The narrator is shaping the moment…')}
-              </span>
-            </div>
-            {thinkingSeconds >= 12 && onCancelTurn && (
-              <button type="button" className="thinking-cancel" onClick={onCancelTurn}>{t('Cancel this turn')}</button>
-            )}
-          </div>
-        )}
-      </div>
-      {error && !errorHidden && (
-        <div className="error-panel" role="alert" title={error} data-error={error}>
-          <p className="error-panel-title">{t('The thread of the weave has slipped.')}</p>
-          <p className="error-panel-body">{t('A.U.R.I.O.N. lost its connection to the narrator. Check your narrator settings and try again.')}</p>
-          <div className="error-panel-actions">
-            {onOpenSettings && (
-              <button type="button" className="primary" onClick={onOpenSettings}>{t('Open settings')}</button>
-            )}
-            <button type="button" className="ghost" onClick={() => setErrorHidden(true)}>{t('Try again')}</button>
-          </div>
-          <details className="error-panel-technical">
-            <summary>{t('Technical detail')}</summary>
-            <code>{error}</code>
-          </details>
-        </div>
-      )}
-      <div className="action-composer-wrap">
-        <p className="quick-actions-heading">{character.in_combat ? t('YOUR MOVE') : t('What do you want to do?')}</p>
-        <div className="quick-action-grid" aria-label={t('Quick actions')}>
-          {quickActions.map(quick => (
-            <button
-              type="button"
-              key={quick.id}
-              className="quick-action-card"
-              disabled={busy}
-              onClick={() => runQuickAction(quick)}
-            >
-              <span className="quick-action-glyph" aria-hidden="true">{quick.glyph}</span>
-              <span className="quick-action-label">{quick.label}</span>
-              <small>{quick.description}</small>
-            </button>
-          ))}
-        </div>
-        {extraChips.length > 0 && (
-          <div className="suggested-actions" aria-label={t('Suggested actions')}>
-            <span className="suggestion-heading">{t('SUGGESTED')}</span>
-            {extraChips.map(chip => (
-              <button
-                type="button"
-                key={chip.action}
-                disabled={busy}
-                onClick={() => onAction(chip.action)}
-              >
-                {t(chip.label)}
-              </button>
-            ))}
-          </div>
-        )}
-        <form className="action-box" onSubmit={handleSubmit}>
-          <input ref={actionInputRef} value={action} onChange={event => setAction(event.target.value)} placeholder={busy ? t('The narrator is writing…') : t('What do you do?')} disabled={busy} aria-label={t('Your action')} />
-          <button type="submit" className="primary" disabled={busy || !action.trim() || Boolean(spellWarning)} aria-label={t('Send action')}>→</button>
-        </form>
-        {characterSpells.length > 0 && (
-          <div className="spell-picker">
-              <label htmlFor="cast-spell">{t('Your spells')}</label>
-            <select
-              id="cast-spell"
-              value={selectedSpell}
-              disabled={busy}
-              onChange={event => {
-                const name = event.target.value;
-                setSelectedSpell(name);
-                if (!name) {
-                  setAction('');
-                  return;
-                }
-                const spell = characterSpells.find(item => item.name === name);
-                const target = spell && enemy && spell.effect_modeled &&
-                  ['Burning Hands', 'Eldritch Blast', 'Fire Bolt', 'Magic Missile', 'Sacred Flame', 'Scorching Ray', 'Vicious Mockery'].includes(name)
-                  ? ` at ${enemy.name}`
-                  : '';
-                setAction(`cast ${name}${target}`);
-              }}
-              aria-label={t('Your spells')}
-            >
-              <option value="">{t('Choose a spell to cast')}</option>
-              {characterSpells.some(spell => spell.level === 0) && (
-                <optgroup label={t('Cantrips')}>
-                  {characterSpells.filter(spell => spell.level === 0).map(spell => <option key={spell.name} value={spell.name}>{spell.name}</option>)}
-                </optgroup>
-              )}
-              {[...new Set(characterSpells.filter(spell => spell.level > 0).map(spell => spell.level))].sort((a, b) => a - b).map(level => (
-                <optgroup key={level} label={t(`Level ${level} spells`)}>
-                  {characterSpells.filter(spell => spell.level === level).map(spell => <option key={spell.name} value={spell.name}>{spell.name}</option>)}
-                </optgroup>
-              ))}
-            </select>
-          </div>
-        )}
-        {spellWarning && <p className="spell-warning" role="status">{spellWarning}</p>}
-        {!spellWarning && spellNotice && <p className="spell-warning" role="status">{spellNotice}</p>}
-        <details className="game-help">
-          <summary>{t('How actions and exploration work')}</summary>
-          <small className="composer-note">{t('Each search uses one six-sided die: a 1 brings an enemy; other results may reveal clues, quiet, or 1–4 gold coins. After a fight or escape, your next search is safe. Rejected actions cost no Adventure Mana.')}</small>
-          <small className="composer-note">{t('Action words guide ability checks: strength for force, dexterity for stealth, constitution to endure, intelligence to inspect, wisdom to notice, and charisma to persuade.')}</small>
-        </details>
-      </div>
-    </section>
-  );
+  return <GameScreenRouter {...props} turnPhase={props.turnPhase ?? 'idle'} />;
 }
 
 export function CharacterScreen({
   character,
   characters,
+  spells,
   onSelect,
   onCreate,
+  onOpenMap,
 }: {
   character: Character | null;
   characters: Character[];
+  spells: Spell[];
   onSelect: (character: Character) => void;
   onCreate: () => void;
+  onOpenMap?: () => void;
 }) {
   const { t } = useI18n();
+  const [tab, setTab] = useState<'sheet' | 'quests'>('sheet');
   if (!character) {
     return <section className="screen empty-screen"><p className="eyebrow">{t('CHARACTER')}</p><h1>{t('Your adventurers')}</h1><p>{t('Create a hero and their full sheet will live here.')}</p><button className="primary" onClick={onCreate}>{t('Create character')}</button></section>;
+  }
+  if (tab === 'quests') {
+    return (
+      <section className="screen quest-screen">
+        <div className="character-hub-tabs" role="tablist" aria-label={t('Character hub')}>
+          <button type="button" role="tab" aria-selected={false} onClick={() => setTab('sheet')}>{t('Character sheet')}</button>
+          <button type="button" role="tab" className="active" aria-selected onClick={() => setTab('quests')}>{t('Quests')}</button>
+        </div>
+        <QuestPanel character={character} />
+        {onOpenMap && (
+          <button type="button" className="text-button" onClick={onOpenMap}>{t('Open world map')}</button>
+        )}
+      </section>
+    );
   }
   const modifier = (score: number) => {
     const value = Math.floor((score - 10) / 2);
@@ -677,6 +252,10 @@ export function CharacterScreen({
   };
   return (
     <section className="screen">
+      <div className="character-hub-tabs" role="tablist" aria-label={t('Character hub')}>
+        <button type="button" role="tab" className="active" aria-selected onClick={() => setTab('sheet')}>{t('Character sheet')}</button>
+        <button type="button" role="tab" aria-selected={false} onClick={() => setTab('quests')}>{t('Quests')}</button>
+      </div>
       <div className="page-title"><p className="eyebrow">{t('YOUR ADVENTURER')}</p><h1>{t('Character sheet')}</h1><p>{t('All the details you need before stepping into danger.')}</p></div>
       <article className="profile-card character-summary">
         <div className="profile-heading"><span className="hero-portrait">{character.name.charAt(0).toUpperCase()}</span><div><h2>{character.name}</h2><p>{t(titleCase(character.race))} {t(titleCase(character.character_class))}</p><span className="level-chip">{t('LEVEL')} {character.level}</span></div></div>
@@ -714,7 +293,36 @@ export function CharacterScreen({
       <details className="character-panel" open>
         <summary>{t('Inventory')}</summary>
         <div className="inventory-card">
-          {(character.inventory?.length ? character.inventory : [t('Your pack is empty')]).map((item, index) => <div key={`${item}-${index}`}><span aria-hidden="true">◇</span>{item}</div>)}
+          {(character.inventory?.length ? character.inventory : [t('Your pack is empty')]).map((item, index) => {
+            const lower = item.toLowerCase();
+            const glyph = lower.includes('sword') || lower.includes('bow') ? '⚔'
+              : lower.includes('armor') || lower.includes('clothes') ? '🛡'
+              : lower.includes('potion') ? '⚗'
+              : '◇';
+            return (
+              <div key={`${item}-${index}`} className="inventory-row">
+                <span className="inventory-glyph" aria-hidden="true">{glyph}</span>
+                <span>{item}</span>
+              </div>
+            );
+          })}
+        </div>
+      </details>
+      <details className="character-panel" open>
+        <summary>{t('Spells')}</summary>
+        <div className="spell-roster">
+          {(() => {
+            const known = new Set([...(character.known_spells ?? []), ...(character.prepared_spells ?? [])]);
+            const rows = spells.filter(spell => known.has(spell.name)).sort((a, b) => a.level - b.level || a.name.localeCompare(b.name));
+            if (!rows.length) return <p className="empty-note">{t('No spells known yet.')}</p>;
+            return rows.map(spell => (
+              <div key={spell.name} className={spell.effect_modeled ? 'spell-row' : 'spell-row muted'}>
+                <strong>{spell.name}</strong>
+                <small>{spell.level === 0 ? t('Cantrip') : t(`Level ${spell.level}`)}</small>
+                {!spell.effect_modeled && <span className="spell-tag">{t('Not modeled in MVP')}</span>}
+              </div>
+            ));
+          })()}
         </div>
       </details>
       {characters.length > 1 && (
@@ -905,6 +513,7 @@ export function MapScreen({
   onTravel: (action: string) => void;
 }) {
   const { t } = useI18n();
+  const [selected, setSelected] = useState<string | null>(null);
   if (!character) {
     return <section className="screen"><p>{t('Choose or create an adventurer to see the map.')}</p></section>;
   }
@@ -912,6 +521,15 @@ export function MapScreen({
   const quests = character.quest_flags ?? {};
   const edges = mapEdges(locations);
   const chapterPlaces = Object.keys(CHAPTER_ONE_LAYOUT);
+  const selectedRef = selected ? locations.find(item => item.name === selected) : null;
+  const selectedState = selected ? mapNodeState(selected, character, locations) : null;
+  const canTravelToSelected = Boolean(
+    selected
+    && node?.connections.includes(selected)
+    && selected !== character.location
+    && routeOpen(selected, quests)
+    && selectedState !== 'locked',
+  );
 
   const edgeVisible = (from: string, to: string) => {
     const a = mapNodeState(from, character, locations);
@@ -923,8 +541,8 @@ export function MapScreen({
 
   return (
     <section className="screen map-screen">
-      <div className="page-title"><p className="eyebrow">{t('WORLD')}</p><h1>{t('Map')}</h1><p>{t('You are here')}: <strong>{character.location}</strong></p></div>
-      <div className="map-graph-wrap" aria-label={t('Campaign map')}>
+      <div className="page-title"><p className="eyebrow">{t('CHAPTER ONE')}</p><h1>{t('Map')}</h1><p>{t('You are here')}: <strong>{character.location}</strong></p></div>
+      <div className="map-graph-wrap map-parchment" aria-label={t('Campaign map')}>
         <svg className="map-graph" viewBox="0 0 100 100" role="img" aria-hidden="true">
           {edges.filter(edge => edgeVisible(edge.from, edge.to)).map(edge => {
             const a = CHAPTER_ONE_LAYOUT[edge.from];
@@ -948,21 +566,14 @@ export function MapScreen({
             const pos = CHAPTER_ONE_LAYOUT[place];
             const state = mapNodeState(place, character, locations);
             if (state === 'hidden') return null;
-            const canTravel = Boolean(
-              node?.connections.includes(place)
-              && place !== character.location
-              && routeOpen(place, quests)
-              && state !== 'locked',
-            );
             return (
               <button
                 type="button"
                 key={place}
                 className={`map-graph-node ${state}`}
                 style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
-                disabled={!canTravel}
                 title={place}
-                onClick={() => onTravel(`travel to ${place}`)}
+                onClick={() => setSelected(place)}
               >
                 <span className="map-node-glyph" aria-hidden="true">
                   {state === 'current' ? '◉' : state === 'locked' ? '🔒' : state === 'visited' ? '◎' : '○'}
@@ -985,34 +596,64 @@ export function MapScreen({
           <ol className="map-route-list">
             {node.connections.filter(route => routeOpen(route, quests)).map(route => (
               <li key={route}>
-                <button type="button" className="text-button" onClick={() => onTravel(`travel to ${route}`)}>{route}</button>
+                <button type="button" className="text-button" onClick={() => setSelected(route)}>{route}</button>
               </li>
             ))}
           </ol>
         </section>
       )}
+      {selected && selectedRef && (
+        <div className="map-location-sheet" role="dialog" aria-modal="true" aria-labelledby="map-sheet-title">
+          <article className="map-location-sheet-card">
+            <button type="button" className="icon-button map-sheet-close" aria-label={t('Close')} onClick={() => setSelected(null)}>×</button>
+            <p className="eyebrow">{t(selectedState === 'current' ? 'You are here' : selectedState === 'visited' ? 'Visited' : selectedState === 'locked' ? 'Locked route' : 'Discovered')}</p>
+            <h2 id="map-sheet-title">{selected}</h2>
+            <p>{selectedRef.arrival_beat ? t(selectedRef.arrival_beat) : t('No description yet for this place.')}</p>
+            {canTravelToSelected ? (
+              <button
+                type="button"
+                className="primary"
+                onClick={() => {
+                  setSelected(null);
+                  onTravel(`travel to ${selected}`);
+                }}
+              >
+                {t('Set out')}
+              </button>
+            ) : (
+              <p className="map-sheet-muted">
+                {selected === character.location
+                  ? t('You are already here.')
+                  : t(mapLockReason(selected, quests))}
+              </p>
+            )}
+          </article>
+        </div>
+      )}
     </section>
   );
 }
 
-export function QuestScreen({ character }: { character: Character | null }) {
+export function QuestPanel({ character }: { character: Character }) {
   const { t } = useI18n();
-  if (!character) {
-    return <section className="screen"><p>{t('Choose or create an adventurer to track quests.')}</p></section>;
-  }
-  const { steps, next } = chapterOneQuestProgress(character.quest_flags ?? {});
-  const atNextLocation = next?.location && character.location === next.location;
+  const { done, active, teaser } = visibleQuestTimeline(character.quest_flags ?? {});
+  const atNextLocation = active?.location && character.location === active.location;
   return (
-    <section className="screen quest-screen">
+    <>
       <div className="page-title"><p className="eyebrow">{t('CAMPAIGN')}</p><h1>{t('Quests')}</h1></div>
-      {next ? (
+      <article className="quest-main-card">
+        <p className="eyebrow">{t('MAIN QUEST')}</p>
+        <h2>{t('The lost shrine bell')}</h2>
+        <p>{t('Return Caldus’s stolen bell and quiet the Vault of Echoes.')}</p>
+      </article>
+      {active ? (
         <article className={`quest-next-card ${atNextLocation ? 'here' : ''}`}>
-          <p className="eyebrow">{t('NEXT STEP')}</p>
-          <h2>{t(next.label)}</h2>
-          <p>{t(next.hint)}</p>
-          {next.location && (
+          <p className="eyebrow">{t('CURRENT OBJECTIVE')}</p>
+          <h2>{t(active.label)}</h2>
+          <p>{t(active.hint)}</p>
+          {active.location && (
             <p className="quest-next-meta">
-              {atNextLocation ? t('You are at the right location.') : `${t('Head to')}: ${next.location}`}
+              {atNextLocation ? t('You are at the right location.') : `${t('Head to')}: ${active.location}`}
             </p>
           )}
         </article>
@@ -1023,20 +664,32 @@ export function QuestScreen({ character }: { character: Character | null }) {
           <p>{t('The shrine bell is home and the Bell Warden is defeated.')}</p>
         </article>
       )}
-      <ol className="quest-step-list">
-        {steps.map(step => {
-          const active = next?.id === step.id;
-          return (
-            <li key={step.id} className={`quest-step ${step.status} ${active ? 'active' : ''}`}>
-              <span className="quest-step-marker" aria-hidden="true">{step.status === 'done' ? '✓' : active ? '→' : '·'}</span>
+      {teaser && <p className="quest-teaser">{t(teaser)}</p>}
+      {done.length > 0 && (
+        <ol className="quest-step-list">
+          {done.map(step => (
+            <li key={step.id} className="quest-step done">
+              <span className="quest-step-marker" aria-hidden="true">✓</span>
               <div>
                 <strong>{t(step.label)}</strong>
-                <small>{step.status === 'done' ? t('Complete') : active ? t('Current objective') : t('Not started')}</small>
+                <small>{t('Complete')}</small>
               </div>
             </li>
-          );
-        })}
-      </ol>
+          ))}
+        </ol>
+      )}
+    </>
+  );
+}
+
+export function QuestScreen({ character }: { character: Character | null }) {
+  const { t } = useI18n();
+  if (!character) {
+    return <section className="screen"><p>{t('Choose or create an adventurer to track quests.')}</p></section>;
+  }
+  return (
+    <section className="screen quest-screen">
+      <QuestPanel character={character} />
     </section>
   );
 }
@@ -1052,7 +705,7 @@ export function JournalScreen({ events }: { events: JournalEvent[] }) {
           <article className="journal-beat" key={event.id}>
             <time>{new Date(event.created_at).toLocaleString()}</time>
             <p className="journal-action">{event.action}</p>
-            <p className="journal-narration">{event.result}</p>
+            <div className="journal-narration"><JournalResultBody result={event.result} /></div>
           </article>
         ))}
       </div>
@@ -1089,7 +742,7 @@ export function SettingsScreen({
           onLanguageChange?.(next);
         }}>
           <option value="en">{t('English')}</option>
-          <option value="cs">{t('Czech (no diacritics)')}</option>
+          <option value="cs">{t('Czech')}</option>
         </select>
       </section>
       <div className="settings-shortcuts">
@@ -1144,6 +797,7 @@ export function SettingsScreen({
 export function MoreScreen({ onNavigate }: { onNavigate: (screen: AppScreen) => void }) {
   const { t } = useI18n();
   const links: Array<{ key: AppScreen; label: string; description: string; glyph: string }> = [
+    { key: 'map', label: t('Map'), description: t('World map and travel'), glyph: '🗺' },
     { key: 'journal', label: t('Journal'), description: t('Story and action history'), glyph: '📜' },
     { key: 'settings', label: t('Settings'), description: t('Language, narrator and game'), glyph: '⚙' },
     { key: 'tools', label: t('Rules & spells'), description: t('SRD reference and encounter tools'), glyph: '⬡' },
@@ -1168,21 +822,22 @@ export function MoreScreen({ onNavigate }: { onNavigate: (screen: AppScreen) => 
 
 export function BottomNav({ screen, onNavigate }: { screen: AppScreen; onNavigate: (screen: AppScreen) => void }) {
   const { t } = useI18n();
-  const moreScreens: AppScreen[] = ['more', 'journal', 'settings', 'tools', 'campaign'];
+  const moreScreens: AppScreen[] = ['more', 'journal', 'settings', 'tools', 'campaign', 'map'];
+  const characterScreens: AppScreen[] = ['character', 'quests'];
   const active: AppScreen =
     screen === 'create' || screen === 'home'
       ? 'home'
       : screen === 'game'
         ? 'game'
-        : moreScreens.includes(screen)
-          ? 'more'
-          : screen;
+        : characterScreens.includes(screen)
+          ? 'character'
+          : moreScreens.includes(screen)
+            ? 'more'
+            : screen;
   const items: Array<{ key: AppScreen; label: string; glyph: string }> = [
     { key: 'home', label: t('Hub'), glyph: '⌂' },
     { key: 'game', label: t('Play'), glyph: '⚔' },
-    { key: 'map', label: t('Map'), glyph: '⌖' },
-    { key: 'quests', label: t('Quests'), glyph: '◇' },
-    { key: 'character', label: t('Hero'), glyph: '♙' },
+    { key: 'character', label: t('Character'), glyph: '♙' },
     { key: 'more', label: t('More'), glyph: '•••' },
   ];
   return (

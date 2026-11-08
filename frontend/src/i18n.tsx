@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { applyCzechDiacritics } from './i18n/csDiacritics';
 
 export type Locale = 'en' | 'cs';
 
@@ -25,7 +26,8 @@ const cs: Record<string, string> = {
   'Choose or create an adventurer before beginning the story.': 'Nez zacnes pribeh, vyber nebo vytvor dobrodruha.',
   'Back to home': 'Zpet na uvod',
   'Main navigation': 'Hlavni navigace',
-  Hub: 'Prehled',
+  Hub: 'Přehled',
+  Character: 'Postava',
   SUGGESTED: 'DOPORUCENO',
   'Suggested actions': 'Doporucene akce',
   'GROW THE PARTY': 'ROZSIR DROUPU',
@@ -88,7 +90,6 @@ const cs: Record<string, string> = {
   'Lv.': 'Uroven',
   'LV.': 'UROV.',
   'Tools': 'Nastroje',
-  'Character': 'Postava',
   'Campaign': 'Kampan',
   'Settings': 'Nastaveni',
   'YOUR NEXT CHAPTER': 'TVA DALSI KAPITOLA',
@@ -324,7 +325,8 @@ const cs: Record<string, string> = {
   'Creative Commons Attribution 4.0 International License': 'mezinarodni licence Creative Commons Attribution 4.0',
   'Language': 'Jazyk',
   'English': 'Anglictina',
-  'Czech (no diacritics)': 'Cestina (bez diakritiky)',
+  'Czech (no diacritics)': 'Čeština',
+  Czech: 'Čeština',
   'A HERO FOR YOUR STORY': 'HRDINA PRO TVUJ PRIBEH',
   'CHARACTER CREATION': 'TVORBA POSTAVY',
   'Path': 'Cesta',
@@ -455,6 +457,41 @@ const cs: Record<string, string> = {
   'Creating your hero…': 'Vytvarim hrdinu…',
   'Enter the adventure': 'Vstoupit do dobrodruzstvi',
   'Continue': 'Pokracovat',
+  'You have fallen': 'Padl jsi',
+  'Revive hero': 'Obnovit hrdinu',
+  'Reviving…': 'Obnovuji…',
+  'Revival costs 10% of carried gold (minimum 1 gp) when you have gold.': 'Obnova stoji 10 % zlata, ktere mas u sebe (minimalne 1 gp), pokud nejakou mas.',
+  'Could not revive the hero.': 'Hrdinu se nepodarilo obnovit.',
+  'The lost shrine bell': 'Ztraceny chramovy zvon',
+  'Return Caldus’s stolen bell and quiet the Vault of Echoes.': 'Vrat Caldusovi ukradeny zvon a utis Odchod Hluku.',
+  'MAIN QUEST': 'HLAVNI UKOL',
+  'COMBAT': 'BOJ',
+  'Combat in progress': 'Probihá boj',
+  'Set out': 'Vydat se',
+  'No description yet for this place.': 'K tomuto mistu zatim neni popis.',
+  'You are already here.': 'Uz jsi tady.',
+  'This route is not open yet.': 'Tahle cesta jeste neni otevrena.',
+  'Discovered': 'Objeveno',
+  'Spells': 'Kouzla',
+  'No spells known yet.': 'Zatim neznas zadna kouzla.',
+  'Not modeled in MVP': 'V MVP bez modelu',
+  'Close': 'Zavřít',
+  'Character hub': 'Postava',
+  'Open world map': 'Otevřít mapu světa',
+  'World map and travel': 'Mapa světa a cestování',
+  'CURRENT OBJECTIVE': 'AKTUÁLNÍ CÍL',
+  'Find out what happened to the shrine bell': 'Zjisti, co se stalo se chrámovým zvonem',
+  'Explore the cellar and follow clues deeper underground.': 'Prozkoumej sklep a sleduj stopy hlouběji pod zemí.',
+  'Further objectives unlock as you meet people along the way.': 'Další cíle se odemknou, až potkáš lidi na cestě.',
+  'Locked — learn what lies beneath the Sunken Corridor first.': 'Zamčeno — nejdřív zjisti, co se skrývá pod Potopenou chodbou.',
+  'The vault stirs, but the last seal still holds.': 'Krypta se probouzí, ale poslední pečeť ještě drží.',
+  'This path is not open yet.': 'Tato cesta zatím není otevřená.',
+  'A cold draft curls around the old stone stairs.': 'Studeny pruduch se vine okolo starych kamennych schodu.',
+  'Mara, a lantern-bearing scavenger, warns that something follows the waterway.': 'Mara se svitilnou varuje, ze neco sleduje vodni cestu.',
+  'A quiet caretaker named Caldus asks you to return a stolen shrine bell.': 'Tichy spravce Caldus te prosi o navrat ukradeného chramoveho zvonu.',
+  'Goblin trader Nib watches from a stall of mismatched charms and stolen bells.': 'Goblin Nib pozoruje z pultu plneho amuletu a ukradenych zvonu.',
+  'Damp stone amplifies every footstep; broken bells hang from rusted chains.': 'Vlhký kamen zesiluje kazdy krok; z rezavých retezu visi rozbite zvony.',
+  'A hulking Bell Warden stirs, shackled bells rattling on its rusted armor.': 'Obr hajce zvonu se probouzi, spoutané zvony chřestí na jeho rezavé zbroji.',
 };
 
 interface I18nValue {
@@ -483,7 +520,11 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
   const value = useMemo<I18nValue>(() => ({
     locale,
     setLocale,
-    t: (text: string) => locale === 'cs' ? cs[text] ?? text : text,
+    t: (text: string) => {
+      if (locale !== 'cs') return text;
+      const translated = cs[text] ?? text;
+      return applyCzechDiacritics(translated);
+    },
   }), [locale]);
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;

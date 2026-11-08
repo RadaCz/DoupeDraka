@@ -261,3 +261,51 @@ def test_empty_action(setup_db):
         headers={"Authorization": f"Bearer {token}"}
     )
     assert response.status_code == 400
+
+
+def test_e2e_fallen_hook_is_hidden_in_normal_runs(setup_db):
+    client.post("/auth/register", json={"username": "e2ehook", "password": "password123"})
+    token = client.post(
+        "/auth/login", json={"username": "e2ehook", "password": "password123"}
+    ).json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+    char_id = client.post(
+        "/characters",
+        json={"name": "Hook", "race": "human", "character_class": "fighter"},
+        headers=headers,
+    ).json()["id"]
+    assert client.post(f"/characters/{char_id}/__e2e/fallen", headers=headers).status_code == 404
+
+
+def test_e2e_fallen_hook_sets_hp_and_revive_works(setup_db, monkeypatch):
+    from app import api as api_module
+
+    client.post("/auth/register", json={"username": "e2erev", "password": "password123"})
+    token = client.post(
+        "/auth/login", json={"username": "e2erev", "password": "password123"}
+    ).json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+    char_id = client.post(
+        "/characters",
+        json={"name": "Rev", "race": "human", "character_class": "fighter"},
+        headers=headers,
+    ).json()["id"]
+
+    async def give_gold():
+        async with Session() as session:
+            record = await session.get(CharacterRecord, char_id)
+            state = decode_character_state(record.payload)
+            state["gold"] = 12
+            record.payload = encode_character_state(state)
+            await session.commit()
+
+    asyncio.run(give_gold())
+    monkeypatch.setattr(api_module, "e2e_hooks_enabled", lambda: True)
+    fallen = client.post(f"/characters/{char_id}/__e2e/fallen", headers=headers)
+    assert fallen.status_code == 200
+    assert fallen.json()["character"]["hp"] == 0
+    revived = client.post(f"/characters/{char_id}/revive", headers=headers)
+    assert revived.status_code == 200
+    body = revived.json()
+    assert body["character"]["hp"] == 1
+    assert body["gold_lost"] >= 1
