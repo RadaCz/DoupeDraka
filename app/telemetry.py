@@ -17,8 +17,8 @@ from .narration_events import DEFEAT_EVENT_PREFIX
 logger = logging.getLogger(__name__)
 
 
-def _encode_metadata(data: dict[str, Any]) -> str:
-    return json.dumps(data, ensure_ascii=False, separators=(",", ":"))
+def _metadata(data: dict[str, Any]) -> dict[str, Any]:
+    return dict(data)
 
 
 def analytics_rows_from_turn(
@@ -36,9 +36,7 @@ def analytics_rows_from_turn(
             AnalyticsEvent(
                 event_type="level_up",
                 character_id=character_id,
-                metadata_json=_encode_metadata(
-                    {"new_level": result.level_up_facts.get("new_level")},
-                ),
+                metadata_json=_metadata({"new_level": result.level_up_facts.get("new_level")}),
             )
         )
 
@@ -47,7 +45,7 @@ def analytics_rows_from_turn(
             AnalyticsEvent(
                 event_type="purchase",
                 character_id=character_id,
-                metadata_json=_encode_metadata(result.purchase_facts),
+                metadata_json=_metadata(result.purchase_facts),
             )
         )
 
@@ -56,11 +54,8 @@ def analytics_rows_from_turn(
             AnalyticsEvent(
                 event_type="death",
                 character_id=character_id,
-                metadata_json=_encode_metadata(
-                    {
-                        "location": location,
-                        "monster_name": monster_name or "unknown",
-                    },
+                metadata_json=_metadata(
+                    {"location": location, "monster_name": monster_name or "unknown"},
                 ),
             )
         )
@@ -84,7 +79,7 @@ async def _persist_analytics_event(
                 AnalyticsEvent(
                     event_type=event_type,
                     character_id=character_id,
-                    metadata_json=_encode_metadata(metadata or {}),
+                    metadata_json=_metadata(metadata or {}),
                 )
             )
             await session.commit()
@@ -110,7 +105,7 @@ def record_character_created(session: AsyncSession, character_id: str, race: str
         AnalyticsEvent(
             event_type="character_created",
             character_id=character_id,
-            metadata_json=_encode_metadata({"race": race, "character_class": character_class}),
+            metadata_json=_metadata({"race": race, "character_class": character_class}),
         )
     )
 

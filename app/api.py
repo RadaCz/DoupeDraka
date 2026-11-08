@@ -3,7 +3,7 @@ from dataclasses import asdict
 from datetime import datetime, timedelta
 import json
 from fastapi import FastAPI, HTTPException, Depends, Header, Request
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -23,6 +23,7 @@ from .narration_events import defeat_facts_from_events
 from .narration_language import normalize_narration_language
 from .memory_summarizer import maybe_archive_journal
 from .admin_stats import aggregate_admin_stats
+from .health_details import build_health_payload
 from .telemetry import (
     analytics_rows_from_turn,
     append_analytics,
@@ -77,9 +78,18 @@ def hash_token(token: str) -> str:
     """Hash API token using SHA-256 for secure storage."""
     return hashlib.sha256(token.encode()).hexdigest()
 
+def narration_mock_requested(request: Request | None) -> bool:
+    if request is None or not get_settings().load_test_enabled:
+        return False
+    return request.headers.get("X-Load-Test-Mock", "").strip() == "1"
+
+
 @app.get("/health")
-async def health() -> dict:
-    return {"status": "healthy"}
+async def health():
+    body, status_code = await build_health_payload()
+    if status_code != 200:
+        return JSONResponse(status_code=status_code, content=body)
+    return body
 
 
 @app.get("/ready")
@@ -571,9 +581,12 @@ async def action(
         logger.info(f"Replayed committed turn for character {character_id}")
         return response
     assert context is not None and event_id is not None
-    response.narration, response.narration_status = await narrate_committed(
-        context, event_id, key, response.narration, character_id=character_id,
-    )
+    if narration_mock_requested(request):
+        response.narration_status = "fallback"
+    else:
+        response.narration, response.narration_status = await narrate_committed(
+            context, event_id, key, response.narration, character_id=character_id,
+        )
     logger.info(f"Action processed for character {character_id}: {payload.action.strip()[:50]}")
     return response
 
@@ -606,13 +619,19 @@ async def action_stream(
 
         assert context is not None and event_id is not None
         chunks: list[str] = []
-        status = "narrated" if narration_gateway_for(get_settings()).has_online_providers else "fallback"
+        mock = narration_mock_requested(request)
+        status = "fallback" if mock else (
+            "narrated" if narration_gateway_for(get_settings()).has_online_providers else "fallback"
+        )
         try:
-            async for chunk in narrator.stream(context):
-                if chunk:
-                    chunks.append(chunk)
-                    yield sse_message("delta", {"text": chunk})
-            narration = "".join(chunks).strip()
+            if mock:
+                narration = response.narration
+            else:
+                async for chunk in narrator.stream(context):
+                    if chunk:
+                        chunks.append(chunk)
+                        yield sse_message("delta", {"text": chunk})
+                narration = "".join(chunks).strip()
             if not narration:
                 status = "fallback"
                 narration = response.narration

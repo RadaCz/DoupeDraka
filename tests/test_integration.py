@@ -35,7 +35,10 @@ def test_health_check(setup_db):
     """Test health check endpoint."""
     response = client.get("/health")
     assert response.status_code == 200
-    assert response.json()["status"] == "healthy"
+    body = response.json()
+    assert body["status"] == "healthy"
+    assert "version" in body
+    assert body["database"]["status"] == "up"
 
 
 def test_full_character_flow(setup_db):

@@ -18,6 +18,7 @@ logs/
 # --- cleanup commit: backups, logs, env, build artefacts ---
 .env.*
 !.env.example
+!.env.docker.example
 *.bak
 *.bak-*
 *.orig

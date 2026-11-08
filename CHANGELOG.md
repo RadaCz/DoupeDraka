@@ -2,6 +2,9 @@
 
 ## Unreleased (2026-11-08)
 
+### Production ops
+- PostgreSQL JSONB telemetry column, asyncpg pool settings, Alembic `v003`, enhanced `/health`, `scripts/load_test.py`, Compose + Postgres.
+
 ### Telemetry & admin
 - `analytics_events` table; hooks for character create, level-up, death, shop purchase, LLM fallback/narration status.
 - `GET /admin/stats` (X-Admin-Token); `scripts/seed_test_data.py` for QA seeding.

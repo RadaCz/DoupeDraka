@@ -14,6 +14,8 @@ from .errors import (
 )
 
 _RETRYABLE = RETRYABLE_PROVIDER_ERRORS + (httpx.ConnectError, httpx.ReadError)
+from .gateway_metrics import record_fallback as record_gateway_fallback
+from .gateway_metrics import record_provider_success
 from .offline import OfflineProvider
 
 logger = logging.getLogger(__name__)
@@ -55,12 +57,15 @@ class NarrationGateway:
             try:
                 text = await entry.complete(request)
                 if text.strip():
+                    record_provider_success(entry.name)
                     return text.strip(), "narrated"
             except _RETRYABLE as exc:
                 fallback = self.providers[index + 1].name if index + 1 < len(self.providers) else "offline"
                 logger.warning("%s failed (%s); falling back to %s", entry.name, exc, fallback)
                 self._telemetry_fallback(entry.name, fallback)
+                record_gateway_fallback(entry.name, fallback)
         text = await self.offline.complete(request)
+        record_provider_success("offline")
         return text, "fallback"
 
     async def stream(self, request: NarrationRequest) -> AsyncIterator[str]:
@@ -70,6 +75,7 @@ class NarrationGateway:
                 async for chunk in entry.provider.stream(request):
                     if chunk:
                         yield chunk
+                record_provider_success(entry.name)
                 return
             except ProviderStreamAbortedError as exc:
                 logger.warning(
@@ -85,5 +91,7 @@ class NarrationGateway:
                 fallback = self.providers[index + 1].name if index + 1 < len(self.providers) else "offline"
                 logger.warning("%s failed (%s); falling back to %s", entry.name, exc, fallback)
                 self._telemetry_fallback(entry.name, fallback)
+                record_gateway_fallback(entry.name, fallback)
         async for chunk in self.offline.stream(request):
             yield chunk
+        record_provider_success("offline")

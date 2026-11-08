@@ -6,7 +6,8 @@ from .openai_chat import OpenAIChatProvider
 from app.settings import Settings
 
 
-def _chain_names(settings: Settings) -> list[str]:
+def get_chain_names(settings: Settings) -> list[str]:
+    """Ordered LLM provider names for the configured primary + chain (public API)."""
     primary = settings.llm_provider.strip().lower()
     if primary in ("fallback", "offline", ""):
         return []
@@ -90,7 +91,7 @@ def _provider_for_name(name: str, settings: Settings) -> NamedProvider | None:
 
 def narration_gateway_for(settings: Settings) -> NarrationGateway:
     providers: list[NamedProvider] = []
-    for name in _chain_names(settings):
+    for name in get_chain_names(settings):
         provider = _provider_for_name(name, settings)
         if provider is not None:
             providers.append(provider)

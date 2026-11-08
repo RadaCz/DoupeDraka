@@ -2,14 +2,28 @@ import json
 from datetime import datetime, timedelta
 from pathlib import Path
 from sqlalchemy import BigInteger, DateTime, ForeignKey, Integer, String, Text
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+from .db_types import JsonMetadata
 from .engine.economy import STARTING_BALANCE_TENTHS
 from .settings import get_settings
 
 CHARACTER_PAYLOAD_SCHEMA_VERSION = 1
 
-engine = create_async_engine(get_settings().database_url)
+
+def build_async_engine() -> AsyncEngine:
+    settings = get_settings()
+    url = settings.database_url
+    kwargs: dict = {}
+    if url.startswith("postgresql"):
+        kwargs["pool_size"] = settings.db_pool_size
+        kwargs["max_overflow"] = settings.db_max_overflow
+        kwargs["pool_pre_ping"] = True
+    return create_async_engine(url, **kwargs)
+
+
+engine = build_async_engine()
 Session = async_sessionmaker(engine, expire_on_commit=False)
 class Base(DeclarativeBase): pass
 class User(Base):
@@ -74,7 +88,7 @@ class AnalyticsEvent(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     event_type: Mapped[str] = mapped_column(String(64), index=True)
     character_id: Mapped[str | None] = mapped_column(String(36), index=True, nullable=True)
-    metadata_json: Mapped[str] = mapped_column(Text, default="{}")
+    metadata_json: Mapped[dict] = mapped_column(JsonMetadata, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
 async def init_db() -> None:
     # Local SQLite development database; production PostgreSQL needs no directory.

@@ -14,6 +14,9 @@ class Settings(BaseSettings):
         protected_namespaces=(),
     )
     database_url: str = "sqlite+aiosqlite:///./data/dnd.db"
+    db_pool_size: int = Field(default=10, validation_alias=AliasChoices("DB_POOL_SIZE", "db_pool_size"))
+    db_max_overflow: int = Field(default=20, validation_alias=AliasChoices("DB_MAX_OVERFLOW", "db_max_overflow"))
+    load_test_enabled: bool = Field(default=False, validation_alias=AliasChoices("LOAD_TEST_ENABLED", "load_test_enabled"))
     api_url: str = "http://127.0.0.1:8000"
     mini_app_url: str = Field(default="", validation_alias=AliasChoices("MINI_APP_URL", "mini_app_url"))
     bot_token: str = ""

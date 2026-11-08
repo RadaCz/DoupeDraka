@@ -29,7 +29,7 @@ async def aggregate_admin_stats(session: AsyncSession) -> dict:
     ).all()
     shop_counter: Counter[str] = Counter()
     for row in purchases:
-        meta = json.loads(row.metadata_json or "{}")
+        meta = row.metadata_json if isinstance(row.metadata_json, dict) else json.loads(row.metadata_json or "{}")
         item = meta.get("item_name")
         if item:
             shop_counter[str(item)] += 1
@@ -42,7 +42,7 @@ async def aggregate_admin_stats(session: AsyncSession) -> dict:
     narration_total = len(narration_rows)
     narration_fallback = 0
     for row in narration_rows:
-        meta = json.loads(row.metadata_json or "{}")
+        meta = row.metadata_json if isinstance(row.metadata_json, dict) else json.loads(row.metadata_json or "{}")
         if meta.get("status") == "fallback":
             narration_fallback += 1
 

@@ -38,9 +38,41 @@ suite uses synthetic signed `initData` and does not require Telegram or a real t
 
 ## Database and containers
 
-SQLite is the default development database. Apply migrations with `alembic upgrade head`.
-PostgreSQL URLs are supported through `DATABASE_URL`; set `PYTEST_DATABASE_URL` to the same
-URL when running concurrency tests against a live Postgres service (as in CI).
+### SQLite (local default)
+
+SQLite is the default development database (`sqlite+aiosqlite:///./data/dnd.db`).
+`init_db()` still calls `create_all` for fast local bootstrap; prefer Alembic when sharing
+schema with production.
+
+### PostgreSQL (production)
+
+Use asyncpg:
+
+```env
+DATABASE_URL=postgresql+asyncpg://doupe:doupe@localhost:5432/doupedraka
+DB_POOL_SIZE=10
+DB_MAX_OVERFLOW=20
+```
+
+Docker Compose includes Postgres 16 (persistent volume `pgdata`):
+
+```powershell
+Copy-Item .env.docker.example .env.docker
+# Align POSTGRES_PASSWORD and DATABASE_URL in .env.docker
+docker compose --env-file .env.docker up -d postgres
+docker compose --env-file .env.docker run --rm api alembic upgrade head
+docker compose --env-file .env.docker up -d api frontend bot
+```
+
+Migrations (clean database):
+
+```powershell
+alembic upgrade head
+```
+
+Revision chain ends at `v003` (`analytics_events` with JSONB metadata on PostgreSQL).
+
+Set `PYTEST_DATABASE_URL` to the same URL when running concurrency tests against Postgres (as in CI).
 
 Merge `clean-main` into `main` only after CI is green on `clean-main`, including the
 PostgreSQL migration job and Playwright E2E.
@@ -98,6 +130,28 @@ python scripts/seed_test_data.py
 This creates user `qa_seed_player`, five leveled characters with varied inventories,
 and fifty random engine turns plus journal rows. Use it to exercise the UI and DB
 without manual play.
+
+## Load testing
+
+Start the API with optional mock narration (no external LLM calls):
+
+```env
+LOAD_TEST_ENABLED=true
+ACTION_RATE_LIMIT=240/minute
+AUTH_RATE_LIMIT=240/minute
+```
+
+```powershell
+python scripts/load_test.py --base-url http://127.0.0.1:8000 --users 20 --turns 5 --mock-llm
+```
+
+The script reports engine vs narration latency percentiles and prints in-process
+gateway hit counters from `GET /health`.
+
+## Health check
+
+`GET /health` returns version, uptime, database dialect/status, configured LLM providers,
+and gateway metrics. `GET /ready` remains a minimal `SELECT 1` probe for orchestrators.
 
 ## Known deprecation warnings (documented, not yet refactored)
 

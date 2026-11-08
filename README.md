@@ -259,6 +259,25 @@ docker compose up --build
 API: http://localhost:8000
 Frontend: http://localhost:5173
 
+## Production Deployment
+
+Full stack (PostgreSQL 16, API, static frontend, Telegram bot) with persistent DB
+storage on the named volume `pgdata`:
+
+```powershell
+Copy-Item .env.docker.example .env.docker
+# Edit .env.docker: POSTGRES_PASSWORD, DATABASE_URL (same password), BOT_TOKEN, LLM keys
+docker compose --env-file .env.docker run --rm api alembic upgrade head
+docker compose --env-file .env.docker up -d --build
+```
+
+- **Liveness:** `GET http://localhost:8000/health` (returns **503** with
+  `{"status":"unhealthy","db":"disconnected"}` if the database is down).
+- **Readiness:** `GET http://localhost:8000/ready` after migrations.
+- Local SQLite without Postgres: see `docker-compose.override.yml.example`.
+
+Details: [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md).
+
 ## Architektura
 
 `app/engine/` nikdy nevolá LLM. Orchestrátor nejprve vyhodnotí a uloží tah a až

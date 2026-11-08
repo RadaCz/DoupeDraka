@@ -1,0 +1,22 @@
+# Local dev: SQLite file DB, no Postgres container.
+# Copy to docker-compose.override.yml to merge with docker-compose.yml.
+#
+#   copy docker-compose.override.yml.example docker-compose.override.yml
+
+services:
+  postgres:
+    profiles: ["production"]
+
+  api:
+    environment:
+      DATABASE_URL: sqlite+aiosqlite:///./data/dnd.db
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    depends_on: {}
+
+  bot:
+    environment:
+      DATABASE_URL: sqlite+aiosqlite:///./data/dnd.db
+    depends_on:
+      - api
