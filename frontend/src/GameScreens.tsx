@@ -45,9 +45,9 @@ function ManaHelp() {
   const { t } = useI18n();
   return (
     <details className="mana-info">
-      <summary aria-label={t('About Adventure Mana')} title={t('About Adventure Mana')}>?</summary>
+      <summary aria-label={t('About narrator credits')} title={t('About narrator credits')}>?</summary>
       <div className="mana-info-popover">
-        <p>{t('Adventure Mana pays for changed turns at paid narration tiers. Lite turns, rests and no-op actions are free.')}</p>
+        <p>{t('Narrator credits pay for changed turns at paid narration tiers. Lite turns, rests and no-op actions are free.')}</p>
         <p>{t('Top-ups are not available yet')}</p>
       </div>
     </details>
@@ -92,7 +92,7 @@ export function HomeScreen({
       <div className="home-stat-grid">
         <article className="stat-card mana-card">
           <span className="stat-icon" aria-hidden="true">✧</span>
-          <div className="mana-stat-copy"><small>{t('ADVENTURE MANA')}</small><strong>{economy ? economy.balance.toFixed(1) : '—'} <i>⚡</i></strong><ManaHelp /></div>
+          <div className="mana-stat-copy"><small>{t('NARRATOR CREDITS')}</small><strong>{economy ? economy.balance.toFixed(1) : '—'} <i>⚡</i></strong><ManaHelp /></div>
           <small>{economy?.tier ?? 'normal'} {t('tier')}</small>
         </article>
         <article className="stat-card">
@@ -280,11 +280,6 @@ export function CharacterScreen({
           <div><small>{t('ARMOR CLASS')}</small><strong>{character.armor_class}</strong></div>
           <div><small>{t('EXPERIENCE')}</small><strong>{character.xp} <i>XP</i></strong></div>
           <div><small>{t('GOLD')}</small><strong>{character.gold} <i>gp</i></strong></div>
-          <details className="legacy-mana">
-            <summary>{t('Mana (historical)')}</summary>
-            <strong>{character.mana} <i>/ {character.max_mana}</i></strong>
-            <p>{t('This legacy character resource does not power spells or Adventure Mana.')}</p>
-          </details>
           <div><small>{t('Spell slots')}</small><strong><SpellSlots character={character} t={t} /></strong></div>
           {character.invisible && <div><small>{t('Condition')}</small><strong>{t('Invisible')}</strong></div>}
         </div>
@@ -803,7 +798,7 @@ export function SettingsScreen({
       </div>
       <article className="balance-card">
         <div className="balance-icon" aria-hidden="true">⚡</div>
-        <div className="balance-copy"><small>{t('AVAILABLE ADVENTURE MANA')}</small><strong>{economy ? economy.balance.toFixed(1) : '—'} <i>⚡</i></strong><p>{t('Separate from spell slots; spellcaster classes spend slots to cast spells.')}</p></div><ManaHelp />
+        <div className="balance-copy"><small>{t('AVAILABLE NARRATOR CREDITS')}</small><strong>{economy ? economy.balance.toFixed(1) : '—'} <i>⚡</i></strong><p>{t('Separate from spell slots; spellcaster classes spend slots to cast spells.')}</p></div><ManaHelp />
       </article>
       <section className="section-block">
         <div className="section-heading"><div><p className="eyebrow"><span aria-hidden="true">🎭</span> {t('THE STORYTELLER')}</p><h2>{t('Choose narration quality')}</h2></div></div>
@@ -818,10 +813,10 @@ export function SettingsScreen({
       </section>
       <article className="notice-card"><span aria-hidden="true">ⓘ</span><div><strong>{t('Top-ups are not available yet')}</strong><p>{t('This build does not process payments. No real-money purchase can be made from the Mini App.')}</p></div></article>
       <section className="section-block">
-        <div className="section-heading"><div><p className="eyebrow"><span aria-hidden="true">⚡</span> {t('HOW IT WORKS')}</p><h2>{t('Adventure Mana')}</h2></div></div>
+        <div className="section-heading"><div><p className="eyebrow"><span aria-hidden="true">⚡</span> {t('HOW IT WORKS')}</p><h2>{t('Narrator credits')}</h2></div></div>
         <div className="mana-explainer">
-          <div><strong>⚡ {t('Adventure Mana')}</strong><p>{t('Pays for a story turn when the game state changes. Balance is shared by your Telegram account.')}</p></div>
-          <div><strong>✦ {t('Spell slots')}</strong><p>{t('Spell slots power casting for spellcaster classes. They are separate from Adventure Mana, which pays only for story turns.')}</p></div>
+          <div><strong>⚡ {t('Narrator credits')}</strong><p>{t('Pays for a story turn when the game state changes. Balance is shared by your Telegram account.')}</p></div>
+          <div><strong>✦ {t('Spell slots')}</strong><p>{t('Spell slots power casting for spellcaster classes. They are separate from narrator credits, which pay only for story turns.')}</p></div>
         </div>
       </section>
       <article className="notice-card storyteller-note" role="note">

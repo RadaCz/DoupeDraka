@@ -124,3 +124,28 @@ def record_llm_narration_status(character_id: str | None, status: str) -> None:
         character_id,
         {"status": status},
     )
+
+
+def record_turn_billing(
+    character_id: str | None,
+    *,
+    billing_tier: str,
+    stored_tier: str,
+    state_changed: bool,
+    narration_status: str,
+    energy_charged_tenths: int,
+    energy_refunded_tenths: int = 0,
+) -> None:
+    """Minimal playtest telemetry (GDS01 E5 scope)."""
+    schedule_analytics_event(
+        "turn_billing",
+        character_id,
+        {
+            "billing_tier": billing_tier,
+            "stored_tier": stored_tier,
+            "state_changed": state_changed,
+            "narration_status": narration_status,
+            "energy_charged_tenths": energy_charged_tenths,
+            "energy_refunded_tenths": energy_refunded_tenths,
+        },
+    )

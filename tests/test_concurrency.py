@@ -342,8 +342,20 @@ def test_concurrent_same_idempotency_key_one_turn(auth):
     assert version == 1
 
 
-def test_concurrent_turns_on_two_characters_debit_energy_once_each(auth):
+def test_concurrent_turns_on_two_characters_debit_energy_once_each(auth, monkeypatch):
     """Parallel turns on two heroes sharing one account must not drop a debit."""
+    class _Gateway:
+        providers = ("mock",)
+        has_online_providers = True
+
+    async def narrated(_self, _context):
+        return "The path unfolds.", "narrated"
+
+    for target in ("app.api.narration_gateway_for", "app.ai.registry.narration_gateway_for"):
+        monkeypatch.setattr(target, lambda _settings: _Gateway())
+    monkeypatch.setattr("app.narrator.Narrator.narrate_detailed", narrated)
+
+    assert client.post("/economy/tier", json={"tier": "normal"}, headers=auth).status_code == 200
     first = _character(auth)
     second = _character(auth)
     cost = economy.turn_cost("normal")

@@ -1,4 +1,4 @@
-"""Adventure Mana charged per turn (shown as ⚡ in the UI).
+"""Narrator credits charged per turn (shown as ⚡ in the UI).
 
 Kept strictly separate from spell slots and the legacy `CharacterState.mana`.
 Amounts are stored as integer tenths so decimal prices never drift.
@@ -26,7 +26,16 @@ MODEL_TIERS = {
     "normal": ModelTier("normal", "Normal", 10, "Balanced quality and speed for most turns."),
     "pro": ModelTier("pro", "Pro", 14, "Highest reasoning for complex combat and roleplay."),
 }
-DEFAULT_TIER = "normal"
+DEFAULT_TIER = "lite"
+
+
+def effective_billing_tier(stored_tier: str, *, has_online_provider: bool) -> str:
+    """Tier used for affordability checks and debits (D31 / GDS01 E2)."""
+    if stored_tier == "lite" or not has_online_provider:
+        return "lite"
+    if stored_tier == "pro":
+        return "lite"
+    return stored_tier
 
 
 @dataclass(frozen=True)

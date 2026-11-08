@@ -146,7 +146,7 @@ def test_economy_endpoint_reports_starting_balance(auth):
     assert data["balance"] == 100.0
     assert data["balance_tenths"] == 1000
     assert next(tier for tier in data["tiers"] if tier["key"] == "lite")["cost"] == 0.0
-    assert data["tier"] == "normal"
+    assert data["tier"] == "lite"
     tier_keys = {tier["key"] for tier in data["tiers"]}
     assert "lite" in tier_keys
     if narration_gateway_for(get_settings()).providers:
@@ -192,17 +192,51 @@ def test_settings_patch_cannot_touch_another_users_character(auth):
     assert response.status_code == 404
 
 
-def test_action_charges_energy_and_reports_balance(auth):
+def _mock_online_gateway(monkeypatch):
+    class _Gateway:
+        providers = ("mock",)
+        has_online_providers = True
+
+    for target in ("app.api.narration_gateway_for", "app.ai.registry.narration_gateway_for"):
+        monkeypatch.setattr(target, lambda _settings: _Gateway())
+
+
+def test_action_charges_energy_and_reports_balance(auth, monkeypatch):
+    async def narrated(_self, _context):
+        return "The cellar yields a quiet discovery.", "narrated"
+
+    _mock_online_gateway(monkeypatch)
+    monkeypatch.setattr("app.narrator.Narrator.narrate_detailed", narrated)
+
+    assert client.post("/economy/tier", json={"tier": "normal"}, headers=auth).status_code == 200
     character = client.post("/characters/presets/tank", headers=auth).json()
     response = client.post(
         f"/characters/{character['id']}/actions", json={"action": "look around"}, headers=auth
     )
     assert response.status_code == 200
     data = response.json()
-    # One normal turn costs 1.0, so 100.0 becomes 99.0.
+    assert data["narration_status"] == "narrated"
     assert data["energy_tenths"] == 990
     assert data["energy"] == 99.0
     assert data["tier"] == "normal"
+
+
+def test_paid_narration_fallback_refunds_commit_hold(auth, monkeypatch):
+    async def fallback(_self, _context):
+        return "Offline prose.", "fallback"
+
+    _mock_online_gateway(monkeypatch)
+    monkeypatch.setattr("app.narrator.Narrator.narrate_detailed", fallback)
+
+    assert client.post("/economy/tier", json={"tier": "normal"}, headers=auth).status_code == 200
+    character = client.post("/characters/presets/tank", headers=auth).json()
+    response = client.post(
+        f"/characters/{character['id']}/actions", json={"action": "look around"}, headers=auth
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["narration_status"] == "fallback"
+    assert data["energy_tenths"] == 1000
 
 
 def test_pro_tier_is_rejected(auth):
@@ -242,7 +276,9 @@ def test_lite_action_is_free_but_noop_remains_free(auth):
     assert no_op.json()["energy_tenths"] == 1000
 
 
-def test_action_returns_402_when_energy_runs_out(auth):
+def test_action_returns_402_when_energy_runs_out(auth, monkeypatch):
+    _mock_online_gateway(monkeypatch)
+    assert client.post("/economy/tier", json={"tier": "normal"}, headers=auth).status_code == 200
     character = client.post("/characters/presets/tank", headers=auth).json()
 
     async def drain():
@@ -257,11 +293,13 @@ def test_action_returns_402_when_energy_runs_out(auth):
         f"/characters/{character['id']}/actions", json={"action": "look around"}, headers=auth
     )
     assert response.status_code == 402
-    assert "Mana" in response.json()["detail"]
+    assert "narrator credits" in response.json()["detail"].casefold()
 
 
-def test_failed_charge_does_not_mutate_the_character(auth):
+def test_failed_charge_does_not_mutate_the_character(auth, monkeypatch):
     """A 402 must not consume a turn or damage the character."""
+    _mock_online_gateway(monkeypatch)
+    assert client.post("/economy/tier", json={"tier": "normal"}, headers=auth).status_code == 200
     character = client.post("/characters/presets/tank", headers=auth).json()
 
     async def drain():
@@ -320,8 +358,8 @@ def test_refused_turn_is_not_charged(auth):
         f"/characters/{character['id']}/actions", json={"action": "wait patiently"}, headers=auth
     )
     assert response.status_code == 200
-    # Ability checks do change state, so this one is charged exactly once.
-    assert response.json()["energy_tenths"] == 990
+    # Ability checks change state, but Lite tier does not spend narrator credits.
+    assert response.json()["energy_tenths"] == 1000
 
 
 def test_blocked_rest_inside_combat_is_free(auth):

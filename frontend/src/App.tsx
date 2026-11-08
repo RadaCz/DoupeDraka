@@ -476,6 +476,13 @@ function AppContent() {
           if (typeof event.data.narration === 'string') streamedNarration = event.data.narration;
           updatePendingNarration(streamedNarration, resolvedFacts);
           setNarrationStatus(event.data.narration_status === 'narrated' ? 'narrated' : 'fallback');
+          if (typeof event.data.energy === 'number' && typeof event.data.energy_tenths === 'number') {
+            setEconomy(previous => previous ? {
+              ...previous,
+              balance: event.data.energy,
+              balance_tenths: event.data.energy_tenths,
+            } : previous);
+          }
           if (pendingDefeatOverlay) setShowDefeatOverlay(true);
           if (pendingLevelUp) setLevelUpNotice(pendingLevelUp);
           haptic('success');

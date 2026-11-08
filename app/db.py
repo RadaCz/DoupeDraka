@@ -34,7 +34,7 @@ class User(Base):
     # Set when the account was created through Telegram Mini App initData. Nullable
     # because locally registered accounts predate it.
     telegram_id: Mapped[int | None] = mapped_column(BigInteger, unique=True, index=True, nullable=True)
-    model_tier: Mapped[str] = mapped_column(String(16), default="normal")
+    model_tier: Mapped[str] = mapped_column(String(16), default="lite")
     # Paid turn currency in tenths. Separate from CharacterState.mana (spell pool).
     energy_tenths: Mapped[int] = mapped_column(Integer, default=STARTING_BALANCE_TENTHS)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

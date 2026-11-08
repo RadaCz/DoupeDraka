@@ -81,7 +81,7 @@ export function PlaySceneChrome({
               <SpellSlots character={character} t={t} />
             </span>
           )}
-          <span className="play-immersive-stat play-immersive-mana" title={t('ADVENTURE MANA')}>
+          <span className="play-immersive-stat play-immersive-mana" title={t('NARRATOR CREDITS')}>
             <span className="play-immersive-stat-glyph" aria-hidden="true">⚡</span>
             <span className="play-immersive-num tabular-nums">{manaLabel}</span>
           </span>
@@ -438,7 +438,7 @@ export function ActionComposer(props: PlayScreenProps) {
       {!spellWarning && spellNotice && <p className="spell-warning" role="status">{spellNotice}</p>}
       {helpOpen && (
         <div className="composer-help-popover" role="note">
-          <p>{t('Each search uses one six-sided die: a 1 brings an enemy; other results may reveal clues, quiet, or 1–4 gold coins. After a fight or escape, your next search is safe. Rejected actions cost no Adventure Mana.')}</p>
+          <p>{t('Each search uses one six-sided die: a 1 brings an enemy; other results may reveal clues, quiet, or 1–4 gold coins. After a fight or escape, your next search is safe. Rejected actions cost no narrator credits.')}</p>
           <p>{t('Action words guide ability checks: strength for force, dexterity for stealth, constitution to endure, intelligence to inspect, wisdom to notice, and charisma to persuade.')}</p>
         </div>
       )}

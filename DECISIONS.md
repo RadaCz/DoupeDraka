@@ -37,3 +37,4 @@
 | D33 | Pro tier ≠ shipped product | `1.4` cost in `MODEL_TIERS` is a placeholder; `/economy/tier` rejects `pro` until OpenRouter (or equivalent) is live. |
 | D34 | GDS01 dice exploration | Keep D6/D20; adopt exploration **variant A** (differentiated 5/6) after playtest unless data favors B. Variable DC table 5–20+. Spec: `design/DICE_AND_ECONOMY_V1.md` §A. |
 | D35 | Monetization pillars | Sell premium narration and story chapters, not play energy or mechanical advantage. No pay-to-win on rolls/loot/stats. Hypothesis pricing in `design/ECONOMY_MODEL_V1.md` only. |
+| D36 | `explore_track:<location>` once per site | D6 variant A result 5 sets `quest_flags["explore_track:<location>"]` at most once per location; repeats yield “already known track” prose only. Spec: `design/DICE_AND_ECONOMY_V1.md` §A.4. |

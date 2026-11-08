@@ -343,11 +343,7 @@ describe('Telegram Mini App', () => {
     expect(screen.getByText('Ability scores')).toBeInTheDocument();
     expect(screen.getByText('Longbow')).toBeInTheDocument();
     expect(screen.queryByText('LEGACY CHARACTER MANA')).not.toBeInTheDocument();
-    const legacyMana = screen.getByText('Mana (historical)');
-    expect(legacyMana).toBeInTheDocument();
-    expect(screen.queryByText('3 / 3')).not.toBeInTheDocument();
-    fireEvent.click(legacyMana);
-    expect(screen.getByText('This legacy character resource does not power spells or Adventure Mana.')).toBeInTheDocument();
+    expect(screen.queryByText('Mana (historical)')).not.toBeInTheDocument();
     openMoreSubscreen('Settings');
     fireEvent.click(screen.getByRole('button', { name: /rules and spell reference/i }));
     expect(await screen.findByRole('heading', { name: /adventurer's tools/i })).toBeInTheDocument();
@@ -453,10 +449,10 @@ describe('Telegram Mini App', () => {
     openMoreSubscreen('Settings');
     expect(await screen.findByRole('heading', { name: 'Settings' })).toBeInTheDocument();
     fireEvent.click(screen.getByText('?', { selector: 'summary' }));
-    expect(screen.getByText('Adventure Mana pays for changed turns at paid narration tiers. Lite turns, rests and no-op actions are free.')).toBeInTheDocument();
+    expect(screen.getByText('Narrator credits pay for changed turns at paid narration tiers. Lite turns, rests and no-op actions are free.')).toBeInTheDocument();
     expect(screen.getByText('Top-ups are not available yet', { selector: 'p' })).toBeInTheDocument();
     expect(screen.getByText('Separate from spell slots; spellcaster classes spend slots to cast spells.')).toBeInTheDocument();
-    expect(screen.getByText('Spell slots power casting for spellcaster classes. They are separate from Adventure Mana, which pays only for story turns.')).toBeInTheDocument();
+    expect(screen.getByText('Spell slots power casting for spellcaster classes. They are separate from narrator credits, which pay only for story turns.')).toBeInTheDocument();
     expect(screen.queryByText(/spell effects are not implemented yet/i)).not.toBeInTheDocument();
     fireEvent.change(screen.getByRole('combobox', { name: 'Language' }), { target: { value: 'cs' } });
     expect(screen.getByText(/Kouzlene sloty pohani sesilani u sesilacich povolani/i)).toBeInTheDocument();

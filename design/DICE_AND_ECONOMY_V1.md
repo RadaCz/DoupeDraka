@@ -138,7 +138,9 @@ Platba: `atomic_debit_energy` po **změněném stavu hře** (`state_changed`), n
 | 5 | 17 % | **Persistovaná stopa** v lokaci (viz níže) + krátký beat v logu |
 | 6 | 17 % | Klid; **žádný** combat; krátký „safe“ beat (**bez nového flagu**) |
 
-**D6=5 ve variantě A (závazná specifikace pro E3):** engine uloží **trvalý fakt** na postavě — např. `quest_flags["explore_track:<location>"]` nebo ekvivalentní pole — se stejným herním významem jako text `track_discovery` pro danou lokaci. Journal a vypravěč smí stopu parafrázovat, ale **nesmí** být jediným „důkazem“ stopy (narativní detail sám o sobě nestačí). Opakovaný D6=5 v téže lokaci buď nic nového nepřidá, nebo vrátí „už známou stopu“ (implementační detail E3).
+**D6=5 ve variantě A (závazná specifikace pro E3):** engine uloží **trvalý fakt** na postavě — `quest_flags["explore_track:<location>"]` (normalizovaný název lokace) — se stejným herním významem jako text `track_discovery` pro danou lokaci. Journal a vypravěč smí stopu parafrázovat, ale **nesmí** být jediným „důkazem“ stopy.
+
+**Jednou za lokaci (závazné):** novou persistovanou stopu lze z D6=5 získat **nejvýše jednou na lokaci**. Pokud flag už existuje, další D6=5 v téže lokaci je **bez nového flagu** — engine vrátí krátkou zprávu typu „už známá stopa“ (může citovat uložený `track_discovery` text). D6=2 (as-is) zůstává odděleně; E3 sjednotí chování 2 vs 5 podle doporučené varianty A.
 
 **D6=6:** pouze prose beat; **žádná** nová persistovaná stopa (odlišení od 5).
 

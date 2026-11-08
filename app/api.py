@@ -29,6 +29,7 @@ from .telemetry import (
     append_analytics,
     record_character_created,
     record_llm_narration_status,
+    record_turn_billing,
 )
 from .narrator import NarrationContext, Narrator
 from .ai.registry import narration_gateway_for
@@ -154,7 +155,7 @@ async def require_energy(session, user_id: int, tier: str) -> User:
     if not record: raise HTTPException(401, "User not found")
     if not economy.can_afford(record.energy_tenths, tier):
         logger.warning(f"Energy exhausted for user {record.username}: {record.energy_tenths} tenths")
-        raise HTTPException(402, "Not enough Mana for this turn. Top up to continue.")
+        raise HTTPException(402, "Not enough narrator credits for this turn. Top up to continue.")
     return record
 
 async def atomic_debit_energy(session, user_id: int, tier: str, detail: str) -> int:
@@ -174,12 +175,94 @@ async def atomic_debit_energy(session, user_id: int, tier: str, detail: str) -> 
     )
     balance = result.scalar_one_or_none()
     if balance is None:
-        raise HTTPException(402, "Not enough Mana for this turn. Top up to continue.")
+        raise HTTPException(402, "Not enough narrator credits for this turn. Top up to continue.")
     session.add(EnergyTransaction(
         user_id=user_id, amount_tenths=-cost, reason="turn",
         detail=detail[:128], balance_after=balance,
     ))
     return balance
+
+
+async def atomic_refund_energy(session, user_id: int, tenths: int, detail: str) -> int:
+    """Restore credits when paid narration was not delivered (E2b)."""
+    if tenths <= 0:
+        record = await session.get(User, user_id)
+        if record is None:
+            raise HTTPException(401, "User not found")
+        return record.energy_tenths
+    result = await session.execute(
+        update(User)
+        .where(User.id == user_id)
+        .values(energy_tenths=User.energy_tenths + tenths)
+        .returning(User.energy_tenths)
+        .execution_options(synchronize_session=False)
+    )
+    balance = result.scalar_one_or_none()
+    if balance is None:
+        raise HTTPException(401, "User not found")
+    session.add(EnergyTransaction(
+        user_id=user_id,
+        amount_tenths=tenths,
+        reason="refund",
+        detail=detail[:128],
+        balance_after=balance,
+    ))
+    return balance
+
+
+def billing_tier_for_user(stored_tier: str) -> str:
+    return economy.effective_billing_tier(
+        stored_tier,
+        has_online_provider=narration_gateway_for(get_settings()).has_online_providers,
+    )
+
+
+async def reconcile_narrator_billing(
+    *,
+    user_id: int,
+    stored_tier: str,
+    billing_tier: str,
+    charged_tenths: int,
+    narration_status: str,
+    action_detail: str,
+    character_id: str,
+    state_changed: bool,
+    receipt_key: str,
+    response: ActionResponse,
+) -> None:
+    """Refund the commit-time hold when paid narration did not land (D32 / E2b)."""
+    refunded = 0
+    balance = response.energy_tenths
+    if charged_tenths > 0 and narration_status != "narrated":
+        async with Session() as session:
+            balance = await atomic_refund_energy(
+                session,
+                user_id,
+                charged_tenths,
+                f"narration:{narration_status}:{action_detail[:96]}",
+            )
+            if receipt_key:
+                receipt = await session.get(ActionReceipt, receipt_key)
+                if receipt is not None:
+                    stored = decode_state(receipt.response)
+                    stored["energy_tenths"] = balance
+                    stored["energy"] = economy.to_units(balance)
+                    stored["narration_status"] = narration_status
+                    receipt.response = encode_state(stored)
+            await session.commit()
+            refunded = charged_tenths
+    net_charged = charged_tenths - refunded
+    response.energy_tenths = balance
+    response.energy = economy.to_units(balance)
+    record_turn_billing(
+        character_id,
+        billing_tier=billing_tier,
+        stored_tier=stored_tier,
+        state_changed=state_changed,
+        narration_status=narration_status,
+        energy_charged_tenths=net_charged,
+        energy_refunded_tenths=refunded,
+    )
 
 async def get_user_by_token(credentials: HTTPAuthorizationCredentials = Depends(security)) -> User:
     token = credentials.credentials
@@ -361,7 +444,7 @@ def _available_narration_tiers() -> list[dict]:
 
     settings = get_settings()
     tiers = economy.tier_list()
-    if not narration_gateway_for(settings).providers:
+    if not narration_gateway_for(settings).has_online_providers:
         return [tier for tier in tiers if tier["key"] == "lite"]
     if settings.llm_provider.lower() != "openrouter" or not settings.openrouter_api_key.strip():
         return [tier for tier in tiers if tier["key"] != "pro"]
@@ -370,10 +453,18 @@ def _available_narration_tiers() -> list[dict]:
 
 @app.get("/economy")
 async def get_economy(user: User = Depends(get_user_by_token)) -> dict:
+    tier = user.model_tier
+    if not narration_gateway_for(get_settings()).has_online_providers and tier != "lite":
+        async with Session() as session:
+            record = await session.get(User, user.id)
+            if record is not None:
+                record.model_tier = "lite"
+                await session.commit()
+                tier = "lite"
     return {
         "balance": economy.to_units(user.energy_tenths),
         "balance_tenths": user.energy_tenths,
-        "tier": user.model_tier,
+        "tier": tier,
         "tiers": _available_narration_tiers(),
         "packages": economy.package_list(),
     }
@@ -381,13 +472,11 @@ async def get_economy(user: User = Depends(get_user_by_token)) -> dict:
 @app.post("/economy/tier")
 async def set_tier(request: CharacterTier, user: User = Depends(get_user_by_token)) -> dict:
     """Switch the model tier that prices each turn (lite / normal / pro)."""
-    from .ai.registry import narration_gateway_for
-
     if request.tier not in economy.MODEL_TIERS:
         raise HTTPException(422, f"Unknown tier: {request.tier}")
     if request.tier == "pro":
         raise HTTPException(422, "Pro tier is not available in this build.")
-    if request.tier != "lite" and not narration_gateway_for(get_settings()).providers:
+    if request.tier != "lite" and not narration_gateway_for(get_settings()).has_online_providers:
         raise HTTPException(422, "Paid narration tiers require a configured AI provider; use lite.")
     async with Session() as session:
         record = await session.get(User, user.id)
@@ -609,9 +698,17 @@ async def action(
     user: User = Depends(get_user_by_token),
     idempotency_key: str = Header(default="", alias=IDEMPOTENCY_HEADER),
 ) -> ActionResponse:
-    response, context, event_id, key, replayed = await commit_action_turn(
-        character_id, payload, user, idempotency_key
-    )
+    (
+        response,
+        context,
+        event_id,
+        key,
+        replayed,
+        charged_tenths,
+        billing_tier,
+        stored_tier,
+        state_changed,
+    ) = await commit_action_turn(character_id, payload, user, idempotency_key)
     if replayed:
         logger.info(f"Replayed committed turn for character {character_id}")
         return response
@@ -622,6 +719,18 @@ async def action(
         response.narration, response.narration_status = await narrate_committed(
             context, event_id, key, response.narration, character_id=character_id,
         )
+    await reconcile_narrator_billing(
+        user_id=user.id,
+        stored_tier=stored_tier,
+        billing_tier=billing_tier,
+        charged_tenths=charged_tenths,
+        narration_status=response.narration_status,
+        action_detail=payload.action.strip(),
+        character_id=character_id,
+        state_changed=state_changed,
+        receipt_key=key,
+        response=response,
+    )
     logger.info(f"Action processed for character {character_id}: {payload.action.strip()[:50]}")
     return response
 
@@ -639,9 +748,17 @@ async def action_stream(
     user: User = Depends(get_user_by_token),
     idempotency_key: str = Header(default="", alias=IDEMPOTENCY_HEADER),
 ) -> StreamingResponse:
-    response, context, event_id, key, replayed = await commit_action_turn(
-        character_id, payload, user, idempotency_key
-    )
+    (
+        response,
+        context,
+        event_id,
+        key,
+        replayed,
+        charged_tenths,
+        billing_tier,
+        stored_tier,
+        state_changed,
+    ) = await commit_action_turn(character_id, payload, user, idempotency_key)
 
     async def events():
         yield sse_message("turn", response.model_dump())
@@ -698,9 +815,27 @@ async def action_stream(
 
         maybe_record_prose_language_mismatch(context.language, narration, character_id)
         record_llm_narration_status(character_id, status)
+        response.narration_status = status
+        await reconcile_narrator_billing(
+            user_id=user.id,
+            stored_tier=stored_tier,
+            billing_tier=billing_tier,
+            charged_tenths=charged_tenths,
+            narration_status=status,
+            action_detail=payload.action.strip(),
+            character_id=character_id,
+            state_changed=state_changed,
+            receipt_key=key,
+            response=response,
+        )
         yield sse_message(
             "complete",
-            {"narration": narration, "narration_status": status},
+            {
+                "narration": narration,
+                "narration_status": status,
+                "energy_tenths": response.energy_tenths,
+                "energy": response.energy,
+            },
         )
 
     return StreamingResponse(
@@ -719,7 +854,7 @@ async def commit_action_turn(
     payload: ActionRequest,
     user: User,
     idempotency_key: str,
-) -> tuple[ActionResponse, NarrationContext | None, int | None, str, bool]:
+) -> tuple[ActionResponse, NarrationContext | None, int | None, str, bool, int, str, str, bool]:
     """Resolve and persist the engine turn under the version fence.
 
     Order matters and is the whole point of this route:
@@ -737,9 +872,12 @@ async def commit_action_turn(
         raise HTTPException(400, "Action cannot be empty")
     key = idempotency_key.strip()[:IDEMPOTENCY_KEY_LIMIT]
 
+    billing_tier = billing_tier_for_user(user.model_tier)
+    stored_tier = user.model_tier
+
     replayed = await replay_receipt(key, user)
     if replayed is not None:
-        return replayed, None, None, key, True
+        return replayed, None, None, key, True, 0, billing_tier, stored_tier, False
 
     for _ in range(MAX_TURN_ATTEMPTS):
         async with Session() as session:
@@ -772,7 +910,7 @@ async def commit_action_turn(
             active_monster = MonsterState(**character.combatant) if character.combatant else None
             result, monster = game.resolve_action(character, text, active_monster)
             account = (
-                await require_energy(session, user.id, user.model_tier)
+                await require_energy(session, user.id, billing_tier)
                 if result.state_changed and result.costs_adventure_mana
                 else await session.get(User, user.id)
             )
@@ -811,14 +949,17 @@ async def commit_action_turn(
                 logger.warning(f"Version conflict on character {character_id} at v{base_version}; retrying")
                 replayed = await replay_receipt(key, user)
                 if replayed is not None:
-                    return replayed, None, None, key, True
+                    return replayed, None, None, key, True, 0, billing_tier, stored_tier, False
                 await asyncio.sleep(0)
                 continue
 
+            charged_tenths = 0
             try:
-                balance = await atomic_debit_energy(session, user.id, user.model_tier, text) \
-                    if result.state_changed and result.costs_adventure_mana \
-                    else account.energy_tenths
+                if result.state_changed and result.costs_adventure_mana and economy.turn_cost(billing_tier) > 0:
+                    balance = await atomic_debit_energy(session, user.id, billing_tier, text)
+                    charged_tenths = economy.turn_cost(billing_tier)
+                else:
+                    balance = account.energy_tenths
             except HTTPException:
                 await session.rollback()
                 raise
@@ -846,7 +987,7 @@ async def commit_action_turn(
 
             response = ActionResponse(
                 events=result.events, narration=fallback, character=asdict(character),
-                energy_tenths=balance, energy=economy.to_units(balance), tier=user.model_tier,
+                energy_tenths=balance, energy=economy.to_units(balance), tier=stored_tier,
                 narration_status="fallback",
                 spell_facts=result.spell_facts or None,
                 rest_facts=result.rest_facts or None,
@@ -869,10 +1010,20 @@ async def commit_action_turn(
                 logger.warning(f"Idempotency receipt race for key {key[:8]}…")
                 replayed = await replay_receipt(key, user)
                 if replayed is not None:
-                    return replayed, None, None, key, True
+                    return replayed, None, None, key, True, 0, billing_tier, stored_tier, False
                 raise HTTPException(409, "Concurrent idempotency conflict; retry") from None
 
-        return response, context, event_id, key, False
+        return (
+            response,
+            context,
+            event_id,
+            key,
+            False,
+            charged_tenths,
+            billing_tier,
+            stored_tier,
+            result.state_changed,
+        )
 
     raise HTTPException(409, "Character state changed during the turn; retry")
 
