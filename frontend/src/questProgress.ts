@@ -6,7 +6,7 @@ export type QuestStepId =
   | 'chapter_one_complete';
 
 export interface QuestStep {
-  id: QuestStepId;
+  id: QuestStepId | string;
   label: string;
   hint: string;
   location?: string;
@@ -54,8 +54,11 @@ function stepDone(id: QuestStepId, flags: Record<string, boolean>) {
   return Boolean(flags[id]);
 }
 
-export function chapterOneQuestProgress(flags: Record<string, boolean> = {}) {
-  const steps = CHAPTER_ONE_STEPS.map(step => ({
+export function chapterOneQuestProgress(
+  flags: Record<string, boolean> = {},
+  stepSource: QuestStep[] = CHAPTER_ONE_STEPS,
+) {
+  const steps = stepSource.map(step => ({
     ...step,
     status: stepDone(step.id, flags) ? 'done' as const : 'open' as const,
   }));
@@ -68,8 +71,11 @@ export function chapterOneQuestProgress(flags: Record<string, boolean> = {}) {
 }
 
 /** Player-visible steps only — no spoilers for future objectives. */
-export function visibleQuestTimeline(flags: Record<string, boolean> = {}) {
-  const { steps, next } = chapterOneQuestProgress(flags);
+export function visibleQuestTimeline(
+  flags: Record<string, boolean> = {},
+  stepSource: QuestStep[] = CHAPTER_ONE_STEPS,
+) {
+  const { steps, next } = chapterOneQuestProgress(flags, stepSource);
   const done = steps.filter(step => step.status === 'done');
   if (!next) {
     return { done, active: null as QuestStep | null, teaser: null as string | null };

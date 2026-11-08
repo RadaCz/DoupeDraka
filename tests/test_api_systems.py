@@ -42,11 +42,36 @@ def test_presets_are_public_and_documented():
         assert {"key", "name", "race", "character_class", "role"} <= set(preset)
 
 
+def test_create_character_rejects_non_mvp_race(auth):
+    response = client.post(
+        "/characters",
+        headers=auth,
+        json={
+            "name": "Tiefling",
+            "race": "tiefling",
+            "character_class": "fighter",
+            "abilities": {
+                "strength": 15, "dexterity": 14, "constitution": 13,
+                "intelligence": 12, "wisdom": 10, "charisma": 8,
+            },
+        },
+    )
+    assert response.status_code == 422
+    assert "ruleset" in response.json()["detail"].casefold() or "reference-only" in response.json()["detail"].casefold()
+
+
+def test_reference_includes_ruleset_and_quests(auth):
+    data = client.get("/reference", headers=auth).json()
+    assert data["ruleset"]["edition"] == "SRD 5.1"
+    assert data["quests"]["campaigns"][0]["id"] == "chapter_one"
+    assert data["races"][0]["mvp_playable"] in (True, False)
+
+
 def test_create_character_from_preset(auth):
     response = client.post("/characters/presets/tank", headers=auth)
     assert response.status_code == 201
     character = response.json()
-    assert character["character_class"] == "barbarian"
+    assert character["character_class"] == "fighter"
     assert character["armor_class"] >= 13
     assert character["difficulty"] == "normal"
 
@@ -112,6 +137,9 @@ def test_combat_calculator_rejects_empty_party():
 
 
 def test_economy_endpoint_reports_starting_balance(auth):
+    from app.ai.registry import narration_gateway_for
+    from app.settings import get_settings
+
     response = client.get("/economy", headers=auth)
     assert response.status_code == 200
     data = response.json()
@@ -119,7 +147,13 @@ def test_economy_endpoint_reports_starting_balance(auth):
     assert data["balance_tenths"] == 1000
     assert next(tier for tier in data["tiers"] if tier["key"] == "lite")["cost"] == 0.0
     assert data["tier"] == "normal"
-    assert {tier["key"] for tier in data["tiers"]} == {"lite", "normal"}
+    tier_keys = {tier["key"] for tier in data["tiers"]}
+    assert "lite" in tier_keys
+    if narration_gateway_for(get_settings()).providers:
+        assert "normal" in tier_keys
+        assert "pro" not in tier_keys
+    else:
+        assert tier_keys == {"lite"}
     assert data["packages"][0]["key"] == "starter"
 
 
@@ -175,6 +209,21 @@ def test_pro_tier_is_rejected(auth):
     response = client.post("/economy/tier", json={"tier": "pro"}, headers=auth)
     assert response.status_code == 422
     assert "not available" in response.json()["detail"].casefold()
+
+
+def test_economy_lists_only_lite_without_llm_provider(auth, monkeypatch):
+    monkeypatch.setenv("LLM_PROVIDER", "fallback")
+    from app.settings import get_settings
+
+    get_settings.cache_clear()
+    try:
+        payload = client.get("/economy", headers=auth).json()
+        assert [tier["key"] for tier in payload["tiers"]] == ["lite"]
+        blocked = client.post("/economy/tier", json={"tier": "normal"}, headers=auth)
+        assert blocked.status_code == 422
+        assert "lite" in blocked.json()["detail"].casefold()
+    finally:
+        get_settings.cache_clear()
 
 
 def test_lite_action_is_free_but_noop_remains_free(auth):

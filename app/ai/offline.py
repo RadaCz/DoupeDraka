@@ -14,9 +14,10 @@ class OfflineProvider:
 
 def narrate_offline(context: NarrationContext) -> str:
     """Turn resolved engine facts into varied prose without changing them."""
+    language = normalize_narration_language(context.language)
     if context.defeat_facts or any(event.startswith("Defeated in combat.") for event in context.events):
         location = (context.defeat_facts or {}).get("respawn_location", "The Whispering Cellar")
-        if normalize_narration_language(context.language) == "cs":
+        if language == "cs":
             return (
                 f"Tma tě pohltí. Probudíš se v {location} s jedním životem — boj skončil dřív, než přišel konec."
             )
@@ -24,8 +25,9 @@ def narrate_offline(context: NarrationContext) -> str:
             f"Darkness swallows you. You wake in {location} with a single breath left — "
             "the fight ended before you could fall for good."
         )
-    if normalize_narration_language(context.language) == "cs":
+    if language == "cs":
         from .offline_cs import narrate_offline_cs
+
         return narrate_offline_cs(context)
     facts = " ".join(context.events).lower()
     action = context.action.strip().rstrip(".!?")

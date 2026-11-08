@@ -386,7 +386,7 @@ def test_rest_does_not_work_mid_fight():
 def test_fleeing_ends_the_fight_and_clears_the_combatant():
     """A mismatched fight must be escapable, not an unwinnable mana sink."""
     game = GameEngine(random.Random(3))
-    hero = game.create_character(1, "Lyra", "half_elf", "bard")
+    hero = game.create_character(1, "Lyra", "halfling", "rogue")
     monster = build_monster("normal", "goblin")
     _, monster = game.resolve_action(hero, "attack", monster)
     if monster is None:
@@ -402,7 +402,7 @@ def test_fleeing_ends_the_fight_and_clears_the_combatant():
 
 def test_failed_flee_keeps_the_fight_going():
     game = GameEngine(random.Random(3))
-    hero = game.create_character(1, "Lyra", "half_elf", "bard")
+    hero = game.create_character(1, "Lyra", "halfling", "rogue")
     monster = build_monster("normal", "ogre")
     game.rng.randint = lambda a, b: 1
     result, after = game.resolve_action(hero, "flee", monster)

@@ -227,6 +227,9 @@ async def login(request: Request, payload: UserCreate) -> Token:
 
 def build_character(user: User, name: str, race: str, character_class: str, abilities: dict[str, int] | None = None, settings_payload: dict | None = None) -> CharacterState:
     """Create and validate a character, applying any campaign settings."""
+    from .engine.ruleset_v1 import validate_mvp_creation
+
+    validate_mvp_creation(race, character_class)
     character = game.create_character(
         owner_id=user.id,
         name=name,
@@ -323,7 +326,12 @@ async def create_character(request: CharacterCreate, user: User = Depends(get_us
 
 @app.get("/reference")
 async def get_reference() -> dict:
+    from .engine.quests import quest_catalog
+    from .engine.ruleset_v1 import public_summary as ruleset_summary
+
     return {
+        "ruleset": ruleset_summary(),
+        "quests": quest_catalog(),
         "races": reference.race_list(),
         "classes": reference.class_list(),
         "feats": reference.feat_list(),
@@ -349,8 +357,12 @@ async def combat_calculator(request: CombatCalculatorRequest) -> dict:
     except ValueError as error: raise HTTPException(422, str(error)) from error
 
 def _available_narration_tiers() -> list[dict]:
+    from .ai.registry import narration_gateway_for
+
     settings = get_settings()
     tiers = economy.tier_list()
+    if not narration_gateway_for(settings).providers:
+        return [tier for tier in tiers if tier["key"] == "lite"]
     if settings.llm_provider.lower() != "openrouter" or not settings.openrouter_api_key.strip():
         return [tier for tier in tiers if tier["key"] != "pro"]
     return tiers
@@ -369,10 +381,14 @@ async def get_economy(user: User = Depends(get_user_by_token)) -> dict:
 @app.post("/economy/tier")
 async def set_tier(request: CharacterTier, user: User = Depends(get_user_by_token)) -> dict:
     """Switch the model tier that prices each turn (lite / normal / pro)."""
+    from .ai.registry import narration_gateway_for
+
     if request.tier not in economy.MODEL_TIERS:
         raise HTTPException(422, f"Unknown tier: {request.tier}")
     if request.tier == "pro":
         raise HTTPException(422, "Pro tier is not available in this build.")
+    if request.tier != "lite" and not narration_gateway_for(get_settings()).providers:
+        raise HTTPException(422, "Paid narration tiers require a configured AI provider; use lite.")
     async with Session() as session:
         record = await session.get(User, user.id)
         if not record: raise HTTPException(404, "User not found")
@@ -531,6 +547,9 @@ async def narrate_committed(
     record_llm_narration_status(character_id, status if narration.strip() else "fallback")
     if status != "narrated" or not narration.strip():
         return fallback, "fallback"
+    from .narration_prose_guard import maybe_record_prose_language_mismatch
+
+    maybe_record_prose_language_mismatch(context.language, narration, character_id)
     async with Session() as session:
         row = await session.get(EventRecord, event_id)
         if row is not None:
@@ -675,6 +694,9 @@ async def action_stream(
                     receipt.response = encode_state(response.model_dump())
                     receipt.status = "complete"
             await session.commit()
+        from .narration_prose_guard import maybe_record_prose_language_mismatch
+
+        maybe_record_prose_language_mismatch(context.language, narration, character_id)
         record_llm_narration_status(character_id, status)
         yield sse_message(
             "complete",

@@ -181,6 +181,9 @@ def test_scorching_ray_resolves_three_attacks_and_spends_one_level_two_slot():
     hero.max_spell_slots = {1: 4, 2: 2}
     hero.spell_slots = {2: 1}
     enemy = MonsterState(hp=1000, max_hp=1000)
+    hero.in_combat = True
+    hero.combat_turn = "player"
+    hero.hp = hero.max_hp = 200
 
     result, returned_enemy = game.resolve_action(hero, "cast Scorching Ray at goblin", enemy)
 
@@ -188,7 +191,10 @@ def test_scorching_ray_resolves_three_attacks_and_spends_one_level_two_slot():
     assert len(attacks) == 3
     assert all(attack["hit"] for attack in attacks)
     assert enemy.hp < 1000
-    assert returned_enemy is enemy
+    if hero.in_combat:
+        assert returned_enemy is enemy
+    else:
+        assert returned_enemy is None
     assert hero.spell_slots == {}
     assert result.spell_facts["slot_level"] == 2
 

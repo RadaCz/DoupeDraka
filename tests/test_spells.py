@@ -33,6 +33,19 @@ def force_high_rolls(game: GameEngine) -> None:
     game.rng.randint = lambda lower, upper: upper
 
 
+def begin_combat(hero: CharacterState) -> None:
+    hero.in_combat = True
+    hero.combat_turn = "player"
+
+
+def assert_active_monster(hero: CharacterState, monster: MonsterState, returned: MonsterState | None) -> None:
+    """Engine returns the live monster only while combat continues."""
+    if hero.in_combat:
+        assert returned is monster
+    else:
+        assert returned is None
+
+
 def test_class_spell_lists_only_use_srd_catalog_cantrips_and_level_one_spells():
     catalog = {spell["name"]: spell["level"] for spell in SPELLS}
     assert set(CLASS_SPELL_LISTS) == set(SPELLCASTING_ABILITIES)
@@ -83,9 +96,11 @@ def test_cantrip_damages_active_enemy_without_spending_a_spell_slot():
     game = GameEngine(random.Random(1))
     force_high_rolls(game)
     hero = create_hero("wizard", intelligence=16)
+    hero.hp = hero.max_hp = 80
     monster = MonsterState(hp=50, max_hp=50, armor_class=12)
+    begin_combat(hero)
     result, after = game.resolve_action(hero, "CAST   fire   bolt", monster)
-    assert after is monster
+    assert_active_monster(hero, monster, after)
     assert monster.hp < 50
     assert hero.spell_slots == {1: 2}
     assert result.spell_facts["slot_consumed"] is False
@@ -147,10 +162,11 @@ def test_magic_missile_is_three_auto_hit_darts():
     game = GameEngine(random.Random(1))
     force_high_rolls(game)
     hero = create_hero("wizard")
-    result, monster = game.resolve_action(
-        hero, "cast Magic Missile at goblin", MonsterState(hp=50, max_hp=50)
-    )
-    assert monster is not None
+    hero.hp = hero.max_hp = 80
+    enemy = MonsterState(hp=50, max_hp=50, armor_class=12)
+    begin_combat(hero)
+    result, monster = game.resolve_action(hero, "cast Magic Missile at goblin", enemy)
+    assert_active_monster(hero, enemy, monster)
     assert len(result.spell_facts["effect"]["darts"]) == 3
     assert result.spell_facts["effect"]["damage"] == 15
 

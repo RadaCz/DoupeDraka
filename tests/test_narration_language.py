@@ -38,6 +38,21 @@ def test_build_narration_context_carries_normalized_language():
     assert context.language == "cs"
 
 
+def test_czech_instruction_forbids_english_prose():
+    text = language_output_instruction("cs")
+    assert "strictly in Czech" in text or "Czech (cs)" in text
+    assert "Do not use English for prose" in text
+
+
+def test_prose_heuristic_flags_english_under_czech_request():
+    from app.narration_prose_guard import prose_looks_english
+
+    assert prose_looks_english(
+        "You take a long rest and recover your strength while the cellar stays quiet.",
+    )
+    assert not prose_looks_english("Na chvíli se zastavíš a dech se ti uklidní.")
+
+
 def test_system_prompt_instructs_czech_prose_not_mechanics():
     context = NarrationContext(
         action="prozkoumat",
@@ -50,6 +65,19 @@ def test_system_prompt_instructs_czech_prose_not_mechanics():
     assert "Czech" in prompt
     assert "Dexterity check" in prompt
     assert language_output_instruction("cs") in prompt
+
+
+def test_offline_rest_no_threat_uses_czech_templates():
+    context = NarrationContext(
+        action="search",
+        events=("You take a moment to catch your breath. No new threat appears.",),
+        location="The Whispering Cellar",
+        memories=(),
+        language="cs",
+    )
+    narration = Narrator.narrate_offline(context)
+    assert "You take a moment" not in narration
+    assert any(word in narration.lower() for word in ("dech", "klid", "zastav"))
 
 
 def test_offline_shrine_quest_in_czech():

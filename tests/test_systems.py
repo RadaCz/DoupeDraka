@@ -251,10 +251,10 @@ def test_combat_calculator_rejects_bad_levels():
 
 def test_presets_match_the_design():
     assert set(HEROES) == {"tank", "skirmisher", "support", "healer"}
-    assert HEROES["tank"].race == "half_orc"
-    assert HEROES["tank"].character_class == "barbarian"
+    assert HEROES["tank"].race == "human"
+    assert HEROES["tank"].character_class == "fighter"
     assert HEROES["skirmisher"].character_class == "rogue"
-    assert HEROES["support"].character_class == "bard"
+    assert HEROES["support"].character_class == "wizard"
     assert HEROES["healer"].character_class == "cleric"
 
 

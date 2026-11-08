@@ -45,6 +45,7 @@ export interface RaceReference {
   ability_increase: Record<string, number>;
   subraces: string[];
   traits: Array<{ name: string; text: string }>;
+  mvp_playable?: boolean;
 }
 
 export interface ClassReference {
@@ -56,9 +57,44 @@ export interface ClassReference {
   armor: string[];
   weapons: string[];
   subclasses: Array<{ name: string; text: string }>;
+  mvp_playable?: boolean;
+}
+
+export interface QuestStepReference {
+  id: string;
+  label: string;
+  hint: string;
+  location?: string | null;
+}
+
+export interface QuestCatalog {
+  campaigns: Array<{
+    id: string;
+    title: string;
+    category: string;
+    steps: QuestStepReference[];
+  }>;
+  side_quests: Array<{
+    id: string;
+    title: string;
+    hint: string;
+    location: string;
+    reward_flag: string;
+  }>;
+}
+
+export interface RulesetReference {
+  edition: string;
+  label: string;
+  max_level: number;
+  mvp_races: string[];
+  mvp_classes: string[];
+  notes: string;
 }
 
 export interface ReferenceCatalog {
+  ruleset?: RulesetReference;
+  quests?: QuestCatalog;
   races: RaceReference[];
   classes: ClassReference[];
   feats: Array<{ name: string; prerequisite: string; benefits: string[] }>;

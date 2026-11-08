@@ -219,6 +219,14 @@ const cs: Record<string, string> = {
   'Return the shrine bell': 'Vratit chramovy zvon',
   'Search the cellar': 'Prohledat sklep',
   'Listen for movement': 'Naslouchat pohybu',
+  Planned: 'Pripravovano',
+  'Ruleset v1 supports Human, Elf, Dwarf, and Halfling for chapter one.':
+    'Ruleset v1 podporuje pro kapitolu 1 lidskou, elfskou, trpaslickou a halfling rasu.',
+  'Ruleset v1 supports Fighter, Rogue, Cleric, and Wizard in play.':
+    'Ruleset v1 podporuje ve hre bojovnika, lupice, kneze a maga.',
+  'SIDE QUEST': 'VEDLEJSI UKOL',
+  'Echo of the Forgotten': 'Ozvena zapomenutych',
+  'Relic secured in the Forgotten Crypt.': 'Relikvie je zajistena ve Zapomenutem krypte.',
   'Inspect the stonework': 'Prozkoumat zdivo',
   'YOUR MOVE': 'TVUJ TAH',
   'YOU COULD': 'MUZES ZKUSIT',

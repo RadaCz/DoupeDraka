@@ -691,13 +691,14 @@ function AppContent() {
         )}
         {screen === 'more' && <MoreScreen onNavigate={navigate} />}
         {screen === 'map' && <MapScreen character={character} locations={catalog?.locations ?? []} onTravel={action => { navigate('game'); void takeAction(action); }} />}
-        {screen === 'quests' && <QuestScreen character={character} />}
+        {screen === 'quests' && <QuestScreen character={character} questCatalog={catalog?.quests} />}
         {screen === 'journal' && <JournalScreen events={events} character={character} />}
         {screen === 'character' && (
           <CharacterScreen
             character={character}
             characters={characters}
             spells={spells}
+            questCatalog={catalog?.quests}
             onSelect={selectCharacter}
             onCreate={() => navigate('create')}
             onOpenMap={() => navigate('map')}

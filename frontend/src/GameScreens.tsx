@@ -8,6 +8,7 @@ import type {
   JournalEvent,
   ReferenceCatalog,
   LocationReference,
+  QuestCatalog,
   Spell,
 } from './types';
 import { useI18n } from './i18n';
@@ -219,6 +220,7 @@ export function CharacterScreen({
   character,
   characters,
   spells,
+  questCatalog,
   onSelect,
   onCreate,
   onOpenMap,
@@ -226,6 +228,7 @@ export function CharacterScreen({
   character: Character | null;
   characters: Character[];
   spells: Spell[];
+  questCatalog?: QuestCatalog;
   onSelect: (character: Character) => void;
   onCreate: () => void;
   onOpenMap?: () => void;
@@ -242,7 +245,7 @@ export function CharacterScreen({
           <button type="button" role="tab" aria-selected={false} onClick={() => setTab('sheet')}>{t('Character sheet')}</button>
           <button type="button" role="tab" className="active" aria-selected onClick={() => setTab('quests')}>{t('Quests')}</button>
         </div>
-        <QuestPanel character={character} />
+        <QuestPanel character={character} questCatalog={questCatalog} />
         {onOpenMap && (
           <button type="button" className="text-button" onClick={onOpenMap}>{t('Open world map')}</button>
         )}
@@ -625,9 +628,23 @@ export function MapScreen({
   );
 }
 
-export function QuestPanel({ character }: { character: Character }) {
+function questStepsFromCatalog(questCatalog?: QuestCatalog) {
+  const campaign = questCatalog?.campaigns?.[0];
+  if (!campaign?.steps?.length) return undefined;
+  return campaign.steps.map(step => ({
+    id: step.id,
+    label: step.label,
+    hint: step.hint,
+    location: step.location ?? undefined,
+  }));
+}
+
+export function QuestPanel({ character, questCatalog }: { character: Character; questCatalog?: QuestCatalog }) {
   const { t } = useI18n();
-  const { done, active, teaser } = visibleQuestTimeline(character.quest_flags ?? {});
+  const stepSource = questStepsFromCatalog(questCatalog);
+  const { done, active, teaser } = visibleQuestTimeline(character.quest_flags ?? {}, stepSource);
+  const sideQuest = questCatalog?.side_quests?.[0];
+  const sideComplete = sideQuest ? Boolean(character.quest_flags?.[sideQuest.reward_flag]) : false;
   const atNextLocation = active?.location && character.location === active.location;
   return (
     <>
@@ -656,6 +673,13 @@ export function QuestPanel({ character }: { character: Character }) {
         </article>
       )}
       {teaser && <p className="quest-teaser">{t(teaser)}</p>}
+      {sideQuest && (
+        <article className={`quest-next-card ${sideComplete ? 'done' : ''}`}>
+          <p className="eyebrow">{t('SIDE QUEST')}</p>
+          <h2>{t(sideQuest.title)}</h2>
+          <p>{sideComplete ? t('Relic secured in the Forgotten Crypt.') : t(sideQuest.hint)}</p>
+        </article>
+      )}
       {done.length > 0 && (
         <ol className="quest-step-list">
           {done.map(step => (
@@ -673,14 +697,20 @@ export function QuestPanel({ character }: { character: Character }) {
   );
 }
 
-export function QuestScreen({ character }: { character: Character | null }) {
+export function QuestScreen({
+  character,
+  questCatalog,
+}: {
+  character: Character | null;
+  questCatalog?: QuestCatalog;
+}) {
   const { t } = useI18n();
   if (!character) {
     return <section className="screen"><p>{t('Choose or create an adventurer to track quests.')}</p></section>;
   }
   return (
     <section className="screen quest-screen">
-      <QuestPanel character={character} />
+      <QuestPanel character={character} questCatalog={questCatalog} />
     </section>
   );
 }

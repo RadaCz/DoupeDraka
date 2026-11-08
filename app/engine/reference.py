@@ -262,6 +262,8 @@ BACKGROUNDS = (
 
 
 def race_list() -> list[dict]:
+    from .ruleset_v1 import race_mvp_playable
+
     return [
         {
             "key": key,
@@ -270,12 +272,15 @@ def race_list() -> list[dict]:
             "ability_increase": spec.ability_increase,
             "subraces": list(spec.subraces),
             "traits": [{"name": trait.name, "text": trait.text} for trait in spec.traits],
+            "mvp_playable": race_mvp_playable(key),
         }
         for key, spec in RACE_SPECS.items()
     ]
 
 
 def class_list() -> list[dict]:
+    from .ruleset_v1 import class_mvp_playable
+
     return [
         {
             "key": key,
@@ -286,6 +291,7 @@ def class_list() -> list[dict]:
             "armor": list(spec.armor),
             "weapons": list(spec.weapons),
             "subclasses": [{"name": sub.name, "text": sub.text} for sub in spec.subclasses],
+            "mvp_playable": class_mvp_playable(key),
         }
         for key, spec in CLASS_SPECS.items()
     ]

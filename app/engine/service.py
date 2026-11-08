@@ -678,61 +678,16 @@ class GameEngine:
         return TurnResult(action, events, True)
 
     def _resolve_quest_action(self, character: CharacterState, action: str, step: str) -> TurnResult | None:
-        text = re.sub(r"\s+", " ", action.casefold().strip())
-        if character.in_combat:
-            return TurnResult(action, ["You cannot deal with the quest while a fight is still raging."], False)
-        flags = character.quest_flags
-        if step == "return_bell" and character.location == "The Shrine of the Forgotten":
-            if flags.get("bell_quest_complete"):
-                return TurnResult(action, ["Caldus has already received the shrine bell."], False)
-            if not (flags.get("bell_found") or flags.get("bell_acquired")):
-                return TurnResult(action, ["You do not have the shrine bell to return."], False)
-            flags["bell_quest_complete"] = True
-            flags["bell_acquired"] = True
-            character.inventory = [item for item in character.inventory if item.casefold() != "shrine bell"]
-            character.gold += 5
-            character.xp += 30
-            events = ["You return the shrine bell to Caldus and receive 5 gold pieces and 30 XP."]
-            level_events, level_up_facts = self._level_up(character)
-            events.extend(level_events)
-            return TurnResult(action, events, True, level_up_facts=level_up_facts)
+        from .quests import resolve_main_quest_step
 
-        if step == "accept_caldus" and character.location == "The Shrine of the Forgotten":
-            if flags.get("bell_quest_complete"):
-                if not flags.get("vault_hint_given"):
-                    flags["vault_hint_given"] = True
-                    flags["vault_unlocked"] = True
-                    return TurnResult(
-                        action,
-                        [
-                            "Caldus thanks you and warns that the bell thief fled toward "
-                            "The Vault of Echoes beneath the corridor. The Bell Warden still guards the pit.",
-                        ],
-                        True,
-                    )
-                return TurnResult(action, ["Caldus thanks you again for returning the shrine bell."], False)
-            if flags.get("bell_quest_accepted"):
-                return TurnResult(action, ["Caldus reminds you that Nib at the market saw the stolen bell."], False)
-            flags["bell_quest_accepted"] = True
-            return TurnResult(
-                action,
-                ["You agree to recover the stolen shrine bell. Caldus says Nib at the Goblin Market may know where it went."],
-                True,
-            )
-
-        if step == "ask_nib" and character.location == "The Goblin Market":
-            if flags.get("bell_quest_complete") or flags.get("bell_acquired"):
-                return TurnResult(action, ["Nib has nothing more to say about the shrine bell."], False)
-            if not flags.get("bell_quest_accepted"):
-                return TurnResult(action, ["Nib shrugs. You need a better reason to ask about the shrine bell."], False)
-            flags["bell_found"] = True
-            flags["bell_acquired"] = True
-            if "Shrine bell" not in character.inventory:
-                character.inventory.append("Shrine bell")
-            return TurnResult(action, ["Nib admits the theft and hands you the shrine bell."], True)
-        return None
+        return resolve_main_quest_step(character, action, step, self._level_up)
 
     def _explore(self, character: CharacterState, action: str) -> tuple[TurnResult, MonsterState | None]:
+        from .quests import try_side_quest_explore
+
+        side = try_side_quest_explore(character, action)
+        if side is not None:
+            return side, None
         if character.exploration_cooldown:
             character.exploration_cooldown -= 1
             return TurnResult(

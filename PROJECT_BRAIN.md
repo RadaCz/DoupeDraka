@@ -47,7 +47,7 @@ Do not conflate resources:
 4. OpenRouter provider and re-enable Pro tier only with a real adapter.
 5. Payments, multiplayer, and Redis remain deferred.
 
-See [ROADMAP.md](./ROADMAP.md) for statuses and [CHANGELOG.md](./CHANGELOG.md) for session history.
+See [ROADMAP.md](./ROADMAP.md) for statuses, [docs/MASTER_PLAN_STATUS.md](./docs/MASTER_PLAN_STATUS.md) for master-plan etapy, and [CHANGELOG.md](./CHANGELOG.md) for session history.
 
 ## 5. Documentation map
 

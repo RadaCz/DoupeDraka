@@ -127,19 +127,19 @@ export function suggestedActions(
   const actions: SuggestedAction[] = [];
   const npcTalk = resolveNpcTalkAction(character, t);
   if (npcTalk) actions.push(npcTalk);
-  if (injured) actions.push({ label: 'Recover your strength', action: 'rest' });
+  if (injured) actions.push({ label: t('Recover your strength'), action: 'rest' });
 
   if (latest.includes('tracks')) {
-    actions.push({ label: 'Study the fresh tracks', action: 'inspect the fresh tracks' });
+    actions.push({ label: t('Study the fresh tracks'), action: 'inspect the fresh tracks' });
   } else if (latest.includes('panel') || latest.includes('scratches')) {
-    actions.push({ label: 'Inspect the stone panel', action: 'inspect the stone panel' });
+    actions.push({ label: t('Inspect the stone panel'), action: 'inspect the stone panel' });
   } else if (latest.includes('gold pieces')) {
-    actions.push({ label: 'Search for more clues', action: `search ${character.location}` });
+    actions.push({ label: t('Search for more clues'), action: `search ${character.location}` });
   }
 
   actions.push({ label: t('Search the area'), action: `search ${character.location}` });
-  actions.push({ label: 'Listen for movement', action: 'listen for movement' });
-  actions.push({ label: 'Inspect the stonework', action: 'inspect the stonework' });
+  actions.push({ label: t('Listen for movement'), action: 'listen for movement' });
+  actions.push({ label: t('Inspect the stonework'), action: 'inspect the stonework' });
   const node = locations.find(location => location.name === character.location);
   const questsFlags = character.quest_flags ?? {};
   const nextLocation = node?.connections.find(route => routeOpen(route, questsFlags));

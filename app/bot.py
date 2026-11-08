@@ -37,6 +37,17 @@ async def create_character(message: Message) -> None:
     )
 
 
+@dp.message(Command("help"))
+async def help_command(message: Message) -> None:
+    await message.answer(
+        "DoupeDraka bezi v Telegram Mini App.\n\n"
+        "/start — otevrit hru\n"
+        "/help — tento navod\n\n"
+        "Postavu, tahy a kampan resis v aplikaci. Bot zatim neposila notifikace ani "
+        "pozvanky do druziny (prijdou v dalsi fazi)."
+    )
+
+
 async def main() -> None:
     token = get_settings().bot_token
     if not token:

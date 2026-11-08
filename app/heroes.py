@@ -36,16 +36,15 @@ HEROES: dict[str, HeroPreset] = {
     "tank": HeroPreset(
         key="tank",
         name="Grath",
-        race="half_orc",
-        character_class="barbarian",
+        race="human",
+        character_class="fighter",
         role="Tank",
-        # Highest HP in the game; strength 16 lands hits against low-level AC.
-        abilities=_abilities("barbarian", strength=16, constitution=16, dexterity=12, intelligence=8),
+        abilities=_abilities("fighter", strength=16, constitution=16, dexterity=12, intelligence=8),
     ),
     "skirmisher": HeroPreset(
         key="skirmisher",
         name="Vela",
-        race="human",
+        race="halfling",
         character_class="rogue",
         role="Skirmisher",
         # Dexterity drives both attack and armor class, so she dodges and stabs.
@@ -54,11 +53,10 @@ HEROES: dict[str, HeroPreset] = {
     "support": HeroPreset(
         key="support",
         name="Lyra",
-        race="half_elf",
-        character_class="bard",
+        race="elf",
+        character_class="wizard",
         role="Support",
-        # Charisma is the bard's spell ability; mana comes from it.
-        abilities=_abilities("bard", charisma=16, dexterity=14, constitution=13, strength=8),
+        abilities=_abilities("wizard", intelligence=16, dexterity=16, constitution=14, strength=8),
     ),
     "healer": HeroPreset(
         key="healer",

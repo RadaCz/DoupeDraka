@@ -20,8 +20,14 @@ def language_output_instruction(language_code: str) -> str:
     """System-prompt fragment: prose language vs English mechanic lines."""
     lang = normalize_narration_language(language_code)
     language = LANGUAGE_NAMES[lang]
-    return (
-        f"You are a D&D narrator. Write every sentence of story prose strictly in {language}. "
-        f"Do not translate game mechanics: keep ability names, roll labels, and engine fact lines "
-        f"(such as 'Dexterity check' or 'Attack roll') in English — the journal below repeats them verbatim."
-    )
+    parts = [
+        f"You are a D&D narrator. Write every sentence of story prose strictly in {language} ({lang}). ",
+        "Do not translate game mechanics: keep ability names, roll labels, and engine fact lines ",
+        "(such as 'Dexterity check' or 'Attack roll') in English — the journal below repeats them verbatim.",
+    ]
+    if lang == "cs":
+        parts.append(
+            " Output the story strictly in Czech (cs). Do not use English for prose — "
+            "only mechanic terms may stay in English."
+        )
+    return "".join(parts)

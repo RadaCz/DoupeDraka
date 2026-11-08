@@ -101,9 +101,10 @@ class Narrator:
             return await OfflineProvider().complete(request), "fallback"
         try:
             async with _provider_gate(settings.llm_max_concurrency):
-                return await gateway.complete(request)
+                narration, status = await gateway.complete(request)
         except PROVIDER_ERRORS:
             return await OfflineProvider().complete(request), "fallback"
+        return narration, status
 
     async def stream(self, context: NarrationContext) -> AsyncIterator[str | StreamReplaceFrame]:
         """Yield narration chunks after mechanics have already been committed."""
@@ -136,6 +137,11 @@ class Narrator:
             f"Structured engine facts: {self._structured_facts(context)}\n"
             f"Previous beats:\n{memories}"
         )
+        if language_code == "cs":
+            prompt += (
+                "\nRemind yourself: all story sentences must be Czech (cs). "
+                "Never answer with English prose."
+            )
         if defeat_line:
             prompt += f"\nScene directive: {defeat_line}"
         return NarrationRequest(

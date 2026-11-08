@@ -52,7 +52,15 @@ export function CharacterWizard({
     () => catalog.classes.find(item => item.key === classKey),
     [catalog.classes, classKey],
   );
-  const canAdvance = step === 1 ? Boolean(race) : step === 2 ? Boolean(characterClass) : step === 3 ? Boolean(name.trim()) : true;
+  const playableRaces = useMemo(
+    () => catalog.races.filter(item => item.mvp_playable !== false),
+    [catalog.races],
+  );
+  const playableClasses = useMemo(
+    () => catalog.classes.filter(item => item.mvp_playable !== false),
+    [catalog.classes],
+  );
+  const canAdvance = step === 1 ? Boolean(race && race.mvp_playable !== false) : step === 2 ? Boolean(characterClass && characterClass.mvp_playable !== false) : step === 3 ? Boolean(name.trim()) : true;
 
   const advance = () => {
     if (step < STEPS.length - 1 && canAdvance) setStep(current => current + 1);
@@ -111,8 +119,8 @@ export function CharacterWizard({
               type="button"
               className="choice-card custom-card"
               onClick={() => {
-                const race = catalog.races[Math.floor(Math.random() * catalog.races.length)];
-                const cls = catalog.classes[Math.floor(Math.random() * catalog.classes.length)];
+                const race = playableRaces[Math.floor(Math.random() * playableRaces.length)];
+                const cls = playableClasses[Math.floor(Math.random() * playableClasses.length)];
                 setRaceKey(race.key);
                 setClassKey(cls.key);
                 setName(t('Adventurer'));
@@ -144,13 +152,19 @@ export function CharacterWizard({
           <p className="eyebrow">{t('STEP 1 · YOUR PEOPLE')}</p>
           <h1 id="wizard-title">{t('Choose a species')}</h1>
           <p className="section-lead">{t('Each species brings its own traits and a different way to see the world.')}</p>
+          {catalog.ruleset && (
+            <p className="wizard-note">{t('Ruleset v1 supports Human, Elf, Dwarf, and Halfling for chapter one.')}</p>
+          )}
           <div className="selection-grid race-grid">
-            {catalog.races.map(item => (
+            {catalog.races.map(item => {
+              const planned = item.mvp_playable === false;
+              return (
               <button
                 type="button"
-                className={`selection-card ${raceKey === item.key ? 'selected' : ''}`}
+                className={`selection-card ${raceKey === item.key ? 'selected' : ''} ${planned ? 'planned' : ''}`}
                 key={item.key}
                 aria-pressed={raceKey === item.key}
+                disabled={planned}
                 onClick={() => setRaceKey(item.key)}
               >
                 <span className="card-title-row"><strong>{t(item.name)}</strong><small>{item.speed} ft.</small></span>
@@ -158,9 +172,10 @@ export function CharacterWizard({
                 <span className="trait-chips">
                   {item.traits.slice(0, 3).map(trait => <small key={trait.name}>{trait.name}</small>)}
                   {item.subraces.length > 0 && <small>{item.subraces.length} {t('lineages')}</small>}
+                  {planned && <small>{t('Planned')}</small>}
                 </span>
               </button>
-            ))}
+            );})}
           </div>
           {race && (
             <div className="selection-detail">
@@ -181,13 +196,19 @@ export function CharacterWizard({
           <p className="eyebrow">{t('STEP 2 · YOUR TRAINING')}</p>
           <h1 id="wizard-title">{t('Choose a class')}</h1>
           <p className="section-lead">{t('Your class shapes your strengths, defenses and place in a fight.')}</p>
+          {catalog.ruleset && (
+            <p className="wizard-note">{t('Ruleset v1 supports Fighter, Rogue, Cleric, and Wizard in play.')}</p>
+          )}
           <div className="selection-grid class-grid">
-            {catalog.classes.map(item => (
+            {catalog.classes.map(item => {
+              const planned = item.mvp_playable === false;
+              return (
               <button
                 type="button"
-                className={`selection-card ${classKey === item.key ? 'selected' : ''}`}
+                className={`selection-card ${classKey === item.key ? 'selected' : ''} ${planned ? 'planned' : ''}`}
                 key={item.key}
                 aria-pressed={classKey === item.key}
+                disabled={planned}
                 onClick={() => setClassKey(item.key)}
               >
                 <span className="card-title-row"><strong>{t(item.name)}</strong><small>d{item.hit_die}</small></span>
@@ -197,8 +218,9 @@ export function CharacterWizard({
                   {item.weapons.slice(0, 2).map(value => <small key={value}>{value}</small>)}
                 </span>
                 {item.subclasses[0] && <small className="subclass-hint">{t('SRD path:')} {item.subclasses[0].name}</small>}
+                {planned && <small>{t('Planned')}</small>}
               </button>
-            ))}
+            );})}
           </div>
           {characterClass && (
             <div className="selection-detail">

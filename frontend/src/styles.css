@@ -1349,6 +1349,11 @@ summary:focus-visible {
   box-shadow: inset 0 0 0 1px #4c9d6330;
 }
 
+.selection-card.planned {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .card-title-row {
   display: flex;
   align-items: baseline;
