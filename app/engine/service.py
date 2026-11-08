@@ -1,7 +1,7 @@
 import random, re, uuid
 from .catalog import ABILITY_ORDER, CLASSES, RACES, standard_abilities
-from .encounters import MONSTERS, build_monster
-from .equipment import attack_modifier, damage_modifier, default_item_instances, equipped_weapon
+from .encounters import MONSTERS, build_monster, filter_encounter_pool
+from .equipment import attack_modifier, damage_modifier, default_item_instances, equipped_weapon, item_attack_bonus
 from .intent import (
     AMBIGUOUS,
     ATTACK,
@@ -20,6 +20,7 @@ from .intent import (
     parse_action_intent,
 )
 from .locations import LOCATIONS, is_travel_action, travel_allowed, travel_destination, visible_connections
+from .shop import SHOP_LOCATION, match_shop_listing, shop_catalog_message
 from .models import (
     DIFFICULTIES,
     HUMORS,
@@ -264,15 +265,31 @@ class GameEngine:
         return TurnResult(action, events, True), None if not character.in_combat else monster
 
     def _shop(self, character: CharacterState, action: str) -> TurnResult:
-        if character.location != "The Goblin Market":
+        if character.location != SHOP_LOCATION:
             return TurnResult(action, ["There is no shop here."], False)
-        if "potion" not in action.casefold():
-            return TurnResult(action, ["Nib sells healing potions for 3 gold each."], False)
-        if character.gold < 3:
-            return TurnResult(action, ["A healing potion costs 3 gold. You cannot afford it."], False)
-        character.gold -= 3
-        character.inventory.append("healing potion")
-        return TurnResult(action, ["You buy a healing potion from Nib for 3 gold."], True)
+        listing = match_shop_listing(action)
+        if listing is None:
+            return TurnResult(action, [shop_catalog_message()], False)
+        if listing.inventory_label.casefold() in {item.casefold() for item in character.inventory}:
+            return TurnResult(action, [f"You already carry {listing.shelf_name}."], False)
+        if character.gold < listing.price_gp:
+            return TurnResult(
+                action,
+                [f"{listing.shelf_name} costs {listing.price_gp} gp. You cannot afford it (you have {character.gold} gp)."],
+                False,
+            )
+        character.gold -= listing.price_gp
+        character.inventory.append(listing.inventory_label)
+        character.item_instances = default_item_instances(character.inventory)
+        return TurnResult(
+            action,
+            [f"You buy {listing.shelf_name} from Nib for {listing.price_gp} gp."],
+            True,
+            purchase_facts={
+                "item_name": listing.shelf_name,
+                "gold_spent": listing.price_gp,
+            },
+        )
 
     def _cast_spell(
         self, character: CharacterState, action: str, monster: MonsterState | None
@@ -626,13 +643,10 @@ class GameEngine:
         """Pick a threat suitable for the character's current tier."""
         location = LOCATIONS.get(character.location)
         pool = list(location.encounter_pool) if location else ["kobold", "goblin", "wolf", "bandit"]
-        if character.level >= 3:
-            if "ghoul" not in pool:
-                pool.append("ghoul")
-        if character.level >= 5:
-            if "ogre" not in pool:
-                pool.append("ogre")
-        return build_monster(character.difficulty, self.rng.choice(pool))
+        eligible = filter_encounter_pool(pool, character.level)
+        if character.level >= 5 and "ogre" not in eligible:
+            eligible.append("ogre")
+        return build_monster(character.difficulty, self.rng.choice(eligible))
 
     def _travel(self, character: CharacterState, action: str) -> TurnResult:
         destination = travel_destination(character.location, action)
@@ -814,7 +828,7 @@ class GameEngine:
 
     def attack(self, character: CharacterState, monster: MonsterState) -> list[str]:
         weapon = equipped_weapon(character)
-        bonus = attack_modifier(character, weapon)
+        bonus = attack_modifier(character, weapon) + item_attack_bonus(character)
         attack_roll = self.roll("1d20", bonus)
         weapon_label = weapon.name if weapon.key != "unarmed" else "your weapon"
         if attack_roll.values[0] == 1:

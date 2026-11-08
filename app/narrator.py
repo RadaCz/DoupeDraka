@@ -9,7 +9,7 @@ import json
 from .ai.base import NarrationContext, NarrationRequest
 from .ai.offline import OfflineProvider, narrate_offline as render_offline
 from .ai.ollama import PROVIDER_ERRORS
-from .ai.registry import provider_for
+from .ai.registry import narration_gateway_for
 from .engine.models import SAFE_RESPAWN_LOCATION
 from .narration_language import LANGUAGE_NAMES, language_output_instruction, normalize_narration_language
 from .settings import get_settings
@@ -57,6 +57,9 @@ class Narrator:
             HUMOR_DIRECTIVES.get(context.humor, HUMOR_DIRECTIVES["rare"]),
             LENGTH_DIRECTIVES[bool(context.verbose)],
         ]
+        memory = (context.long_term_memory or "").strip()
+        if memory:
+            parts.append(f"Long-term campaign memory: {memory}")
         defeat = Narrator._defeat_scene_instruction(context)
         if defeat:
             parts.append(defeat)
@@ -89,36 +92,29 @@ class Narrator:
         return (await self.narrate_detailed(context))[0]
 
     async def narrate_detailed(self, context: NarrationContext) -> tuple[str, str]:
-        """Return (prose, status) so callers can tell narration from fallback.
-
-        The status is what lets the API report honestly whether the model
-        actually answered, instead of labelling fallback prose as narration.
-        """
+        """Return (prose, status) so callers can tell narration from fallback."""
         settings = get_settings()
-        provider = provider_for(settings)
-        if provider is not None:
-            try:
-                async with _provider_gate(settings.llm_max_concurrency):
-                    narration = await provider.complete(self._request(context))
-                return narration, "narrated"
-            except PROVIDER_ERRORS:
-                # A local model that is slow, missing or misconfigured must never
-                # take the turn down: the offline storyteller answers instead.
-                pass
+        gateway = narration_gateway_for(settings)
         request = self._request(context)
-        return await OfflineProvider().complete(request), "fallback"
+        if not gateway.has_online_providers:
+            return await OfflineProvider().complete(request), "fallback"
+        try:
+            async with _provider_gate(settings.llm_max_concurrency):
+                return await gateway.complete(request)
+        except PROVIDER_ERRORS:
+            return await OfflineProvider().complete(request), "fallback"
 
     async def stream(self, context: NarrationContext) -> AsyncIterator[str]:
         """Yield narration chunks after mechanics have already been committed."""
         settings = get_settings()
-        provider = provider_for(settings)
+        gateway = narration_gateway_for(settings)
         request = self._request(context)
-        if provider is None:
+        if not gateway.has_online_providers:
             async for chunk in OfflineProvider().stream(request):
                 yield chunk
             return
         async with _provider_gate(settings.llm_max_concurrency):
-            async for chunk in provider.stream(request):
+            async for chunk in gateway.stream(request):
                 yield chunk
 
     @staticmethod

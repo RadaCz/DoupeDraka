@@ -66,6 +66,16 @@ class EventRecord(Base):
     __tablename__ = "events"
     id: Mapped[int] = mapped_column(Integer, primary_key=True); character_id: Mapped[str] = mapped_column(String(36), index=True)
     action: Mapped[str] = mapped_column(Text); result: Mapped[str] = mapped_column(Text); created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+
+class AnalyticsEvent(Base):
+    """Lightweight product telemetry (first-party, no third-party analytics)."""
+
+    __tablename__ = "analytics_events"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    event_type: Mapped[str] = mapped_column(String(64), index=True)
+    character_id: Mapped[str | None] = mapped_column(String(36), index=True, nullable=True)
+    metadata_json: Mapped[str] = mapped_column(Text, default="{}")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
 async def init_db() -> None:
     # Local SQLite development database; production PostgreSQL needs no directory.
     if get_settings().database_url.startswith("sqlite"):

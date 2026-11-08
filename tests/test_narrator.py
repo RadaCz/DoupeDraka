@@ -22,6 +22,19 @@ def test_offline_narrates_combat_defeat_respawn():
     assert "wake" in narration.lower() or "probud" in narration.lower()
 
 
+def test_long_term_memory_in_system_prompt():
+    context = NarrationContext(
+        action="look",
+        events=("A latch clicks.",),
+        location="The Whispering Cellar",
+        memories=(),
+        long_term_memory="Caldus wants the shrine bell returned.",
+    )
+    prompt = Narrator.system_prompt(context)
+    assert "Long-term campaign memory" in prompt
+    assert "shrine bell" in prompt
+
+
 def test_defeat_instruction_in_system_prompt():
     context = NarrationContext(
         action="attack",

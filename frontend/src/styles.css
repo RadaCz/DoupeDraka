@@ -1877,6 +1877,137 @@ summary:focus-visible {
   cursor: not-allowed;
 }
 
+.composer-send-spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(242, 246, 239, 0.35);
+  border-top-color: #f2f6ef;
+  border-radius: 50%;
+  animation: composer-spin 0.75s linear infinite;
+}
+
+@keyframes composer-spin {
+  to { transform: rotate(360deg); }
+}
+
+.journal-beat-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.share-button-wrap {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.share-chip {
+  border: 1px solid #3d5244;
+  background: #1a251d;
+  color: #b8d4be;
+  font-size: 0.78rem;
+  padding: 4px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.share-chip-gold {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.share-button-hint {
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.turn-moment-share {
+  margin: 0;
+}
+
+.turn-moment-card .share-chip {
+  width: 100%;
+  justify-content: center;
+}
+
+.inventory-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.inventory-item-card {
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  padding: 12px 10px;
+  border-radius: 12px;
+  border: 1px solid #2f3d32;
+  background: #151d17;
+  color: var(--text);
+  cursor: pointer;
+  text-align: center;
+  font-size: 0.88rem;
+}
+
+.inventory-item-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.inventory-item-icon {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.inventory-item-label {
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+.inventory-detail-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: grid;
+  place-items: end center;
+  padding: 20px 16px calc(20px + var(--tg-safe-bottom, env(safe-area-inset-bottom, 0px)));
+  background: rgba(8, 12, 10, 0.55);
+}
+
+.inventory-detail-card {
+  width: min(100%, 380px);
+  padding: 18px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  text-align: center;
+  display: grid;
+  gap: 10px;
+}
+
+.inventory-detail-icon {
+  font-size: 2rem;
+}
+
+.inventory-detail-card h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.inventory-detail-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+  font-size: 0.92rem;
+}
+
 .composer-help-popover {
   padding: 8px 10px;
   border: 1px solid #334837;

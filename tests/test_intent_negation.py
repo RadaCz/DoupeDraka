@@ -11,7 +11,7 @@ def _hero(**flags) -> CharacterState:
     game = GameEngine()
     hero = game.create_character(1, "Test", "human", "fighter")
     hero.quest_flags = dict(flags)
-    hero.gold = 10
+    hero.gold = 60
     hero.location = "The Goblin Market"
     return hero
 
@@ -114,7 +114,7 @@ def test_valid_buy_and_use_change_state_when_appropriate():
     hero = _hero()
     buy, _ = game.resolve_action(hero, "buy a healing potion", None)
     assert buy.state_changed
-    assert hero.gold == 7
+    assert hero.gold == 10
     hero.hp = hero.max_hp - 4
     use, _ = game.resolve_action(hero, "use potion", None)
     assert use.state_changed

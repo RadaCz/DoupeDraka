@@ -6,7 +6,10 @@ export const CHAPTER_ONE_LAYOUT: Record<string, { x: number; y: number }> = {
   'The Sunken Corridor': { x: 38, y: 52 },
   'The Shrine of the Forgotten': { x: 64, y: 38 },
   'The Goblin Market': { x: 88, y: 38 },
+  'The Bandit Camp': { x: 88, y: 18 },
   'The Vault of Echoes': { x: 38, y: 78 },
+  'The Forgotten Crypt': { x: 62, y: 78 },
+  'The Underground River': { x: 38, y: 32 },
   "The Bell Warden's Pit": { x: 38, y: 92 },
 };
 

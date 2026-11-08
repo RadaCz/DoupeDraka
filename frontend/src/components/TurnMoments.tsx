@@ -1,16 +1,22 @@
 import { useI18n } from '../i18n';
 import type { LevelUpNotice } from '../game/turnMoments';
+import type { Character } from '../types';
+import { ShareButton } from './ShareButton';
+import { buildLevelUpShareMessage } from '../share/adventureShare';
 
 export type { LevelUpNotice };
 
 export function LevelUpModal({
   notice,
+  character,
   onDismiss,
 }: {
   notice: LevelUpNotice;
+  character: Character;
   onDismiss: () => void;
 }) {
   const { t } = useI18n();
+  const shareMessage = buildLevelUpShareMessage(character, notice.level);
   return (
     <div className="turn-moment-overlay" role="dialog" aria-modal="true" aria-labelledby="level-up-title">
       <div className="turn-moment-card level-up-card">
@@ -18,6 +24,9 @@ export function LevelUpModal({
         <h2 id="level-up-title">{t('Level')} {notice.level}</h2>
         <p className="turn-moment-body">
           {t('Maximum HP increased by {amount}.').replace('{amount}', String(notice.hpGained))}
+        </p>
+        <p className="turn-moment-share">
+          <ShareButton message={shareMessage} className="share-chip share-chip-gold" />
         </p>
         <button type="button" className="primary" onClick={onDismiss}>
           {t('Continue adventure')}

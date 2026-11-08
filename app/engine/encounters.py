@@ -51,12 +51,37 @@ MONSTERS = {
     "goblin": MonsterTemplate("goblin", "Goblin scout", 1, 7, 13, 4, "1d6", 2, 50),
     "kobold": MonsterTemplate("kobold", "Kobold skirmisher", 1, 5, 12, 3, "1d4", 1, 35),
     "wolf": MonsterTemplate("wolf", "Starving wolf", 1, 11, 13, 4, "1d6", 2, 60),
+    "skeleton": MonsterTemplate("skeleton", "Rattling skeleton", 1, 13, 13, 4, "1d6", 2, 50),
     "bandit": MonsterTemplate("bandit", "Road bandit", 2, 11, 12, 3, "1d6", 1, 70),
+    "hobgoblin": MonsterTemplate("hobgoblin", "Hobgoblin soldier", 2, 11, 18, 3, "1d8", 1, 85),
     "ghoul": MonsterTemplate("ghoul", "Cellar ghoul", 2, 22, 12, 4, "1d8", 2, 110),
+    "orc": MonsterTemplate("orc", "Orc marauder", 2, 15, 13, 5, "1d12", 3, 100),
+    "bandit_captain": MonsterTemplate(
+        "bandit_captain", "Bandit captain", 3, 28, 15, 5, "1d8", 3, 150,
+    ),
     "ogre": MonsterTemplate("ogre", "Cellar ogre", 3, 44, 11, 6, "2d8", 4, 200),
     "bell_warden": MonsterTemplate(
         "bell_warden", "Bell Warden", 3, 38, 15, 6, "1d10", 4, 180,
     ),
+}
+
+DEX_SAVE_MODIFIERS = {
+    "goblin": 2,
+    "kobold": 2,
+    "wolf": 2,
+    "skeleton": 2,
+    "bandit": 1,
+    "hobgoblin": 1,
+    "ghoul": 2,
+    "orc": 1,
+    "bandit_captain": 2,
+    "ogre": -1,
+    "bell_warden": 0,
+}
+
+WIS_SAVE_MODIFIERS = {
+    "wolf": 1,
+    "kobold": -1,
 }
 
 # The default fight when a player attacks without naming a target.
@@ -71,6 +96,22 @@ def parse_damage(damage: str) -> tuple[str, int]:
 
 def format_damage(dice: str, bonus: int) -> str:
     return f"{dice}+{bonus}" if bonus else dice
+
+
+def tier_allowed_for_level(template: MonsterTemplate, level: int) -> bool:
+    """Gate encounter pool picks by character level (tier 1 at L1+, tier 2 at L2+, etc.)."""
+    if template.tier <= 1:
+        return level >= 1
+    if template.tier == 2:
+        return level >= 2
+    if template.tier == 3:
+        return level >= 3
+    return level >= 4
+
+
+def filter_encounter_pool(pool: tuple[str, ...] | list[str], level: int) -> list[str]:
+    keys = [key for key in pool if key in MONSTERS and tier_allowed_for_level(MONSTERS[key], level)]
+    return keys or [key for key in pool if key in MONSTERS]
 
 
 def resolve_template(target: str | None) -> MonsterTemplate:
@@ -101,10 +142,8 @@ def build_monster(difficulty: str = "normal", target: str | None = None) -> Mons
         damage=format_damage(scaled.damage_dice, scaled.damage_bonus),
         reward_xp=scaled.reward_xp,
         saving_throws={
-            "dexterity": {
-                "goblin": 2, "kobold": 2, "wolf": 2, "bandit": 1, "ghoul": 2, "ogre": -1, "bell_warden": 0,
-            }[scaled.key],
-            "wisdom": {"wolf": 1, "kobold": -1}.get(scaled.key, 0),
+            "dexterity": DEX_SAVE_MODIFIERS.get(scaled.key, 0),
+            "wisdom": WIS_SAVE_MODIFIERS.get(scaled.key, 0),
         },
     )
 

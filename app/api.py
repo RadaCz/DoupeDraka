@@ -9,11 +9,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
-from sqlalchemy import select, text, update
+from sqlalchemy import func, select, text, update
 from sqlalchemy.exc import IntegrityError
 import bcrypt
 from .auth.telegram import InitDataError, verify_init_data
-from .db import ActionReceipt, CharacterRecord, EventRecord, EnergyTransaction, User, ApiKey, Session, decode_character_state, decode_state, encode_character_state, encode_state, init_db
+from .db import ActionReceipt, AnalyticsEvent, CharacterRecord, EventRecord, EnergyTransaction, User, ApiKey, Session, decode_character_state, decode_state, encode_character_state, encode_state, init_db
 from .engine import economy, reference, tools
 from .engine.models import CharacterState, MonsterState
 from .engine.locations import LOCATIONS
@@ -21,7 +21,16 @@ from .engine.service import GameEngine
 from .heroes import HEROES, get_hero
 from .narration_events import defeat_facts_from_events
 from .narration_language import normalize_narration_language
+from .memory_summarizer import maybe_archive_journal
+from .admin_stats import aggregate_admin_stats
+from .telemetry import (
+    analytics_rows_from_turn,
+    append_analytics,
+    record_character_created,
+    record_llm_narration_status,
+)
 from .narrator import NarrationContext, Narrator
+from .ai.registry import narration_gateway_for
 from .schemas import ActionRequest, ActionResponse, CharacterCreate, CharacterSettings, CharacterTier, CombatCalculatorRequest, TelegramAuthRequest, Token, TopUpRequest, UserCreate, UserResponse
 from .settings import get_settings
 from .logging import logger
@@ -218,6 +227,7 @@ async def create_from_preset(key: str, user: User = Depends(get_user_by_token)) 
     character = build_character(user, hero.name, hero.race, hero.character_class, hero.abilities)
     async with Session() as session:
         await persist_character(session, character)
+        record_character_created(session, character.id, character.race, character.character_class)
         await session.commit()
     logger.info(f"Preset character created: {character.name} from {key} by {user.username}")
     return asdict(character)
@@ -280,6 +290,7 @@ async def create_character(request: CharacterCreate, user: User = Depends(get_us
         raise HTTPException(422, str(error)) from error
     async with Session() as session:
         await persist_character(session, character)
+        record_character_created(session, character.id, character.race, character.character_class)
         await session.commit()
     logger.info(f"Character created: {character.name} by user {user.username}")
     return asdict(character)
@@ -344,6 +355,14 @@ async def set_tier(request: CharacterTier, user: User = Depends(get_user_by_toke
     tier = economy.MODEL_TIERS[request.tier]
     logger.info(f"Tier changed for {user.username}: {request.tier}")
     return {"tier": tier.key, "cost": economy.to_units(tier.cost_tenths), "label": tier.label}
+
+@app.get("/admin/stats")
+async def admin_stats(x_admin_token: str = Header(default="", alias="X-Admin-Token")) -> dict:
+    """Aggregated product telemetry (admin token required)."""
+    require_admin(x_admin_token)
+    async with Session() as session:
+        return await aggregate_admin_stats(session)
+
 
 @app.post("/economy/topup")
 async def top_up(request: TopUpRequest, user: User = Depends(get_user_by_token), x_admin_token: str = Header(default="")) -> dict:
@@ -434,6 +453,7 @@ def build_narration_context(
         rest_facts=rest_facts,
         level_up_facts=level_up_facts,
         defeat_facts=defeat_facts_from_events(events),
+        long_term_memory=character.long_term_memory,
     )
 
 
@@ -463,7 +483,13 @@ async def replay_receipt(key: str, user: User) -> ActionResponse | None:
         return ActionResponse(**decode_state(receipt.response))
 
 
-async def narrate_committed(context: NarrationContext, event_id: int, key: str, fallback: str) -> tuple[str, str]:
+async def narrate_committed(
+    context: NarrationContext,
+    event_id: int,
+    key: str,
+    fallback: str,
+    character_id: str | None = None,
+) -> tuple[str, str]:
     """Narrate a turn that is already durable.
 
     The model only chooses wording, and it runs after the commit, so a slow or
@@ -474,7 +500,9 @@ async def narrate_committed(context: NarrationContext, event_id: int, key: str, 
         narration, status = await narrator.narrate_detailed(context)
     except Exception:  # a broken model must never cost the player their turn
         logger.exception(f"Narration failed for event {event_id}; keeping fallback prose")
+        record_llm_narration_status(character_id, "fallback")
         return fallback, "fallback"
+    record_llm_narration_status(character_id, status if narration.strip() else "fallback")
     if status != "narrated" or not narration.strip():
         return fallback, "fallback"
     async with Session() as session:
@@ -543,7 +571,9 @@ async def action(
         logger.info(f"Replayed committed turn for character {character_id}")
         return response
     assert context is not None and event_id is not None
-    response.narration, response.narration_status = await narrate_committed(context, event_id, key, response.narration)
+    response.narration, response.narration_status = await narrate_committed(
+        context, event_id, key, response.narration, character_id=character_id,
+    )
     logger.info(f"Action processed for character {character_id}: {payload.action.strip()[:50]}")
     return response
 
@@ -576,7 +606,7 @@ async def action_stream(
 
         assert context is not None and event_id is not None
         chunks: list[str] = []
-        status = "narrated" if get_settings().llm_provider.lower() == "ollama" else "fallback"
+        status = "narrated" if narration_gateway_for(get_settings()).has_online_providers else "fallback"
         try:
             async for chunk in narrator.stream(context):
                 if chunk:
@@ -605,6 +635,7 @@ async def action_stream(
                     receipt.response = encode_state(response.model_dump())
                     receipt.status = "complete"
             await session.commit()
+        record_llm_narration_status(character_id, status)
         yield sse_message(
             "complete",
             {"narration": narration, "narration_status": status},
@@ -661,13 +692,21 @@ async def commit_action_turn(
                 logger.warning(f"Action attempted by dead character {character_id}")
                 raise HTTPException(409, "Character has fallen and can no longer act")
             history = (await session.scalars(
-                select(EventRecord).where(EventRecord.character_id == character_id)
-                .order_by(EventRecord.id.desc()).limit(5)
+                select(EventRecord)
+                .where(
+                    EventRecord.character_id == character_id,
+                    EventRecord.id > character.journal_archived_through_event_id,
+                )
+                .order_by(EventRecord.id.desc())
+                .limit(5)
             )).all()
             memories = [row.result for row in reversed(history)]
-            if character.memory_summary:
+            if character.long_term_memory.strip():
+                memories.insert(0, f"Long-term memory: {character.long_term_memory.strip()}")
+            elif character.memory_summary:
                 memories.insert(0, f"Campaign memory: {character.memory_summary}")
 
+            turn_location = character.location
             active_monster = MonsterState(**character.combatant) if character.combatant else None
             result, monster = game.resolve_action(character, text, active_monster)
             account = (
@@ -730,6 +769,18 @@ async def commit_action_turn(
             session.add(event)
             await session.flush()
             event_id = event.id
+            character.turn_count += 1
+            character = await maybe_archive_journal(session, character_id, character)
+            record.payload = encode_character_state(asdict(character))
+            append_analytics(
+                session,
+                analytics_rows_from_turn(
+                    character_id,
+                    result,
+                    location=turn_location,
+                    monster_name=active_monster.name if active_monster else None,
+                ),
+            )
 
             response = ActionResponse(
                 events=result.events, narration=fallback, character=asdict(character),

@@ -658,7 +658,7 @@ function AppContent() {
         {screen === 'more' && <MoreScreen onNavigate={navigate} />}
         {screen === 'map' && <MapScreen character={character} locations={catalog?.locations ?? []} onTravel={action => { navigate('game'); void takeAction(action); }} />}
         {screen === 'quests' && <QuestScreen character={character} />}
-        {screen === 'journal' && <JournalScreen events={events} />}
+        {screen === 'journal' && <JournalScreen events={events} character={character} />}
         {screen === 'character' && (
           <CharacterScreen
             character={character}
@@ -689,8 +689,12 @@ function AppContent() {
         <BottomNav screen={screen} onNavigate={navigate} />
       )}
 
-      {levelUpNotice && (
-        <LevelUpModal notice={levelUpNotice} onDismiss={() => setLevelUpNotice(null)} />
+      {levelUpNotice && character && (
+        <LevelUpModal
+          notice={levelUpNotice}
+          character={character}
+          onDismiss={() => setLevelUpNotice(null)}
+        />
       )}
       {showDefeatOverlay && (
         <DefeatOverlay onDismiss={() => setShowDefeatOverlay(false)} />

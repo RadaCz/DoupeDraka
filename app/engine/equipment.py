@@ -18,6 +18,18 @@ class WeaponDefinition:
     finesse: bool = False
 
 
+# Inventory labels that map to a weapon definition plus optional attack bonus (magic gear).
+INVENTORY_GEAR: dict[str, tuple[str | None, int]] = {
+    "shortsword +1": ("shortsword", 1),
+    "shortsword": ("shortsword", 0),
+    "longsword": ("longsword", 0),
+    "rapier": ("rapier", 0),
+    "mace": ("mace", 0),
+    "dagger": ("dagger", 0),
+    "healing potion": (None, 0),
+}
+
+
 WEAPONS: dict[str, WeaponDefinition] = {
     "unarmed": WeaponDefinition("unarmed", "unarmed strike", "1d4", "strength"),
     "shortsword": WeaponDefinition("shortsword", "shortsword", "1d6", "strength", finesse=True),
@@ -35,9 +47,19 @@ def proficiency_bonus(level: int) -> int:
 def weapon_key_from_inventory(inventory: list[str]) -> str:
     for item in inventory:
         key = item.casefold().strip()
+        mapped = INVENTORY_GEAR.get(key)
+        if mapped and mapped[0]:
+            return mapped[0]
         if key in WEAPONS:
             return key
     return "unarmed"
+
+
+def item_attack_bonus(character: CharacterState) -> int:
+    for entry in character.item_instances:
+        if entry.get("equipped"):
+            return int(entry.get("attack_bonus", 0))
+    return 0
 
 
 def equipped_weapon(character: CharacterState) -> WeaponDefinition:
@@ -89,7 +111,9 @@ def default_item_instances(inventory: list[str]) -> list[dict]:
     equipped_weapon_set = False
     for index, label in enumerate(inventory):
         key = label.casefold().strip()
-        definition = WEAPONS.get(key)
+        gear = INVENTORY_GEAR.get(key)
+        definition = WEAPONS.get(gear[0]) if gear and gear[0] else WEAPONS.get(key)
+        attack_bonus = gear[1] if gear else 0
         equipped = bool(definition and not equipped_weapon_set)
         if equipped:
             equipped_weapon_set = True
@@ -98,5 +122,6 @@ def default_item_instances(inventory: list[str]) -> list[dict]:
             "definition_id": definition.key if definition else key.replace(" ", "_"),
             "name": label,
             "equipped": equipped,
+            "attack_bonus": attack_bonus if equipped else 0,
         })
     return instances

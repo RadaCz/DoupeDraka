@@ -2,6 +2,18 @@
 
 ## Unreleased (2026-11-08)
 
+### Telemetry & admin
+- `analytics_events` table; hooks for character create, level-up, death, shop purchase, LLM fallback/narration status.
+- `GET /admin/stats` (X-Admin-Token); `scripts/seed_test_data.py` for QA seeding.
+
+### LLM gateway & journal memory (D7)
+- `NarrationGateway` chains NVIDIA NIM, Groq, Cerebras, Ollama, then offline on 429/5xx/timeout; SSE switches to offline if a stream dies mid-token.
+- Character JSONB: `long_term_memory`, `journal_archived_through_event_id`, `turn_count`; every 20 turns archives 10 oldest journal beats into a summary for the narrator system prompt.
+
+### Content expansion
+- SRD-style bestiary entries (skeleton, orc, hobgoblin, bandit captain) with level-gated encounter pools; three new locations (Forgotten Crypt, Bandit Camp, Underground River).
+- Nib’s shop at The Goblin Market: Healing Potion (50 gp) and Shortsword +1 (100 gp, +1 attack while equipped).
+
 ### Engine: defeat recovery & initiative
 - Combat knockout resets to `The Whispering Cellar` at 1 HP (no negative HP); `attack`/`cast`/`flee`/`defend`/potion require `combat_turn == player`; initiative uses DEX for both sides.
 

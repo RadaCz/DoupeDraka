@@ -1,4 +1,4 @@
-"""Data for the first four connected campaign locations."""
+"""Campaign location graph, encounter pools, and travel helpers."""
 
 from dataclasses import dataclass
 import re
@@ -20,7 +20,7 @@ LOCATIONS = {
         Location(
             name="The Whispering Cellar",
             connections=("The Sunken Corridor",),
-            encounter_pool=("kobold", "goblin", "wolf", "bandit"),
+            encounter_pool=("kobold", "goblin", "wolf", "skeleton", "bandit"),
             track_discovery="Fresh tracks cross the dust and lead toward the sunken corridor.",
             clue_discovery="Scratches around a stone panel mark the cellar's hidden passage.",
             arrival_beat="A cold draft curls around the old stone stairs.",
@@ -31,8 +31,9 @@ LOCATIONS = {
                 "The Shrine of the Forgotten",
                 "The Whispering Cellar",
                 "The Vault of Echoes",
+                "The Underground River",
             ),
-            encounter_pool=("kobold", "goblin", "wolf", "ghoul"),
+            encounter_pool=("kobold", "goblin", "wolf", "skeleton", "ghoul"),
             track_discovery="Wet footprints lead toward a pale light beneath the shrine doors.",
             clue_discovery="A brass token stamped with a broken moon lies in the silt.",
             arrival_beat="Mara, a lantern-bearing scavenger, warns that something follows the waterway.",
@@ -40,23 +41,23 @@ LOCATIONS = {
         Location(
             name="The Shrine of the Forgotten",
             connections=("The Goblin Market", "The Sunken Corridor"),
-            encounter_pool=("bandit", "ghoul", "wolf"),
+            encounter_pool=("bandit", "ghoul", "wolf", "skeleton"),
             track_discovery="Boot prints cross the shrine dust and continue toward a crowded bazaar.",
             clue_discovery="An offering bowl hides a map fragment marked with a green hand.",
             arrival_beat="A quiet caretaker named Caldus asks you to return a stolen shrine bell.",
         ),
         Location(
             name="The Goblin Market",
-            connections=("The Shrine of the Forgotten",),
-            encounter_pool=("kobold", "goblin", "bandit"),
+            connections=("The Shrine of the Forgotten", "The Bandit Camp"),
+            encounter_pool=("kobold", "goblin", "bandit", "hobgoblin"),
             track_discovery="A trail of copper scales vanishes behind the market's shuttered stalls.",
             clue_discovery="Nib, a goblin trader, claims the stolen shrine bell changed hands at this market.",
             arrival_beat="Goblin trader Nib watches from a stall of mismatched charms and stolen bells.",
         ),
         Location(
             name="The Vault of Echoes",
-            connections=("The Sunken Corridor", "The Bell Warden's Pit"),
-            encounter_pool=("ghoul", "bandit", "wolf"),
+            connections=("The Sunken Corridor", "The Bell Warden's Pit", "The Forgotten Crypt"),
+            encounter_pool=("ghoul", "bandit", "wolf", "skeleton", "orc"),
             track_discovery="Bell scratches mark a spiral path deeper into the vault.",
             clue_discovery="A rusted key ring holds a shrine tag that reads 'return what was stolen'.",
             arrival_beat="Damp stone amplifies every footstep; broken bells hang from rusted chains.",
@@ -64,13 +65,38 @@ LOCATIONS = {
         Location(
             name="The Bell Warden's Pit",
             connections=("The Vault of Echoes",),
-            encounter_pool=("bell_warden", "ghoul"),
+            encounter_pool=("bell_warden", "ghoul", "orc"),
             track_discovery="The pit floor is scorched in a ring around a shattered brazier.",
             clue_discovery="Carved into the wall: 'The Warden keeps tolls even in death.'",
             arrival_beat="A hulking Bell Warden stirs, shackled bells rattling on its rusted armor.",
         ),
+        Location(
+            name="The Forgotten Crypt",
+            connections=("The Vault of Echoes", "The Underground River"),
+            encounter_pool=("skeleton", "ghoul", "wolf", "hobgoblin"),
+            track_discovery="Bone dust swirls in a draft from deeper niches.",
+            clue_discovery="A nameless sarcophagus lid bears claw marks from the inside.",
+            arrival_beat="Collapsed biers and cracked skulls remember a burial rite gone wrong.",
+        ),
+        Location(
+            name="The Bandit Camp",
+            connections=("The Goblin Market",),
+            encounter_pool=("bandit", "bandit_captain", "orc", "wolf"),
+            track_discovery="Cookfire smoke stains the tree line above hidden tents.",
+            clue_discovery="A bounty notice lists stolen shrine goods headed for the market.",
+            arrival_beat="Rough laughter and whetstones — a bandit captain drills recruits by firelight.",
+        ),
+        Location(
+            name="The Underground River",
+            connections=("The Sunken Corridor", "The Forgotten Crypt"),
+            encounter_pool=("kobold", "ghoul", "skeleton", "orc"),
+            track_discovery="Cold water trails toward a tunnel mouth slick with moss.",
+            clue_discovery="A ferry chain hangs broken; something dragged it into the dark.",
+            arrival_beat="Black water whispers past echoing stone; the current tugs at your boots.",
+        ),
     )
 }
+
 
 def travel_allowed(destination: str, quest_flags: dict) -> bool:
     """Campaign gates for chapter one routes."""

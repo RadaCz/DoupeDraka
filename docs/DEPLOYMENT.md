@@ -74,6 +74,31 @@ Narration failure falls back without blocking or undoing a committed turn.
 Real payments are not enabled. Top-up routes remain admin-gated; do not configure a
 production payment flow without a separate product/security review.
 
+## Admin telemetry
+
+Set `ADMIN_API_KEY` (alias: `ADMIN_TOKEN`) in the API `.env`. Pass it as the
+`X-Admin-Token` header on admin routes.
+
+```powershell
+curl -s -H "X-Admin-Token: $env:ADMIN_API_KEY" http://127.0.0.1:8000/admin/stats
+```
+
+The response includes character counts, deaths per character, popular shop items,
+and LLM fallback rates from the first-party `analytics_events` table (no third-party
+analytics SDK).
+
+## Seed script (QA / load smoke)
+
+From the repo root with the same `DATABASE_URL` as the API:
+
+```powershell
+python scripts/seed_test_data.py
+```
+
+This creates user `qa_seed_player`, five leveled characters with varied inventories,
+and fifty random engine turns plus journal rows. Use it to exercise the UI and DB
+without manual play.
+
 ## Known deprecation warnings (documented, not yet refactored)
 
 - FastAPI `@app.on_event("startup")` — migrate to lifespan handlers when touching `app/api.py` startup.

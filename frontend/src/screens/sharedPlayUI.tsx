@@ -4,6 +4,8 @@ import type { Character, JournalEvent, LocationReference, Spell } from '../types
 import { useI18n } from '../i18n';
 import { isFallenError, playActionChips, scenePrompt } from '../game/gameActions';
 import { JournalResultBody } from '../components/journalBlocks';
+import { ShareButton } from '../components/ShareButton';
+import { buildJournalShareMessage, journalExcerpt } from '../share/adventureShare';
 import { SpellSlots } from '../components/characterVitals';
 
 export interface PlayScreenProps {
@@ -138,7 +140,12 @@ export function PlayJournal({
       )}
       {events.map(event => (
         <article className={`journal-beat ${event.result.includes('LEVEL UP!') ? 'level-up-entry' : ''}`} key={event.id}>
-          <time>{new Date(event.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</time>
+          <div className="journal-beat-head">
+            <time>{new Date(event.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</time>
+            <ShareButton
+              message={buildJournalShareMessage(character, journalExcerpt(event.result), event.action)}
+            />
+          </div>
           <p className="journal-action"><span aria-hidden="true">›</span> {event.action}</p>
           {event.result.includes('LEVEL UP!') && <strong className="level-up-banner">{t('LEVEL UP')}</strong>}
           {event.action.toLowerCase().includes('rest') && event.result.toLowerCase().includes('cannot rest') && (
@@ -356,8 +363,9 @@ export function ActionComposer(props: PlayScreenProps) {
             className="composer-send"
             disabled={busy || !action.trim() || Boolean(spellWarning)}
             aria-label={t('Send action')}
+            aria-busy={busy}
           >
-            →
+            {busy ? <span className="composer-send-spinner" aria-hidden="true" /> : '→'}
           </button>
         </div>
       </form>

@@ -15,6 +15,9 @@ def test_location_graph_is_connected():
         "The Goblin Market",
         "The Vault of Echoes",
         "The Bell Warden's Pit",
+        "The Forgotten Crypt",
+        "The Bandit Camp",
+        "The Underground River",
     }
     for name, location in LOCATIONS.items():
         for destination in location.connections:

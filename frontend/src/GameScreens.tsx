@@ -14,7 +14,10 @@ import { useI18n } from './i18n';
 import { CHAPTER_ONE_LAYOUT, mapEdges, mapLockReason, mapNodeState, routeOpen } from './chapterOneMap';
 import { chapterOneQuestProgress, visibleQuestTimeline } from './questProgress';
 import { JournalResultBody } from './components/journalBlocks';
+import { InventoryList } from './components/InventoryList';
+import { ShareButton } from './components/ShareButton';
 import { HpBar, SpellSlots, titleCase } from './components/characterVitals';
+import { buildJournalShareMessage, journalExcerpt } from './share/adventureShare';
 import { GameScreenRouter } from './screens/GameScreenRouter';
 
 const ABILITIES = ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'];
@@ -293,19 +296,7 @@ export function CharacterScreen({
       <details className="character-panel" open>
         <summary>{t('Inventory')}</summary>
         <div className="inventory-card">
-          {(character.inventory?.length ? character.inventory : [t('Your pack is empty')]).map((item, index) => {
-            const lower = item.toLowerCase();
-            const glyph = lower.includes('sword') || lower.includes('bow') ? '⚔'
-              : lower.includes('armor') || lower.includes('clothes') ? '🛡'
-              : lower.includes('potion') ? '⚗'
-              : '◇';
-            return (
-              <div key={`${item}-${index}`} className="inventory-row">
-                <span className="inventory-glyph" aria-hidden="true">{glyph}</span>
-                <span>{item}</span>
-              </div>
-            );
-          })}
+          <InventoryList items={character.inventory ?? []} />
         </div>
       </details>
       <details className="character-panel" open>
@@ -694,7 +685,13 @@ export function QuestScreen({ character }: { character: Character | null }) {
   );
 }
 
-export function JournalScreen({ events }: { events: JournalEvent[] }) {
+export function JournalScreen({
+  events,
+  character,
+}: {
+  events: JournalEvent[];
+  character: Character | null;
+}) {
   const { t } = useI18n();
   return (
     <section className="screen">
@@ -703,7 +700,18 @@ export function JournalScreen({ events }: { events: JournalEvent[] }) {
         {events.length === 0 && <p>{t('Your story has not begun yet.')}</p>}
         {events.map(event => (
           <article className="journal-beat" key={event.id}>
-            <time>{new Date(event.created_at).toLocaleString()}</time>
+            <div className="journal-beat-head">
+              <time>{new Date(event.created_at).toLocaleString()}</time>
+              {character && (
+                <ShareButton
+                  message={buildJournalShareMessage(
+                    character,
+                    journalExcerpt(event.result),
+                    event.action,
+                  )}
+                />
+              )}
+            </div>
             <p className="journal-action">{event.action}</p>
             <div className="journal-narration"><JournalResultBody result={event.result} /></div>
           </article>

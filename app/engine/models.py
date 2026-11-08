@@ -33,6 +33,9 @@ class CharacterState:
     death_state: str = "alive"
     dodging: bool = False
     memory_summary: str = ""
+    long_term_memory: str = ""
+    journal_archived_through_event_id: int = 0
+    turn_count: int = 0
     # Campaign settings. Every field is defaulted so character payloads stored
     # before these existed still decode cleanly.
     difficulty: str = "normal"; tone: str = "balanced"; humor: str = "rare"; verbose: bool = True
@@ -56,4 +59,5 @@ class TurnResult:
     spell_facts: dict = field(default_factory=dict)
     rest_facts: dict = field(default_factory=dict)
     level_up_facts: dict = field(default_factory=dict)
+    purchase_facts: dict = field(default_factory=dict)
     costs_adventure_mana: bool = True

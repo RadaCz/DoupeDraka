@@ -33,6 +33,42 @@ class Settings(BaseSettings):
     # model on CPU needs a generous one (30-90s per turn is normal).
     ollama_timeout_s: float = 180.0
     llm_max_concurrency: int = 1
+    llm_provider_chain: str = Field(
+        default="nvidia,groq,cerebras,ollama",
+        validation_alias=AliasChoices("LLM_PROVIDER_CHAIN", "llm_provider_chain"),
+    )
+    llm_read_timeout_s: float = Field(default=120.0, validation_alias=AliasChoices("LLM_READ_TIMEOUT_S", "llm_read_timeout_s"))
+    nvidia_api_key: str = Field(default="", validation_alias=AliasChoices("NVIDIA_API_KEY", "nvidia_api_key"))
+    nvidia_base_url: str = Field(
+        default="https://integrate.api.nvidia.com/v1",
+        validation_alias=AliasChoices("NVIDIA_BASE_URL", "nvidia_base_url"),
+    )
+    nvidia_model: str = Field(
+        default="meta/llama3-8b-instruct",
+        validation_alias=AliasChoices("NVIDIA_MODEL", "nvidia_model"),
+    )
+    groq_api_key: str = Field(default="", validation_alias=AliasChoices("GROQ_API_KEY", "groq_api_key"))
+    groq_base_url: str = Field(
+        default="https://api.groq.com/openai/v1",
+        validation_alias=AliasChoices("GROQ_BASE_URL", "groq_base_url"),
+    )
+    groq_model: str = Field(
+        default="llama-3.1-8b-instant",
+        validation_alias=AliasChoices("GROQ_MODEL", "groq_model"),
+    )
+    cerebras_api_key: str = Field(default="", validation_alias=AliasChoices("CEREBRAS_API_KEY", "cerebras_api_key"))
+    cerebras_base_url: str = Field(
+        default="https://api.cerebras.ai/v1",
+        validation_alias=AliasChoices("CEREBRAS_BASE_URL", "cerebras_base_url"),
+    )
+    cerebras_model: str = Field(
+        default="llama3.1-8b",
+        validation_alias=AliasChoices("CEREBRAS_MODEL", "cerebras_model"),
+    )
+    openrouter_base_url: str = Field(
+        default="https://openrouter.ai/api/v1",
+        validation_alias=AliasChoices("OPENROUTER_BASE_URL", "openrouter_base_url"),
+    )
 
     @model_validator(mode="before")
     @classmethod
@@ -79,7 +115,9 @@ class Settings(BaseSettings):
     auth_rate_limit: str = "10/minute"
     action_rate_limit: str = "30/minute"
     # Empty by default: with no token configured, admin-only routes stay closed.
-    admin_token: str = ""
+    admin_token: str = Field(default="", validation_alias=AliasChoices(
+        "ADMIN_TOKEN", "admin_token", "ADMIN_API_KEY", "admin_api_key",
+    ))
 
     @field_validator("cors_origins")
     @classmethod

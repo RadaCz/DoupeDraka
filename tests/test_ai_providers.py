@@ -4,6 +4,7 @@ import json
 import httpx
 
 from app.ai.base import NarrationContext, NarrationRequest
+from app.ai.gateway import NamedProvider, NarrationGateway
 from app.ai.ollama import OllamaProvider
 from app.narrator import Narrator
 
@@ -67,7 +68,9 @@ def test_provider_failure_uses_offline_fallback(monkeypatch):
         async def complete(self, request: NarrationRequest) -> str:
             raise httpx.ConnectError("Ollama is unavailable")
 
-    monkeypatch.setattr("app.narrator.provider_for", lambda settings: BrokenProvider())
+    broken = BrokenProvider()
+    gateway = NarrationGateway([NamedProvider("Broken", broken)])
+    monkeypatch.setattr("app.narrator.narration_gateway_for", lambda settings: gateway)
     context = narration_request().context
 
     narration, status = asyncio.run(Narrator().narrate_detailed(context))
