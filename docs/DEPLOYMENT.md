@@ -38,9 +38,21 @@ suite uses synthetic signed `initData` and does not require Telegram or a real t
 
 ## Database and containers
 
-SQLite is the default development database. Apply migrations with
-`alembic upgrade head`. PostgreSQL URLs are supported through `DATABASE_URL`, but live
-PostgreSQL migration/concurrency validation is still required before production.
+SQLite is the default development database. Apply migrations with `alembic upgrade head`.
+PostgreSQL URLs are supported through `DATABASE_URL`; set `PYTEST_DATABASE_URL` to the same
+URL when running concurrency tests against a live Postgres service (as in CI).
+
+Merge `clean-main` into `main` only after CI is green on `clean-main`, including the
+PostgreSQL migration job and Playwright E2E.
+
+## Continuous integration
+
+GitHub Actions on `main`, `master`, and `clean-main` runs:
+
+- backend: `python -m pytest -q`
+- backend-postgres: `alembic upgrade head`, then `tests/test_concurrency.py`
+- frontend: Vitest and `npm run build`
+- e2e: `npm run test:e2e` (API on 8001, Vite on 5174)
 
 `docker compose up --build` is configured for the API, bot, and frontend. Before the
 first run (and before upgrades), apply migrations inside the API image:

@@ -2,7 +2,7 @@ import random
 
 import pytest
 
-from app.engine.locations import LOCATIONS, is_travel_action, travel_destination
+from app.engine.locations import LOCATIONS, is_travel_action, travel_allowed, travel_destination
 from app.engine.models import CharacterState
 from app.engine.service import GameEngine
 
@@ -37,6 +37,11 @@ def test_travel_destination_parsing(action, expected):
         assert is_travel_action(action)
 
 
+def test_vault_route_requires_story_unlock():
+    assert not travel_allowed("The Vault of Echoes", {})
+    assert travel_allowed("The Vault of Echoes", {"vault_unlocked": True})
+
+
 def test_bell_quest_branch_resolves_in_order():
     game = GameEngine(random.Random(3))
     hero = game.create_character(1, "Arin", "human", "fighter", abilities={
@@ -53,6 +58,7 @@ def test_bell_quest_branch_resolves_in_order():
     hero.location = "The Goblin Market"
     find, _ = game.resolve_action(hero, "ask Nib about the shrine bell", None)
     assert hero.quest_flags.get("bell_found")
+    assert hero.quest_flags.get("bell_acquired")
     assert "Shrine bell" in hero.inventory
 
     hero.location = "The Shrine of the Forgotten"

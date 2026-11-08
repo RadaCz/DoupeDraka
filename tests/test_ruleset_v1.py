@@ -20,6 +20,27 @@ def test_attack_uses_weapon_die_and_proficiency():
     assert any("1d6" in event for event in events)
 
 
+def test_wizard_lacks_martial_weapon_proficiency():
+    from app.engine.equipment import attack_modifier, equipped_weapon
+
+    game = GameEngine(random.Random(1))
+    hero = game.create_character(1, "Mira", "human", "wizard", abilities={
+        "strength": 10, "dexterity": 14, "constitution": 12,
+        "intelligence": 16, "wisdom": 10, "charisma": 10,
+    })
+    weapon = equipped_weapon(hero)
+    assert attack_modifier(hero, weapon) == 2  # finesse DEX only, no proficiency with shortsword
+
+
+def test_ability_check_uses_dc_not_natural_twenty_auto_success():
+    game = GameEngine(random.Random(77))
+    hero = game.create_character(1, "Check", "human", "fighter")
+    game.rng.randint = lambda a, b: 20
+    roll, success = game.ability_check(hero, "strength", 25)
+    assert roll.values[0] == 20
+    assert success is False
+
+
 def test_initiative_can_put_enemy_first():
     game = GameEngine(random.Random(1))
     hero = game.create_character(1, "Arin", "human", "fighter", abilities={

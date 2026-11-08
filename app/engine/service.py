@@ -2,8 +2,21 @@ import random, re, uuid
 from .catalog import ABILITY_ORDER, CLASSES, RACES, standard_abilities
 from .encounters import MONSTERS, build_monster
 from .equipment import attack_modifier, damage_modifier, default_item_instances, equipped_weapon
-from .intent import parse_action_intent
-from .locations import LOCATIONS, is_travel_action, travel_destination
+from .intent import (
+    AMBIGUOUS,
+    ATTACK,
+    CAST,
+    CHECK,
+    DEFEND,
+    EXPLORE,
+    FLEE,
+    REST,
+    TALK,
+    TRAVEL,
+    UNKNOWN,
+    parse_action_intent,
+)
+from .locations import LOCATIONS, is_travel_action, travel_allowed, travel_destination, visible_connections
 from .models import DIFFICULTIES, HUMORS, TONES, CharacterState, MonsterState, RollResult, TurnResult
 from .spells import (
     CLASS_SPELL_LISTS,
@@ -566,11 +579,18 @@ class GameEngine:
         destination = travel_destination(character.location, action)
         current = LOCATIONS.get(character.location)
         if destination is None:
-            if current is None or not current.connections:
+            open_routes = visible_connections(character.location, character.quest_flags)
+            if current is None or not open_routes:
                 message = "You cannot find a known route from here."
             else:
-                message = f"That route is not open. Nearby destinations: {', '.join(current.connections)}."
+                message = f"That route is not open. Nearby destinations: {', '.join(open_routes)}."
             return TurnResult(action, [message], False)
+        if not travel_allowed(destination, character.quest_flags):
+            return TurnResult(
+                action,
+                ["That path is still sealed. Caldus must reveal the vault route before you can enter."],
+                False,
+            )
 
         if character.location not in character.visited_locations:
             character.visited_locations.append(character.location)
@@ -594,10 +614,10 @@ class GameEngine:
         ):
             if flags.get("bell_quest_complete"):
                 return TurnResult(action, ["Caldus has already received the shrine bell."], False)
-            if not flags.get("bell_found"):
+            if not (flags.get("bell_found") or flags.get("bell_acquired")):
                 return TurnResult(action, ["You do not have the shrine bell to return."], False)
-            flags["bell_found"] = False
             flags["bell_quest_complete"] = True
+            flags["bell_acquired"] = True
             character.inventory = [item for item in character.inventory if item.casefold() != "shrine bell"]
             character.gold += 5
             character.xp += 30
@@ -612,6 +632,7 @@ class GameEngine:
             if flags.get("bell_quest_complete"):
                 if not flags.get("vault_hint_given"):
                     flags["vault_hint_given"] = True
+                    flags["vault_unlocked"] = True
                     return TurnResult(
                         action,
                         [
@@ -633,11 +654,12 @@ class GameEngine:
         if character.location == "The Goblin Market" and "nib" in text and any(
             word in text for word in ("talk", "speak", "ask")
         ):
-            if flags.get("bell_quest_complete") or flags.get("bell_found"):
+            if flags.get("bell_quest_complete") or flags.get("bell_acquired"):
                 return TurnResult(action, ["Nib has nothing more to say about the shrine bell."], False)
             if not flags.get("bell_quest_accepted"):
                 return TurnResult(action, ["Nib shrugs. You need a better reason to ask about the shrine bell."], False)
             flags["bell_found"] = True
+            flags["bell_acquired"] = True
             if "Shrine bell" not in character.inventory:
                 character.inventory.append("Shrine bell")
             return TurnResult(action, ["Nib admits the theft and hands you the shrine bell."], True)
@@ -711,7 +733,7 @@ class GameEngine:
 
     def ability_check(self, character: CharacterState, ability: str, dc: int) -> tuple[RollResult, bool]:
         result = self.roll("1d20", self.modifier(character.abilities[ability]))
-        return result, result.values[0] == 20 or (result.values[0] != 1 and result.total >= dc)
+        return result, result.total >= dc
 
     @staticmethod
     def _ability_for_action(text: str) -> str:
@@ -752,24 +774,73 @@ class GameEngine:
             f"Damage {damage.total} ({weapon.damage} + modifier); {monster.name} has {monster.hp}/{monster.max_hp} HP.",
         ]
 
+    def _resolve_attack_turn(
+        self,
+        character: CharacterState,
+        action: str,
+        monster: MonsterState | None,
+    ) -> tuple[TurnResult, MonsterState | None]:
+        character.invisible = False
+        fresh_combat = monster is None and not character.in_combat
+        monster = monster or build_monster(character.difficulty, action)
+        events: list[str] = []
+        if fresh_combat:
+            character.in_combat = True
+            events.extend(self._roll_initiative(character, monster))
+            if character.combat_turn == "enemy":
+                events.extend(self._enemy_turn(character, monster))
+                character.combat_turn = "player"
+        elif not character.in_combat:
+            character.in_combat = True
+            events.extend(self._roll_initiative(character, monster))
+        if character.combat_turn != "player":
+            return TurnResult(action, ["It is not your turn yet — defend, flee, or wait."], False), monster
+        events.extend(self.attack(character, monster))
+        if monster.hp == 0:
+            character.in_combat = False
+            reward = monster.reward_xp
+            character.xp += reward
+            character.exploration_cooldown = 1
+            events.append(f"{monster.name} is defeated. You gain {reward} XP.")
+            if "bell warden" in monster.name.casefold():
+                character.quest_flags["chapter_one_complete"] = True
+                character.gold += 25
+                events.append(
+                    "Chapter complete: the shrine's bells fall silent. You claim 25 gold "
+                    "from the vault and earn a clear route back to the surface."
+                )
+            level_events, level_up_facts = self._level_up(character)
+            events.extend(level_events)
+            return TurnResult(action, events, True, True, level_up_facts=level_up_facts), None
+        events.extend(self._enemy_turn(character, monster))
+        self._regenerate_mana(character)
+        return TurnResult(action, events, True), monster
+
     def resolve_action(self, character: CharacterState, action: str, monster: MonsterState | None) -> tuple[TurnResult, MonsterState | None]:
         if character.hp <= 0:
             return TurnResult(action, [f"{character.name} has fallen and can no longer act."], False), monster
         text = action.lower().strip()
-        if not text: return TurnResult(action, ["Say what your character attempts."], False), monster
+        if not text:
+            return TurnResult(action, ["Say what your character attempts."], False), monster
         intent = parse_action_intent(action)
-        if intent.needs_clarification:
+        if intent.kind == AMBIGUOUS:
             return TurnResult(
                 action,
-                ["Your intent is unclear — describe what you want without negating the action."],
+                ["Your command mixes conflicting goals — choose attack, talk, movement, or magic clearly."],
                 False,
                 costs_adventure_mana=False,
             ), monster
+        if intent.kind == UNKNOWN:
+            return TurnResult(action, ["Say what your character attempts."], False), monster
         if any(word in text for word in SHOP_VERBS):
             return self._shop(character, action), monster
         if any(word in text for word in ITEM_VERBS):
             return self._use_item(character, action, monster)
-        if _mentions_token(text, DEFEND_VERBS):
+        quest_result = self._resolve_quest_action(character, action)
+        if quest_result is not None:
+            return quest_result, monster
+
+        if intent.kind == DEFEND:
             if monster is None or not character.in_combat:
                 return TurnResult(action, ["You take a guarded stance, but there is no active enemy."], False), monster
             character.dodging = True
@@ -777,100 +848,25 @@ class GameEngine:
             events.extend(self._enemy_turn(character, monster, disadvantage=True))
             character.dodging = False
             return TurnResult(action, events, True), monster if character.in_combat else None
-        if any(phrase in text for phrase in SHORT_REST_VERBS):
-            if monster is not None or character.in_combat:
-                return TurnResult(action, ["You cannot take a short rest while a fight is raging."], False), monster
-            healing = self.roll("1d6", self.modifier(character.abilities.get("constitution", 10)))
-            restored = min(character.max_hp - character.hp, max(0, healing.total))
-            character.hp += restored
-            return TurnResult(
-                action,
-                [f"You take a short rest and recover {restored} HP. Your HP: {character.hp}/{character.max_hp}."],
-                restored > 0,
-                costs_adventure_mana=False,
-                rest_facts={"kind": "short", "hp_restored": restored},
-            ), monster
-        quest_result = self._resolve_quest_action(character, action)
-        if quest_result is not None:
-            return quest_result, monster
-        if any(word in text for word in CAST_VERBS):
-            original_spell_state = (
-                character.spell_slots,
-                character.max_spell_slots,
-                character.known_spells,
-                character.prepared_spells,
-                character.spellcasting_ability,
-            )
-            ensure_spellcasting(character)
-            result, monster = self._cast_spell(character, action, monster)
-            if not result.state_changed:
-                (
-                    character.spell_slots,
-                    character.max_spell_slots,
-                    character.known_spells,
-                    character.prepared_spells,
-                    character.spellcasting_ability,
-                ) = original_spell_state
-            return result, monster
-        if any(word in text for word in ATTACK_VERBS):
-            # Difficulty and target are the engine's decision, never the model's.
-            character.invisible = False
-            fresh_combat = monster is None and not character.in_combat
-            monster = monster or build_monster(character.difficulty, text)
-            events: list[str] = []
-            if fresh_combat:
-                character.in_combat = True
-                events.extend(self._roll_initiative(character, monster))
-                if character.combat_turn == "enemy":
-                    events.extend(self._enemy_turn(character, monster))
-                    character.combat_turn = "player"
-            elif not character.in_combat:
-                character.in_combat = True
-                events.extend(self._roll_initiative(character, monster))
-            if character.combat_turn != "player":
-                return TurnResult(action, ["It is not your turn yet — defend, flee, or wait."], False), monster
-            events.extend(self.attack(character, monster))
-            if monster.hp == 0:
-                character.in_combat = False; reward = monster.reward_xp; character.xp += reward
-                character.exploration_cooldown = 1
-                events.append(f"{monster.name} is defeated. You gain {reward} XP.")
-                if "bell warden" in monster.name.casefold():
-                    character.quest_flags["chapter_one_complete"] = True
-                    character.gold += 25
-                    events.append(
-                        "Chapter complete: the shrine's bells fall silent. You claim 25 gold "
-                        "from the vault and earn a clear route back to the surface."
-                    )
-                level_events, level_up_facts = self._level_up(character)
-                events.extend(level_events)
-                return TurnResult(action, events, True, True, level_up_facts=level_up_facts), None
-            events.extend(self._enemy_turn(character, monster))
-            self._regenerate_mana(character)
-            return TurnResult(action, events, True), monster
-        if any(word in text for word in FLEE_VERBS):
-            # Without an escape hatch a mismatched fight becomes an unwinnable
-            # stalemate that only burns the paid currency.
-            check, success = self.ability_check(character, "dexterity", FLEE_DC)
-            if not success:
-                return TurnResult(action, [f"Dexterity check: {check.total} vs DC {FLEE_DC} — you fail to break away."], True), monster
-            character.in_combat = False
-            character.exploration_cooldown = 1
-            return TurnResult(action, [f"Dexterity check: {check.total} vs DC {FLEE_DC} — you break away and escape the fight."], True, True), None
-        if any(phrase in text for phrase in EXPLORE_PHRASES):
-            if monster is not None or character.in_combat:
-                return TurnResult(action, ["You cannot explore safely while a fight is still raging."], False), monster
-            if is_travel_action(action):
-                return self._travel(character, action), monster
-            return self._explore(character, action)
-        if any(word in text for word in REST_VERBS):
+
+        if intent.kind == REST:
+            if any(phrase in text for phrase in SHORT_REST_VERBS):
+                if monster is not None or character.in_combat:
+                    return TurnResult(action, ["You cannot take a short rest while a fight is raging."], False), monster
+                healing = self.roll("1d6", self.modifier(character.abilities.get("constitution", 10)))
+                restored = min(character.max_hp - character.hp, max(0, healing.total))
+                character.hp += restored
+                return TurnResult(
+                    action,
+                    [f"You take a short rest and recover {restored} HP. Your HP: {character.hp}/{character.max_hp}."],
+                    restored > 0,
+                    costs_adventure_mana=False,
+                    rest_facts={"kind": "short", "hp_restored": restored},
+                ), monster
             if monster is not None or character.in_combat:
                 return TurnResult(action, ["You cannot rest while a fight is still raging."], False), monster
-            character.spell_slots = {
-                int(level): int(count) for level, count in character.spell_slots.items()
-            }
-            character.max_spell_slots = {
-                int(level): int(count) for level, count in character.max_spell_slots.items()
-            }
+            character.spell_slots = {int(level): int(count) for level, count in character.spell_slots.items()}
+            character.max_spell_slots = {int(level): int(count) for level, count in character.max_spell_slots.items()}
             hp_restored = character.max_hp - character.hp
             slots_restored = {
                 int(level): max(0, count - character.spell_slots.get(int(level), 0))
@@ -891,8 +887,8 @@ class GameEngine:
             slot_total = sum(slots_restored.values())
             events = [
                 f"You take a long rest and recover {hp_restored} HP; all spell slots are restored."
-                if slot_total else
-                f"You take a long rest and recover {hp_restored} HP."
+                if slot_total
+                else f"You take a long rest and recover {hp_restored} HP."
             ]
             return TurnResult(
                 action,
@@ -905,6 +901,57 @@ class GameEngine:
                 },
                 costs_adventure_mana=False,
             ), monster
+
+        if intent.kind == CAST:
+            original_spell_state = (
+                character.spell_slots,
+                character.max_spell_slots,
+                character.known_spells,
+                character.prepared_spells,
+                character.spellcasting_ability,
+            )
+            ensure_spellcasting(character)
+            result, monster = self._cast_spell(character, action, monster)
+            if not result.state_changed:
+                (
+                    character.spell_slots,
+                    character.max_spell_slots,
+                    character.known_spells,
+                    character.prepared_spells,
+                    character.spellcasting_ability,
+                ) = original_spell_state
+            return result, monster
+
+        if intent.kind == ATTACK:
+            return self._resolve_attack_turn(character, action, monster)
+
+        if intent.kind == FLEE:
+            check, success = self.ability_check(character, "dexterity", FLEE_DC)
+            if not success:
+                return TurnResult(action, [f"Dexterity check: {check.total} vs DC {FLEE_DC} — you fail to break away."], True), monster
+            character.in_combat = False
+            character.exploration_cooldown = 1
+            return TurnResult(action, [f"Dexterity check: {check.total} vs DC {FLEE_DC} — you break away and escape the fight."], True, True), None
+
+        if intent.kind in (TRAVEL, EXPLORE):
+            if monster is not None or character.in_combat:
+                return TurnResult(action, ["You cannot explore safely while a fight is still raging."], False), monster
+            if intent.kind == TRAVEL or is_travel_action(action):
+                return self._travel(character, action), monster
+            return self._explore(character, action)
+
+        if intent.kind == TALK:
+            quest_result = self._resolve_quest_action(character, action)
+            if quest_result is not None:
+                return quest_result, monster
+            check, success = self.ability_check(character, "charisma", 12)
+            self._regenerate_mana(character)
+            return TurnResult(
+                action,
+                [f"Charisma check: {check.total} vs DC 12 — {'success' if success else 'failure'}."],
+                True,
+            ), monster
+
         ability = self._ability_for_action(text)
         check, success = self.ability_check(character, ability, 12)
         self._regenerate_mana(character)

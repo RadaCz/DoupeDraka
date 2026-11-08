@@ -328,6 +328,8 @@ async def set_tier(request: CharacterTier, user: User = Depends(get_user_by_toke
     """Switch the model tier that prices each turn (lite / normal / pro)."""
     if request.tier not in economy.MODEL_TIERS:
         raise HTTPException(422, f"Unknown tier: {request.tier}")
+    if request.tier == "pro":
+        raise HTTPException(422, "Pro tier is not available in this build.")
     async with Session() as session:
         record = await session.get(User, user.id)
         if not record: raise HTTPException(404, "User not found")

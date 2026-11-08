@@ -64,7 +64,6 @@ const economyData = {
   tiers: [
     { key: 'lite', label: 'Lite', cost: 0, description: 'Free narration for the core game loop.' },
     { key: 'normal', label: 'Normal', cost: 1, description: 'Balanced for most turns.' },
-    { key: 'pro', label: 'Pro', cost: 1.4, description: 'Highest reasoning.' },
   ],
   packages: [{ key: 'starter', label: 'Starter', mana: 50, price_rub: 100 }],
 };

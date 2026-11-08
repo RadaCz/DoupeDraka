@@ -88,13 +88,15 @@ nelze přeskočit protivníka.
 V boji se objevený nepřítel zatím nevrhne na postavu okamžitě — hráč dostane možnost
 zvolit další akci. Herní obrazovka zobrazuje zdraví a obranu aktivního protivníka a
 kontextové rychlé akce se mění podle boje, zranění a posledního objevu. Mimo boj se
-nenabízí útok ani zbytečný odpočinek při plném zdraví. Kampaň nyní propojuje čtyři
-lokace: The Whispering Cellar, The Sunken Corridor, The Shrine of the Forgotten a
-The Goblin Market. Hráč může cestovat jen do sousední lokace; každá má vlastní výběr
-setkání a stopy. První návštěva přidá do deníku krátký příběhový beat s NPC (Mara,
-Caldus nebo Nib). Ve svatyni lze přijmout jednoduchý úkol od Calduse, získat zvon
-od Niba na trhu a odnést jej zpět za odměnu 30 XP a 5 zlaťáků. Není zde obecný
-dialogový systém, obchod ani větvené questy.
+nenabízí útok ani zbytečný odpočinek při plném zdraví. Kampaň (kapitola jedna) propojuje
+šest lokací včetně The Vault of Echoes a The Bell Warden's Pit. Cesta do trezoru a jámy
+je uzamčená, dokud Caldus po odevzdání zvonu neodhalí trasu (`vault_unlocked`).
+Hráč cestuje jen do sousední otevřené lokace; každá má vlastní setkání a stopy.
+První návštěva přidá krátký beat (Mara, Caldus, Nib). Úkol: přijmout u Calduse, získat
+zvon od Niba, vrátit ho, projít vault, porazit Bell Wardena (`chapter_one_complete`).
+Akce směruje parser `ActionIntent` v enginu (útok, kouzlo, mluvení, pohyb atd.);
+negace typu „nechci zaútočit“ nespustí boj. Obecný dialog NPC mimo tyto questy zatím
+není implementovaný.
 
 Volné akce jako `inspect the door`, `sneak past the guard` nebo `persuade the guard`
 vyhodnocují hod vlastnosti odpovídající záměru (Intelligence, Dexterity, Charisma atd.),
@@ -111,7 +113,8 @@ Ve výchozí konfiguraci (`LLM_PROVIDER=fallback`) neběží jazykový model; hr
 vestavěný offline vypravěč. AI próza je dostupná po nastavení `LLM_PROVIDER=ollama` a
 spuštění Ollama. Tah se uloží před začátkem streamování prózy; Mini App ji postupně
 zobrazuje a při chybě modelu použije offline fallback. Lite stojí 0,0 ⚡, Normal 1,0 ⚡
-a Pro 1,4 ⚡ za zpoplatněný změněný tah. Nové účty začínají se 100,0 ⚡; stávající
+za zpoplatněný změněný tah; tier Pro je v této verzi vypnutý (až do OpenRouter adapteru).
+Nové účty začínají se 100,0 ⚡; stávající
 zůstatky se automaticky nemění. Tahy bez změny stavu a dlouhý odpočinek jsou zdarma.
 Placené dobíjení přes Telegram Stars nebo jinou platební bránu není zapojené; mana na
 účtu se zobrazuje, ale skutečné nákupy nejsou dostupné.
@@ -176,6 +179,16 @@ Telegram sign-in, custom character creation, a real engine action and journal
 restoration after reload. The E2E API uses port 8001 and Vite uses 5174 so the
 usual local development ports remain untouched. Its runner removes the isolated
 temporary database after both test servers have shut down.
+
+### Ověření backendu
+
+```powershell
+cd D:\DoupeDraka
+python -m pytest -q
+```
+
+Aktuální baseline: **223** pytest; frontend **18** Vitest. CI na větvi `clean-main` spouští
+navíc Postgres migrace a Playwright (viz [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)).
 
 ### Lokální AI přes Ollama
 

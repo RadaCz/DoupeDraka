@@ -22,7 +22,11 @@ _TEST_DB_DIR = tempfile.mkdtemp(prefix="doupe-tests-")
 _TEST_DB_PATH = os.path.join(_TEST_DB_DIR, f"test-{uuid.uuid4().hex}.db")
 _LIVE_DB = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "dnd.db"))
 
-os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///" + _TEST_DB_PATH.replace(os.sep, "/")
+_postgres = os.environ.get("PYTEST_DATABASE_URL", "").strip()
+if _postgres:
+    os.environ["DATABASE_URL"] = _postgres
+else:
+    os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///" + _TEST_DB_PATH.replace(os.sep, "/")
 os.environ.setdefault("LLM_PROVIDER", "fallback")
 
 import pytest  # noqa: E402

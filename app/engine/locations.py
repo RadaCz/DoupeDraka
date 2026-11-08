@@ -72,6 +72,20 @@ LOCATIONS = {
     )
 }
 
+def travel_allowed(destination: str, quest_flags: dict) -> bool:
+    """Campaign gates for chapter one routes."""
+    if destination in ("The Vault of Echoes", "The Bell Warden's Pit"):
+        return bool(quest_flags.get("vault_unlocked") or quest_flags.get("vault_hint_given"))
+    return True
+
+
+def visible_connections(current_location: str, quest_flags: dict) -> tuple[str, ...]:
+    location = LOCATIONS.get(current_location)
+    if location is None:
+        return ()
+    return tuple(route for route in location.connections if travel_allowed(route, quest_flags))
+
+
 def travel_destination(current_location: str, action: str) -> str | None:
     """Return a connected destination for explicit 'travel/go/head to' actions."""
     match = re.match(

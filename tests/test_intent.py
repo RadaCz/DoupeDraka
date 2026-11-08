@@ -1,4 +1,4 @@
-from app.engine.intent import ATTACK, CAST, CHECK, EXPLORE, parse_action_intent
+from app.engine.intent import ATTACK, AMBIGUOUS, CAST, CHECK, EXPLORE, TALK, parse_action_intent
 
 
 def test_intent_recognizes_attack_and_cast():
@@ -9,6 +9,16 @@ def test_intent_recognizes_attack_and_cast():
 def test_intent_flags_negated_attack():
     intent = parse_action_intent("do not attack the guard")
     assert intent.kind == CHECK
+
+
+def test_czech_talk_over_negated_attack():
+    intent = parse_action_intent("Nechci zaútočit, chci s ním mluvit")
+    assert intent.kind == TALK
+
+
+def test_conflicting_attack_and_talk_is_ambiguous():
+    intent = parse_action_intent("attack the guard and ask about the bell")
+    assert intent.kind == AMBIGUOUS
     assert intent.needs_clarification
 
 

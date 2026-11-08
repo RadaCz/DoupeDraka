@@ -2,6 +2,13 @@
 
 ## Unreleased (2026-11-08)
 
+### Chapter one etapa
+- ActionIntent exclusively routes combat, spells, travel, talk, and checks (CS/EN negation; ambiguous commands clarified).
+- Ability checks follow DC totals; weapon proficiency respects class lists in `reference.CLASS_SPECS`.
+- Vault and Bell Warden routes gated on `vault_unlocked`; `bell_acquired` persists through delivery; Map/Quest UI updated.
+- Pro narrator tier disabled in API and UI until an OpenRouter adapter ships.
+- CI runs on `clean-main`, PostgreSQL `alembic upgrade`, and Playwright E2E.
+
 ### P0 stability
 - Concurrent idempotency replay after version conflicts; atomic adventure-mana debits; frontend pending idempotency keys.
 

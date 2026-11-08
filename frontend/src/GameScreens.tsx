@@ -62,11 +62,11 @@ function suggestedActions(
   const latest = events[events.length - 1]?.result.toLowerCase() ?? '';
   const actions: SuggestedAction[] = [];
   const quests = character.quest_flags ?? {};
-  if (character.location === 'The Shrine of the Forgotten' && quests.bell_found) {
+  if (character.location === 'The Shrine of the Forgotten' && (quests.bell_found || quests.bell_acquired) && !quests.bell_quest_complete) {
     actions.push({ label: t('Return the shrine bell'), action: 'return the shrine bell to Caldus' });
   } else if (character.location === 'The Shrine of the Forgotten' && !quests.bell_quest_accepted && !quests.bell_quest_complete) {
     actions.push({ label: t('Talk to Caldus'), action: 'talk to Caldus about the shrine bell' });
-  } else if (character.location === 'The Goblin Market' && quests.bell_quest_accepted && !quests.bell_found && !quests.bell_quest_complete) {
+  } else if (character.location === 'The Goblin Market' && quests.bell_quest_accepted && !quests.bell_found && !quests.bell_acquired && !quests.bell_quest_complete) {
     actions.push({ label: t('Ask Nib about the shrine bell'), action: 'ask Nib about the shrine bell' });
   }
   if (injured) actions.push({ label: 'Recover your strength', action: 'rest' });
@@ -82,7 +82,14 @@ function suggestedActions(
   actions.push({ label: t('Search the area'), action: `search ${character.location}` });
   actions.push({ label: 'Listen for movement', action: 'listen for movement' });
   actions.push({ label: 'Inspect the stonework', action: 'inspect the stonework' });
-  const nextLocation = locations.find(location => location.name === character.location)?.connections[0];
+  const routeOpen = (route: string) => {
+    if (route === 'The Vault of Echoes' || route === "The Bell Warden's Pit") {
+      return !!(quests.vault_unlocked || quests.vault_hint_given);
+    }
+    return true;
+  };
+  const node = locations.find(location => location.name === character.location);
+  const nextLocation = node?.connections.find(route => routeOpen(route));
   if (nextLocation) {
     actions.push({ label: t(`Travel to ${nextLocation}`), action: `travel to ${nextLocation}` });
     return [...actions.slice(0, 2), actions[actions.length - 1]];
@@ -725,6 +732,13 @@ export function MapScreen({
   }
   const node = locations.find(item => item.name === character.location);
   const visited = new Set(character.visited_locations ?? [character.location]);
+  const quests = character.quest_flags ?? {};
+  const routeOpen = (route: string) => {
+    if (route === 'The Vault of Echoes' || route === "The Bell Warden's Pit") {
+      return !!(quests.vault_unlocked || quests.vault_hint_given);
+    }
+    return true;
+  };
   return (
     <section className="screen">
       <div className="page-title"><p className="eyebrow">{t('WORLD')}</p><h1>{t('Map')}</h1><p>{t('You are here')}: <strong>{character.location}</strong></p></div>
@@ -736,7 +750,7 @@ export function MapScreen({
               <>
                 <h3>{t('Open routes')}</h3>
                 <ol>
-                  {node.connections.map(route => (
+                  {node.connections.filter(route => routeOpen(route)).map(route => (
                     <li key={route}><button type="button" onClick={() => onTravel(`travel to ${route}`)}>{route}</button></li>
                   ))}
                 </ol>
@@ -751,7 +765,7 @@ export function MapScreen({
 
 const QUEST_LABELS: Record<string, string> = {
   bell_quest_accepted: 'Recover the stolen shrine bell',
-  bell_found: 'Obtain the bell from Nib',
+  bell_acquired: 'Obtain the bell from Nib',
   bell_quest_complete: 'Return the bell to Caldus',
   vault_hint_given: 'Learn about the Vault of Echoes',
   chapter_one_complete: 'Defeat the Bell Warden',
@@ -760,15 +774,21 @@ const QUEST_LABELS: Record<string, string> = {
 export function QuestScreen({ character }: { character: Character | null }) {
   const { t } = useI18n();
   const flags = character?.quest_flags ?? {};
+  const questDone = (key: string) => {
+    if (key === 'bell_acquired') {
+      return Boolean(flags.bell_acquired || flags.bell_found);
+    }
+    return Boolean(flags[key]);
+  };
   const entries = Object.entries(QUEST_LABELS);
   return (
     <section className="screen">
       <div className="page-title"><p className="eyebrow">{t('CAMPAIGN')}</p><h1>{t('Quests')}</h1></div>
       <ul className="quest-list">
         {entries.map(([key, label]) => (
-          <li key={key} className={flags[key] ? 'done' : 'open'}>
+          <li key={key} className={questDone(key) ? 'done' : 'open'}>
             <strong>{t(label)}</strong>
-            <small>{flags[key] ? t('Complete') : t('In progress or not started')}</small>
+            <small>{questDone(key) ? t('Complete') : t('In progress or not started')}</small>
           </li>
         ))}
       </ul>

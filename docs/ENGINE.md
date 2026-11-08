@@ -6,33 +6,45 @@ Mechanics are resolved by `app/engine/service.py`; the LLM is never an authority
 game state. Dice are rolled through the engine's injected RNG, and every effect sent
 to the narrator is already resolved.
 
+## ActionIntent routing
+
+Player text is classified in `app/engine/intent.py` (`parse_action_intent`). Kinds
+include attack, cast_spell, flee, defend, rest, travel, explore, talk, ability_check,
+ambiguous, and unknown. `resolve_action` branches only on `intent.kind`.
+
+- Negated attack/cast/flee in English or Czech is stripped (for example “nechci
+  zaútočit, chci mluvit” resolves to talk, not combat).
+- Conflicting verbs in one sentence return `ambiguous` with no combat or spell spend.
+- Shop, item use, and engine quest hooks still run as special cases before intent routing.
+
 ## Supported actions
 
-- Combat: `attack`, `cast`, `flee`.
-- Recovery: `rest` is a free long rest outside combat; it restores HP and spell slots.
-- Exploration: `explore`, `search`, `look around`, `travel`, and supported Czech
-  variants. Encounters are rolled on a six-sided die; an encounter appears on 1, and
-  the turn immediately after a fight or escape is safe.
-- Explicit travel: `travel to <connected location>` changes location without an
-  exploration roll. Only connected routes are allowed. First visits write a short
-  NPC/story beat to the journal.
-- Shrine bell quest: accept Caldus's request, ask Nib for the bell, and return it to
-  receive 30 XP and 5 gold. Quest flags and item/reward changes are engine-owned,
-  persisted character state; repeated completions are no-ops.
-- Other free text resolves to an ability check selected from intent keywords.
+- Combat: attack (intent), cast (intent), flee, defend.
+- Recovery: rest is a long rest outside combat; short-rest phrases recover partial HP.
+- Exploration: explore/search/look around and travel-without-destination; six-sided
+  encounter roll; safe turn after fight or escape.
+- Explicit travel: `travel to <connected location>` via intent travel; only connected
+  and **story-unlocked** routes (vault and pit require `vault_unlocked` or
+  `vault_hint_given`). See `app/engine/locations.py`.
+- Shrine bell and chapter one: Caldus/Nib/bell return, vault hint, Bell Warden defeat;
+  flags include `bell_quest_accepted`, `bell_acquired`, `bell_quest_complete`,
+  `vault_hint_given`, `vault_unlocked`, `chapter_one_complete` (see [CONTENT.md](./CONTENT.md)).
+- Talk: quest resolution first, then a Charisma ability check when no quest line matches.
+- Other free text maps to an ability check by keyword (`ACTION_ABILITIES`).
 
-Rejected actions do not change state and do not consume Adventure Mana. Rest while in
-combat is rejected.
+Rejected and ambiguous actions do not change state and do not consume Adventure Mana.
 
 ## Combat and advancement
 
-Ruleset v1 uses SRD 5.1–compatible basics only: proficiency bonus, equipped weapon damage
-dice from `app/engine/equipment.py`, finesse weapons, and initiative (1d20 + Dexterity)
-when a fight begins. Unsupported options in the reference catalog are not playable.
+Ruleset v1: proficiency bonus on attacks only when the class is proficient with the
+equipped weapon (`reference.CLASS_SPECS` via `equipment.weapon_proficiency`), weapon
+damage dice, finesse, and initiative (1d20 + Dexterity) when a fight begins.
+
+**Ability checks** succeed when `d20 + modifier >= DC`. Natural 20 and 1 do not
+auto-pass or auto-fail ability checks (attack rolls still use crit miss on 1).
 
 The engine applies easy/normal/hard scaling to monster stats and XP. A character
-advances at most one level per resolved turn. Current supported progression and
-spell behavior are bounded; see the spell limitations below.
+advances at most one level per resolved turn.
 
 ## Spellcasting
 
@@ -42,10 +54,9 @@ slot. Supported effects are Fire Bolt, Eldritch Blast, Sacred Flame, Vicious Moc
 Wounds, Healing Word (treated as a main action), Scorching Ray, combat-escape Misty
 Step, and Invisibility (flag only; no attack modifier).
 
-Other recognized spells are honest no-ops: the engine reports that the effect is not
-modeled and does not consume a slot. Area and save effects currently target one
-enemy. Higher-level class progression, concentration, durations, many spell
-conditions, and complete SRD spell effects are not implemented.
+Casting is routed only through `intent.kind == cast_spell`. Other recognized spells are
+honest no-ops: the engine reports that the effect is not modeled and does not consume
+a slot.
 
-See `app/engine/service.py`, `app/engine/spells.py`, and `tests/test_locations.py`,
-`tests/test_engine.py`, and `tests/test_spells.py`.
+See `app/engine/service.py`, `app/engine/spells.py`, `tests/test_intent.py`,
+`tests/test_chapter_one.py`, `tests/test_ruleset_v1.py`, and `tests/test_engine.py`.

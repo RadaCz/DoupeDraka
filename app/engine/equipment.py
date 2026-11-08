@@ -3,6 +3,10 @@
 from dataclasses import dataclass, field
 
 from .models import CharacterState
+from .reference import CLASS_SPECS
+
+MARTIAL_WEAPON_KEYS = frozenset({"shortsword", "longsword", "rapier"})
+SIMPLE_WEAPON_KEYS = frozenset({"mace", "dagger", "unarmed"})
 
 
 @dataclass(frozen=True)
@@ -47,6 +51,20 @@ def _ability_mod(score: int) -> int:
     return (score - 10) // 2
 
 
+def weapon_proficiency(character: CharacterState, weapon_key: str) -> bool:
+    spec = CLASS_SPECS.get(character.character_class)
+    if spec is None:
+        return weapon_key == "unarmed"
+    proficiencies = {entry.casefold() for entry in spec.weapons}
+    if weapon_key in proficiencies:
+        return True
+    if "simple" in proficiencies and weapon_key in SIMPLE_WEAPON_KEYS:
+        return True
+    if "martial" in proficiencies and weapon_key in MARTIAL_WEAPON_KEYS:
+        return True
+    return weapon_key == "unarmed"
+
+
 def attack_modifier(character: CharacterState, weapon: WeaponDefinition) -> int:
     strength = character.abilities.get("strength", 10)
     dexterity = character.abilities.get("dexterity", 10)
@@ -54,7 +72,8 @@ def attack_modifier(character: CharacterState, weapon: WeaponDefinition) -> int:
         mod = max(_ability_mod(strength), _ability_mod(dexterity))
     else:
         mod = _ability_mod(character.abilities.get(weapon.ability, strength))
-    return proficiency_bonus(character.level) + mod
+    prof = proficiency_bonus(character.level) if weapon_proficiency(character, weapon.key) else 0
+    return prof + mod
 
 
 def damage_modifier(character: CharacterState, weapon: WeaponDefinition) -> int:

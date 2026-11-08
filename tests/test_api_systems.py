@@ -171,6 +171,12 @@ def test_action_charges_energy_and_reports_balance(auth):
     assert data["tier"] == "normal"
 
 
+def test_pro_tier_is_rejected(auth):
+    response = client.post("/economy/tier", json={"tier": "pro"}, headers=auth)
+    assert response.status_code == 422
+    assert "not available" in response.json()["detail"].casefold()
+
+
 def test_lite_action_is_free_but_noop_remains_free(auth):
     character = client.post("/characters/presets/tank", headers=auth).json()
     assert client.post("/economy/tier", json={"tier": "lite"}, headers=auth).status_code == 200

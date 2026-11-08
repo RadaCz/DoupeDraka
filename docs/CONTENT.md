@@ -8,7 +8,7 @@ engine-owned data in `app/engine/locations.py`.
 | Location | Forward routes | Encounter pool | First-visit beat |
 |---|---|---|---|
 | The Whispering Cellar | The Sunken Corridor | Kobold, goblin, wolf, bandit | A cold draft curls around the old stone stairs. |
-| The Sunken Corridor | Shrine, cellar, **The Vault of Echoes** | Kobold, goblin, wolf, ghoul | Mara warns that something follows the waterway. |
+| The Sunken Corridor | Shrine, cellar; **The Vault of Echoes** (after Caldus reveals it) | Kobold, goblin, wolf, ghoul | Mara warns that something follows the waterway. |
 | The Shrine of the Forgotten | The Goblin Market; back to the corridor | Bandit, ghoul, wolf | Caretaker Caldus asks you to return a stolen shrine bell. |
 | The Goblin Market | Back to the shrine | Kobold, goblin, bandit | Goblin trader Nib watches from a stall of stolen bells. |
 | The Vault of Echoes | The Bell Warden's Pit; back to the corridor | Ghoul, bandit, wolf | Broken bells hang from rusted chains. |
@@ -25,7 +25,10 @@ do not repeat their first-visit beat.
 At the Shrine of the Forgotten, Caldus offers a quest to recover the stolen bell. At
 the Goblin Market, Nib returns it only after the player accepts the request. Returning
 the bell grants 30 XP and 5 gold exactly once. Flags: `bell_quest_accepted`,
-`bell_found`, `bell_quest_complete`.
+`bell_found`, `bell_acquired`, `bell_quest_complete`. The bell stays marked as obtained after delivery.
+
+Travel to **The Vault of Echoes** and **The Bell Warden's Pit** is blocked until Caldus sets
+`vault_hint_given` and `vault_unlocked`.
 
 ### Vault finale (after the bell)
 
