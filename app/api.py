@@ -211,9 +211,14 @@ async def atomic_refund_energy(session, user_id: int, tenths: int, detail: str) 
 
 
 def billing_tier_for_user(stored_tier: str) -> str:
+    settings = get_settings()
+    from .ai.registry import has_external_paid_narration_provider
+
+    gateway = narration_gateway_for(settings)
     return economy.effective_billing_tier(
         stored_tier,
-        has_online_provider=narration_gateway_for(get_settings()).has_online_providers,
+        has_online_provider=gateway.has_online_providers,
+        has_external_paid_provider=has_external_paid_narration_provider(settings),
     )
 
 
@@ -332,11 +337,22 @@ async def list_presets() -> list[dict]:
     return [{"key": hero.key, "name": hero.name, "race": hero.race, "character_class": hero.character_class, "role": hero.role} for hero in HEROES.values()]
 
 @app.post("/characters/presets/{key}", status_code=201)
-async def create_from_preset(key: str, user: User = Depends(get_user_by_token)) -> dict:
+async def create_from_preset(
+    key: str,
+    user: User = Depends(get_user_by_token),
+    language: str | None = None,
+) -> dict:
     try: hero = get_hero(key)
     except ValueError as error:
         raise HTTPException(404, str(error)) from error
-    character = build_character(user, hero.name, hero.race, hero.character_class, hero.abilities)
+    character = build_character(
+        user,
+        hero.name,
+        hero.race,
+        hero.character_class,
+        hero.abilities,
+        {"language": language} if language else None,
+    )
     async with Session() as session:
         await persist_character(session, character)
         record_character_created(session, character.id, character.race, character.character_class)
@@ -394,8 +410,17 @@ async def telegram_login(request: Request, payload: TelegramAuthRequest) -> Toke
 async def create_character(request: CharacterCreate, user: User = Depends(get_user_by_token)) -> dict:
     try: 
         character = build_character(
-            user, request.name, request.race, request.character_class, request.abilities,
-            {"difficulty": request.difficulty, "tone": request.tone, "humor": request.humor},
+            user,
+            request.name,
+            request.race,
+            request.character_class,
+            request.abilities,
+            {
+                "difficulty": request.difficulty,
+                "tone": request.tone,
+                "humor": request.humor,
+                "language": request.language,
+            },
         )
     except ValueError as error: 
         logger.warning(f"Character creation failed for user {user.username}: {error}")
@@ -620,6 +645,7 @@ async def narrate_committed(
     key: str,
     fallback: str,
     character_id: str | None = None,
+    billing_tier: str = "lite",
 ) -> tuple[str, str]:
     """Narrate a turn that is already durable.
 
@@ -628,13 +654,16 @@ async def narrate_committed(
     database transaction open while it thinks.
     """
     try:
-        narration, status = await narrator.narrate_detailed(context)
+        narration, status = await narrator.narrate_detailed(context, billing_tier=billing_tier)
     except Exception:  # a broken model must never cost the player their turn
         logger.exception(f"Narration failed for event {event_id}; keeping fallback prose")
         record_llm_narration_status(character_id, "fallback")
         return fallback, "fallback"
-    record_llm_narration_status(character_id, status if narration.strip() else "fallback")
-    if status != "narrated" or not narration.strip():
+    if not narration.strip():
+        record_llm_narration_status(character_id, "fallback")
+        return fallback, "fallback"
+    record_llm_narration_status(character_id, status)
+    if status not in ("narrated", "offline"):
         return fallback, "fallback"
     from .narration_prose_guard import maybe_record_prose_language_mismatch
 
@@ -717,7 +746,12 @@ async def action(
         response.narration_status = "fallback"
     else:
         response.narration, response.narration_status = await narrate_committed(
-            context, event_id, key, response.narration, character_id=character_id,
+            context,
+            event_id,
+            key,
+            response.narration,
+            character_id=character_id,
+            billing_tier=billing_tier,
         )
     await reconcile_narrator_billing(
         user_id=user.id,
@@ -773,13 +807,52 @@ async def action_stream(
         chunks: list[str] = []
         mock = narration_mock_requested(request)
         status = "fallback" if mock else (
-            "narrated" if narration_gateway_for(get_settings()).has_online_providers else "fallback"
+            "offline" if billing_tier == "lite" else (
+                "narrated" if narration_gateway_for(get_settings()).has_online_providers else "fallback"
+            )
         )
+        narration = response.narration
+        billing_settled = False
+
+        async def finalize_turn() -> None:
+            nonlocal billing_settled, narration, status
+            if billing_settled:
+                return
+            billing_settled = True
+            response.narration = narration
+            response.narration_status = status
+            async with Session() as session:
+                row = await session.get(EventRecord, event_id)
+                if row is not None:
+                    row.result = journal_result(narration, context.events)
+                if key:
+                    receipt = await session.get(ActionReceipt, key)
+                    if receipt is not None:
+                        receipt.response = encode_state(response.model_dump())
+                        receipt.status = "complete"
+                await session.commit()
+            from .narration_prose_guard import maybe_record_prose_language_mismatch
+
+            maybe_record_prose_language_mismatch(context.language, narration, character_id)
+            record_llm_narration_status(character_id, status)
+            await reconcile_narrator_billing(
+                user_id=user.id,
+                stored_tier=stored_tier,
+                billing_tier=billing_tier,
+                charged_tenths=charged_tenths,
+                narration_status=status,
+                action_detail=payload.action.strip(),
+                character_id=character_id,
+                state_changed=state_changed,
+                receipt_key=key,
+                response=response,
+            )
+
         try:
             if mock:
                 narration = response.narration
             else:
-                async for chunk in narrator.stream(context):
+                async for chunk in narrator.stream(context, billing_tier=billing_tier):
                     if isinstance(chunk, StreamReplaceFrame):
                         chunks.clear()
                         chunks.append(chunk.narration)
@@ -793,41 +866,19 @@ async def action_stream(
                 status = "fallback"
                 narration = response.narration
                 yield sse_message("replace", {"narration": narration})
+        except asyncio.CancelledError:
+            logger.info("Client disconnected during narration stream for event %s", event_id)
+            status = "fallback"
+            narration = response.narration
+            await finalize_turn()
+            raise
         except Exception:
             logger.exception(f"Streaming narration failed for event {event_id}; using offline fallback")
             status = "fallback"
             narration = Narrator.narrate_offline(context)
             yield sse_message("replace", {"narration": narration})
 
-        response.narration = narration
-        response.narration_status = status
-        async with Session() as session:
-            row = await session.get(EventRecord, event_id)
-            if row is not None:
-                row.result = journal_result(narration, context.events)
-            if key:
-                receipt = await session.get(ActionReceipt, key)
-                if receipt is not None:
-                    receipt.response = encode_state(response.model_dump())
-                    receipt.status = "complete"
-            await session.commit()
-        from .narration_prose_guard import maybe_record_prose_language_mismatch
-
-        maybe_record_prose_language_mismatch(context.language, narration, character_id)
-        record_llm_narration_status(character_id, status)
-        response.narration_status = status
-        await reconcile_narrator_billing(
-            user_id=user.id,
-            stored_tier=stored_tier,
-            billing_tier=billing_tier,
-            charged_tenths=charged_tenths,
-            narration_status=status,
-            action_detail=payload.action.strip(),
-            character_id=character_id,
-            state_changed=state_changed,
-            receipt_key=key,
-            response=response,
-        )
+        await finalize_turn()
         yield sse_message(
             "complete",
             {

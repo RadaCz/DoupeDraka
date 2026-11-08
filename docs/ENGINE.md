@@ -14,7 +14,7 @@ explore, talk, rejected, ambiguous, unknown, and ability_check. `resolve_action`
 branches only on `intent.kind`.
 
 - Negation is evaluated per clause (comma/semicolon separated) in Czech and English.
-  Purely negated commands return `rejected` and do not change state or spend Adventure Mana.
+  Purely negated commands return `rejected` and do not change state or spend narrator credits.
 - “Nechci zaútočit, chci mluvit” resolves to talk; “don't buy a potion” is rejected.
 - Conflicting positive verbs (for example rest + attack, travel + cast) return `ambiguous`.
 - Chapter-one quest steps (`accept_caldus`, `ask_nib`, `return_bell`) route only through
@@ -37,7 +37,7 @@ branches only on `intent.kind`.
 - Talk: quest resolution first, then a Charisma ability check when no quest line matches.
 - Other free text maps to an ability check by keyword (`ACTION_ABILITIES`).
 
-Rejected and ambiguous actions do not change state and do not consume Adventure Mana.
+Rejected and ambiguous actions do not change state and do not consume narrator credits.
 
 ## Combat and advancement
 

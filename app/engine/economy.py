@@ -29,11 +29,18 @@ MODEL_TIERS = {
 DEFAULT_TIER = "lite"
 
 
-def effective_billing_tier(stored_tier: str, *, has_online_provider: bool) -> str:
+def effective_billing_tier(
+    stored_tier: str,
+    *,
+    has_online_provider: bool,
+    has_external_paid_provider: bool = False,
+) -> str:
     """Tier used for affordability checks and debits (D31 / GDS01 E2)."""
     if stored_tier == "lite" or not has_online_provider:
         return "lite"
     if stored_tier == "pro":
+        return "lite"
+    if stored_tier == "normal" and not has_external_paid_provider:
         return "lite"
     return stored_tier
 

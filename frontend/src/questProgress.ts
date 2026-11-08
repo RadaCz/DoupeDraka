@@ -34,8 +34,8 @@ const CHAPTER_ONE_STEPS: QuestStep[] = [
   {
     id: 'vault_hint_given',
     label: 'Learn about the Vault of Echoes',
-    hint: 'Search the Sunken Corridor or talk to locals until the vault route opens.',
-    location: 'The Sunken Corridor',
+    hint: 'Return to the Shrine of the Forgotten and speak with Caldus again. After the bell is returned, he reveals the path to the Vault of Echoes.',
+    location: 'The Shrine of the Forgotten',
   },
   {
     id: 'chapter_one_complete',
@@ -91,6 +91,17 @@ export function visibleQuestTimeline(
       location: undefined,
     };
     teaser = 'Further objectives unlock as you meet people along the way.';
+  } else if (
+    next.id === 'vault_hint_given' &&
+    quests.bell_quest_complete &&
+    !quests.vault_hint_given &&
+    !quests.vault_unlocked
+  ) {
+    active = {
+      ...next,
+      hint: 'Return to the Shrine of the Forgotten and speak with Caldus again. After the bell is returned, he reveals the path to the Vault of Echoes.',
+      location: 'The Shrine of the Forgotten',
+    };
   }
   return { done, active, teaser };
 }

@@ -16,6 +16,10 @@ def test_quest_catalog_matches_chapter_one_steps():
     assert payload["campaigns"][0]["id"] == CHAPTER_ONE.id
     assert [step["id"] for step in steps] == [step.id for step in CHAPTER_ONE.steps]
     assert payload["side_quests"][0]["id"] == "crypt_echo_relic"
+    vault_step = next(step for step in CHAPTER_ONE.steps if step.id == "vault_hint_given")
+    assert "Caldus" in vault_step.hint
+    assert "Shrine of the Forgotten" in vault_step.location
+    assert "Sunken Corridor" not in vault_step.hint
 
 
 def test_crypt_relic_pays_once():

@@ -11,7 +11,7 @@ Poslední revize: **2026-11-08**. Etapy 7–9 záměrně otevřené až po uzav�
 | 4 | First campaign slice | Průběžně | `quests.py` + `/reference` katalog; side quest Crypt; hlavní quest refaktor |
 | 5 | AI DM CZ | Průběžně | `narration_language`, offline CS, prose guard telemetry |
 | 6 | Mini App & Telegram QA | Hotovo (uživatel) | Checklist vyplněn; CS chips; frontend polish fáze 0–6 (theme-dark, play, polish moduly, `styles/README.md`, volitelný `e2e/visual-baseline.spec.ts`) |
-| 7 | Closed beta | **GDS01 připraveno k produktovému schválení** | Design balík (3 dokumenty) hotový k review; **implementace** Lite default, billing E2/E2b a playtest až **po** sign-off a epikách E1→E2b→telemetrie |
+| 7 | Closed beta | **E1–E2b + minimální telemetrie implementováno** (lokální audit nad `e012532`); **E3 pozastaveno** | Postgres migrace **v005**, CI/dev deps, racial bonusy, vault hint, tier billing; playtest 10–15 hráčů ať po sign-off commitu |
 | 8 | Co-op MP | Nezačato | Záměrně po sólo kapitole |
 | 9 | Monetizace | Nezačato | GDS01 pilíře v dokumentaci; hypotézy 49/99/149 Kč v `ECONOMY_MODEL_V1.md`; **žádné platby** před playtestem a produktovým go (E6 až po validaci) |
 

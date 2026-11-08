@@ -17,7 +17,7 @@ Updated 2026-11-08. Chapter one is a gated six-location slice on `clean-main`. A
 | 3 | **E2b** | Billing: no charge / refund při fallback |
 | 4 | **Min. telemetrie** | `state_changed`, narration outcome, turn/session (E5 minimální rozsah) |
 | 5 | **Playtest** | `CHAPTER_ONE_PLAYTEST_V1` — 10–15 hráčů, kvalitativní go/no-go |
-| 6 | **E3** | Dice v1.1 (DC, D6 varianta A) |
+| 6 | **E3** *(pozastaveno)* | Dice v1.1 (DC, D6 varianta A); `explore_track` není v enginu |
 | 7 | **E4** | Kapitola 1 motivation polish |
 | 8 | **E6** | Monetizace / platby — **až po** go z playtestu a validaci produktu |
 

@@ -25,6 +25,7 @@ class CharacterCreate(BaseModel):
     difficulty: str | None = None
     tone: str | None = None
     humor: str | None = None
+    language: str | None = Field(default=None, max_length=8)
 
 class CharacterSettings(BaseModel):
     """Partial update: every field is optional, absent means "leave as is"."""

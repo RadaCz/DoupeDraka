@@ -37,7 +37,7 @@ class User(Base):
     model_tier: Mapped[str] = mapped_column(String(16), default="lite")
     # Paid turn currency in tenths. Separate from CharacterState.mana (spell pool).
     energy_tenths: Mapped[int] = mapped_column(Integer, default=STARTING_BALANCE_TENTHS)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 class EnergyTransaction(Base):
     __tablename__ = "energy_transactions"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -46,19 +46,19 @@ class EnergyTransaction(Base):
     reason: Mapped[str] = mapped_column(String(32))
     detail: Mapped[str] = mapped_column(String(128), default="")
     balance_after: Mapped[int] = mapped_column(Integer)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False, index=True)
 class ApiKey(Base):
     __tablename__ = "api_keys"
     token_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"))
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 class CharacterRecord(Base):
     __tablename__ = "characters"
     id: Mapped[str] = mapped_column(String(36), primary_key=True); owner_id: Mapped[int] = mapped_column(Integer, index=True); payload: Mapped[str] = mapped_column(Text)
     # Optimistic concurrency guard. Every accepted turn claims the row at the
     # version it read, so a second writer holding a stale copy writes nothing.
     version: Mapped[int] = mapped_column(Integer, default=0, server_default="0", nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 class ActionReceipt(Base):
     """One row per accepted turn, keyed by the client's Idempotency-Key.
 
@@ -72,14 +72,14 @@ class ActionReceipt(Base):
     # committed = state + ledger + event are durable; complete = narration landed.
     status: Mapped[str] = mapped_column(String(16), default="committed")
     response: Mapped[str] = mapped_column(Text)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False, index=True)
     expires_at: Mapped[datetime | None] = mapped_column(
         DateTime, default=lambda: datetime.utcnow() + timedelta(hours=24), index=True
     )
 class EventRecord(Base):
     __tablename__ = "events"
     id: Mapped[int] = mapped_column(Integer, primary_key=True); character_id: Mapped[str] = mapped_column(String(36), index=True)
-    action: Mapped[str] = mapped_column(Text); result: Mapped[str] = mapped_column(Text); created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    action: Mapped[str] = mapped_column(Text); result: Mapped[str] = mapped_column(Text); created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False, index=True)
 
 class AnalyticsEvent(Base):
     """Lightweight product telemetry (first-party, no third-party analytics)."""
@@ -89,7 +89,7 @@ class AnalyticsEvent(Base):
     event_type: Mapped[str] = mapped_column(String(64), index=True)
     character_id: Mapped[str | None] = mapped_column(String(36), index=True, nullable=True)
     metadata_json: Mapped[dict] = mapped_column(JsonMetadata, default=dict)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False, index=True)
 async def init_db() -> None:
     # Local SQLite development database; production PostgreSQL needs no directory.
     if get_settings().database_url.startswith("sqlite"):

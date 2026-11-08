@@ -3,13 +3,16 @@ import { fileURLToPath } from 'node:url';
 
 const frontendRoot = fileURLToPath(new URL('..', import.meta.url));
 const repositoryRoot = fileURLToPath(new URL('../..', import.meta.url));
+const visualOnly = process.env.E2E_SUITE === 'visual';
+
 if (!process.env.E2E_DATABASE_DIRECTORY) {
   throw new Error('Run the E2E suite with npm run test:e2e to manage its temporary database.');
 }
 
 export default defineConfig({
   testDir: '.',
-  testMatch: '**/*.spec.ts',
+  testMatch: visualOnly ? ['**/visual-baseline.spec.ts'] : ['**/*.spec.ts'],
+  testIgnore: visualOnly ? [] : ['**/visual-baseline.spec.ts'],
   fullyParallel: false,
   workers: 1,
   forbidOnly: Boolean(process.env.CI),
@@ -18,7 +21,6 @@ export default defineConfig({
   reporter: 'line',
   outputDir: '../.playwright-results',
   use: {
-    // iPhone 13 metrics + UA; Chromium matches Telegram Android WebView and runs headless in CI.
     ...devices['iPhone 13'],
     browserName: 'chromium',
     baseURL: 'http://127.0.0.1:5174',

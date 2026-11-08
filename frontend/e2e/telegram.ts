@@ -43,7 +43,7 @@ export async function mockTelegramWebApp(page: Page, initData: string) {
 }
 
 export async function completeWizardFighter(page: Page, name: string) {
-  await page.getByRole('button', { name: 'Create your character' }).click();
+  await page.getByRole('button', { name: /create your character/i }).click();
   await page.getByRole('button', { name: 'Step-by-step wizard' }).click();
   await page.getByRole('button', { name: 'Human' }).click();
   await page.getByRole('button', { name: 'Continue', exact: true }).click();

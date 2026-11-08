@@ -57,8 +57,8 @@ CHAPTER_ONE_STEPS: tuple[QuestStepPublic, ...] = (
     QuestStepPublic(
         "vault_hint_given",
         "Learn about the Vault of Echoes",
-        "Search the Sunken Corridor or talk to locals until the vault route opens.",
-        "The Sunken Corridor",
+        "Return to the Shrine of the Forgotten and speak with Caldus again. After the bell is returned, he reveals the path to the Vault of Echoes.",
+        "The Shrine of the Forgotten",
     ),
     QuestStepPublic(
         "chapter_one_complete",

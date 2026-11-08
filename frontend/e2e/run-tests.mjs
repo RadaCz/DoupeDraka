@@ -9,15 +9,21 @@ const databaseDirectory = join(tmpdir(), `doupedraka-e2e-${process.pid}`);
 const playwrightCli = join(frontendRoot, 'node_modules', '@playwright', 'test', 'cli.js');
 mkdirSync(databaseDirectory, { recursive: false });
 
-const child = spawn(
-  process.execPath,
-  [playwrightCli, 'test', '--config=e2e/playwright.config.ts'],
-  {
-    cwd: frontendRoot,
-    env: { ...process.env, E2E_DATABASE_DIRECTORY: databaseDirectory },
-    stdio: 'inherit',
+const argv = process.argv.slice(2);
+const visualMode = argv.includes('--visual') || process.env.E2E_SUITE === 'visual';
+const forwardedArgs = argv.filter(arg => arg !== '--visual');
+
+const playwrightArgs = [playwrightCli, 'test', '--config=e2e/playwright.config.ts', ...forwardedArgs];
+
+const child = spawn(process.execPath, playwrightArgs, {
+  cwd: frontendRoot,
+  env: {
+    ...process.env,
+    E2E_DATABASE_DIRECTORY: databaseDirectory,
+    ...(visualMode ? { E2E_SUITE: 'visual' } : {}),
   },
-);
+  stdio: 'inherit',
+});
 
 let spawnFailed = false;
 child.once('error', error => {

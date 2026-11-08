@@ -42,6 +42,27 @@ def test_presets_are_public_and_documented():
         assert {"key", "name", "race", "character_class", "role"} <= set(preset)
 
 
+def test_create_character_with_czech_narration_language(auth):
+    response = client.post(
+        "/characters",
+        headers={**auth, "Content-Type": "application/json"},
+        json={
+            "name": "Czech Hero",
+            "race": "human",
+            "character_class": "fighter",
+            "language": "cs",
+        },
+    )
+    assert response.status_code == 201
+    assert response.json()["narration_language"] == "cs"
+
+
+def test_preset_accepts_narration_language_query(auth):
+    response = client.post("/characters/presets/tank?language=cs", headers=auth)
+    assert response.status_code == 201
+    assert response.json()["narration_language"] == "cs"
+
+
 def test_create_character_rejects_non_mvp_race(auth):
     response = client.post(
         "/characters",
@@ -199,10 +220,11 @@ def _mock_online_gateway(monkeypatch):
 
     for target in ("app.api.narration_gateway_for", "app.ai.registry.narration_gateway_for"):
         monkeypatch.setattr(target, lambda _settings: _Gateway())
+    monkeypatch.setattr("app.ai.registry.has_external_paid_narration_provider", lambda _settings: True)
 
 
 def test_action_charges_energy_and_reports_balance(auth, monkeypatch):
-    async def narrated(_self, _context):
+    async def narrated(_self, _context, **_kwargs):
         return "The cellar yields a quiet discovery.", "narrated"
 
     _mock_online_gateway(monkeypatch)
@@ -224,7 +246,7 @@ def test_action_charges_energy_and_reports_balance(auth, monkeypatch):
 def test_paid_narration_fallback_writes_refund_ledger(auth, monkeypatch):
     from app.db import EnergyTransaction
 
-    async def fallback(_self, _context):
+    async def fallback(_self, _context, **_kwargs):
         return "Offline prose.", "fallback"
 
     _mock_online_gateway(monkeypatch)
@@ -253,7 +275,7 @@ def test_paid_narration_fallback_writes_refund_ledger(auth, monkeypatch):
 
 
 def test_paid_narration_fallback_refunds_commit_hold(auth, monkeypatch):
-    async def fallback(_self, _context):
+    async def fallback(_self, _context, **_kwargs):
         return "Offline prose.", "fallback"
 
     _mock_online_gateway(monkeypatch)

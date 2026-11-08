@@ -16,9 +16,10 @@ const hero = {
 } as Character;
 
 describe('chapterOneMap', () => {
-  it('locks the vault until hinted', () => {
+  it('locks the vault until Caldus reveals the route', () => {
     expect(routeOpen('The Vault of Echoes', {})).toBe(false);
-    expect(routeOpen('The Vault of Echoes', { vault_hint_given: true })).toBe(true);
+    expect(routeOpen('The Vault of Echoes', { vault_hint_given: true })).toBe(false);
+    expect(routeOpen('The Vault of Echoes', { vault_unlocked: true })).toBe(true);
   });
 
   it('marks the next corridor as adjacent', () => {

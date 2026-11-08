@@ -32,7 +32,7 @@ const cs: Record<string, string> = {
   'Suggested actions': 'Doporucene akce',
   'GROW THE PARTY': 'ROZSIR DROUPU',
   'Invite friends': 'Pozvi pratele',
-  'Share Doupě Draka — your link will count toward future in-game rewards.': 'Sdil Doupe Draka — tvuj odkaz se pocita do budoucich odmen ve hre.',
+  'Share Doupě Draka with friends — invite links help us grow the playtest.': 'Sdilej Doupe Draka s prateli — pozvanky nam pomahaji s playtestem.',
   'Share invite link': 'Sdilet pozvanku',
   'Quick generate': 'Rychle generovat',
   'Random race and class — tweak the name, then play.': 'Nahodna rasa a trida — uprav jmeno a hrej.',
@@ -228,6 +228,8 @@ const cs: Record<string, string> = {
   'Search the cellar': 'Prohledat sklep',
   'Listen for movement': 'Naslouchat pohybu',
   Planned: 'Pripravovano',
+  'Ability score bonuses from your species are applied at creation. Trait text below is SRD reference — most traits are not modeled in Ruleset v1 yet.':
+    'Bonuses k vlastnostem z rasy se aplikuji pri vytvoreni. Text vlastnosti je reference SRD — vetsina vlastnosti jeste neni v Ruleset v1 modelech.',
   'Ruleset v1 supports Human, Elf, Dwarf, and Halfling for chapter one.':
     'Ruleset v1 podporuje pro kapitolu 1 lidskou, elfskou, trpaslickou a halfling rasu.',
   'Ruleset v1 supports Fighter, Rogue, Cleric, and Wizard in play.':
@@ -535,8 +537,9 @@ const cs: Record<string, string> = {
   'Find out what happened to the shrine bell': 'Zjisti, co se stalo se chrámovým zvonem',
   'Explore the cellar and follow clues deeper underground.': 'Prozkoumej sklep a sleduj stopy hlouběji pod zemí.',
   'Further objectives unlock as you meet people along the way.': 'Další cíle se odemknou, až potkáš lidi na cestě.',
-  'Locked — learn what lies beneath the Sunken Corridor first.': 'Zamčeno — nejdřív zjisti, co se skrývá pod Potopenou chodbou.',
-  'The vault stirs, but the last seal still holds.': 'Krypta se probouzí, ale poslední pečeť ještě drží.',
+  'Locked — complete the shrine bell quest first.': 'Zamčeno — nejdřív dokonči úkol se zvonem u svatyně.',
+  'Return to the Shrine of the Forgotten and speak with Caldus again to learn the way to the Vault of Echoes.':
+    'Vrať se do Svatyně zapomenutých a znovu promluv s Caldusem — po vrácení zvonu ti prozradí cestu do Krypta ozvěn.',
   'This path is not open yet.': 'Tato cesta zatím není otevřená.',
   'A cold draft curls around the old stone stairs.': 'Studeny pruduch se vine okolo starych kamennych schodu.',
   'Mara, a lantern-bearing scavenger, warns that something follows the waterway.': 'Mara se svitilnou varuje, ze neco sleduje vodni cestu.',

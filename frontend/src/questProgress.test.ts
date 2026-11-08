@@ -30,4 +30,16 @@ describe('visibleQuestTimeline', () => {
     expect(active?.label).not.toMatch(/Nib|Caldus/i);
     expect(teaser).toBeTruthy();
   });
+
+  it('points to Caldus for the vault step after the bell is returned', () => {
+    const { active } = visibleQuestTimeline({
+      bell_quest_accepted: true,
+      bell_acquired: true,
+      bell_quest_complete: true,
+    });
+    expect(active?.id).toBe('vault_hint_given');
+    expect(active?.location).toBe('The Shrine of the Forgotten');
+    expect(active?.hint).toMatch(/Caldus/i);
+    expect(active?.hint).not.toMatch(/Sunken Corridor/i);
+  });
 });

@@ -10,6 +10,7 @@ if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
+pip install -r requirements-dev.txt
 python -m uvicorn app.api:app --reload
 ```
 
@@ -73,7 +74,8 @@ Migrations (clean database):
 alembic upgrade head
 ```
 
-Revision chain ends at `v003` (`analytics_events` with JSONB metadata on PostgreSQL).
+Revision chain ends at `v005` (`v004` default narrator tier `lite`; `v005` backfills NULL
+timestamps and enforces NOT NULL to match ORM models).
 
 Set `PYTEST_DATABASE_URL` to the same URL when running concurrency tests against Postgres (as in CI).
 

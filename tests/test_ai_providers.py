@@ -73,7 +73,7 @@ def test_provider_failure_uses_offline_fallback(monkeypatch):
     monkeypatch.setattr("app.narrator.narration_gateway_for", lambda settings: gateway)
     context = narration_request().context
 
-    narration, status = asyncio.run(Narrator().narrate_detailed(context))
+    narration, status = asyncio.run(Narrator().narrate_detailed(context, billing_tier="normal"))
 
     assert status == "fallback"
     assert narration

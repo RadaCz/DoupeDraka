@@ -28,8 +28,8 @@ journal text may still appear in English.
 - MVP kouzlení pro 8 sesílacích tříd: třídní seznamy triků a kouzel 1. úrovně,
   naučená/připravená kouzla, sloty a omezený počet skutečných efektů;
 - nástroje: kalkulačka vyvážení střetu podle XP prahů a referenční katalog kouzel;
-- herní měna Adventure Mana (⚡) v celých desetinách; nový účet dostane 100,0 ⚡,
-  Lite tahy jsou zdarma a placené tiery mají pevnou cenu;
+- kredity vypravěče (⚡) v celých desetinách; nový účet dostane 100,0 ⚡,
+  Lite tahy používají offline vypravěče zdarma, Normal účtuje jen při doručené placené naraci;
 - REST API, aiogram botové handlery a persistentní deník;
 - AI hranice: narátor dostává výsledek engine a vrací jen prózu;
 - postupné streamování narace přes SSE po uložení tahu;
@@ -187,7 +187,9 @@ cd D:\DoupeDraka
 python -m pytest -q
 ```
 
-Aktuální baseline: **238** pytest; frontend **18** Vitest. CI na větvi `clean-main` spouští
+Aktuální baseline: **310+** pytest (včetně postgres migrace v005 v GA), frontend **38** Vitest,
+funkční Playwright E2E **7** speců (+ volitelný visual). CI na větvi `clean-main` spouští
+`requirements-dev.txt`, Alembic `v005` + `alembic check` na PostgreSQL,
 navíc Postgres migrace a Playwright (viz [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)).
 
 ### Lokální AI přes Ollama

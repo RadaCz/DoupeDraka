@@ -14,6 +14,16 @@ engine-owned data in `app/engine/locations.py`.
 | The Vault of Echoes | The Bell Warden's Pit; back to the corridor | Ghoul, bandit, wolf | Broken bells hang from rusted chains. |
 | The Bell Warden's Pit | Back to the vault | **Bell Warden**, ghoul | The Bell Warden stirs in the pit. |
 
+### Optional chapter-one sites
+
+| Location | Routes | Notes |
+|---|---|---|
+| The Forgotten Crypt | Underground River | One-time echo relic side reward via exploration. |
+| The Bandit Camp | Goblin Market area | Extra encounters; not required for the bell arc. |
+| The Underground River | Sunken Corridor, Forgotten Crypt | Flavour travel / side content. |
+
+Ruleset v1 character creation supports **four races** and **four classes** in the engine; the `/reference` catalog lists more SRD entries for tooltips only.
+
 The game screen reads connected routes from `GET /reference` and offers contextual
 quick actions. Travel can also be typed directly (`travel to …`). Revisited locations
 do not repeat their first-visit beat.
@@ -27,8 +37,9 @@ the Goblin Market, Nib returns it only after the player accepts the request. Ret
 the bell grants 30 XP and 5 gold exactly once. Flags: `bell_quest_accepted`,
 `bell_found`, `bell_acquired`, `bell_quest_complete`. The bell stays marked as obtained after delivery.
 
-Travel to **The Vault of Echoes** and **The Bell Warden's Pit** is blocked until Caldus sets
-`vault_hint_given` and `vault_unlocked`.
+Travel to **The Vault of Echoes** and **The Bell Warden's Pit** is blocked until the player
+returns the bell, speaks with Caldus again, and the engine sets `vault_unlocked` (together with
+`vault_hint_given`).
 
 ### Vault finale (after the bell)
 

@@ -101,7 +101,7 @@ LOCATIONS = {
 def travel_allowed(destination: str, quest_flags: dict) -> bool:
     """Campaign gates for chapter one routes."""
     if destination in ("The Vault of Echoes", "The Bell Warden's Pit"):
-        return bool(quest_flags.get("vault_unlocked") or quest_flags.get("vault_hint_given"))
+        return bool(quest_flags.get("vault_unlocked"))
     return True
 
 

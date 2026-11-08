@@ -41,3 +41,17 @@ def standard_abilities(character_class: str) -> dict[str, int]:
         if ability not in order:
             order.append(ability)
     return dict(zip(order, STANDARD_ARRAY))
+
+
+def apply_racial_ability_increases(race: str, scores: dict[str, int]) -> dict[str, int]:
+    """Apply SRD racial ability increases once at character creation (Ruleset v1 MVP races)."""
+    from .reference import RACE_SPECS
+
+    spec = RACE_SPECS.get(race)
+    if spec is None:
+        return dict(scores)
+    increased = dict(scores)
+    for ability, bonus in spec.ability_increase.items():
+        if ability in increased:
+            increased[ability] = min(20, increased[ability] + bonus)
+    return increased

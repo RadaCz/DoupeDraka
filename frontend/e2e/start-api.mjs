@@ -1,14 +1,12 @@
 import { spawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { resolveProjectPython } from './resolve-python.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const python = join(root, '.venv', 'Scripts', 'python.exe');
+const { path: python, version } = resolveProjectPython();
+console.info(`E2E API Python: ${python} (${version})`);
 const E2E_BOT_TOKEN = '123456:e2e-test-token';
-if (!existsSync(python)) {
-  throw new Error(`Project Python environment was not found at ${python}. Install requirements.txt first.`);
-}
 
 const databaseDirectory = process.env.E2E_DATABASE_DIRECTORY;
 if (!databaseDirectory) {

@@ -380,7 +380,10 @@ function AppContent() {
       const created = await request<Character>('/characters', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(draft),
+        body: JSON.stringify({
+          ...draft,
+          language: locale === 'cs' ? 'cs' : 'en',
+        }),
       });
       setCharacters(previous => [...previous, created]);
       setCharacter(created);
@@ -398,7 +401,11 @@ function AppContent() {
     setBusy(true);
     setError(null);
     try {
-      const created = await request<Character>(`/characters/presets/${key}`, { method: 'POST' });
+      const lang = locale === 'cs' ? 'cs' : 'en';
+      const created = await request<Character>(
+        `/characters/presets/${key}${lang === 'cs' ? '?language=cs' : ''}`,
+        { method: 'POST' },
+      );
       setCharacters(previous => [...previous, created]);
       setCharacter(created);
       localStorage.setItem(ACTIVE_CHARACTER_KEY, created.id);

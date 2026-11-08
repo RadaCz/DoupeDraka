@@ -180,6 +180,7 @@ export function CharacterWizard({
           {race && (
             <div className="selection-detail">
               <strong>{t(race.name)} {t('traits')}</strong>
+              <p className="muted-copy">{t('Ability score bonuses from your species are applied at creation. Trait text below is SRD reference — most traits are not modeled in Ruleset v1 yet.')}</p>
               {race.traits.map(trait => (
                 <p key={trait.name}><b>{t(trait.name)}.</b> {t(trait.text)}</p>
               ))}

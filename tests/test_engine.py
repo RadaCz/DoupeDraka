@@ -252,10 +252,10 @@ def test_dead_character_cannot_level_up_or_heal():
 
 def test_default_abilities_use_standard_array():
     hero = GameEngine(random.Random(1)).create_character(1, "Arin", "human", "fighter")
-    assert sorted(hero.abilities.values(), reverse=True) == [15, 14, 13, 12, 10, 8]
-    # Primary ability gets the highest score, so a default fighter can hit things.
-    assert hero.abilities["strength"] == 15
-    assert hero.abilities["constitution"] == 14
+    # Standard array plus human +1 to each ability.
+    assert sorted(hero.abilities.values(), reverse=True) == [16, 15, 14, 13, 11, 9]
+    assert hero.abilities["strength"] == 16
+    assert hero.abilities["constitution"] == 15
 
 
 def test_default_abilities_are_valid_for_every_class():

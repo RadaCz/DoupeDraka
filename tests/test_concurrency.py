@@ -221,14 +221,23 @@ def test_streamed_narration_is_saved_and_idempotent(auth, monkeypatch):
     key = uuid.uuid4().hex
     calls = 0
 
-    async def chunks(context):
+    class _Gateway:
+        providers = ("mock",)
+        has_online_providers = True
+
+    for target in ("app.api.narration_gateway_for", "app.ai.registry.narration_gateway_for"):
+        monkeypatch.setattr(target, lambda _settings: _Gateway())
+    monkeypatch.setattr("app.ai.registry.has_external_paid_narration_provider", lambda _settings: True)
+    assert client.post("/economy/tier", json={"tier": "normal"}, headers=auth).status_code == 200
+
+    async def chunks(_self, context, **_kwargs):
         nonlocal calls
         calls += 1
         assert context.events
         yield "The "
         yield "stone shifts."
 
-    monkeypatch.setattr(api.narrator, "stream", chunks)
+    monkeypatch.setattr("app.narrator.Narrator.stream", chunks)
     headers = {**auth, "Idempotency-Key": key}
     path = f"/characters/{character['id']}/actions/stream"
     first = client.post(path, json={"action": "look around"}, headers=headers)
@@ -273,11 +282,20 @@ def test_streamed_narration_is_saved_and_idempotent(auth, monkeypatch):
 def test_streaming_provider_failure_replaces_partial_text_with_fallback(auth, monkeypatch):
     character = _character(auth)
 
-    async def broken_stream(context):
+    class _Gateway:
+        providers = ("mock",)
+        has_online_providers = True
+
+    for target in ("app.api.narration_gateway_for", "app.ai.registry.narration_gateway_for"):
+        monkeypatch.setattr(target, lambda _settings: _Gateway())
+    monkeypatch.setattr("app.ai.registry.has_external_paid_narration_provider", lambda _settings: True)
+    assert client.post("/economy/tier", json={"tier": "normal"}, headers=auth).status_code == 200
+
+    async def broken_stream(_self, context, **_kwargs):
         yield "partial"
         raise RuntimeError("model disconnected")
 
-    monkeypatch.setattr(api.narrator, "stream", broken_stream)
+    monkeypatch.setattr("app.narrator.Narrator.stream", broken_stream)
     response = client.post(
         f"/characters/{character['id']}/actions/stream",
         json={"action": "look around"},
@@ -348,11 +366,12 @@ def test_concurrent_turns_on_two_characters_debit_energy_once_each(auth, monkeyp
         providers = ("mock",)
         has_online_providers = True
 
-    async def narrated(_self, _context):
+    async def narrated(_self, _context, **_kwargs):
         return "The path unfolds.", "narrated"
 
     for target in ("app.api.narration_gateway_for", "app.ai.registry.narration_gateway_for"):
         monkeypatch.setattr(target, lambda _settings: _Gateway())
+    monkeypatch.setattr("app.ai.registry.has_external_paid_narration_provider", lambda _settings: True)
     monkeypatch.setattr("app.narrator.Narrator.narrate_detailed", narrated)
 
     assert client.post("/economy/tier", json={"tier": "normal"}, headers=auth).status_code == 200
@@ -400,3 +419,20 @@ def test_concurrent_turns_on_two_characters_debit_energy_once_each(auth, monkeyp
     balance, debited = asyncio.run(ledger_state())
     assert balance == 0
     assert debited == cost * 2
+
+
+def test_idempotent_replay_emits_single_turn_billing(auth, monkeypatch):
+    captured: list[dict] = []
+
+    def _capture_turn_billing(*_args, **kwargs):
+        captured.append(dict(kwargs))
+
+    monkeypatch.setattr("app.api.record_turn_billing", _capture_turn_billing)
+    character = _character(auth)
+    headers = {**auth, "Idempotency-Key": uuid.uuid4().hex}
+    path = f"/characters/{character['id']}/actions"
+    first = client.post(path, json={"action": "look around"}, headers=headers)
+    replay = client.post(path, json={"action": "look around"}, headers=headers)
+    assert first.status_code == 200
+    assert replay.status_code == 200
+    assert len(captured) == 1

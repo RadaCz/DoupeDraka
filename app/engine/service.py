@@ -1,4 +1,5 @@
 import random, re, uuid
+from . import catalog
 from .catalog import ABILITY_ORDER, CLASSES, RACES, standard_abilities
 from .encounters import MONSTERS, build_monster, filter_encounter_pool
 from .equipment import attack_modifier, damage_modifier, default_item_instances, equipped_weapon, item_attack_bonus
@@ -38,9 +39,11 @@ from .spells import (
     advance_spellcasting,
     ensure_spellcasting,
     initialize_spellcasting,
-    learn_level_up_spells,    spell_level,
+    learn_level_up_spells,
+    spell_level,
 )
-XP_THRESHOLD = 100  # XP needed per levelMANA_REGEN = 1  # mana restored after any costly turn
+XP_THRESHOLD = 100  # XP needed per level
+MANA_REGEN = 1  # mana restored after any costly turn
 
 # Verbs the engine understands. Free text is mapped onto this closed set so a
 # model can suggest an intent but can never invent a new mechanic.
@@ -86,7 +89,9 @@ class GameEngine:
         if race not in RACES or character_class not in CLASSES: raise ValueError("Unknown race or class")
         # Falling back to the standard array keeps a blank character able to hit AC 13.
         scores = abilities or standard_abilities(character_class)
-        if set(scores) != set(ABILITY_ORDER) or any(not 3 <= score <= 20 for score in scores.values()): raise ValueError("Ability scores must contain each ability in range 3–20")
+        if set(scores) != set(ABILITY_ORDER) or any(not 3 <= score <= 20 for score in scores.values()):
+            raise ValueError("Ability scores must contain each ability in range 3-20")
+        scores = catalog.apply_racial_ability_increases(race, scores)
         spec = CLASSES[character_class]; hp = max(1, spec.hit_die + self.modifier(scores["constitution"]))
         # Only classes with a spellcasting pool get mana; martial classes never do.
         mana = spec.mana + max(0, self.modifier(scores[spec.primary])) if spec.mana else 0

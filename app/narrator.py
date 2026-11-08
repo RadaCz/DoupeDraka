@@ -92,11 +92,15 @@ class Narrator:
     async def narrate(self, context: NarrationContext) -> str:
         return (await self.narrate_detailed(context))[0]
 
-    async def narrate_detailed(self, context: NarrationContext) -> tuple[str, str]:
+    async def narrate_detailed(
+        self, context: NarrationContext, *, billing_tier: str = "lite"
+    ) -> tuple[str, str]:
         """Return (prose, status) so callers can tell narration from fallback."""
         settings = get_settings()
         gateway = narration_gateway_for(settings)
         request = self._request(context)
+        if billing_tier == "lite":
+            return await OfflineProvider().complete(request), "offline"
         if not gateway.has_online_providers:
             return await OfflineProvider().complete(request), "fallback"
         try:
@@ -106,11 +110,17 @@ class Narrator:
             return await OfflineProvider().complete(request), "fallback"
         return narration, status
 
-    async def stream(self, context: NarrationContext) -> AsyncIterator[str | StreamReplaceFrame]:
+    async def stream(
+        self, context: NarrationContext, *, billing_tier: str = "lite"
+    ) -> AsyncIterator[str | StreamReplaceFrame]:
         """Yield narration chunks after mechanics have already been committed."""
         settings = get_settings()
         gateway = narration_gateway_for(settings)
         request = self._request(context)
+        if billing_tier == "lite":
+            async for chunk in OfflineProvider().stream(request):
+                yield chunk
+            return
         if not gateway.has_online_providers:
             async for chunk in OfflineProvider().stream(request):
                 yield chunk

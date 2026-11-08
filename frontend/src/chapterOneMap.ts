@@ -15,7 +15,7 @@ export const CHAPTER_ONE_LAYOUT: Record<string, { x: number; y: number }> = {
 
 export function routeOpen(route: string, quests: Record<string, boolean>) {
   if (route === 'The Vault of Echoes' || route === "The Bell Warden's Pit") {
-    return Boolean(quests.vault_unlocked || quests.vault_hint_given);
+    return Boolean(quests.vault_unlocked);
   }
   return true;
 }
@@ -23,8 +23,10 @@ export function routeOpen(route: string, quests: Record<string, boolean>) {
 export function mapLockReason(route: string, quests: Record<string, boolean>) {
   if (route === 'The Vault of Echoes' || route === "The Bell Warden's Pit") {
     if (quests.vault_unlocked) return null;
-    if (quests.vault_hint_given) return 'The vault stirs, but the last seal still holds.';
-    return 'Locked — learn what lies beneath the Sunken Corridor first.';
+    if (quests.bell_quest_complete) {
+      return 'Return to the Shrine of the Forgotten and speak with Caldus again to learn the way to the Vault of Echoes.';
+    }
+    return 'Locked — complete the shrine bell quest first.';
   }
   return 'This path is not open yet.';
 }

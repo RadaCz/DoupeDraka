@@ -154,7 +154,7 @@ export function HomeScreen({
         <div>
           <p className="eyebrow">{t('GROW THE PARTY')}</p>
           <h2>{t('Invite friends')}</h2>
-          <p>{t('Share Doupě Draka — your link will count toward future in-game rewards.')}</p>
+          <p>{t('Share Doupě Draka with friends — invite links help us grow the playtest.')}</p>
         </div>
         <button
           type="button"

@@ -89,6 +89,16 @@ def _provider_for_name(name: str, settings: Settings) -> NamedProvider | None:
     return None
 
 
+def has_external_paid_narration_provider(settings: Settings) -> bool:
+    """True when a configured provider can incur off-machine API cost (not local Ollama)."""
+    for name in get_chain_names(settings):
+        if name == "ollama":
+            continue
+        if _provider_for_name(name, settings) is not None:
+            return True
+    return False
+
+
 def narration_gateway_for(settings: Settings) -> NarrationGateway:
     providers: list[NamedProvider] = []
     for name in get_chain_names(settings):

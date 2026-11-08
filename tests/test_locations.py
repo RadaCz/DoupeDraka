@@ -42,6 +42,8 @@ def test_travel_destination_parsing(action, expected):
 
 def test_vault_route_requires_story_unlock():
     assert not travel_allowed("The Vault of Echoes", {})
+    assert not travel_allowed("The Vault of Echoes", {"vault_hint_given": True})
+    assert not travel_allowed("The Vault of Echoes", {"bell_quest_complete": True})
     assert travel_allowed("The Vault of Echoes", {"vault_unlocked": True})
 
 
@@ -69,3 +71,9 @@ def test_bell_quest_branch_resolves_in_order():
     assert hero.quest_flags.get("bell_quest_complete")
     assert hero.xp >= 30
     assert complete.state_changed
+    assert not travel_allowed("The Vault of Echoes", hero.quest_flags)
+
+    reveal, _ = game.resolve_action(hero, "talk to Caldus about the vault", None)
+    assert reveal.state_changed
+    assert hero.quest_flags.get("vault_unlocked")
+    assert travel_allowed("The Vault of Echoes", hero.quest_flags)

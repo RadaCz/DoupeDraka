@@ -109,7 +109,12 @@ def test_can_afford_boundaries():
     assert economy.can_afford(0, "normal") is False
     assert economy.DEFAULT_TIER == "lite"
     assert economy.effective_billing_tier("normal", has_online_provider=False) == "lite"
-    assert economy.effective_billing_tier("normal", has_online_provider=True) == "normal"
+    assert economy.effective_billing_tier(
+        "normal", has_online_provider=True, has_external_paid_provider=False
+    ) == "lite"
+    assert economy.effective_billing_tier(
+        "normal", has_online_provider=True, has_external_paid_provider=True
+    ) == "normal"
 
 
 def test_unknown_tier_and_package_raise():

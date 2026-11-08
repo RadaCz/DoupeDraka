@@ -27,11 +27,13 @@ Playtest protokol primárně hodnotí **první session**; dokončení celé kapi
 
 ### 1.2 Výchozí režim vypravěče (cíl bety)
 
-**Cíl specifikace:** hráč začíná na **Lite** (bez útraty kreditů).  
-**As-is:** může být uložen **Normal** — facilitator před startem:
+**Cíl closed beta:** hráč začíná na **Lite** (offline vypravěč, bez útraty ⚡ a bez placeného API).
+
+**Facilitator před startem:**
 
 1. Nastavení → vypravěč → **Lite** (nebo v budoucnu E2 default).
-2. Vysvětlit: ⚡ = **kredity vypravěče**, ne mana kouzelníka.
+2. Vysvětlit: ⚡ = **kredity vypravěče** (volitelná kvalita narace), ne spell sloty ani pay-to-win.
+3. Hratelné rasy/třídy: Human, Elf, Dwarf, Halfling + Fighter, Rogue, Cleric, Wizard; ostatní SRD položky jsou referenční.
 
 ### 1.3 Facilitator checklist
 
@@ -54,7 +56,7 @@ Playtest protokol primárně hodnotí **první session**; dokončení celé kapi
 | 4 | Talk Caldus / accept quest | `bell_quest_accepted` | — | NPC engine |
 | 5 | Travel Market, ask Nib | `bell_acquired`, bell v inventáři | — | |
 | 6 | Return bell (`return_bell`) | `bell_quest_complete` | 30 XP, 5 gp | **Jen** vrácení zvonu |
-| 7 | Talk Caldus znovu (`accept_caldus`) | `vault_hint_given`, `vault_unlocked` | — | Vault route — **samostatný** krok po §6 |
+| 7 | Talk Caldus znovu ve Shrine (`accept_caldus`) | `vault_hint_given`, `vault_unlocked` | — | Vault route — **samostatný** krok po §6; UI hint vede k Caldusovi, ne do Sunken Corridor |
 | 8 | Vault → Pit → Bell Warden | Combat, `chapter_one_complete` | boss XP + 25 gp | Boss; často až mimo první 45–90 min |
 
 **Volitelný side:** Forgotten Crypt search (1×) — 10 XP, 15 gp, Echo shard (mimo D6).

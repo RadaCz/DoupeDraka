@@ -2,6 +2,13 @@
 
 ## Unreleased (2026-11-08)
 
+### Closed beta audit (clean-main, pre-commit)
+- CI: `requirements-dev.txt`, portable E2E Python resolver, PostgreSQL `v005` + `alembic check`, functional Playwright vs optional `test:e2e:visual`.
+- Engine: racial ability bonuses at creation; vault quest hints aligned with Caldus second talk.
+- Billing: Lite → offline narrator only; Normal bills only with external paid provider; stream finalize/refund on disconnect.
+- UX: honest invite copy; Czech narration language on create; race trait reference disclaimer.
+- Tests: `test_alembic_v005`, billing contract, offline Czech scenarios, hero racial presets.
+
 ### Production ops
 - PostgreSQL JSONB telemetry column, asyncpg pool settings, Alembic `v003`, enhanced `/health`, `scripts/load_test.py`, Compose + Postgres.
 
