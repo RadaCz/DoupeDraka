@@ -3,7 +3,7 @@ import asyncio
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import text
+from sqlalchemy import select, text
 
 from app.api import app
 from app.db import Session, User, init_db
@@ -219,6 +219,37 @@ def test_action_charges_energy_and_reports_balance(auth, monkeypatch):
     assert data["energy_tenths"] == 990
     assert data["energy"] == 99.0
     assert data["tier"] == "normal"
+
+
+def test_paid_narration_fallback_writes_refund_ledger(auth, monkeypatch):
+    from app.db import EnergyTransaction
+
+    async def fallback(_self, _context):
+        return "Offline prose.", "fallback"
+
+    _mock_online_gateway(monkeypatch)
+    monkeypatch.setattr("app.narrator.Narrator.narrate_detailed", fallback)
+
+    assert client.post("/economy/tier", json={"tier": "normal"}, headers=auth).status_code == 200
+    character = client.post("/characters/presets/tank", headers=auth).json()
+    response = client.post(
+        f"/characters/{character['id']}/actions", json={"action": "look around"}, headers=auth
+    )
+    assert response.status_code == 200
+    assert response.json()["energy_tenths"] == 1000
+
+    async def refunds():
+        async with Session() as session:
+            rows = (
+                await session.scalars(
+                    select(EnergyTransaction).where(EnergyTransaction.reason == "refund")
+                )
+            ).all()
+            return rows
+
+    refunds = asyncio.run(refunds())
+    assert len(refunds) == 1
+    assert refunds[0].amount_tenths == 10
 
 
 def test_paid_narration_fallback_refunds_commit_hold(auth, monkeypatch):

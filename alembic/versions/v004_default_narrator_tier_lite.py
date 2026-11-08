@@ -3,8 +3,8 @@
 from alembic import op
 import sqlalchemy as sa
 
-revision = "v004_default_narrator_tier_lite"
-down_revision = "v003_analytics_events"
+revision = "v004"
+down_revision = "v003"
 branch_labels = None
 depends_on = None
 
