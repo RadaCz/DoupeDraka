@@ -1,21 +1,8 @@
 @import url("./styles/fonts.css");
-@import url("./styles/tokens.css");
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono&family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700&display=swap');
-
-:root {
-  color-scheme: dark;
-  font-family: Manrope, system-ui, sans-serif;
-  color: #edf1e5;
-  background: #111713;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  --surface: #182019;
-  --surface-raised: #202a1f;
-  --border: #3e503a;
-  --muted: #aebaa8;
-  --gold: #d4c07d;
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
-}
+@import url("./styles/theme-dark.css");
+/* Parchment tokens (design/direction.md) — deferred: ./styles/tokens.css */
+@import url("./styles/polish.css");
+@import url("./styles/play.css");
 
 * {
   box-sizing: border-box;
@@ -1627,6 +1614,17 @@ summary:focus-visible {
 
 .game-screen.text-first .action-composer-wrap {
   flex-shrink: 0;
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
+  padding-top: 10px;
+  padding-bottom: calc(10px + var(--tg-safe-bottom, var(--safe-bottom, 0px)));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--tg-bg, #0d120e) 0%, transparent) 0%,
+    color-mix(in srgb, var(--tg-bg, #0d120e) 72%, transparent) 28%,
+    var(--tg-bg, #0d120e) 55%
+  );
 }
 
 .app-shell.play-active .app-header {
@@ -1688,10 +1686,10 @@ summary:focus-visible {
   grid-template-columns: minmax(0, 1fr) auto auto;
   gap: 8px;
   align-items: center;
-  padding: 5px 8px;
-  border: 1px solid #2a382d;
+  padding: 6px 10px;
+  border: 1px solid var(--border-subtle, #2a382d);
   border-radius: 10px;
-  background: #121812;
+  background: var(--surface-deep, #121812);
 }
 
 .play-status-hp {
@@ -1727,8 +1725,9 @@ summary:focus-visible {
 }
 
 .play-status-numbers {
-  color: #e8ede5;
-  font: 700 11px 'DM Mono', monospace;
+  color: var(--text, #e8ede5);
+  font: 700 11px var(--font-mono);
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
@@ -1790,6 +1789,22 @@ summary:focus-visible {
   gap: 6px;
 }
 
+.suggested-actions-scroll {
+  position: relative;
+  max-width: 100%;
+}
+
+.suggested-actions-scroll::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 32px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, var(--tg-bg, #0d120e));
+}
+
 .suggested-actions-row {
   flex-wrap: nowrap;
   padding-bottom: 2px;
@@ -1799,13 +1814,13 @@ summary:focus-visible {
 .suggested-actions-row button {
   flex: 0 0 auto;
   white-space: nowrap;
-  min-height: 34px;
-  padding: 6px 12px;
+  min-height: 44px;
+  padding: 8px 14px;
   border-radius: 999px;
-  border: 1px solid #35503a;
-  background: #18241b;
-  color: #c9dcc9;
-  font-size: 12px;
+  border: 1px solid color-mix(in srgb, var(--accent-verb) 40%, var(--border-subtle));
+  background: var(--surface-deep, #18241b);
+  color: var(--text-soft, #c9dcc9);
+  font-size: 13px;
 }
 
 .composer-input-shell {
@@ -1817,11 +1832,17 @@ summary:focus-visible {
   grid-template-columns: auto 1fr auto auto;
   align-items: stretch;
   gap: 0;
-  min-height: 46px;
-  border: 1px solid #334837;
+  min-height: 48px;
+  border: 1px solid var(--border-subtle, #334837);
   border-radius: 14px;
-  background: #141c16;
+  background: var(--surface-deep, #141c16);
   overflow: hidden;
+}
+
+.composer-field:focus-within {
+  border-color: color-mix(in srgb, var(--accent-verb) 55%, var(--border-subtle));
+  outline: 2px solid color-mix(in srgb, var(--accent-verb) 35%, transparent);
+  outline-offset: 1px;
 }
 
 .composer-field-tools {
@@ -3924,17 +3945,43 @@ summary:focus-visible {
   clip: rect(0 0 0 0);
 }
 
-.journal-prose { margin: 0 0 8px; line-height: 1.55; }
-.journal-mechanic {
-  margin: 6px 0 10px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  font: 600 0.9em 'DM Mono', monospace;
-  border: 1px solid transparent;
+.journal-prose {
+  margin: 0 0 12px;
+  font-family: var(--font-journal);
+  font-size: clamp(1rem, 0.95rem + 0.35vw, 1.125rem);
+  line-height: 1.68;
+  color: var(--text-soft, #e8ede5);
+  text-wrap: pretty;
 }
-.journal-mechanic-success { background: #1a2d1f; border-color: #3f6b4a; color: #b7e0bf; }
-.journal-mechanic-failure { background: #2d1717; border-color: #6b3f3f; color: #e8b7b7; }
-.journal-mechanic-neutral { background: #1c2220; border-color: #3d4e45; color: #c8d6cd; }
+
+.journal-mechanic {
+  margin: 4px 0 12px;
+  padding: 4px 0 4px 10px;
+  border-radius: 0;
+  border: none;
+  border-left: 2px solid var(--border-subtle, #3d4e45);
+  background: transparent;
+  font: 600 0.72rem var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.journal-mechanic-success {
+  border-left-color: color-mix(in srgb, var(--accent-verb) 65%, #6b9a72);
+  color: color-mix(in srgb, var(--accent-verb) 55%, var(--muted));
+}
+
+.journal-mechanic-failure {
+  border-left-color: #9a5f55;
+  color: color-mix(in srgb, #c98a7f 45%, var(--muted));
+}
+
+.journal-mechanic-neutral {
+  border-left-color: var(--border-subtle, #3d4e45);
+  color: var(--muted);
+}
 
 .character-hub-tabs {
   display: flex;

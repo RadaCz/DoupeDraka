@@ -10,7 +10,7 @@ Poslední revize: 2026-03-29. Etapy 7–9 záměrně otevřené až po uzavřen�
 | 3 | Ruleset v1 | Průběžně | `ruleset_v1.py` + MVP lock při tvorbě; UI „Planned“; iniciativa/akce — backlog |
 | 4 | First campaign slice | Průběžně | `quests.py` + `/reference` katalog; side quest Crypt; hlavní quest refaktor |
 | 5 | AI DM CZ | Průběžně | `narration_language`, offline CS, prose guard telemetry |
-| 6 | Mini App & Telegram QA | Hotovo (uživatel) | Checklist vyplněn; CS chips |
+| 6 | Mini App & Telegram QA | Hotovo (uživatel) | Checklist vyplněn; CS chips; frontend polish fáze 0–6 (theme-dark, play, polish moduly, `styles/README.md`, volitelný `e2e/visual-baseline.spec.ts`) |
 | 7 | Closed beta | Nezačato | Telemetry částečně (`analytics_events`) |
 | 8 | Co-op MP | Nezačato | Záměrně po sólo kapitole |
 | 9 | Monetizace | Nezačato | Lite-only bez LLM provideru; Pro vypnuto |

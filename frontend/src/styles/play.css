@@ -1,0 +1,13 @@
+/* Play loop layout — extracted polish layer (see also inline rules in styles.css). */
+
+.game-screen.text-first .play-scene-title {
+  color: var(--text);
+}
+
+.turn-delta-strip {
+  padding: 6px 10px;
+  border-left: 2px solid var(--gold);
+  background: color-mix(in srgb, var(--gold) 8%, transparent);
+  color: var(--text-soft);
+  font-size: 0.9rem;
+}

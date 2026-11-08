@@ -1,0 +1,56 @@
+/* ============================================================
+   DoupeDraka — dark Telegram-first theme (active UI)
+   Parchment tokens in tokens.css are deferred; not imported in prod chain.
+   ============================================================ */
+
+:root {
+  color-scheme: dark;
+
+  /* Telegram chrome (set at runtime by telegramWebApp.ts; fallbacks for browser) */
+  --tg-bg: #0d120e;
+  --tg-surface: #182019;
+  --tg-text: #edf1e5;
+  --tg-hint: #aebaa8;
+  --tg-button: #4a8f5c;
+  --tg-safe-top: env(safe-area-inset-top, 0px);
+  --tg-safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  /* Semantic aliases — use these in components and new CSS */
+  --surface: var(--tg-surface, #182019);
+  --surface-raised: #202a1f;
+  --surface-deep: #121812;
+  --text: var(--tg-text, #edf1e5);
+  --text-soft: #d8e6d8;
+  --muted: var(--tg-hint, #aebaa8);
+  --border: #3e503a;
+  --border-subtle: #2f3d32;
+  --accent-verb: var(--tg-button, #4a8f5c);
+  --accent-verb-hover: color-mix(in srgb, var(--accent-verb) 85%, #000);
+  /* Legacy aliases used in error panels and highlights */
+  --accent: var(--accent-verb);
+  --accent-hover: var(--accent-verb-hover);
+  --accent-ink: #0d120e;
+  --gold: #d4c07d;
+  --safe-bottom: var(--tg-safe-bottom, env(safe-area-inset-bottom, 0px));
+
+  /* Typography */
+  --font-ui: Manrope, system-ui, sans-serif;
+  --font-mono: 'DM Mono', ui-monospace, monospace;
+  --font-journal: Literata, 'Source Serif 4', Georgia, serif;
+
+  font-family: var(--font-ui);
+  color: var(--text);
+  background: var(--tg-bg, #111713);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+html.telegram-themed {
+  --surface: color-mix(in srgb, var(--tg-surface, #182019) 88%, var(--tg-bg, #0d120e));
+  --surface-raised: color-mix(in srgb, var(--tg-surface, #202a1f) 92%, var(--tg-bg));
+  --surface-deep: color-mix(in srgb, var(--tg-bg, #0d120e) 94%, #000);
+  --text: var(--tg-text, #d8e6d8);
+  --muted: var(--tg-hint, #9aa89b);
+  --border: color-mix(in srgb, var(--tg-hint, #3e503a) 35%, var(--tg-bg));
+  --accent-verb: var(--tg-button, #4a8f5c);
+}

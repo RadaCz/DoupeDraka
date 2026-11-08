@@ -1,0 +1,62 @@
+/* Phase 3 — Map & quests */
+
+.map-graph-wrap {
+  border-color: var(--border-subtle);
+  background: var(--surface-deep);
+}
+
+.map-graph-node.locked,
+.map-edge.locked {
+  opacity: 0.72;
+}
+
+.map-graph-node.locked .map-node-label {
+  color: var(--muted);
+}
+
+.map-legend {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.map-location-sheet {
+  padding-bottom: calc(16px + var(--tg-safe-bottom, var(--safe-bottom)));
+  max-height: min(72vh, 520px);
+  overflow: auto;
+}
+
+.quest-main-card {
+  margin-bottom: 12px;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--gold) 45%, var(--border-subtle));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--gold) 8%, var(--surface-deep));
+}
+
+.quest-next-card {
+  border-color: var(--border-subtle);
+  background: var(--surface);
+}
+
+.quest-next-card.here {
+  border-color: color-mix(in srgb, var(--accent-verb) 50%, var(--border));
+  box-shadow: inset 3px 0 0 var(--accent-verb);
+}
+
+.quest-next-card:not(.done):not(.here) {
+  border-left: 3px solid var(--border-subtle);
+}
+
+.quest-screen .quest-next-card + .quest-next-card {
+  margin-top: 10px;
+  opacity: 0.95;
+}
+
+.quest-step {
+  border-color: var(--border-subtle);
+  background: var(--surface-deep);
+}
+
+.quest-step.done .quest-step-marker {
+  color: var(--accent-verb);
+}

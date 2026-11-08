@@ -420,7 +420,7 @@ export function ToolsScreen({
     return matchesSearch && matchesLevel && matchesProgression;
   }).slice(0, 60), [spells, search, spellLevel, spellScope, maxSpellLevel]);
   return (
-    <section className="screen">
+    <section className="screen tools-screen">
       <div className="page-title"><p className="eyebrow">{t('FIELD GUIDE')}</p><h1>{t("Adventurer's tools")}</h1><p>{t('Reference material and planning tools from the SRD catalog.')}</p></div>
       <div className="tool-switch" role="tablist" aria-label={t('Choose a tool')}>
         <button type="button" role="tab" aria-selected={tool === 'library'} className={tool === 'library' ? 'active' : ''} onClick={() => setTool('library')}>✧ {t('Spell library')} <span>{spells.length}</span></button>

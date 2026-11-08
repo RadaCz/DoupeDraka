@@ -1,0 +1,58 @@
+/* Phase 4 — Character hub, settings, tools */
+
+.character-hub-tabs button {
+  border-color: var(--border-subtle);
+  background: var(--surface-deep);
+  color: var(--muted);
+}
+
+.character-hub-tabs button.active {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 10%, var(--surface));
+}
+
+.tier-card {
+  border-color: var(--border-subtle);
+  background: var(--surface);
+}
+
+.tier-card.selected {
+  border-color: var(--accent-verb);
+  background: color-mix(in srgb, var(--accent-verb) 10%, var(--surface));
+}
+
+.tier-list {
+  display: grid;
+  gap: 10px;
+}
+
+.tools-screen .form-input,
+.tools-screen .form-select {
+  width: 100%;
+  min-height: 44px;
+}
+
+.tools-screen .stepper {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 480px) {
+  .tools-screen .tool-switch {
+    flex-wrap: wrap;
+  }
+
+  .ability-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .inventory-row {
+    flex-wrap: wrap;
+  }
+}
+
+.inventory-detail-card {
+  border-color: var(--border-subtle);
+  background: var(--surface-raised);
+}

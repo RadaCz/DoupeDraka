@@ -286,10 +286,12 @@ export function ActionComposer(props: PlayScreenProps) {
   return (
     <div className="action-composer-wrap action-composer-text-first">
       {chips.length > 0 && (
-        <div className="suggested-actions suggested-actions-row" aria-label={t('Suggested actions')}>
-          {chips.map(chip => (
-            <button type="button" key={chip.key} disabled={busy} onClick={() => handleChip(chip)}>{chip.label}</button>
-          ))}
+        <div className="suggested-actions-scroll">
+          <div className="suggested-actions suggested-actions-row" aria-label={t('Suggested actions')}>
+            {chips.map(chip => (
+              <button type="button" key={chip.key} disabled={busy} onClick={() => handleChip(chip)}>{chip.label}</button>
+            ))}
+          </div>
         </div>
       )}
       <form className="composer-input-shell" onSubmit={handleSubmit}>

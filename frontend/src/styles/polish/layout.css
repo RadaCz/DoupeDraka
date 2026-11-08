@@ -1,0 +1,85 @@
+/* Phase 2 — Hub, bottom nav, More */
+
+.home-screen .continue-button {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 4px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  background: var(--accent-verb);
+  border-color: var(--accent-verb);
+  color: var(--accent-ink, #0d120e);
+}
+
+.home-screen .continue-button:not(:disabled):hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.home-shortcut {
+  border-color: var(--border-subtle);
+  background: var(--surface-deep);
+  color: var(--text-soft);
+}
+
+.home-shortcut:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent-verb) 35%, var(--border-subtle));
+}
+
+.home-new-hero,
+.home-invite-card .text-button {
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.home-invite-card {
+  border-color: var(--border-subtle);
+  background: var(--surface);
+}
+
+.empty-adventure-card .primary {
+  width: 100%;
+  min-height: 48px;
+}
+
+.bottom-nav {
+  border-top-color: var(--border-subtle);
+  background: color-mix(in srgb, var(--tg-bg, #121914) 96%, #000);
+  padding-bottom: max(6px, var(--tg-safe-bottom, var(--safe-bottom)));
+}
+
+.bottom-nav button {
+  color: var(--muted);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.bottom-nav button.active {
+  background: color-mix(in srgb, var(--accent-verb) 22%, var(--surface-deep));
+  color: color-mix(in srgb, var(--accent-verb) 70%, var(--text));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-verb) 35%, transparent);
+}
+
+.bottom-nav button.active > small {
+  color: inherit;
+}
+
+.more-screen .more-link-card {
+  border-color: var(--border-subtle);
+  background: var(--surface);
+  border-radius: 14px;
+  min-height: 56px;
+}
+
+.more-screen .more-link-card:hover {
+  border-color: color-mix(in srgb, var(--accent-verb) 40%, var(--border-subtle));
+  background: var(--surface-raised);
+}
+
+.more-screen .more-link-card strong {
+  color: var(--text);
+}
+
+.screen.empty-screen p[role='alert'] {
+  color: var(--muted);
+  line-height: 1.5;
+}

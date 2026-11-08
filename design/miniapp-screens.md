@@ -1,6 +1,6 @@
 # DoupěDraka Mini App — obrazovky a engine truth
 
-Zdroj pravdy pro frontend sprinty 1–4. Vizuál: **B modern dark fantasy**; ilustrace **C** až po Sprintu 4 (placeholder).
+Zdroj pravdy pro frontend sprinty 1–4. Vizuál: **tmavé Telegram UI** (`frontend/src/styles/theme-dark.css`); moduly fází 2–4 v `frontend/src/styles/polish/` (import `polish.css`); play vrstva `play.css`. Ilustrace **C** až po Sprintu 4 (placeholder). Pergamen z `design/direction.md` je odložený.
 
 ## 1. Tři vrstvy
 

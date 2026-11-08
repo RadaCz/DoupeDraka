@@ -1,0 +1,44 @@
+/* Phase 3 — Character wizard */
+
+.wizard-page {
+  color: var(--text);
+}
+
+.wizard-progress-step > span {
+  border-color: var(--border-subtle);
+  background: var(--surface-deep);
+  color: var(--muted);
+}
+
+.wizard-progress-step.active > span {
+  border-color: var(--accent-verb);
+  color: var(--accent-ink, #0d120e);
+  background: var(--accent-verb);
+}
+
+.selection-card {
+  border-color: var(--border-subtle);
+  background: var(--surface);
+  color: var(--text-soft);
+}
+
+.selection-card.selected {
+  border-color: color-mix(in srgb, var(--accent-verb) 55%, var(--border));
+  background: color-mix(in srgb, var(--accent-verb) 12%, var(--surface));
+}
+
+.selection-card.planned {
+  opacity: 0.5;
+  border-style: dashed;
+}
+
+.wizard-note {
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.wizard-next .primary {
+  min-height: 48px;
+  width: 100%;
+}
