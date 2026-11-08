@@ -2,6 +2,11 @@
 
 ## Unreleased (2026-11-08)
 
+### Playability & viral hub pass
+- Suggested action chips return on the game screen (instant submit); Talk prefills when no NPC quest cue.
+- Hub tab in bottom nav; shortcuts to map/quests; invite share stub; Quick generate in character creation.
+- Six-column navigation; home hub visible while a character is active.
+
 ### Mini App UI-3 – UI-6
 - Graph map for chapter-one locations with locked vault routes and travel from adjacent nodes.
 - Quest screen highlights the next objective from quest flags.

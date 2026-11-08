@@ -520,7 +520,20 @@ function AppContent() {
       </header>
 
       <main className="main-content" key={screen}>
-        {screen === 'home' && <HomeScreen character={character} characters={characters} presets={presets} economy={economy} onContinue={() => navigate('game')} onCreate={() => navigate('create')} onPreset={createPreset} onSelect={selectCharacter} />}
+        {screen === 'home' && (
+          <HomeScreen
+            character={character}
+            characters={characters}
+            presets={presets}
+            economy={economy}
+            onContinue={() => navigate('game')}
+            onCreate={() => navigate('create')}
+            onPreset={createPreset}
+            onSelect={selectCharacter}
+            onOpenMap={() => navigate('map')}
+            onOpenQuests={() => navigate('quests')}
+          />
+        )}
         {screen === 'create' && <CharacterWizard catalog={catalog} presets={presets} busy={busy} error={error} onCreate={createCharacter} onPreset={createPreset} onCancel={() => navigate('home')} />}
         {screen === 'game' && character && (
           <GameScreen
@@ -559,7 +572,7 @@ function AppContent() {
         {screen === 'game' && !character && <div className="empty-screen"><p role="alert">{t('Choose or create an adventurer before beginning the story.')}</p><button className="primary" onClick={() => navigate('home')}>{t('Back to home')}</button></div>}
       </main>
 
-      {character && screen !== 'home' && screen !== 'create' && (
+      {character && screen !== 'create' && (
         <BottomNav screen={screen} onNavigate={navigate} />
       )}
     </div>

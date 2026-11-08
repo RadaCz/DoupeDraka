@@ -34,6 +34,12 @@
 - `BackButton` on More sub-screens and secondary screens.
 - Haptic success feedback when a streamed turn completes.
 
+## Playability pass
+
+- Contextual **Suggested** chips on Play screen (rest, tracks, travel targets, quest lines).
+- **Hub** bottom-nav tab; map/quest shortcuts and invite on home.
+- **Quick generate** + step-by-step wizard on character path.
+
 ## Deferred
 
 - Full design/direction.md parchment theme migration (palette typography overhaul).

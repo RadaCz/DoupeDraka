@@ -49,7 +49,7 @@ interface QuickAction {
   description: string;
   glyph: string;
   action?: string;
-  mode: 'submit' | 'map' | 'custom' | 'spells';
+  mode: 'submit' | 'map' | 'custom' | 'spells' | 'prefill';
 }
 
 function buildQuickActions(
@@ -77,6 +77,7 @@ function buildQuickActions(
   }
   const contextual = suggestedActions(character, events, locations, t);
   const talk = contextual.find(item => /talk|ask|return|caldus|nib|bell/i.test(item.action));
+  const talkMode: QuickAction['mode'] = talk ? 'submit' : 'prefill';
   return [
     {
       id: 'explore',
@@ -92,7 +93,7 @@ function buildQuickActions(
       description: talk ? t(talk.label) : t('Speak or persuade'),
       glyph: '♙',
       action: talk?.action ?? 'listen for movement',
-      mode: 'submit',
+      mode: talkMode,
     },
     {
       id: 'travel',
@@ -159,6 +160,24 @@ function suggestedActions(
     return [...actions.slice(0, 2), actions[actions.length - 1]];
   }
   return actions.slice(0, 3);
+}
+
+function contextualChips(
+  character: Character,
+  events: JournalEvent[],
+  locations: LocationReference[],
+  t: (value: string) => string,
+) {
+  const chips = suggestedActions(character, events, locations, t);
+  const talk = chips.find(item => /talk|ask|return|caldus|nib|bell/i.test(item.action));
+  return chips.filter(item => {
+    if (item.action === `search ${character.location}`) return false;
+    if (talk && item.action === talk.action) return false;
+    if (character.in_combat) {
+      if (item.action === 'flee' || item.action.startsWith('attack ')) return false;
+    }
+    return true;
+  }).slice(0, 4);
 }
 
 function scenePrompt(character: Character, events: JournalEvent[], t: (value: string) => string) {
@@ -233,6 +252,8 @@ export function HomeScreen({
   onCreate,
   onPreset,
   onSelect,
+  onOpenMap,
+  onOpenQuests,
 }: {
   character: Character | null;
   characters: Character[];
@@ -242,6 +263,8 @@ export function HomeScreen({
   onCreate: () => void;
   onPreset: (key: string) => void;
   onSelect: (character: Character) => void;
+  onOpenMap?: () => void;
+  onOpenQuests?: () => void;
 }) {
   const { t } = useI18n();
   return (
@@ -286,6 +309,11 @@ export function HomeScreen({
             <span>⌖ {character.location}</span>
           </div>
           <button type="button" className="primary continue-button" onClick={onContinue}>{t('Continue adventure')} <span aria-hidden="true">→</span></button>
+          <div className="home-shortcut-row">
+            <button type="button" className="home-shortcut" onClick={onOpenMap}>{t('Map')}</button>
+            <button type="button" className="home-shortcut" onClick={onOpenQuests}>{t('Quests')}</button>
+          </div>
+          <button type="button" className="text-button home-new-hero" onClick={onCreate}>{t('New adventurer')}</button>
         </article>
       ) : (
         <article className="empty-adventure-card">
@@ -310,6 +338,32 @@ export function HomeScreen({
           </div>
         </section>
       )}
+
+      <article className="home-invite-card">
+        <div>
+          <p className="eyebrow">{t('GROW THE PARTY')}</p>
+          <h2>{t('Invite friends')}</h2>
+          <p>{t('Share Doupě Draka — your link will count toward future in-game rewards.')}</p>
+        </div>
+        <button
+          type="button"
+          className="text-button"
+          onClick={() => {
+            const bot = import.meta.env.VITE_TELEGRAM_BOT_USERNAME;
+            const url = bot ? `https://t.me/${bot}?startapp=invite` : window.location.href;
+            const telegram = window.Telegram?.WebApp;
+            if (telegram?.openTelegramLink && bot) {
+              telegram.openTelegramLink(url);
+            } else if (navigator.share) {
+              void navigator.share({ title: 'Doupě Draka', url });
+            } else {
+              void navigator.clipboard?.writeText(url);
+            }
+          }}
+        >
+          {t('Share invite link')} →
+        </button>
+      </article>
 
       <section className="section-block">
         <div className="section-heading">
@@ -384,6 +438,7 @@ export function GameScreen(props: {
     .sort((left, right) => left.level - right.level || left.name.localeCompare(right.name));
   const hasPotion = character.inventory.some(item => item.toLowerCase().includes('potion'));
   const quickActions = buildQuickActions(character, events, locations, t, characterSpells.length > 0, hasPotion);
+  const extraChips = contextualChips(character, events, locations, t);
 
   const runQuickAction = (quick: QuickAction) => {
     if (busy) return;
@@ -392,6 +447,11 @@ export function GameScreen(props: {
       return;
     }
     if (quick.mode === 'custom') {
+      actionInputRef.current?.focus();
+      return;
+    }
+    if (quick.mode === 'prefill') {
+      if (quick.action) setAction(quick.action);
       actionInputRef.current?.focus();
       return;
     }
@@ -528,6 +588,21 @@ export function GameScreen(props: {
             </button>
           ))}
         </div>
+        {extraChips.length > 0 && (
+          <div className="suggested-actions" aria-label={t('Suggested actions')}>
+            <span className="suggestion-heading">{t('SUGGESTED')}</span>
+            {extraChips.map(chip => (
+              <button
+                type="button"
+                key={chip.action}
+                disabled={busy}
+                onClick={() => onAction(chip.action)}
+              >
+                {t(chip.label)}
+              </button>
+            ))}
+          </div>
+        )}
         <form className="action-box" onSubmit={handleSubmit}>
           <input ref={actionInputRef} value={action} onChange={event => setAction(event.target.value)} placeholder={busy ? t('The narrator is writing…') : t('What do you do?')} disabled={busy} aria-label={t('Your action')} />
           <button type="submit" className="primary" disabled={busy || !action.trim() || Boolean(spellWarning)} aria-label={t('Send action')}>→</button>
@@ -1103,6 +1178,7 @@ export function BottomNav({ screen, onNavigate }: { screen: AppScreen; onNavigat
           ? 'more'
           : screen;
   const items: Array<{ key: AppScreen; label: string; glyph: string }> = [
+    { key: 'home', label: t('Hub'), glyph: '⌂' },
     { key: 'game', label: t('Play'), glyph: '⚔' },
     { key: 'map', label: t('Map'), glyph: '⌖' },
     { key: 'quests', label: t('Quests'), glyph: '◇' },

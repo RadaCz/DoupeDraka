@@ -1129,7 +1129,7 @@ summary:focus-visible {
   z-index: 4;
   min-height: calc(60px + var(--safe-bottom));
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   padding: 5px 4px max(5px, var(--safe-bottom));
   border-top: 1px solid #29342b;
   background: #121914;
@@ -1158,7 +1158,7 @@ summary:focus-visible {
 .bottom-nav button > small {
   overflow: hidden;
   max-width: 100%;
-  font-size: 12px;
+  font-size: 10px;
   line-height: 1.2;
   text-overflow: ellipsis;
 }
@@ -3277,4 +3277,44 @@ summary:focus-visible {
 .character-panel > .ability-grid,
 .character-panel > .inventory-card {
   padding: 0 14px 14px;
+}
+
+.home-shortcut-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.home-shortcut {
+  min-height: 44px;
+  border: 1px solid #334837;
+  border-radius: 12px;
+  background: #172219;
+  color: #c5d6c6;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.home-invite-card {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0;
+  padding: 14px 16px;
+  border: 1px solid #2f3d32;
+  border-radius: 14px;
+  background: #161d18;
+}
+
+.home-invite-card h2 {
+  margin: 4px 0;
+  font-size: 17px;
+}
+
+.home-invite-card p {
+  margin: 0;
+  color: #8fa893;
+  font-size: 12px;
+  line-height: 1.45;
 }

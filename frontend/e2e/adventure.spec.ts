@@ -49,7 +49,7 @@ test('creates a hero, completes a real game turn, and restores its journal after
   await expect(page.getByRole('heading', { name: 'An adventure awaits.' })).toBeVisible();
 
   await page.getByRole('button', { name: 'Create your character' }).click();
-  await page.getByRole('button', { name: 'Create your own' }).click();
+  await page.getByRole('button', { name: 'Step-by-step wizard' }).click();
   await page.getByRole('button', { name: 'Human' }).click();
   await page.getByRole('button', { name: 'Continue', exact: true }).click();
   await page.getByRole('button', { name: 'Fighter' }).click();

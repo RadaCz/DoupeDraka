@@ -107,10 +107,29 @@ export function CharacterWizard({
                 <span className="choice-arrow" aria-hidden="true">›</span>
               </button>
             ))}
+            <button
+              type="button"
+              className="choice-card custom-card"
+              onClick={() => {
+                const race = catalog.races[Math.floor(Math.random() * catalog.races.length)];
+                const cls = catalog.classes[Math.floor(Math.random() * catalog.classes.length)];
+                setRaceKey(race.key);
+                setClassKey(cls.key);
+                setName(t('Adventurer'));
+                setStep(3);
+              }}
+            >
+              <span className="choice-icon" aria-hidden="true">⚁</span>
+              <span className="choice-copy">
+                <strong>{t('Quick generate')}</strong>
+                <small>{t('Random race and class — tweak the name, then play.')}</small>
+              </span>
+              <span className="choice-arrow" aria-hidden="true">›</span>
+            </button>
             <button type="button" className="choice-card custom-card" onClick={() => setStep(1)}>
               <span className="choice-icon" aria-hidden="true">✧</span>
               <span className="choice-copy">
-                <strong>{t('Create your own')}</strong>
+                <strong>{t('Step-by-step wizard')}</strong>
                 <small>{t('Choose a species, class and the mood of your campaign.')}</small>
               </span>
               <span className="choice-arrow" aria-hidden="true">›</span>
