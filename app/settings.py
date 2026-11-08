@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     )
     database_url: str = "sqlite+aiosqlite:///./data/dnd.db"
     api_url: str = "http://127.0.0.1:8000"
+    mini_app_url: str = Field(default="", validation_alias=AliasChoices("MINI_APP_URL", "mini_app_url"))
     bot_token: str = ""
     bot_api_token: str = ""
     openrouter_api_key: str = ""

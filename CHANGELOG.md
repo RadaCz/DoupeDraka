@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased (2026-11-08)
+
+### P0 stability
+- Concurrent idempotency replay after version conflicts; atomic adventure-mana debits; frontend pending idempotency keys.
+
+### Gameplay
+- Ruleset v1: weapon damage dice, proficiency, initiative on combat start, item instances.
+- Chapter one extended to six locations with Vault of Echoes, Bell Warden boss, and quest finale flags.
+- ActionIntent parser with negation guardrails; narration language persisted on character (`en`/`cs`).
+
+### Platform
+- `/ready` health check, Mini App bot launcher, GitHub Actions CI, economy API hides unpaid Pro tier without OpenRouter.
+
 Historical session records moved from `PROJECT_BRAIN.md` to keep the project brain concise.
 
 ### 6.5 Session 2026-11-06 — audit repair, STEP 0 and STEP 1.0

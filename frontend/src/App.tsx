@@ -6,6 +6,9 @@ import {
   CharacterScreen,
   GameScreen,
   HomeScreen,
+  JournalScreen,
+  MapScreen,
+  QuestScreen,
   SettingsScreen,
   ToolsScreen,
 } from './GameScreens';
@@ -19,6 +22,12 @@ import type {
   Spell,
 } from './types';
 import { LocaleProvider, useI18n } from './i18n';
+import {
+  clearPendingAction,
+  idempotencyKeyForTurn,
+  readPendingAction,
+  type TurnPhase,
+} from './pendingTurn';
 import './styles.css';
 
 declare global {
@@ -161,6 +170,7 @@ function AppContent() {
   const [loading, setLoading] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [turnPhase, setTurnPhase] = useState<TurnPhase>('idle');
   const [calculating, setCalculating] = useState(false);
   const [calculation, setCalculation] = useState<Record<string, unknown> | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -182,6 +192,14 @@ function AppContent() {
       setError(reason instanceof Error ? `${t('Could not load the saved journal:')} ${reason.message}` : t('Could not load the saved journal.'));
     }
   }, [refreshEvents]);
+
+  useEffect(() => {
+    if (!character) return;
+    const pending = readPendingAction();
+    if (pending?.characterId === character.id) {
+      setTurnPhase('recovering');
+    }
+  }, [character?.id]);
 
   useEffect(() => {
     const telegram = window.Telegram?.WebApp;
@@ -288,15 +306,17 @@ function AppContent() {
     setError(null);
     const pendingEventId = -Date.now();
     let committed = false;
+    let streamCompleted = false;
     let streamedNarration = '';
     let resolvedFacts: string[] = [];
+    setTurnPhase('sending');
     const updatePendingNarration = (narration: string, facts: string[]) => {
       setEvents(previous => previous.map(event => event.id === pendingEventId
         ? { ...event, result: [narration, facts.join('\n')].filter(Boolean).join('\n\n') }
         : event));
     };
     try {
-      const idempotencyKey = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const idempotencyKey = idempotencyKeyForTurn(character.id, action);
       await streamRequest(`/characters/${character.id}/actions/stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey },
@@ -304,6 +324,7 @@ function AppContent() {
       }, event => {
         if (event.type === 'turn') {
           committed = true;
+          setTurnPhase('resolved');
           const result = event.data as unknown as ActionResponse;
           resolvedFacts = result.events;
           updateCharacter(result.character);
@@ -315,27 +336,39 @@ function AppContent() {
             created_at: new Date().toISOString(),
           }]);
         } else if (event.type === 'delta' && typeof event.data.text === 'string') {
+          setTurnPhase('narrating');
           streamedNarration += event.data.text;
           updatePendingNarration(streamedNarration, resolvedFacts);
         } else if (event.type === 'replace' && typeof event.data.narration === 'string') {
           streamedNarration = event.data.narration;
           updatePendingNarration(streamedNarration, resolvedFacts);
         } else if (event.type === 'complete') {
+          streamCompleted = true;
           if (typeof event.data.narration === 'string') streamedNarration = event.data.narration;
           updatePendingNarration(streamedNarration, resolvedFacts);
           setNarrationStatus(event.data.narration_status === 'narrated' ? 'narrated' : 'fallback');
+          clearPendingAction();
+          setTurnPhase('idle');
         }
       });
       await refreshEvents(character.id);
+      if (streamCompleted) {
+        clearPendingAction();
+        setTurnPhase('idle');
+      }
     } catch (reason) {
       if (committed) {
+        setTurnPhase('recovering');
         setNarrationStatus('fallback');
         try {
           await refreshEvents(character.id);
+          clearPendingAction();
+          setTurnPhase('idle');
         } catch (refreshError) {
           setError(refreshError instanceof Error ? refreshError.message : t('Could not load the saved journal.'));
         }
       } else {
+        setTurnPhase(readPendingAction() ? 'recovering' : 'idle');
         setEvents(previous => previous.filter(event => event.id !== pendingEventId));
         const message = reason instanceof Error ? reason.message : t('The turn could not be completed.');
         if (reason instanceof ApiError && reason.status === 402) setScreen('settings');
@@ -344,6 +377,12 @@ function AppContent() {
     } finally {
       setBusy(false);
     }
+  };
+
+  const resumePendingTurn = () => {
+    const pending = readPendingAction();
+    if (!pending || !character || pending.characterId !== character.id || busy) return;
+    void takeAction(pending.action);
   };
 
   const updateCampaign = async (settings: Record<string, string | boolean>) => {
@@ -416,8 +455,26 @@ function AppContent() {
   }
 
   const navigate = (next: AppScreen) => {
-    setScreen(next);
+    if (next === 'game' && !character) {
+      setScreen('home');
+    } else {
+      setScreen(next);
+    }
     setError(null);
+  };
+
+  const syncNarrationLanguage = async (language: 'en' | 'cs') => {
+    if (!character) return;
+    try {
+      const updated = await request<Character>(`/characters/${character.id}/settings`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ language }),
+      });
+      updateCharacter(updated);
+    } catch {
+      // UI locale still updates even if the character patch fails.
+    }
   };
 
   return (
@@ -432,11 +489,24 @@ function AppContent() {
       <main className="main-content" key={screen}>
         {screen === 'home' && <HomeScreen character={character} characters={characters} presets={presets} economy={economy} onContinue={() => navigate('game')} onCreate={() => navigate('create')} onPreset={createPreset} onSelect={selectCharacter} />}
         {screen === 'create' && <CharacterWizard catalog={catalog} presets={presets} busy={busy} error={error} onCreate={createCharacter} onPreset={createPreset} onCancel={() => navigate('home')} />}
-        {screen === 'game' && character && <GameScreen character={character} events={events} spells={spells} locations={catalog?.locations ?? []} busy={busy} error={error} narrationStatus={narrationStatus} onAction={takeAction} onOpenSheet={() => navigate('character')} />}
+        {screen === 'game' && character && <GameScreen character={character} events={events} spells={spells} locations={catalog?.locations ?? []} busy={busy} turnPhase={turnPhase} error={error} narrationStatus={narrationStatus} onAction={takeAction} onResumePending={resumePendingTurn} onOpenSheet={() => navigate('character')} />}
+        {screen === 'map' && <MapScreen character={character} locations={catalog?.locations ?? []} onTravel={action => { navigate('game'); void takeAction(action); }} />}
+        {screen === 'quests' && <QuestScreen character={character} />}
+        {screen === 'journal' && <JournalScreen events={events} />}
         {screen === 'character' && <CharacterScreen character={character} characters={characters} onSelect={selectCharacter} onCreate={() => navigate('create')} />}
         {screen === 'campaign' && <CampaignScreen character={character} events={events} busy={busy} onUpdate={updateCampaign} />}
         {screen === 'tools' && <ToolsScreen character={character} catalog={catalog} spells={spells} calculating={calculating} calculation={calculation} error={error} onCalculate={calculateEncounter} />}
-        {screen === 'settings' && <SettingsScreen economy={economy} busy={busy} error={error} onChangeTier={changeTier} />}
+        {screen === 'settings' && (
+          <SettingsScreen
+            economy={economy}
+            busy={busy}
+            error={error}
+            onChangeTier={changeTier}
+            onLanguageChange={syncNarrationLanguage}
+            onOpenCampaign={() => navigate('campaign')}
+            onOpenTools={() => navigate('tools')}
+          />
+        )}
         {screen === 'game' && !character && <div className="empty-screen"><p role="alert">{t('Choose or create an adventurer before beginning the story.')}</p><button className="primary" onClick={() => navigate('home')}>{t('Back to home')}</button></div>}
       </main>
 

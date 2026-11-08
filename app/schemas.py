@@ -32,6 +32,7 @@ class CharacterSettings(BaseModel):
     tone: str | None = None
     humor: str | None = None
     verbose: bool | None = None
+    language: str | None = Field(default=None, max_length=8)
 
 class CharacterTier(BaseModel):
     """Switch the model tier that priced each turn. Validated against economy.MODEL_TIERS."""

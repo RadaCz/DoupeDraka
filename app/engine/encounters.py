@@ -54,6 +54,9 @@ MONSTERS = {
     "bandit": MonsterTemplate("bandit", "Road bandit", 2, 11, 12, 3, "1d6", 1, 70),
     "ghoul": MonsterTemplate("ghoul", "Cellar ghoul", 2, 22, 12, 4, "1d8", 2, 110),
     "ogre": MonsterTemplate("ogre", "Cellar ogre", 3, 44, 11, 6, "2d8", 4, 200),
+    "bell_warden": MonsterTemplate(
+        "bell_warden", "Bell Warden", 3, 38, 15, 6, "1d10", 4, 180,
+    ),
 }
 
 # The default fight when a player attacks without naming a target.
@@ -98,7 +101,9 @@ def build_monster(difficulty: str = "normal", target: str | None = None) -> Mons
         damage=format_damage(scaled.damage_dice, scaled.damage_bonus),
         reward_xp=scaled.reward_xp,
         saving_throws={
-            "dexterity": {"goblin": 2, "kobold": 2, "wolf": 2, "bandit": 1, "ghoul": 2, "ogre": -1}[scaled.key],
+            "dexterity": {
+                "goblin": 2, "kobold": 2, "wolf": 2, "bandit": 1, "ghoul": 2, "ogre": -1, "bell_warden": 0,
+            }[scaled.key],
             "wisdom": {"wolf": 1, "kobold": -1}.get(scaled.key, 0),
         },
     )

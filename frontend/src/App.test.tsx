@@ -324,7 +324,8 @@ describe('Telegram Mini App', () => {
     expect(screen.queryByText('3 / 3')).not.toBeInTheDocument();
     fireEvent.click(legacyMana);
     expect(screen.getByText('This legacy character resource does not power spells or Adventure Mana.')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Tools' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+    fireEvent.click(screen.getByRole('button', { name: /rules and spell reference/i }));
     expect(await screen.findByRole('heading', { name: /adventurer's tools/i })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('tab', { name: /spell library/i }));
     expect(screen.getByText(/does not currently have spell levels/i)).toBeInTheDocument();
@@ -341,7 +342,8 @@ describe('Telegram Mini App', () => {
     setupApp([wizard]);
     render(<App />);
     await screen.findByRole('heading', { name: /welcome back, rada/i });
-    fireEvent.click(screen.getByRole('button', { name: 'Tools' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+    fireEvent.click(screen.getByRole('button', { name: /rules and spell reference/i }));
     fireEvent.click(await screen.findByRole('tab', { name: /spell library/i }));
     expect(screen.getByText('Cure Wounds')).toBeInTheDocument();
     expect(screen.queryByText('Fireball')).not.toBeInTheDocument();
@@ -352,7 +354,8 @@ describe('Telegram Mini App', () => {
     const requests = setupApp([mockCharacter]);
     render(<App />);
     await screen.findByRole('heading', { name: /welcome back, rada/i });
-    fireEvent.click(screen.getByRole('button', { name: 'Tools' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+    fireEvent.click(screen.getByRole('button', { name: /rules and spell reference/i }));
     fireEvent.click(await screen.findByRole('tab', { name: /combat balance/i }));
     fireEvent.click(screen.getByRole('button', { name: /rate this encounter/i }));
     expect(await screen.findByText('Medium')).toBeInTheDocument();
@@ -397,12 +400,12 @@ describe('Telegram Mini App', () => {
     const requests = setupApp([mockCharacter]);
     render(<App />);
     await screen.findByRole('heading', { name: /welcome back, rada/i });
-    fireEvent.click(screen.getByRole('button', { name: 'Campaign' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+    fireEvent.click(await screen.findByRole('button', { name: /campaign mood/i }));
     expect(await screen.findByRole('heading', { name: /your campaign/i })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /dangerous hard/i }));
     await waitFor(() => expect(requests.some(item => item.url === `/api/characters/${mockCharacter.id}/settings` && item.body?.difficulty === 'hard')).toBe(true));
-    fireEvent.click(screen.getByRole('button', { name: 'Home' }));
-    fireEvent.click(screen.getByRole('button', { name: /continue adventure/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Adventure' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Your action' }), { target: { value: 'attack goblin' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send action' }));
     await waitFor(() => expect(requests.some(item => item.url.endsWith('/actions/stream'))).toBe(true));
@@ -447,14 +450,15 @@ describe('Telegram Mini App', () => {
 
     expect(await screen.findByRole('heading', { name: 'Nastaveni' })).toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: 'Hlavni navigace' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Uvod' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Dobrodruzstvi' })).toBeInTheDocument();
     expect(localStorage.getItem('app_locale')).toBe('cs');
     expect(document.documentElement.lang).toBe('cs');
     expect(container.textContent).not.toMatch(/[áčďéěíňóřšťúůýžÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]/);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Uvod' }));
-    expect(await screen.findByRole('heading', { name: 'Vitej zpet, Rada.' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Dobrodruzstvi' }));
+    expect(await screen.findByRole('heading', { name: 'The Whispering Cellar' })).toBeInTheDocument();
     expect(container.textContent).not.toMatch(/[áčďéěíňóřšťúůýžÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]/);
+    fireEvent.click(screen.getByRole('button', { name: 'Prejit na uvod' }));
     fireEvent.click(screen.getByRole('button', { name: 'Vytvorit vlastni' }));
     fireEvent.click(await screen.findByRole('button', { name: /Vytvorit vlastniho/ }));
     expect(await screen.findByRole('heading', { name: 'Vyber rasu' })).toBeInTheDocument();

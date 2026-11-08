@@ -42,8 +42,16 @@ SQLite is the default development database. Apply migrations with
 `alembic upgrade head`. PostgreSQL URLs are supported through `DATABASE_URL`, but live
 PostgreSQL migration/concurrency validation is still required before production.
 
-`docker compose up --build` is configured for the API, bot, and frontend. Docker image
-build/runtime and production deployment have not been verified in this environment.
+`docker compose up --build` is configured for the API, bot, and frontend. Before the
+first run (and before upgrades), apply migrations inside the API image:
+
+```powershell
+docker compose run --rm api alembic upgrade head
+```
+
+Set `MINI_APP_URL` to the public HTTPS origin of the frontend service so `/start` can
+open the Mini App. API exposes `/health` for liveness and `/ready` after the database
+answers `SELECT 1`.
 
 ## Narration provider
 

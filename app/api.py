@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
-from sqlalchemy import select, update
+from sqlalchemy import select, text, update
 from sqlalchemy.exc import IntegrityError
 import bcrypt
 from .auth.telegram import InitDataError, verify_init_data
@@ -67,7 +67,20 @@ def hash_token(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 
 @app.get("/health")
-async def health() -> dict: return {"status": "healthy"}
+async def health() -> dict:
+    return {"status": "healthy"}
+
+
+@app.get("/ready")
+async def ready() -> dict:
+    """Process is up and the database answers a trivial query."""
+    try:
+        async with Session() as session:
+            await session.execute(text("SELECT 1"))
+        return {"status": "ready"}
+    except Exception as error:
+        logger.exception("Readiness check failed")
+        raise HTTPException(503, "Database unavailable") from error
 
 @app.on_event("startup")
 async def startup() -> None: await init_db()
@@ -107,12 +120,28 @@ async def require_energy(session, user_id: int, tier: str) -> User:
         raise HTTPException(402, "Not enough Mana for this turn. Top up to continue.")
     return record
 
-def charge_energy(session, record: User, tier: str, detail: str) -> int:
-    """Debit one turn's cost from an already-loaded row and ledger it."""
-    balance, charged = economy.charge(record.energy_tenths, tier)
-    record.energy_tenths = balance
-    if charged:
-        session.add(EnergyTransaction(user_id=record.id, amount_tenths=-charged, reason="turn", detail=detail[:128], balance_after=balance))
+async def atomic_debit_energy(session, user_id: int, tier: str, detail: str) -> int:
+    """Debit one turn with a conditional UPDATE so concurrent turns cannot lose a charge."""
+    cost = economy.turn_cost(tier)
+    if cost == 0:
+        record = await session.get(User, user_id)
+        if record is None:
+            raise HTTPException(401, "User not found")
+        return record.energy_tenths
+    result = await session.execute(
+        update(User)
+        .where(User.id == user_id, User.energy_tenths >= cost)
+        .values(energy_tenths=User.energy_tenths - cost)
+        .returning(User.energy_tenths)
+        .execution_options(synchronize_session=False)
+    )
+    balance = result.scalar_one_or_none()
+    if balance is None:
+        raise HTTPException(402, "Not enough Mana for this turn. Top up to continue.")
+    session.add(EnergyTransaction(
+        user_id=user_id, amount_tenths=-cost, reason="turn",
+        detail=detail[:128], balance_after=balance,
+    ))
     return balance
 
 async def get_user_by_token(credentials: HTTPAuthorizationCredentials = Depends(security)) -> User:
@@ -276,13 +305,21 @@ async def combat_calculator(request: CombatCalculatorRequest) -> dict:
     try: return tools.combat_calculator(request.party_levels, request.monsters)
     except ValueError as error: raise HTTPException(422, str(error)) from error
 
+def _available_narration_tiers() -> list[dict]:
+    settings = get_settings()
+    tiers = economy.tier_list()
+    if settings.llm_provider.lower() != "openrouter" or not settings.openrouter_api_key.strip():
+        return [tier for tier in tiers if tier["key"] != "pro"]
+    return tiers
+
+
 @app.get("/economy")
 async def get_economy(user: User = Depends(get_user_by_token)) -> dict:
     return {
         "balance": economy.to_units(user.energy_tenths),
         "balance_tenths": user.energy_tenths,
         "tier": user.model_tier,
-        "tiers": economy.tier_list(),
+        "tiers": _available_narration_tiers(),
         "packages": economy.package_list(),
     }
 
@@ -384,7 +421,8 @@ def build_narration_context(
     return NarrationContext(
         text, events, character.location, tuple(history),
         difficulty=character.difficulty, tone=character.tone, humor=character.humor,
-        verbose=character.verbose, spell_facts=spell_facts,
+        verbose=character.verbose, language=character.narration_language,
+        spell_facts=spell_facts,
         rest_facts=rest_facts, level_up_facts=level_up_facts,
     )
 
@@ -660,12 +698,19 @@ async def commit_action_turn(
                 # so no energy was spent and no event was recorded.
                 await session.rollback()
                 logger.warning(f"Version conflict on character {character_id} at v{base_version}; retrying")
+                replayed = await replay_receipt(key, user)
+                if replayed is not None:
+                    return replayed, None, None, key, True
                 await asyncio.sleep(0)
                 continue
 
-            balance = charge_energy(session, account, user.model_tier, text) \
-                if result.state_changed and result.costs_adventure_mana \
-                else account.energy_tenths
+            try:
+                balance = await atomic_debit_energy(session, user.id, user.model_tier, text) \
+                    if result.state_changed and result.costs_adventure_mana \
+                    else account.energy_tenths
+            except HTTPException:
+                await session.rollback()
+                raise
             fallback = Narrator.narrate_offline(context)
             event = EventRecord(
                 character_id=character_id,
@@ -694,7 +739,15 @@ async def commit_action_turn(
                     created_at=receipt_created_at,
                     expires_at=receipt_created_at + IDEMPOTENCY_WINDOW,
                 ))
-            await session.commit()
+            try:
+                await session.commit()
+            except IntegrityError:
+                await session.rollback()
+                logger.warning(f"Idempotency receipt race for key {key[:8]}…")
+                replayed = await replay_receipt(key, user)
+                if replayed is not None:
+                    return replayed, None, None, key, True
+                raise HTTPException(409, "Concurrent idempotency conflict; retry") from None
 
         return response, context, event_id, key, False
 

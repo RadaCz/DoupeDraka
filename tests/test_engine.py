@@ -367,7 +367,7 @@ def test_rest_recovers_hp_and_heals_nothing_at_full():
 def test_rest_does_not_work_mid_fight():
     game = GameEngine(random.Random(7))
     hero = game.create_character(1, "Arin", "human", "fighter")
-    monster = build_monster("normal", "goblin")
+    monster = MonsterState(name="Goblin scout", hp=40, max_hp=40, armor_class=16)
     # Start a real fight and keep the goblin alive, then try to rest mid-combat.
     _, monster = game.resolve_action(hero, "attack", monster)
     monster = monster or build_monster("normal", "goblin")

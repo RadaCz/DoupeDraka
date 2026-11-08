@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import type { TurnPhase } from './pendingTurn';
 import type {
   AppScreen,
   Character,
@@ -265,9 +266,11 @@ export function GameScreen(props: {
   spells: Spell[];
   locations: LocationReference[];
   busy: boolean;
+  turnPhase?: TurnPhase;
   error: string | null;
   narrationStatus: 'narrated' | 'fallback' | null;
   onAction: (action: string) => void;
+  onResumePending?: () => void;
   onOpenSheet: () => void;
   onOpenSettings?: () => void;
   onCancelTurn?: () => void;
@@ -278,9 +281,11 @@ export function GameScreen(props: {
   spells,
   locations,
   busy,
+  turnPhase = 'idle',
   error,
   narrationStatus,
   onAction,
+  onResumePending,
   onOpenSheet,
   onOpenSettings,
   onCancelTurn,
@@ -366,16 +371,28 @@ export function GameScreen(props: {
             <p className="journal-narration">{event.result}</p>
           </article>
         ))}
+        {turnPhase === 'recovering' && !busy && onResumePending && (
+          <p className="storyteller-status" role="status">
+            {t('A turn may have been interrupted. Retry with the same idempotency key.')}
+            <button type="button" className="link-button" onClick={onResumePending}>{t('Recover last action')}</button>
+          </p>
+        )}
         {busy && (
           <div className="thinking" role="status">
             <div key={thinkingSeconds >= 12 ? 'long' : thinkingSeconds >= 5 ? 'mid' : 'short'}>
               <span className="thinking-die" aria-hidden="true">◆</span>
               <span className="thinking-elapsed">
-                {thinkingSeconds >= 12
-                  ? t('Still weaving. Local models can take a moment.')
-                  : thinkingSeconds >= 5
-                    ? t('A.U.R.I.O.N. is weighing your fate…')
-                    : t('The narrator is shaping the moment…')}
+                {turnPhase === 'sending'
+                  ? t('Sending your action…')
+                  : turnPhase === 'resolved'
+                    ? t('The dice have spoken. The narrator continues…')
+                    : turnPhase === 'recovering'
+                      ? t('Restoring the saved result…')
+                      : thinkingSeconds >= 12
+                        ? t('Still weaving. Local models can take a moment.')
+                        : thinkingSeconds >= 5
+                          ? t('A.U.R.I.O.N. is weighing your fate…')
+                          : t('The narrator is shaping the moment…')}
               </span>
             </div>
             {thinkingSeconds >= 12 && onCancelTurn && (
@@ -693,16 +710,107 @@ export function ToolsScreen({
   );
 }
 
+export function MapScreen({
+  character,
+  locations,
+  onTravel,
+}: {
+  character: Character | null;
+  locations: LocationReference[];
+  onTravel: (action: string) => void;
+}) {
+  const { t } = useI18n();
+  if (!character) {
+    return <section className="screen"><p>{t('Choose or create an adventurer to see the map.')}</p></section>;
+  }
+  const node = locations.find(item => item.name === character.location);
+  const visited = new Set(character.visited_locations ?? [character.location]);
+  return (
+    <section className="screen">
+      <div className="page-title"><p className="eyebrow">{t('WORLD')}</p><h1>{t('Map')}</h1><p>{t('You are here')}: <strong>{character.location}</strong></p></div>
+      <ul className="map-list">
+        {locations.map(place => (
+          <li key={place.name} className={`map-node ${place.name === character.location ? 'current' : ''} ${visited.has(place.name) ? 'discovered' : 'hidden'}`}>
+            <strong>{place.name}</strong>
+            {place.name === character.location && node && (
+              <>
+                <h3>{t('Open routes')}</h3>
+                <ol>
+                  {node.connections.map(route => (
+                    <li key={route}><button type="button" onClick={() => onTravel(`travel to ${route}`)}>{route}</button></li>
+                  ))}
+                </ol>
+              </>
+            )}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+const QUEST_LABELS: Record<string, string> = {
+  bell_quest_accepted: 'Recover the stolen shrine bell',
+  bell_found: 'Obtain the bell from Nib',
+  bell_quest_complete: 'Return the bell to Caldus',
+  vault_hint_given: 'Learn about the Vault of Echoes',
+  chapter_one_complete: 'Defeat the Bell Warden',
+};
+
+export function QuestScreen({ character }: { character: Character | null }) {
+  const { t } = useI18n();
+  const flags = character?.quest_flags ?? {};
+  const entries = Object.entries(QUEST_LABELS);
+  return (
+    <section className="screen">
+      <div className="page-title"><p className="eyebrow">{t('CAMPAIGN')}</p><h1>{t('Quests')}</h1></div>
+      <ul className="quest-list">
+        {entries.map(([key, label]) => (
+          <li key={key} className={flags[key] ? 'done' : 'open'}>
+            <strong>{t(label)}</strong>
+            <small>{flags[key] ? t('Complete') : t('In progress or not started')}</small>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+export function JournalScreen({ events }: { events: JournalEvent[] }) {
+  const { t } = useI18n();
+  return (
+    <section className="screen">
+      <div className="page-title"><p className="eyebrow">{t('HISTORY')}</p><h1>{t('Journal')}</h1></div>
+      <div className="journal-scene" role="log" aria-label={t('Adventure journal')}>
+        {events.length === 0 && <p>{t('Your story has not begun yet.')}</p>}
+        {events.map(event => (
+          <article className="journal-beat" key={event.id}>
+            <time>{new Date(event.created_at).toLocaleString()}</time>
+            <p className="journal-action">{event.action}</p>
+            <p className="journal-narration">{event.result}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export function SettingsScreen({
   economy,
   busy,
   error,
   onChangeTier,
+  onLanguageChange,
+  onOpenCampaign,
+  onOpenTools,
 }: {
   economy: Economy | null;
   busy: boolean;
   error: string | null;
   onChangeTier: (tier: string) => void;
+  onLanguageChange?: (language: 'en' | 'cs') => void;
+  onOpenCampaign?: () => void;
+  onOpenTools?: () => void;
 }) {
   const { t, locale, setLocale } = useI18n();
   return (
@@ -710,11 +818,23 @@ export function SettingsScreen({
       <div className="page-title"><p className="eyebrow">{t('YOUR PREFERENCES')}</p><h1>{t('Settings')}</h1><p>{t('Manage how each adventure turn is narrated.')}</p></div>
       <section className="section-block locale-setting">
         <label className="field-label" htmlFor="app-language">{t('Language')}</label>
-        <select id="app-language" className="form-select" value={locale} onChange={event => setLocale(event.target.value === 'cs' ? 'cs' : 'en')}>
+        <select id="app-language" className="form-select" value={locale} onChange={event => {
+          const next = event.target.value === 'cs' ? 'cs' : 'en';
+          setLocale(next);
+          onLanguageChange?.(next);
+        }}>
           <option value="en">{t('English')}</option>
           <option value="cs">{t('Czech (no diacritics)')}</option>
         </select>
       </section>
+      <div className="settings-shortcuts">
+        {onOpenCampaign && (
+          <button type="button" className="text-button" onClick={onOpenCampaign}>{t('Campaign mood and tone')}</button>
+        )}
+        {onOpenTools && (
+          <button type="button" className="text-button" onClick={onOpenTools}>{t('Rules and spell reference')}</button>
+        )}
+      </div>
       <article className="balance-card">
         <div className="balance-icon">✧</div><div className="balance-copy"><small>{t('AVAILABLE ADVENTURE MANA')}</small><strong>{economy ? economy.balance.toFixed(1) : '—'} <i>⚡</i></strong><p>{t('Separate from spell slots; spellcaster classes spend slots to cast spells.')}</p></div><ManaHelp />
       </article>
@@ -758,12 +878,13 @@ export function SettingsScreen({
 
 export function BottomNav({ screen, onNavigate }: { screen: AppScreen; onNavigate: (screen: AppScreen) => void }) {
   const { t } = useI18n();
-  const active = screen === 'game' || screen === 'create' ? 'home' : screen;
-  const items: Array<{ key: Exclude<AppScreen, 'game' | 'create'>; label: string; glyph: string }> = [
-    { key: 'home', label: t('Home'), glyph: '⌂' },
-    { key: 'tools', label: t('Tools'), glyph: '⚒' },
+  const active = screen === 'create' ? 'home' : screen === 'game' ? 'game' : screen;
+  const items: Array<{ key: AppScreen; label: string; glyph: string }> = [
+    { key: 'game', label: t('Adventure'), glyph: '✦' },
+    { key: 'map', label: t('Map'), glyph: '🗺' },
     { key: 'character', label: t('Character'), glyph: '♙' },
-    { key: 'campaign', label: t('Campaign'), glyph: '⬡' },
+    { key: 'quests', label: t('Quests'), glyph: '⬡' },
+    { key: 'journal', label: t('Journal'), glyph: '📜' },
     { key: 'settings', label: t('Settings'), glyph: '⚙' },
   ];
   return (

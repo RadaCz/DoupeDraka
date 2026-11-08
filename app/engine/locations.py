@@ -27,7 +27,11 @@ LOCATIONS = {
         ),
         Location(
             name="The Sunken Corridor",
-            connections=("The Shrine of the Forgotten", "The Whispering Cellar"),
+            connections=(
+                "The Shrine of the Forgotten",
+                "The Whispering Cellar",
+                "The Vault of Echoes",
+            ),
             encounter_pool=("kobold", "goblin", "wolf", "ghoul"),
             track_discovery="Wet footprints lead toward a pale light beneath the shrine doors.",
             clue_discovery="A brass token stamped with a broken moon lies in the silt.",
@@ -48,6 +52,22 @@ LOCATIONS = {
             track_discovery="A trail of copper scales vanishes behind the market's shuttered stalls.",
             clue_discovery="Nib, a goblin trader, claims the stolen shrine bell changed hands at this market.",
             arrival_beat="Goblin trader Nib watches from a stall of mismatched charms and stolen bells.",
+        ),
+        Location(
+            name="The Vault of Echoes",
+            connections=("The Sunken Corridor", "The Bell Warden's Pit"),
+            encounter_pool=("ghoul", "bandit", "wolf"),
+            track_discovery="Bell scratches mark a spiral path deeper into the vault.",
+            clue_discovery="A rusted key ring holds a shrine tag that reads 'return what was stolen'.",
+            arrival_beat="Damp stone amplifies every footstep; broken bells hang from rusted chains.",
+        ),
+        Location(
+            name="The Bell Warden's Pit",
+            connections=("The Vault of Echoes",),
+            encounter_pool=("bell_warden", "ghoul"),
+            track_discovery="The pit floor is scorched in a ring around a shattered brazier.",
+            clue_discovery="Carved into the wall: 'The Warden keeps tolls even in death.'",
+            arrival_beat="A hulking Bell Warden stirs, shackled bells rattling on its rusted armor.",
         ),
     )
 }

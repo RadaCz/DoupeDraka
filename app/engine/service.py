@@ -1,6 +1,8 @@
 import random, re, uuid
 from .catalog import ABILITY_ORDER, CLASSES, RACES, standard_abilities
 from .encounters import MONSTERS, build_monster
+from .equipment import attack_modifier, damage_modifier, default_item_instances, equipped_weapon
+from .intent import parse_action_intent
 from .locations import LOCATIONS, is_travel_action, travel_destination
 from .models import DIFFICULTIES, HUMORS, TONES, CharacterState, MonsterState, RollResult, TurnResult
 from .spells import (
@@ -11,7 +13,7 @@ from .spells import (
     ensure_spellcasting,
     initialize_spellcasting,
     learn_level_up_spells,    spell_level,
-)
+)
 XP_THRESHOLD = 100  # XP needed per levelMANA_REGEN = 1  # mana restored after any costly turn
 
 # Verbs the engine understands. Free text is mapped onto this closed set so a
@@ -20,7 +22,7 @@ ATTACK_VERBS = ("attack", "strike", "hit", "útok", "zaútoč")
 CAST_VERBS = ("cast", "kouzl")
 REST_VERBS = ("rest", "sleep", "odpočiň", "odpočívat")
 SHORT_REST_VERBS = ("short rest", "take a breather", "brief rest", "kratky odpocinek", "kratky oddech")
-DEFEND_VERBS = ("dodge", "defend", "guard", "brace", "uhni", "bran")
+DEFEND_VERBS = ("dodge", "defend", "brace", "uhni", "bran", "on guard", "guard up")
 ITEM_VERBS = ("use potion", "drink potion", "use item", "pouzij lektvar", "vypij lektvar")
 SHOP_VERBS = ("buy", "purchase", "kup", "nakup")
 FLEE_VERBS = ("flee", "retreat", "run away", "utek", "útěk")
@@ -32,6 +34,11 @@ EXPLORE_PHRASES = (
 )
 FLEE_DC = 10
 ENCOUNTER_TRIGGER = 1
+NARRATION_LANGUAGES = ("en", "cs")
+
+
+def _mentions_token(text: str, tokens: tuple[str, ...]) -> bool:
+    return any(re.search(rf"\b{re.escape(token)}\b", text) for token in tokens)
 
 ACTION_ABILITIES = (
     ("strength", ("lift", "push", "pull", "break", "force", "shove", "climb", "grapple", "zved", "zatlac", "rozbij", "rozlom", "vypac")),
@@ -65,6 +72,7 @@ class GameEngine:
             mana=mana, max_mana=mana,
         )
         character.visited_locations = [character.location]
+        character.item_instances = default_item_instances(character.inventory)
         initialize_spellcasting(character)
         return character
 
@@ -596,12 +604,22 @@ class GameEngine:
             events = ["You return the shrine bell to Caldus and receive 5 gold pieces and 30 XP."]
             level_events, level_up_facts = self._level_up(character)
             events.extend(level_events)
-            return TurnResult(action, events, True, level_up_facts=level_up_facts), None
+            return TurnResult(action, events, True, level_up_facts=level_up_facts)
 
         if character.location == "The Shrine of the Forgotten" and "caldus" in text and any(
             word in text for word in ("talk", "speak", "ask", "help", "accept")
         ):
             if flags.get("bell_quest_complete"):
+                if not flags.get("vault_hint_given"):
+                    flags["vault_hint_given"] = True
+                    return TurnResult(
+                        action,
+                        [
+                            "Caldus thanks you and warns that the bell thief fled toward "
+                            "The Vault of Echoes beneath the corridor. The Bell Warden still guards the pit.",
+                        ],
+                        True,
+                    )
                 return TurnResult(action, ["Caldus thanks you again for returning the shrine bell."], False)
             if flags.get("bell_quest_accepted"):
                 return TurnResult(action, ["Caldus reminds you that Nib at the market saw the stolen bell."], False)
@@ -610,7 +628,7 @@ class GameEngine:
                 action,
                 ["You agree to recover the stolen shrine bell. Caldus says Nib at the Goblin Market may know where it went."],
                 True,
-            ), None
+            )
 
         if character.location == "The Goblin Market" and "nib" in text and any(
             word in text for word in ("talk", "speak", "ask")
@@ -665,12 +683,21 @@ class GameEngine:
             True,
         ), None
 
-    def apply_settings(self, character: CharacterState, difficulty: str | None = None, tone: str | None = None, humor: str | None = None, verbose: bool | None = None) -> CharacterState:
+    def apply_settings(
+        self,
+        character: CharacterState,
+        difficulty: str | None = None,
+        tone: str | None = None,
+        humor: str | None = None,
+        verbose: bool | None = None,
+        language: str | None = None,
+    ) -> CharacterState:
         """Validate campaign settings. Unknown values raise so the API can answer 422."""
         for value, allowed, label in (
             (difficulty, DIFFICULTIES, "difficulty"),
             (tone, TONES, "tone"),
             (humor, HUMORS, "humor"),
+            (language, NARRATION_LANGUAGES, "language"),
         ):
             if value is not None and value not in allowed:
                 raise ValueError(f"Unknown {label}: {value}. Expected one of {', '.join(allowed)}.")
@@ -678,6 +705,8 @@ class GameEngine:
         if tone is not None: character.tone = tone
         if humor is not None: character.humor = humor
         if verbose is not None: character.verbose = bool(verbose)
+        if language is not None:
+            character.narration_language = language
         return character
 
     def ability_check(self, character: CharacterState, ability: str, dc: int) -> tuple[RollResult, bool]:
@@ -691,24 +720,56 @@ class GameEngine:
                 return ability
         return "dexterity"
 
+    def _roll_initiative(self, character: CharacterState, monster: MonsterState) -> list[str]:
+        player = self.roll("1d20", self.modifier(character.abilities.get("dexterity", 10)))
+        enemy = self.roll("1d20", 0)
+        character.combat_round = 1
+        if enemy.total > player.total:
+            character.combat_turn = "enemy"
+            order = f"{monster.name} acts first"
+        else:
+            character.combat_turn = "player"
+            order = "You act first"
+        return [
+            f"Initiative: you {player.total}, {monster.name} {enemy.total}. {order}.",
+        ]
+
     def attack(self, character: CharacterState, monster: MonsterState) -> list[str]:
-        primary = CLASSES[character.character_class].primary; attack = self.roll("1d20", self.modifier(character.abilities[primary]))
-        if attack.values[0] == 1: return [f"Attack roll {attack.total}: critical miss."]
-        if attack.values[0] != 20 and attack.total < monster.armor_class: return [f"Attack roll {attack.total} against AC {monster.armor_class}: miss."]
-        damage = self.roll("1d8", self.modifier(character.abilities[primary]), attack.values[0] == 20)
+        weapon = equipped_weapon(character)
+        bonus = attack_modifier(character, weapon)
+        attack_roll = self.roll("1d20", bonus)
+        weapon_label = weapon.name if weapon.key != "unarmed" else "your weapon"
+        if attack_roll.values[0] == 1:
+            return [f"Attack with {weapon_label}: {attack_roll.total} (d20 +{bonus}) — critical miss."]
+        if attack_roll.values[0] != 20 and attack_roll.total < monster.armor_class:
+            return [
+                f"Attack with {weapon_label}: {attack_roll.total} (d20 +{bonus}) vs AC {monster.armor_class} — miss.",
+            ]
+        damage = self.roll(weapon.damage, damage_modifier(character, weapon), attack_roll.values[0] == 20)
         monster.hp = max(0, monster.hp - max(1, damage.total))
-        return [f"Attack roll {attack.total}: hit.", f"Damage {damage.total}; {monster.name} has {monster.hp}/{monster.max_hp} HP."]
+        return [
+            f"Attack with {weapon_label}: {attack_roll.total} (d20 +{bonus}) — hit.",
+            f"Damage {damage.total} ({weapon.damage} + modifier); {monster.name} has {monster.hp}/{monster.max_hp} HP.",
+        ]
 
     def resolve_action(self, character: CharacterState, action: str, monster: MonsterState | None) -> tuple[TurnResult, MonsterState | None]:
         if character.hp <= 0:
             return TurnResult(action, [f"{character.name} has fallen and can no longer act."], False), monster
         text = action.lower().strip()
         if not text: return TurnResult(action, ["Say what your character attempts."], False), monster
+        intent = parse_action_intent(action)
+        if intent.needs_clarification:
+            return TurnResult(
+                action,
+                ["Your intent is unclear — describe what you want without negating the action."],
+                False,
+                costs_adventure_mana=False,
+            ), monster
         if any(word in text for word in SHOP_VERBS):
             return self._shop(character, action), monster
         if any(word in text for word in ITEM_VERBS):
             return self._use_item(character, action, monster)
-        if any(word in text for word in DEFEND_VERBS):
+        if _mentions_token(text, DEFEND_VERBS):
             if monster is None or not character.in_combat:
                 return TurnResult(action, ["You take a guarded stance, but there is no active enemy."], False), monster
             character.dodging = True
@@ -754,12 +815,32 @@ class GameEngine:
         if any(word in text for word in ATTACK_VERBS):
             # Difficulty and target are the engine's decision, never the model's.
             character.invisible = False
+            fresh_combat = monster is None and not character.in_combat
             monster = monster or build_monster(character.difficulty, text)
-            character.in_combat = True; events = self.attack(character, monster)
+            events: list[str] = []
+            if fresh_combat:
+                character.in_combat = True
+                events.extend(self._roll_initiative(character, monster))
+                if character.combat_turn == "enemy":
+                    events.extend(self._enemy_turn(character, monster))
+                    character.combat_turn = "player"
+            elif not character.in_combat:
+                character.in_combat = True
+                events.extend(self._roll_initiative(character, monster))
+            if character.combat_turn != "player":
+                return TurnResult(action, ["It is not your turn yet — defend, flee, or wait."], False), monster
+            events.extend(self.attack(character, monster))
             if monster.hp == 0:
                 character.in_combat = False; reward = monster.reward_xp; character.xp += reward
                 character.exploration_cooldown = 1
                 events.append(f"{monster.name} is defeated. You gain {reward} XP.")
+                if "bell warden" in monster.name.casefold():
+                    character.quest_flags["chapter_one_complete"] = True
+                    character.gold += 25
+                    events.append(
+                        "Chapter complete: the shrine's bells fall silent. You claim 25 gold "
+                        "from the vault and earn a clear route back to the surface."
+                    )
                 level_events, level_up_facts = self._level_up(character)
                 events.extend(level_events)
                 return TurnResult(action, events, True, True, level_up_facts=level_up_facts), None

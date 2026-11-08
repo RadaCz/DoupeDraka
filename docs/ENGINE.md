@@ -26,6 +26,10 @@ combat is rejected.
 
 ## Combat and advancement
 
+Ruleset v1 uses SRD 5.1–compatible basics only: proficiency bonus, equipped weapon damage
+dice from `app/engine/equipment.py`, finesse weapons, and initiative (1d20 + Dexterity)
+when a fight begins. Unsupported options in the reference catalog are not playable.
+
 The engine applies easy/normal/hard scaling to monster stats and XP. A character
 advances at most one level per resolved turn. Current supported progression and
 spell behavior are bounded; see the spell limitations below.

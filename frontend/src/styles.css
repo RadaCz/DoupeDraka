@@ -1823,6 +1823,45 @@ summary:focus-visible {
   font: 500 15px/1.6 Fraunces, Georgia, serif;
 }
 
+.map-list,
+.quest-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.map-node,
+.quest-list li {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--color-border, #2a352c);
+  border-radius: 0.5rem;
+}
+
+.map-node.current {
+  border-color: var(--color-gold, #c9a227);
+}
+
+.map-node.hidden {
+  opacity: 0.55;
+}
+
+.quest-list li.done {
+  border-color: var(--color-gold, #c9a227);
+}
+
+.link-button {
+  margin-left: 0.5rem;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-gold, #c9a227);
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+}
+
 .storyteller-status {
   margin: 0 0 10px;
   padding: 8px 10px;

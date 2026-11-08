@@ -28,6 +28,7 @@ export interface Character {
   tone: string;
   humor: string;
   verbose: boolean;
+  narration_language?: string;
 }
 
 export interface Combatant {
@@ -109,4 +110,14 @@ export interface Economy {
   packages: Array<{ key: string; label: string; mana: number; price_rub: number }>;
 }
 
-export type AppScreen = 'home' | 'game' | 'create' | 'character' | 'campaign' | 'tools' | 'settings';
+export type AppScreen =
+  | 'home'
+  | 'game'
+  | 'create'
+  | 'character'
+  | 'campaign'
+  | 'tools'
+  | 'settings'
+  | 'map'
+  | 'quests'
+  | 'journal';

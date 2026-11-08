@@ -83,8 +83,9 @@ def test_reference_endpoint_exposes_connected_campaign_locations():
 
     assert response.status_code == 200
     locations = {location["name"]: location["connections"] for location in response.json()["locations"]}
-    assert len(locations) == 4
+    assert len(locations) == 6
     assert locations["The Whispering Cellar"] == ["The Sunken Corridor"]
+    assert "The Vault of Echoes" in locations["The Sunken Corridor"]
     assert locations["The Shrine of the Forgotten"][0] == "The Goblin Market"
 
 
@@ -118,7 +119,7 @@ def test_economy_endpoint_reports_starting_balance(auth):
     assert data["balance_tenths"] == 1000
     assert next(tier for tier in data["tiers"] if tier["key"] == "lite")["cost"] == 0.0
     assert data["tier"] == "normal"
-    assert {tier["key"] for tier in data["tiers"]} == {"lite", "normal", "pro"}
+    assert {tier["key"] for tier in data["tiers"]} == {"lite", "normal"}
     assert data["packages"][0]["key"] == "starter"
 
 

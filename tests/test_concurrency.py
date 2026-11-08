@@ -10,7 +10,10 @@ Each test names the mechanism it pins, so a later refactor that quietly removes
 the version fence fails here rather than in production.
 '''
 import asyncio
+import json
+import re
 import uuid
+from concurrent.futures import ThreadPoolExecutor, wait
 from datetime import datetime, timedelta
 
 import pytest
@@ -19,7 +22,8 @@ from sqlalchemy import select, text, update
 
 from app import api
 from app.api import app
-from app.db import ActionReceipt, CharacterRecord, EventRecord, Session, decode_state, init_db
+from app.db import ActionReceipt, CharacterRecord, EnergyTransaction, EventRecord, Session, User, decode_state, init_db
+from app.engine import economy
 
 client = TestClient(app)
 
@@ -234,7 +238,7 @@ def test_streamed_narration_is_saved_and_idempotent(auth, monkeypatch):
     assert "event: delta\ndata: {\"text\":\"The \"}" in first.text
     assert "event: delta\ndata: {\"text\":\"stone shifts.\"}" in first.text
     assert first.text.index('"The "') < first.text.index('"stone shifts."')
-    complete = __import__("json").loads(re.search(r"event: complete\ndata: (.*)", first.text).group(1))
+    complete = json.loads(re.search(r"event: complete\ndata: (.*)", first.text).group(1))
     assert complete["narration"] == "The stone shifts."
     # A provider that answered is "narrated"; only an empty or failed stream is
     # "fallback". Either status is legitimate here, the wording is not.
@@ -295,3 +299,92 @@ def test_streaming_provider_failure_replaces_partial_text_with_fallback(auth, mo
     result = asyncio.run(saved_event())
     assert "partial" not in result
     assert "Exploration roll:" in result
+
+
+def test_concurrent_same_idempotency_key_one_turn(auth):
+    """Two parallel POSTs with the same key must commit at most one turn."""
+    character = _character(auth)
+    key = uuid.uuid4().hex
+    headers = {**auth, "Idempotency-Key": key}
+    body = {"action": "look around"}
+    path = f"/characters/{character['id']}/actions"
+
+    def post():
+        return client.post(path, json=body, headers=headers)
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        futures = [pool.submit(post), pool.submit(post)]
+        wait(futures)
+        responses = [future.result() for future in futures]
+
+    for response in responses:
+        assert response.status_code == 200, response.text
+
+    assert responses[0].json()["events"] == responses[1].json()["events"]
+    assert responses[0].json()["character"]["hp"] == responses[1].json()["character"]["hp"]
+
+    async def counts():
+        async with Session() as session:
+            events = (
+                await session.scalars(
+                    select(EventRecord).where(EventRecord.character_id == character["id"])
+                )
+            ).all()
+            receipts = (
+                await session.scalars(select(ActionReceipt).where(ActionReceipt.key == key))
+            ).all()
+            record = await session.get(CharacterRecord, character["id"])
+            return len(events), len(receipts), record.version
+
+    events, receipts, version = asyncio.run(counts())
+    assert events == 1
+    assert receipts == 1
+    assert version == 1
+
+
+def test_concurrent_turns_on_two_characters_debit_energy_once_each(auth):
+    """Parallel turns on two heroes sharing one account must not drop a debit."""
+    first = _character(auth)
+    second = _character(auth)
+    cost = economy.turn_cost("normal")
+    body = {"action": "look around"}
+
+    async def set_balance(tenths: int):
+        async with Session() as session:
+            user = await session.scalar(select(User).where(User.username == "atomic"))
+            user.energy_tenths = tenths
+            await session.commit()
+
+    asyncio.run(set_balance(cost * 2))
+
+    def act(character_id: str):
+        return client.post(
+            f"/characters/{character_id}/actions",
+            json=body,
+            headers={**auth, "Idempotency-Key": uuid.uuid4().hex},
+        )
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        futures = [
+            pool.submit(act, first["id"]),
+            pool.submit(act, second["id"]),
+        ]
+        wait(futures)
+        responses = [future.result() for future in futures]
+
+    assert all(response.status_code == 200 for response in responses)
+
+    async def ledger_state():
+        async with Session() as session:
+            user = await session.scalar(select(User).where(User.username == "atomic"))
+            txs = (
+                await session.scalars(
+                    select(EnergyTransaction).where(EnergyTransaction.user_id == user.id)
+                )
+            ).all()
+            debits = [tx for tx in txs if tx.reason == "turn"]
+            return user.energy_tenths, sum(-tx.amount_tenths for tx in debits)
+
+    balance, debited = asyncio.run(ledger_state())
+    assert balance == 0
+    assert debited == cost * 2

@@ -5,34 +5,42 @@
 Location names, connections, encounter pools, discovery text, and arrival beats are
 engine-owned data in `app/engine/locations.py`.
 
-| Location | Forward route | Encounter pool | First-visit beat |
+| Location | Forward routes | Encounter pool | First-visit beat |
 |---|---|---|---|
 | The Whispering Cellar | The Sunken Corridor | Kobold, goblin, wolf, bandit | A cold draft curls around the old stone stairs. |
-| The Sunken Corridor | The Shrine of the Forgotten; back to the cellar | Kobold, goblin, wolf, ghoul | Mara, a lantern-bearing scavenger, warns that something follows the waterway. |
-| The Shrine of the Forgotten | The Goblin Market; back to the corridor | Bandit, ghoul, wolf | Caretaker Caldus asks the player to return a stolen shrine bell. |
-| The Goblin Market | Back to the shrine | Kobold, goblin, bandit | Goblin trader Nib watches from a stall of mismatched charms and stolen bells. |
+| The Sunken Corridor | Shrine, cellar, **The Vault of Echoes** | Kobold, goblin, wolf, ghoul | Mara warns that something follows the waterway. |
+| The Shrine of the Forgotten | The Goblin Market; back to the corridor | Bandit, ghoul, wolf | Caretaker Caldus asks you to return a stolen shrine bell. |
+| The Goblin Market | Back to the shrine | Kobold, goblin, bandit | Goblin trader Nib watches from a stall of stolen bells. |
+| The Vault of Echoes | The Bell Warden's Pit; back to the corridor | Ghoul, bandit, wolf | Broken bells hang from rusted chains. |
+| The Bell Warden's Pit | Back to the vault | **Bell Warden**, ghoul | The Bell Warden stirs in the pit. |
 
-The game screen reads connected routes from `GET /reference` and offers the next
-route as a contextual quick action. Travel can also be typed directly. Revisited
-locations do not repeat their first-visit beat.
+The game screen reads connected routes from `GET /reference` and offers contextual
+quick actions. Travel can also be typed directly (`travel to …`). Revisited locations
+do not repeat their first-visit beat.
 
-## Shrine bell quest
+## Chapter one quests
 
-At the Shrine of the Forgotten, Caldus offers a small quest to recover the stolen
-bell. At the Goblin Market, Nib returns it only after the player accepts the request.
-Returning the bell to Caldus grants 30 XP and 5 gold exactly once. The engine persists
-the acceptance/found/completed flags and inventory item.
+### Shrine bell (branching intro)
+
+At the Shrine of the Forgotten, Caldus offers a quest to recover the stolen bell. At
+the Goblin Market, Nib returns it only after the player accepts the request. Returning
+the bell grants 30 XP and 5 gold exactly once. Flags: `bell_quest_accepted`,
+`bell_found`, `bell_quest_complete`.
+
+### Vault finale (after the bell)
+
+After the bell is returned, speaking with Caldus again reveals the route to
+**The Vault of Echoes**. The **Bell Warden** miniboss guards the pit; defeating it sets
+`chapter_one_complete`, awards bonus gold, and closes the first chapter arc.
 
 ## Current narrative limits
 
-Mara, Caldus, and Nib have only the explicit actions described above; there is no
-general NPC dialogue system, shop, or branching quest resolution. Discovery results
-are location-specific, but there is not yet a branching campaign or a persistent map
-beyond the current location and visited-location list.
+Mara, Caldus, and Nib have explicit engine actions only; general NPC dialogue is still
+limited. The six-location region is a complete vertical slice, not an open world.
 
-The bestiary is a small SRD-derived set of six monsters. Exploration selects only
-from the current location's pool, with higher-tier monsters added by character level.
-The combat balance calculator is separate and does not start encounters.
+The bestiary is a small SRD-derived set plus the Bell Warden. Exploration rolls use
+each location's pool. The combat balance calculator is separate and does not start
+encounters.
 
 ## SRD reference
 
