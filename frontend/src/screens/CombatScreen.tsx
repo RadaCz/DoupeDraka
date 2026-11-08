@@ -27,7 +27,7 @@ export function CombatScreen(props: PlayScreenProps) {
       <div className="game-play-story">
         <PlayJournal {...props} />
       </div>
-      <PlayErrorPanel error={props.error} onOpenSettings={props.onOpenSettings} />
+      <PlayErrorPanel error={props.error} onOpenSettings={props.onOpenSettings} onRetry={props.onRetryError} />
       <ActionComposer {...props} />
     </section>
   );

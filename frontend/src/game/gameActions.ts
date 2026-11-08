@@ -12,7 +12,39 @@ export interface QuickAction {
   description: string;
   glyph: string;
   action?: string;
-  mode: 'submit' | 'map' | 'custom' | 'spells' | 'prefill';
+  mode: 'submit' | 'map' | 'custom' | 'spells' | 'prefill' | 'focus';
+}
+
+/** Engine-backed NPC dialogue for the current location and quest flags only. */
+export function resolveNpcTalkAction(
+  character: Character,
+  t: (value: string) => string,
+): SuggestedAction | null {
+  const quests = character.quest_flags ?? {};
+  if (
+    character.location === 'The Shrine of the Forgotten'
+    && (quests.bell_found || quests.bell_acquired)
+    && !quests.bell_quest_complete
+  ) {
+    return { label: t('Return the shrine bell'), action: 'return the shrine bell to Caldus' };
+  }
+  if (
+    character.location === 'The Shrine of the Forgotten'
+    && !quests.bell_quest_accepted
+    && !quests.bell_quest_complete
+  ) {
+    return { label: t('Talk to Caldus'), action: 'talk to Caldus about the shrine bell' };
+  }
+  if (
+    character.location === 'The Goblin Market'
+    && quests.bell_quest_accepted
+    && !quests.bell_found
+    && !quests.bell_acquired
+    && !quests.bell_quest_complete
+  ) {
+    return { label: t('Ask Nib about the shrine bell'), action: 'ask Nib about the shrine bell' };
+  }
+  return null;
 }
 
 export function buildQuickActions(
@@ -38,9 +70,7 @@ export function buildQuickActions(
     }
     return actions;
   }
-  const contextual = suggestedActions(character, events, locations, t);
-  const talk = contextual.find(item => /talk|ask|return|caldus|nib|bell/i.test(item.action));
-  const talkMode: QuickAction['mode'] = talk ? 'submit' : 'prefill';
+  const npcTalk = resolveNpcTalkAction(character, t);
   return [
     {
       id: 'explore',
@@ -53,10 +83,10 @@ export function buildQuickActions(
     {
       id: 'talk',
       label: t('Talk'),
-      description: talk ? t(talk.label) : t('Speak or persuade'),
+      description: npcTalk ? npcTalk.label : t('Speak or persuade'),
       glyph: '♙',
-      action: talk?.action ?? 'listen for movement',
-      mode: talkMode,
+      action: npcTalk?.action,
+      mode: npcTalk ? 'submit' : 'focus',
     },
     {
       id: 'travel',
@@ -95,14 +125,8 @@ export function suggestedActions(
 
   const latest = events[events.length - 1]?.result.toLowerCase() ?? '';
   const actions: SuggestedAction[] = [];
-  const quests = character.quest_flags ?? {};
-  if (character.location === 'The Shrine of the Forgotten' && (quests.bell_found || quests.bell_acquired) && !quests.bell_quest_complete) {
-    actions.push({ label: t('Return the shrine bell'), action: 'return the shrine bell to Caldus' });
-  } else if (character.location === 'The Shrine of the Forgotten' && !quests.bell_quest_accepted && !quests.bell_quest_complete) {
-    actions.push({ label: t('Talk to Caldus'), action: 'talk to Caldus about the shrine bell' });
-  } else if (character.location === 'The Goblin Market' && quests.bell_quest_accepted && !quests.bell_found && !quests.bell_acquired && !quests.bell_quest_complete) {
-    actions.push({ label: t('Ask Nib about the shrine bell'), action: 'ask Nib about the shrine bell' });
-  }
+  const npcTalk = resolveNpcTalkAction(character, t);
+  if (npcTalk) actions.push(npcTalk);
   if (injured) actions.push({ label: 'Recover your strength', action: 'rest' });
 
   if (latest.includes('tracks')) {
@@ -184,7 +208,11 @@ export function playActionChips(
   const explore = quick.find(item => item.id === 'explore');
   if (explore?.action) push('explore', explore.label, explore.action);
   const talk = quick.find(item => item.id === 'talk');
-  if (talk?.action) push('talk', talk.label, talk.action);
+  if (talk?.action) {
+    push('talk', talk.label, talk.action);
+  } else if (talk) {
+    push('talk', talk.label, undefined, 'focus');
+  }
   push('travel', t('Travel'), undefined, 'map');
   push('custom', t('Custom action'), undefined, 'focus');
   return out.slice(0, 12);

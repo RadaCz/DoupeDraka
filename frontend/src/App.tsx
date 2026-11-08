@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { CharacterWizard, type CharacterDraft } from './CharacterWizard';
 import {
   BottomNav,
@@ -28,7 +28,13 @@ import { formatTurnDelta } from './game/turnDelta';
 import { DefeatOverlay, LevelUpModal, type LevelUpNotice } from './components/TurnMoments';
 import { isCombatDefeatRespawn, noticeFromLevelUp } from './game/turnMoments';
 import { FallenScreen } from './screens/FallenScreen';
-import { applyTelegramTheme, applyTelegramViewport, haptic, syncTelegramBackButton, syncTelegramMainButton } from './telegramWebApp';
+import {
+  bindTelegramChrome,
+  haptic,
+  syncTelegramBackButton,
+  syncTelegramMainButton,
+  teardownTelegramMainButton,
+} from './telegramWebApp';
 import { LocaleProvider, useI18n } from './i18n';
 import {
   clearPendingAction,
@@ -65,6 +71,17 @@ declare global {
           impactOccurred: (style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft') => void;
           notificationOccurred: (type: 'error' | 'success' | 'warning') => void;
         };
+        MainButton?: {
+          setText: (text: string) => void;
+          color: (color: string) => void;
+          show: () => void;
+          hide: () => void;
+          enable: () => void;
+          onClick: (handler: () => void) => void;
+          offClick: (handler: () => void) => void;
+        };
+        onEvent?: (event: string, handler: () => void) => void;
+        offEvent?: (event: string, handler: () => void) => void;
       };
     };
   }
@@ -200,6 +217,8 @@ function AppContent() {
   const [calculating, setCalculating] = useState(false);
   const [calculation, setCalculation] = useState<Record<string, unknown> | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [lastRetryableAction, setLastRetryableAction] = useState<string | null>(null);
+  const busyRef = useRef(false);
   const [turnDelta, setTurnDelta] = useState<string | null>(null);
   const [levelUpNotice, setLevelUpNotice] = useState<LevelUpNotice | null>(null);
   const [showDefeatOverlay, setShowDefeatOverlay] = useState(false);
@@ -246,27 +265,33 @@ function AppContent() {
   useEffect(() => syncTelegramBackButton(screen, telegramBack), [screen, telegramBack]);
 
   useEffect(() => {
-    if (screen !== 'game' || !character || character.hp <= 0) return;
-    const readDraft = () => (document.getElementById('adventure-action-input') as HTMLInputElement | null)?.value ?? '';
+    busyRef.current = busy;
+  }, [busy]);
+
+  useEffect(() => {
+    if (screen !== 'game' || !character || character.hp <= 0) {
+      teardownTelegramMainButton();
+      return;
+    }
+    const input = document.getElementById('adventure-action-input') as HTMLInputElement | null;
+    const readDraft = () => input?.value ?? '';
     const sendDraft = () => {
       const text = readDraft().trim();
-      if (text && !busy) void takeAction(text);
+      if (text && !busyRef.current) void takeAction(text);
     };
-    const paint = () => syncTelegramMainButton(readDraft, sendDraft, !busy);
+    const paint = () => syncTelegramMainButton(readDraft, sendDraft, !busyRef.current);
     paint();
-    document.addEventListener('input', paint);
+    input?.addEventListener('input', paint);
     return () => {
-      document.removeEventListener('input', paint);
-      syncTelegramMainButton(() => '', () => {}, false);
+      input?.removeEventListener('input', paint);
+      teardownTelegramMainButton();
     };
   }, [screen, character?.id, character?.hp, busy]);
 
   useEffect(() => {
     const telegram = window.Telegram?.WebApp;
     telegram?.ready?.();
-    telegram?.expand?.();
-    applyTelegramTheme();
-    applyTelegramViewport();
+    const unbindChrome = bindTelegramChrome();
 
     const initData = telegram?.initData;
     if (!initData) {
@@ -313,6 +338,8 @@ function AppContent() {
     })();
 
     return () => {
+      unbindChrome();
+      teardownTelegramMainButton();
       sessionToken = null;
     };
   }, []);
@@ -388,6 +415,7 @@ function AppContent() {
     if (!character || busy || character.hp <= 0) return;
     setBusy(true);
     setError(null);
+    setLastRetryableAction(null);
     setTurnDelta(null);
     const snapshot = character;
     const pendingEventId = -Date.now();
@@ -485,6 +513,7 @@ function AppContent() {
           }
         } else {
           setError(message);
+          setLastRetryableAction(action);
         }
       }
     } finally {
@@ -653,6 +682,11 @@ function AppContent() {
             onOpenSheet={() => navigate('character')}
             onOpenMap={() => navigate('map')}
             onOpenSettings={() => navigate('settings')}
+            onRetryError={
+              lastRetryableAction
+                ? () => { if (!busy) void takeAction(lastRetryableAction); }
+                : undefined
+            }
           />
         )}
         {screen === 'more' && <MoreScreen onNavigate={navigate} />}

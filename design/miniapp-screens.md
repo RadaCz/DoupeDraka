@@ -80,7 +80,7 @@ Beze změny architektury: Hub = mana, continue, invite; More = journal, settings
 | UI | Zobrazit když | Akce / API | Zakázat |
 |----|---------------|------------|---------|
 | Explore | `!in_combat && hp>0` | `search {location}` | fallen |
-| Talk | `!in_combat && hp>0` | quest NPC string nebo prefill listen | fallen |
+| Talk | `!in_combat && hp>0` | NPC quest string (`resolveNpcTalkAction`) nebo focus composeru — **ne** `listen for movement` | fallen |
 | Travel | `!in_combat && hp>0` | otevře Map / `travel to …` | locked routes |
 | Bojovat | **`in_combat` only** | attack/defend/flee/cast | nikdy v průzkumu |
 | Shop | intent SHOP + lokace | text shop | **ne** globální tlačítko (jen chip pokud engine vrátí shop) |
@@ -96,11 +96,11 @@ Beze změny architektury: Hub = mana, continue, invite; More = journal, settings
 | combat | Combat layout |
 | fallen | Fallen overlay, žádné quick actions |
 | sending | thinking, disabled inputs |
-| narrator error | error-panel jen pro síť/narrator — **ne** fallen |
+| narrator error | error-panel: **Try again** = zopakuje poslední tah (idempotence); jinak **Dismiss** — **ne** fallen |
 
 ## 5. Mobil
 
-Pořadí scroll: kontext → HUD → journal → akce → composer. `safe-area` na header/nav. Composer sticky nad klávesnicí (Sprint 4 MainButton doplněk).
+Pořadí scroll: kontext → HUD → journal → akce → composer. `safe-area` na header/nav (`viewportChanged`). Composer sticky nad klávesnicí. Telegram **MainButton**: jeden handler, teardown při opuštění hry (`telegramWebApp.ts`).
 
 ## 6. Mapování kódu
 

@@ -83,7 +83,7 @@ def test_reference_endpoint_exposes_connected_campaign_locations():
 
     assert response.status_code == 200
     locations = {location["name"]: location["connections"] for location in response.json()["locations"]}
-    assert len(locations) == 6
+    assert len(locations) == 9
     assert locations["The Whispering Cellar"] == ["The Sunken Corridor"]
     assert "The Vault of Echoes" in locations["The Sunken Corridor"]
     assert locations["The Shrine of the Forgotten"][0] == "The Goblin Market"

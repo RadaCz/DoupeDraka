@@ -24,6 +24,7 @@ export interface PlayScreenProps {
   onOpenMap?: () => void;
   onOpenSettings?: () => void;
   onCancelTurn?: () => void;
+  onRetryError?: () => void;
 }
 
 export function TurnDeltaStrip({ message }: { message: string | null | undefined }) {
@@ -190,14 +191,24 @@ export function PlayJournal({
 export function PlayErrorPanel({
   error,
   onOpenSettings,
+  onRetry,
 }: {
   error: string | null;
   onOpenSettings?: () => void;
+  onRetry?: () => void;
 }) {
   const { t } = useI18n();
   const [hidden, setHidden] = useState(false);
   useEffect(() => { setHidden(false); }, [error]);
   if (!error || hidden || isFallenError(error)) return null;
+  const dismiss = () => setHidden(true);
+  const handleRetry = () => {
+    if (onRetry) {
+      onRetry();
+      return;
+    }
+    dismiss();
+  };
   return (
     <div className="error-panel" role="alert" title={error} data-error={error}>
       <p className="error-panel-title">{t('The thread of the weave has slipped.')}</p>
@@ -206,7 +217,9 @@ export function PlayErrorPanel({
         {onOpenSettings && (
           <button type="button" className="primary" onClick={onOpenSettings}>{t('Open settings')}</button>
         )}
-        <button type="button" className="ghost" onClick={() => setHidden(true)}>{t('Try again')}</button>
+        <button type="button" className="ghost" onClick={handleRetry}>
+          {onRetry ? t('Try again') : t('Dismiss')}
+        </button>
       </div>
       <details className="error-panel-technical">
         <summary>{t('Technical detail')}</summary>

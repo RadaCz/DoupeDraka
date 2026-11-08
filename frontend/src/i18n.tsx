@@ -457,6 +457,7 @@ const cs: Record<string, string> = {
   'A.U.R.I.O.N. lost its connection to the narrator. Check your narrator settings and try again.': 'A.U.R.I.O.N. ztratil spojeni s vypravecem. Zkontroluj nastaveni vypravece a zkus to znovu.',
   'Open settings': 'Otevrit nastaveni',
   'Try again': 'Zkusit znovu',
+  Dismiss: 'Zavrít',
   'Technical detail': 'Technicky detail',
   'A.U.R.I.O.N. is weighing your fate…': 'A.U.R.I.O.N. zvazuje tvuj osud…',
   'Still weaving. Local models can take a moment.': 'Stale tkam. Lokalnim modelum to muze chvili trvat.',

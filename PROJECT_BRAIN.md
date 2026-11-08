@@ -5,7 +5,7 @@
 - **Repository:** `D:\DoupeDraka`
 - **Development branch:** `clean-main` (merge to `main` after green CI only)
 - **Last updated:** 2026-11-08
-- **Verified baseline:** backend **244 passed**; frontend **18 passed** Vitest; E2E via `npm run test:e2e`; CI Postgres job runs `alembic upgrade head`, `alembic check`, then concurrency tests.
+- **Verified baseline:** backend **278+ passed** (3 known spell/combat return-value tests may fail until engine fix); frontend **37 passed** Vitest; E2E **7 passed**; CI Postgres job runs `alembic upgrade head`, `alembic check`, then concurrency tests.
 - **External verification:** real Telegram visual QA and Docker/Postgres in production-like deploy remain **UNVERIFIED** by the maintainer.
 
 ## 1. Directives
@@ -31,7 +31,7 @@ Do not conflate resources:
 ## 3. Current implementation
 
 - Python/FastAPI async backend, SQLAlchemy, SQLite development DB, Alembic; PostgreSQL URL support and CI migration job on `clean-main`.
-- React 18/Vite Telegram Mini App: Adventure, Map, Character, Quests, Journal, Settings, Tools.
+- React 18/Vite Telegram Mini App: Adventure, Map, Character, Quests, Journal, Settings, Tools. Telegram chrome: single MainButton handler, `themeChanged`/`viewportChanged`, error panel retry vs dismiss.
 - Version fence and idempotency receipts protect turns; SSE narrates after commit with offline fallback.
 - Narration: `app/narrator.py` + `app/ai/` (Ollama when configured). **Pro tier is disabled** in API/UI until an OpenRouter adapter exists.
 - Lite narration is free; new accounts start with 100.0 Adventure Mana. No payment gateway is connected.
