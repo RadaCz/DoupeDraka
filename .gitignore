@@ -1,0 +1,42 @@
+.env
+.venv/
+__pycache__/
+*.py[cod]
+data/*.db
+frontend/node_modules/
+frontend/dist/
+frontend/.playwright-results/
+.aider*
+.andromity/
+
+logs/
+.pytest_cache/
+
+# Large reference PDF (SRD 5.1) - not versioned
+/SRD 5.1.pdf
+
+# --- cleanup commit: backups, logs, env, build artefacts ---
+.env.*
+!.env.example
+*.bak
+*.bak-*
+*.orig
+*.rej
+*.log
+.qa/
+.qa-backups/
+qa-logs/
+node_modules/
+dist/
+.pytest-out.txt
+SRD_CC_v5.1.pdf
+tools/_*
+# --- end cleanup rules ---
+
+
+# --- never commit archives or test databases ---
+*.zip
+tests/data/*.db
+*.sqlite
+*.db
+

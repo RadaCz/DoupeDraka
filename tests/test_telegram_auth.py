@@ -1,0 +1,234 @@
+"""Telegram initData verification — the project's only trusted identity source."""
+import json
+import time
+
+import pytest
+
+from app.auth.telegram import (
+    DEFAULT_MAX_AGE_SECONDS,
+    InitDataError,
+    build_init_data,
+    expected_hash,
+    verify_init_data,
+)
+from app.api import app, limiter
+from fastapi.testclient import TestClient
+from app.settings import Settings
+
+BOT_TOKEN = "123456:TEST-TOKEN-not-a-real-secret"
+client = TestClient(app)
+
+
+def make_init_data(user_id: int = 42, username: str = "valenok", auth_date: int | None = None, **extra):
+    payload = {"id": user_id, "username": username, "first_name": "Val", "language_code": "ru"}
+    payload.update(extra.pop("user", {}))
+    fields = {"user": json.dumps(payload), "query_id": "AAF", **extra}
+    return build_init_data(fields, BOT_TOKEN, auth_date=auth_date)
+
+
+# --------------------------------------------------------------------------
+# Happy path
+# --------------------------------------------------------------------------
+
+def test_valid_init_data_returns_the_user():
+    user = verify_init_data(make_init_data(77, "grath"), BOT_TOKEN)
+    assert user.id == 77
+    assert user.username == "grath"
+    assert user.display_name == "grath"
+
+
+def test_display_name_falls_back_through_username_first_name_id():
+    assert verify_init_data(make_init_data(username=""), BOT_TOKEN).display_name == "Val"
+    no_name = json.dumps({"id": 99})
+    data = build_init_data({"user": no_name}, BOT_TOKEN)
+    assert verify_init_data(data, BOT_TOKEN).display_name == "player_99"
+
+
+def test_extra_fields_are_signed_and_tolerated():
+    """Telegram sends more than user/auth_date; extra signed fields must not break it."""
+    data = make_init_data(extra={"chat_type": "private", "chat_instance": "abc"})
+    assert verify_init_data(data, BOT_TOKEN).id == 42
+
+
+def test_empty_optional_fields_survive():
+    payload = {"id": 5, "username": ""}
+    data = build_init_data({"user": json.dumps(payload), "query_id": ""}, BOT_TOKEN)
+    assert verify_init_data(data, BOT_TOKEN).id == 5
+
+
+# --------------------------------------------------------------------------
+# Forgery — the reason this module exists
+# --------------------------------------------------------------------------
+
+def test_tampered_user_id_is_rejected():
+    """The core attack: swap in someone else's id without re-signing."""
+    data = make_init_data(42, "victim")
+    forged = data.replace('"id": 42', '"id": 1')
+    assert forged != data and '"id": 1' in forged
+    with pytest.raises(InitDataError, match="signature"):
+        verify_init_data(forged, BOT_TOKEN)
+
+
+def test_wrong_bot_token_is_rejected():
+    with pytest.raises(InitDataError, match="signature"):
+        verify_init_data(make_init_data(), "999:OTHER-TOKEN")
+
+
+def test_missing_hash_is_rejected():
+    data = "&".join(part for part in make_init_data().split("&") if not part.startswith("hash="))
+    with pytest.raises(InitDataError, match="hash"):
+        verify_init_data(data, BOT_TOKEN)
+
+
+def test_empty_hash_is_rejected():
+    data = "&".join(part for part in make_init_data().split("&") if not part.startswith("hash="))
+    with pytest.raises(InitDataError, match="hash"):
+        verify_init_data(data, BOT_TOKEN)
+
+
+def test_unsigned_user_field_is_rejected():
+    """Appending an unsigned `user` must not let an attacker inject an identity.
+
+    The duplicate-field guard catches this before the signature check, which is
+    the stronger outcome: the payload is rejected either way.
+    """
+    data = make_init_data(42, "victim")
+    with pytest.raises(InitDataError, match="duplicate|signature"):
+        verify_init_data(data + "&user=" + json.dumps({"id": 1, "username": "attacker"}), BOT_TOKEN)
+
+
+def test_duplicate_fields_are_rejected():
+    data = make_init_data()
+    with pytest.raises(InitDataError, match="duplicate"):
+        verify_init_data(f"{data}&user=%7B%22id%22%3A+1%7D", BOT_TOKEN)
+
+
+def test_unconfigured_bot_token_fails_closed():
+    """No token means no verification, so nothing may be trusted."""
+    with pytest.raises(InitDataError, match="not configured"):
+        verify_init_data(make_init_data(), "")
+
+
+def test_empty_init_data_is_rejected():
+    with pytest.raises(InitDataError, match="empty"):
+        verify_init_data("   ", BOT_TOKEN)
+
+
+# --------------------------------------------------------------------------
+# Freshness
+# --------------------------------------------------------------------------
+
+def test_expired_init_data_is_rejected():
+    old = int(time.time()) - DEFAULT_MAX_AGE_SECONDS - 10
+    with pytest.raises(InitDataError, match="expired"):
+        verify_init_data(make_init_data(auth_date=old), BOT_TOKEN)
+
+
+def test_replay_just_inside_the_window_is_accepted():
+    fresh = int(time.time()) - DEFAULT_MAX_AGE_SECONDS + 30
+    assert verify_init_data(make_init_data(auth_date=fresh), BOT_TOKEN).id == 42
+
+
+def test_future_auth_date_is_rejected():
+    future = int(time.time()) + 600
+    with pytest.raises(InitDataError, match="future"):
+        verify_init_data(make_init_data(auth_date=future), BOT_TOKEN)
+
+
+def test_small_clock_skew_is_tolerated():
+    skewed = int(time.time()) + 30
+    assert verify_init_data(make_init_data(auth_date=skewed), BOT_TOKEN).id == 42
+
+
+def test_missing_auth_date_is_rejected():
+    signature = expected_hash({"user": json.dumps({"id": 1})}, BOT_TOKEN)
+    with pytest.raises(InitDataError, match="auth_date"):
+        verify_init_data(f"user=%7B%22id%22%3A+1%7D&hash={signature}", BOT_TOKEN)
+
+
+# --------------------------------------------------------------------------
+# Malformed payloads must raise InitDataError, never crash
+# --------------------------------------------------------------------------
+
+def test_missing_user_payload_is_rejected():
+    data = build_init_data({"query_id": "x"}, BOT_TOKEN)
+    with pytest.raises(InitDataError, match="user payload"):
+        verify_init_data(data, BOT_TOKEN)
+
+
+def test_non_json_user_payload_is_rejected():
+    data = build_init_data({"user": "not-json"}, BOT_TOKEN)
+    with pytest.raises(InitDataError, match="not valid JSON"):
+        verify_init_data(data, BOT_TOKEN)
+
+
+def test_non_object_user_payload_is_rejected():
+    data = build_init_data({"user": "[1,2]"}, BOT_TOKEN)
+    with pytest.raises(InitDataError, match="not an object"):
+        verify_init_data(data, BOT_TOKEN)
+
+
+@pytest.mark.parametrize("bad_id", ["0", "-3", '"42"', "null"])
+def test_invalid_user_id_is_rejected(bad_id):
+    data = build_init_data({"user": f'{{"id": {bad_id}}}'}, BOT_TOKEN)
+    with pytest.raises(InitDataError, match="valid id"):
+        verify_init_data(data, BOT_TOKEN)
+
+
+def test_expected_hash_is_stable_and_hex():
+    fields = {"user": '{"id": 1}', "auth_date": "1700000000"}
+    digest = expected_hash(fields, BOT_TOKEN)
+    assert digest == expected_hash(fields, BOT_TOKEN)
+    assert digest == digest.lower()
+    assert len(digest) == 64 and all(character in "0123456789abcdef" for character in digest)
+
+
+def test_expected_hash_ignores_the_hash_field():
+    fields = {"user": '{"id": 1}', "auth_date": "1700000000"}
+    assert expected_hash(fields, BOT_TOKEN) == expected_hash({**fields, "hash": "whatever"}, BOT_TOKEN)
+
+
+def test_telegram_auth_is_rate_limited():
+    limiter.reset()
+    responses = [
+        client.post("/auth/telegram", json={"init_data": "invalid"})
+        for _ in range(10)
+    ]
+    assert all(response.status_code == 401 for response in responses)
+
+    limited = client.post("/auth/telegram", json={"init_data": "invalid"})
+    assert limited.status_code == 429
+
+
+def test_cors_requires_explicit_origins():
+    settings = Settings(_env_file=None, cors_origins="https://mini.example")
+    assert settings.origins == ["https://mini.example"]
+
+    with pytest.raises(ValueError, match="explicit HTTP\\(S\\) origins"):
+        Settings(_env_file=None, cors_origins="*")
+    with pytest.raises(ValueError, match="explicit HTTP\\(S\\) origins"):
+        Settings(_env_file=None, cors_origins="https://mini.example/game")
+
+
+def test_cors_preflight_allows_only_configured_development_origin():
+    allowed_origin = "http://localhost:5173"
+    response = client.options(
+        "/auth/telegram",
+        headers={
+            "Origin": allowed_origin,
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type",
+        },
+    )
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == allowed_origin
+
+    rejected = client.options(
+        "/auth/telegram",
+        headers={
+            "Origin": "https://not-the-mini-app.example",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type",
+        },
+    )
+    assert rejected.status_code == 400

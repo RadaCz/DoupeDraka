@@ -1,0 +1,549 @@
+/* ============================================================
+   DoupeDraka — design tokens
+   Source of truth: design/direction.md
+   Doctrine: a printed adventure module — parchment, ink, one lamp.
+   Do not add a hue. Do not add a gradient. Do not add a shadow blur.
+   ============================================================ */
+
+:root {
+  /* --- 6-swatch system ------------------------------------ */
+  --bg:            #F6F0E4;  /* parchment ground          */
+  --surface-1:     #FFFBF2;  /* the page itself           */
+  --surface-2:     #EDE3CF;  /* ruled panels, insets      */
+  --border:        #D8C9AC;  /* hairlines, table rules    */
+  --text:          #241C14;  /* ink                       */
+  --accent:        #A32B22;  /* oxblood — the verb colour */
+  --accent-hover:  #86201A;
+
+  /* --- utility, NOT part of the palette -------------------- */
+  --coin:          #B58A3C;  /* currency glyph and coin totals only.
+                                Never a decorative colour, never a
+                                border, never a heading. */
+
+  /* --- ink tiers ------------------------------------------ */
+  --text-muted:    #5A4A38;  /* marginal notes, captions     */
+  --text-faint:    #8A7860;  /* disabled, "not yet modelled" */
+  --rule-faint:    #C9B896;  /* inner rules inside tables    */
+
+  /* --- accent tiers (desaturations, not new hues) ---------- */
+  --accent-wash:   #F3E0D9;  /* selected row, quiet emphasis */
+  --accent-line:   #D9A79F;  /* accent hairline              */
+
+  /* --- space: 8px grid ------------------------------------ */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
+  --sp-9: 96px;
+  --sp-10: 128px;
+
+  /* --- layout --------------------------------------------- */
+  --measure: 62ch;      /* narration column                     */
+  --sheet: 34rem;       /* character-sheet panel                */
+  --page-max: 72rem;    /* journal + sheet, two columns         */
+  --actionbar: 4.5rem;  /* pinned footer height                 */
+
+  /* --- type scale, fluid ---------------------------------- */
+  --step--1: clamp(0.8125rem, 0.79rem + 0.11vw, 0.875rem);
+  --step-0:  clamp(1rem,     0.96rem + 0.20vw, 1.125rem);
+  --step-1:  clamp(1.1875rem, 1.12rem + 0.32vw, 1.375rem);
+  --step-2:  clamp(1.4375rem, 1.32rem + 0.55vw, 1.75rem);
+  --step-3:  clamp(1.75rem,   1.55rem + 0.90vw, 2.25rem);
+  --step-4:  clamp(2.125rem,  1.80rem + 1.50vw, 3rem);
+  --step-5:  clamp(2.625rem,  2.00rem + 2.90vw, 4.25rem);
+
+  /* --- type families -------------------------------------- */
+  --font-display: "Literata", Georgia, "Times New Roman", serif;
+  --font-body:    "Source Serif 4", "Source Serif Pro", Georgia, serif;
+  --font-figures: "Source Serif 4", Georgia, serif; /* tabular-nums */
+
+  /* --- leading / tracking --------------------------------- */
+  --lh-display: 1.10;
+  --lh-tight:   1.30;
+  --lh-body:    1.55;
+  --lh-prose:   1.72;
+  --tr-display: -0.02em;
+  --tr-label:   0.09em;   /* small caps labels */
+
+  /* --- borders & shadow: hard offset, never blurred ------- */
+  --hair:        1px solid var(--border);
+  --hair-faint:  1px solid var(--rule-faint);
+  --hair-accent: 1px solid var(--accent-line);
+  --rule-heavy:  2px solid var(--text);
+  --shadow-plate: 3px 3px 0 var(--surface-2);
+  --radius:      2px;  /* paper has corners, barely */
+
+  /* --- one vignette, and nothing else --------------------- */
+  --vignette: radial-gradient(
+    120% 100% at 50% 0%,
+    rgba(181, 138, 60, 0.04) 0%,
+    rgba(181, 138, 60, 0.00) 70%
+  );
+
+  /* --- motion: one dice settle, one HP drain, one fade ---- */
+  --dur-micro:  150ms;
+  --dur-state:  220ms;
+  --dur-fade:   400ms;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ============================================================
+   Base
+   ============================================================ */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: var(--step-0);
+  line-height: var(--lh-body);
+  font-optical-sizing: auto;
+  text-rendering: optimizeLegibility;
+  /* a very faint paper tooth — texture, not colour */
+  background-image: var(--vignette);
+  background-attachment: fixed;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: var(--lh-display);
+  letter-spacing: var(--tr-display);
+  text-wrap: balance;
+  margin: 0;
+}
+
+p { margin: 0; text-wrap: pretty; }
+
+a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 0.18em; }
+a:hover { color: var(--accent-hover); }
+
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius);
+}
+
+::selection { background: var(--accent-wash); color: var(--text); }
+
+hr.rule { border: 0; border-top: var(--hair); margin: var(--sp-5) 0; }
+
+/* ============================================================
+   Type utilities
+   ============================================================ */
+
+.t-display {
+  font-family: var(--font-display);
+  font-size: var(--step-5);
+  line-height: var(--lh-display);
+  letter-spacing: var(--tr-display);
+  font-weight: 600;
+}
+
+.t-title   { font-size: var(--step-3); }
+.t-subhead { font-size: var(--step-2); }
+.t-prose {
+  font-size: var(--step-0);
+  line-height: var(--lh-prose);
+  max-width: var(--measure);
+}
+
+.t-label {
+  font-family: var(--font-body);
+  font-size: var(--step--1);
+  font-weight: 600;
+  letter-spacing: var(--tr-label);
+  text-transform: uppercase;
+  font-variant-caps: all-small-caps;
+  color: var(--text-muted);
+}
+
+/* tabular figures on EVERY stat, HP, dice total and coin count */
+.t-num,
+.stat,
+.hp,
+.gold,
+.slots,
+.dice-total,
+table td.num,
+table th.num {
+  font-family: var(--font-figures);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* ============================================================
+   Surfaces
+   ============================================================ */
+
+.page {
+  background: var(--surface-1);
+  border: var(--hair);
+  border-radius: var(--radius);
+  padding: var(--sp-6);
+}
+
+.panel {
+  background: var(--surface-2);
+  border: var(--hair);
+  border-radius: var(--radius);
+  padding: var(--sp-4);
+}
+
+.plate {
+  background: var(--surface-1);
+  border: var(--hair);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-plate);
+}
+
+/* ============================================================
+   The journal — the interface, not a chat
+   ============================================================ */
+
+.journal {
+  max-width: var(--measure);
+  display: grid;
+  gap: var(--sp-5);
+}
+
+/* DM prose. A drop-cap opens each scene. */
+.journal .scene {
+  font-size: var(--step-0);
+  line-height: var(--lh-prose);
+  max-width: var(--measure);
+}
+
+.journal .scene--opening::first-letter {
+  font-family: var(--font-display);
+  font-size: 3.05em;
+  line-height: 0.86;
+  float: left;
+  padding: 0.06em 0.09em 0 0;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* Player intent — an indented marginal annotation, never a bubble. */
+.journal .intent {
+  font-style: italic;
+  color: var(--text-muted);
+  margin-left: var(--sp-6);
+  padding-left: var(--sp-3);
+  border-left: var(--hair);
+  max-width: 52ch;
+}
+
+/* Mechanical result — right-aligned small caps marginal note. */
+.journal .result {
+  font-family: var(--font-body);
+  font-size: var(--step--1);
+  font-variant-caps: all-small-caps;
+  letter-spacing: var(--tr-label);
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.journal .result--crit,
+.journal .result--hit {
+  color: var(--accent);
+}
+
+.journal .result--miss {
+  color: var(--text-muted);
+}
+
+/* Dice — a thin rule above the total. */
+.journal .dice {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  justify-content: flex-end;
+  border-top: var(--hair);
+  padding-top: var(--sp-1);
+  margin-top: var(--sp-2);
+  font-size: var(--step--1);
+  color: var(--text-muted);
+}
+
+.journal .dice .dice-total {
+  font-size: var(--step-0);
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* ============================================================
+   Character sheet — a printed stat block
+   ============================================================ */
+
+.sheet {
+  width: var(--sheet);
+  max-width: 100%;
+  background: var(--surface-1);
+  border: var(--hair);
+  padding: var(--sp-5);
+}
+
+.sheet__vitals {
+  font-variant-caps: all-small-caps;
+  letter-spacing: var(--tr-label);
+  font-size: var(--step--1);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums lining-nums;
+  border-bottom: var(--rule-heavy);
+  padding-bottom: var(--sp-2);
+  margin-bottom: var(--sp-4);
+}
+
+.sheet__abilities {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-3);
+}
+
+.ability {
+  border: var(--hair);
+  text-align: center;
+  padding: var(--sp-2);
+}
+
+.ability__label {
+  display: block;
+  font-size: var(--step--1);
+  font-variant-caps: all-small-caps;
+  letter-spacing: var(--tr-label);
+  color: var(--text-muted);
+}
+
+.ability__score {
+  display: block;
+  font-size: var(--step-2);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.ability__mod { font-size: var(--step--1); color: var(--text-muted); }
+
+/* spells: full weight when modelled, faint when not — never a
+   silent slot refund, never a lie about what exists. */
+.spell { padding: var(--sp-2) 0; border-bottom: var(--hair-faint); }
+.spell--modelled { color: var(--text); }
+.spell--unmodelled { color: var(--text-faint); }
+.spell--unmodelled .spell__note {
+  font-size: var(--step--1);
+  font-style: italic;
+}
+
+/* ============================================================
+   Actions — the only chrome on the page
+   ============================================================ */
+
+.actionbar {
+  position: sticky;
+  bottom: 0;
+  min-height: var(--actionbar);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-5);
+  background: var(--bg);
+  border-top: var(--hair);
+  /* the page footer of the printed sheet */
+}
+
+.btn {
+  font-family: var(--font-body);
+  font-size: var(--step--1);
+  font-weight: 600;
+  font-variant-caps: all-small-caps;
+  letter-spacing: var(--tr-label);
+  padding: var(--sp-2) var(--sp-4);
+  border: var(--hair);
+  background: var(--surface-1);
+  color: var(--text);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background-color var(--dur-micro) var(--ease),
+              border-color var(--dur-micro) var(--ease),
+              color var(--dur-micro) var(--ease);
+}
+
+.btn:hover { background: var(--surface-2); }
+
+/* the ONE accent verb — Attack / Continue / Begin / Buy */
+.btn--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.btn--primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  color: var(--text-faint);
+  background: var(--surface-2);
+  border-color: var(--border);
+  cursor: not-allowed;
+}
+
+/* ============================================================
+   Forms — ruled paper
+   ============================================================ */
+
+label { display: block; }
+
+.field__label {
+  font-size: var(--step--1);
+  font-variant-caps: all-small-caps;
+  letter-spacing: var(--tr-label);
+  color: var(--text-muted);
+  margin-bottom: var(--sp-1);
+}
+
+input[type="text"],
+input[type="number"],
+select,
+textarea {
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: var(--step-0);
+  color: var(--text);
+  background: transparent;
+  border: 0;
+  border-bottom: var(--hair);
+  border-radius: 0;
+  padding: var(--sp-2) 0;
+  transition: border-color var(--dur-micro) var(--ease);
+}
+
+input:focus, select:focus, textarea:focus {
+  border-bottom-color: var(--accent);
+  outline: none;
+}
+
+/* choice list — the selected row gains a left accent rule */
+.choice {
+  display: block;
+  padding: var(--sp-2) var(--sp-3);
+  border-left: 3px solid transparent;
+  border-bottom: var(--hair-faint);
+  cursor: pointer;
+  transition: background-color var(--dur-micro) var(--ease);
+}
+.choice:hover { background: var(--surface-2); }
+.choice[aria-selected="true"],
+.choice.is-selected {
+  background: var(--accent-wash);
+  border-left-color: var(--accent);
+}
+
+/* ============================================================
+   Tables — ruled, no fills, no striping
+   ============================================================ */
+
+table { width: 100%; border-collapse: collapse; }
+
+thead th {
+  font-size: var(--step--1);
+  font-variant-caps: all-small-caps;
+  letter-spacing: var(--tr-label);
+  color: var(--text-muted);
+  text-align: left;
+  font-weight: 600;
+  border-bottom: var(--rule-heavy);
+  padding: var(--sp-2) var(--sp-2);
+}
+
+td {
+  padding: var(--sp-2);
+  border-bottom: var(--hair-faint);
+}
+
+td.num, th.num { text-align: right; }
+
+.price--coin { color: var(--coin); font-variant-numeric: tabular-nums; }
+
+/* ============================================================
+   Motion — THREE moves, and one of them is the dice
+   ============================================================ */
+
+@keyframes dice-settle {
+  0%   { transform: translateY(-6px) rotate(-4deg); opacity: 0.4; }
+  60%  { transform: translateY(1px)  rotate(1.5deg); opacity: 1; }
+  100% { transform: translateY(0)    rotate(0);      opacity: 1; }
+}
+
+@keyframes hp-drain {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(var(--hp-ratio, 0.5)); }
+}
+
+.fade-in { animation: fade var(--dur-fade) var(--ease) both; }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+.dice--settling { animation: dice-settle var(--dur-state) var(--ease) both; }
+
+.hpbar {
+  transform-origin: left center;
+  animation: hp-drain var(--dur-state) var(--ease) both;
+}
+
+/* ============================================================
+   prefers-reduced-motion — everything still, everything shown
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .hpbar { transform: scaleX(var(--hp-ratio, 0.5)); }
+  .dice--settling { animation: none; }
+}
+
+/* ============================================================
+   Layout
+   ============================================================ */
+
+.wrap {
+  max-width: var(--page-max);
+  margin-inline: auto;
+  padding-inline: var(--sp-5);
+}
+
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--sheet);
+  gap: var(--sp-7);
+  align-items: start;
+}
+
+@media (max-width: 62rem) {
+  .split { grid-template-columns: minmax(0, 1fr); gap: var(--sp-5); }
+  .sheet { width: 100%; }
+  .journal .intent { margin-left: var(--sp-4); }
+}
+
+@media (max-width: 34rem) {
+  .wrap { padding-inline: var(--sp-4); }
+  .page { padding: var(--sp-4); }
+  .actionbar { padding: var(--sp-2) var(--sp-4); gap: var(--sp-2); }
+}

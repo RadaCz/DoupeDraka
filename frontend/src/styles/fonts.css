@@ -1,0 +1,22 @@
+/* ============================================================
+   DoupeDraka — type loading
+   Literata (display) + Source Serif 4 (body). Both SIL OFL.
+
+   Czech diacritics are a FIRST-CLASS requirement, not an
+   afterthought — the game is Czech. The "Přízračný" test in
+   design/direction.md must render at full weight in both faces.
+   Google's css2 endpoint serves the latin-ext subset whenever
+   the font has it, and the unicode-range in its response is what
+   makes ř, ě, ů, č resolve — no missing glyphs, no fallback.
+
+   Self-hosting later is a straight swap: download the woff2
+   pairs from the same endpoint, drop them in styles/fonts/,
+   and replace the @import with local @font-face blocks
+   (font-weight: 400 700; font-display: swap).
+   ============================================================ */
+
+@import url("https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400..700;1,7..72,400..600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400..700;1,8..60,400..600&display=swap");
+
+/* Fallback stack (declared in tokens.css) is Georgia, so a slow
+   or blocked font request still shows a serif page, never a
+   sans fallback and never an empty box. */

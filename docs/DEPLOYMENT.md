@@ -1,0 +1,55 @@
+# Local Development and Deployment
+
+## Local API and frontend
+
+Requirements: Python 3.11+ and Node.js 20+.
+
+```powershell
+cd D:\DoupeDraka
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+python -m uvicorn app.api:app --reload
+```
+
+In another PowerShell:
+
+```powershell
+cd D:\DoupeDraka\frontend
+npm install
+npm run dev
+```
+
+API docs: `http://127.0.0.1:8000/docs`; Vite: `http://127.0.0.1:5173`.
+Opening Vite outside Telegram intentionally shows the authentication gate.
+
+## Telegram Mini App development
+
+1. Configure a real Telegram bot token in the private root `.env`; do not share or
+   commit it.
+2. Run the API and frontend as above.
+3. Expose port 5173 with a temporary HTTPS tunnel such as `ngrok http 5173`.
+4. Set `NGROK_HOST` in `frontend/.env` to the tunnel hostname only, then restart Vite.
+5. Set the bot's Mini App menu button to the HTTPS URL and open it inside Telegram.
+
+Only use a temporary tunnel for your own QA and stop it afterward. The browser E2E
+suite uses synthetic signed `initData` and does not require Telegram or a real token.
+
+## Database and containers
+
+SQLite is the default development database. Apply migrations with
+`alembic upgrade head`. PostgreSQL URLs are supported through `DATABASE_URL`, but live
+PostgreSQL migration/concurrency validation is still required before production.
+
+`docker compose up --build` is configured for the API, bot, and frontend. Docker image
+build/runtime and production deployment have not been verified in this environment.
+
+## Narration provider
+
+The default `LLM_PROVIDER=fallback` runs without a model. For local Ollama, set
+`LLM_PROVIDER=ollama`, configure `OLLAMA_URL` and `OLLAMA_MODEL`, and start Ollama.
+Narration failure falls back without blocking or undoing a committed turn.
+
+Real payments are not enabled. Top-up routes remain admin-gated; do not configure a
+production payment flow without a separate product/security review.

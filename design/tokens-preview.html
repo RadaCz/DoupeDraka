@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DoupeDraka — design tokens</title>
+<link rel="stylesheet" href="../frontend/src/styles/fonts.css">
+<link rel="stylesheet" href="../frontend/src/styles/tokens.css">
+<style>
+  body { padding: var(--sp-8) 0 var(--sp-9); }
+  .stack { display: grid; gap: var(--sp-7); }
+  .swatches { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: var(--sp-3); }
+  .swatch { border: var(--hair); border-radius: var(--radius); overflow: hidden; }
+  .swatch__chip { height: 5.5rem; }
+  .swatch__meta { padding: var(--sp-2) var(--sp-3); background: var(--surface-1); font-size: var(--step--1); }
+  .swatch__meta b { display: block; font-variant-caps: all-small-caps; letter-spacing: var(--tr-label); }
+  .demo-grid { display: grid; gap: var(--sp-6); }
+  .specimen p + p { margin-top: var(--sp-3); }
+</style>
+</head>
+<body>
+<div class="wrap stack">
+
+  <!-- ============ palette ============ -->
+  <section>
+    <p class="t-label">The six swatches</p>
+    <h2 class="t-title" style="margin-bottom: var(--sp-4)">Parchment and oxblood</h2>
+    <div class="swatches">
+      <div class="swatch"><div class="swatch__chip" style="background: var(--bg)"></div><div class="swatch__meta"><b>bg</b>#F6F0E4</div></div>
+      <div class="swatch"><div class="swatch__chip" style="background: var(--surface-1)"></div><div class="swatch__meta"><b>surface-1</b>#FFFBF2</div></div>
+      <div class="swatch"><div class="swatch__chip" style="background: var(--surface-2)"></div><div class="swatch__meta"><b>surface-2</b>#EDE3CF</div></div>
+      <div class="swatch"><div class="swatch__chip" style="background: var(--border)"></div><div class="swatch__meta"><b>border</b>#D8C9AC</div></div>
+      <div class="swatch"><div class="swatch__chip" style="background: var(--text)"></div><div class="swatch__meta"><b>text</b>#241C14</div></div>
+      <div class="swatch"><div class="swatch__chip" style="background: var(--accent)"></div><div class="swatch__meta"><b>accent</b>#A32B22</div></div>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <!-- ============ the journal ============ -->
+  <section>
+    <p class="t-label">Distinctive move — the journal is the interface</p>
+    <h2 class="t-title" style="margin-bottom: var(--sp-5)">No bubbles. A printed page.</h2>
+
+    <div class="split">
+      <div class="page">
+        <div class="journal">
+          <div class="scene scene--opening">
+            Kamenné schody klesají do tmy, kde vzduch páchne po mokré hlíně a starém popelu.
+            Někde vpředu kapka padá do vody — a pak znovu. Mezi kamením u stěny se cosi pohne,
+            příliš pomalu na to, aby to byl odraz lucerny.
+          </div>
+
+          <div class="intent">Zvednu lucernu a rozhlédnu se po chodbě.</div>
+
+          <div class="scene">
+            Světlo klouže po vlhkém zdivu a odhalí výklenek, ve kterém sedí zkroucená postava
+            v rezavé zbroji. Nemá tvář, jen prázdnou přilbu, a přesto se pomalu obrací k tobě.
+          </div>
+
+          <div class="result result--hit">hazard · přízračný strážce · vyhrál jsi iniciativu</div>
+
+          <div class="dice">
+            <span>d20</span><span class="dice-total">18</span><span>+ 3 &nbsp;=&nbsp; 21</span>
+          </div>
+
+          <div class="result">útok · 14 vs AC 13 · zásah</div>
+          <div class="result result--crit">kritické · 7 poškození</div>
+        </div>
+      </div>
+
+      <!-- ============ the sheet ============ -->
+      <aside class="sheet">
+        <div class="sheet__vitals">Maeve · trpaslice · válečnice · úroveň 3</div>
+        <div class="sheet__vitals" style="border-bottom: 0; padding-bottom: 0; margin-bottom: var(--sp-3)">
+          AC <span class="t-num">16</span> &nbsp;·&nbsp;
+          HP <span class="t-num">22/28</span> &nbsp;·&nbsp;
+          rychlost <span class="t-num">25</span> stop
+        </div>
+        <div class="hpbar" style="--hp-ratio: .785; height: 6px; background: var(--accent); margin-bottom: var(--sp-4)"></div>
+
+        <div class="sheet__abilities">
+          <div class="ability"><span class="ability__label">Síla</span><span class="ability__score">16</span><span class="ability__mod">+3</span></div>
+          <div class="ability"><span class="ability__label">Obratnost</span><span class="ability__score">12</span><span class="ability__mod">+1</span></div>
+          <div class="ability"><span class="ability__label">Odolnost</span><span class="ability__score">15</span><span class="ability__mod">+2</span></div>
+          <div class="ability"><span class="ability__label">Inteligence</span><span class="ability__score">9</span><span class="ability__mod">−1</span></div>
+          <div class="ability"><span class="ability__label">Moudrost</span><span class="ability__score">11</span><span class="ability__mod">+0</span></div>
+          <div class="ability"><span class="ability__label">Charisma</span><span class="ability__score">13</span><span class="ability__mod">+1</span></div>
+        </div>
+
+        <p class="t-label" style="margin: var(--sp-5) 0 var(--sp-2)">Kouzla</p>
+        <div class="spell spell--modelled">Štít &nbsp;<span style="color: var(--text-muted)">— reakce, +5 AC &nbsp;·&nbsp; slot 1</span></div>
+        <div class="spell spell--modelled">Vodní dýka &nbsp;<span style="color: var(--text-muted)">— bonusová akce, 1k4 &nbsp;·&nbsp; slot 1</span></div>
+        <div class="spell spell--unmodelled">Spánek <span class="spell__note">— zatím nemodelováno</span></div>
+      </aside>
+    </div>
+
+    <div class="actionbar" style="margin-top: var(--sp-5); border: var(--hair)">
+      <button class="btn btn--primary">Útok</button>
+      <button class="btn">Kouzlo</button>
+      <button class="btn">Útěk</button>
+      <span style="margin-left: auto" class="t-num gold" title="gold">12 zl</span>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <!-- ============ data tables / shop ============ -->
+  <section>
+    <p class="t-label">Screen 7 — the shop, and the gold sink</p>
+    <h2 class="t-title" style="margin-bottom: var(--sp-4)">Ruled prices, tabular figures</h2>
+    <table>
+      <thead>
+        <tr><th>Zboží</th><th class="num">Cena</th><th class="num"></th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Léčivý odvar <span style="color: var(--text-muted)">— obnoví 2k4+2 HP</span></td><td class="num price--coin">35 zl</td><td class="num"><button class="btn">Koupit</button></td></tr>
+        <tr><td>Nářadí na zámky</td><td class="num price--coin">25 zl</td><td class="num"><button class="btn">Koupit</button></td></tr>
+        <tr><td>Rezavý krátký meč <span style="color: var(--text-muted)">— 1k6 poškození</span></td><td class="num price--coin">10 zl</td><td class="num"><button class="btn" aria-disabled="true" disabled>Koupit</button></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <hr class="rule">
+
+  <!-- ============ type specimen ============ -->
+  <section class="specimen">
+    <p class="t-label">Type specimen — diacritics test</p>
+    <p class="t-display" style="margin-bottom: var(--sp-4)">Přízračný strážce</p>
+    <div class="t-prose">
+      <p>Literata drží titulky a jména míst; Source Serif 4 nese prózu. Ř, ě, ů, č, š, ž a ď
+      musí mít plnou váhu v obou řezech — test „Přízračný“ je součástí akceptace každé obrazovky.</p>
+      <p class="t-num">12,480 zl &nbsp;·&nbsp; 22/28 HP &nbsp;·&nbsp; d20 = 18 &nbsp;·&nbsp; −1</p>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

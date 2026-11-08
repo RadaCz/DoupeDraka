@@ -1,0 +1,2235 @@
+[
+  {
+    "name": "Acid Arrow",
+    "level": 2,
+    "school": "evocation",
+    "range": "90 feet",
+    "text": "A shimmering green arrow streaks toward a target within range and bursts in a spray of acid."
+  },
+  {
+    "name": "Acid Splash",
+    "level": 0,
+    "school": "conjuration",
+    "range": "60 feet",
+    "text": "You hurl a bubble of acid."
+  },
+  {
+    "name": "Aid",
+    "level": 2,
+    "school": "abjuration",
+    "range": "30 feet",
+    "text": "Your spell bolsters your allies with toughness and resolve."
+  },
+  {
+    "name": "Alarm",
+    "level": 1,
+    "school": "abjuration",
+    "range": "30 feet",
+    "text": "You set an alarm against unwanted intrusion."
+  },
+  {
+    "name": "Alter Self",
+    "level": 2,
+    "school": "transmutation",
+    "range": "Self",
+    "text": "You assume a different form."
+  },
+  {
+    "name": "Animal Friendship",
+    "level": 1,
+    "school": "enchantment",
+    "range": "30 feet",
+    "text": "This spell lets you convince a beast that you mean it no harm."
+  },
+  {
+    "name": "Animal Messenger",
+    "level": 2,
+    "school": "enchantment",
+    "range": "30 feet",
+    "text": "By means of this spell, you use an animal to deliver a message."
+  },
+  {
+    "name": "Animal Shapes",
+    "level": 8,
+    "school": "transmutation",
+    "range": "30 feet",
+    "text": "Your magic turns others into beasts."
+  },
+  {
+    "name": "Animate Dead",
+    "level": 3,
+    "school": "necromancy",
+    "range": "10 feet",
+    "text": "This spell creates an undead servant."
+  },
+  {
+    "name": "Animate Objects",
+    "level": 5,
+    "school": "transmutation",
+    "range": "120 feet",
+    "text": "Objects come to life at your command."
+  },
+  {
+    "name": "Antilife Shell",
+    "level": 5,
+    "school": "abjuration",
+    "range": "Self (10-foot radius)",
+    "text": "A shimmering barrier extends out from you in a 10-foot radius and moves with you, remaining centered on you and hedging out creatures other than undead and constructs."
+  },
+  {
+    "name": "Antimagic Field",
+    "level": 8,
+    "school": "abjuration",
+    "range": "Self (10-foot-radius sphere)",
+    "text": "A 10-foot-radius invisible sphere of antimagic surrounds you."
+  },
+  {
+    "name": "Antipathy/Sympathy",
+    "level": 8,
+    "school": "enchantment",
+    "range": "60 feet",
+    "text": "This spell attracts or repels creatures of your choice."
+  },
+  {
+    "name": "Arcane Eye",
+    "level": 4,
+    "school": "divination",
+    "range": "30 feet",
+    "text": "You create an invisible, magical eye within range that hovers in the air for the durat ion."
+  },
+  {
+    "name": "Arcane Hand",
+    "level": 5,
+    "school": "evocation",
+    "range": "120 feet",
+    "text": "You create a Large hand of shimmering, translucent force in an unoccupied space that you can see within range."
+  },
+  {
+    "name": "Arcane Lock",
+    "level": 2,
+    "school": "abjuration",
+    "range": "Touch",
+    "text": "You touch a closed door, window, gate, chest, or other entryway, and it becomes locked for the duration."
+  },
+  {
+    "name": "Arcane Sword",
+    "level": 7,
+    "school": "evocation",
+    "range": "60 feet",
+    "text": "You create a sword-shaped plane of force that hovers within range."
+  },
+  {
+    "name": "Arcanist's Magic Aura",
+    "level": 2,
+    "school": "illusion",
+    "range": "Touch",
+    "text": "You place an illusion on a creature or an object you touch so that divination spells reveal false information about it."
+  },
+  {
+    "name": "Astral Projection",
+    "level": 9,
+    "school": "necromancy",
+    "range": "10 feet",
+    "text": "You and up to eight willing creatur es within range project your astral bodies into the Astral Plane (the spell fails and the casting is wasted if you are already on that plane)."
+  },
+  {
+    "name": "Augury",
+    "level": 2,
+    "school": "divination",
+    "range": "Self",
+    "text": "By casting gem-inlaid sticks, rolling dragon bones, laying out ornate cards, or employing some other divining tool, you receive an omen from an otherworldly entity about the results of a specific course of action that you plan to take within the next 30 minutes."
+  },
+  {
+    "name": "Awaken",
+    "level": 5,
+    "school": "transmutation",
+    "range": "Touch",
+    "text": "After spending the casting time tracing magical pathways within a precious gemstone, you touch a Huge or smaller beast or plant."
+  },
+  {
+    "name": "Bane",
+    "level": 1,
+    "school": "enchantment",
+    "range": "30 feet",
+    "text": "Up to three creatures of y our choice that you can see within range must make Charisma saving throws."
+  },
+  {
+    "name": "Banishment",
+    "level": 4,
+    "school": "abjuration",
+    "range": "60 feet",
+    "text": "You attempt to send one creature that you can see within range to another plane of existence."
+  },
+  {
+    "name": "Barkskin",
+    "level": 2,
+    "school": "transmutation",
+    "range": "Touch",
+    "text": "You touch a willing creature."
+  },
+  {
+    "name": "Beacon of Hope",
+    "level": 3,
+    "school": "abjuration",
+    "range": "30 feet",
+    "text": "This spell bestows hope and vitality."
+  },
+  {
+    "name": "Bestow Curse",
+    "level": 3,
+    "school": "necromancy",
+    "range": "Touch",
+    "text": "You touch a creature, and that creature must succeed on a Wisdom saving throw or become cursed for the duration of the spell."
+  },
+  {
+    "name": "Black Tentacles",
+    "level": 4,
+    "school": "conjuration",
+    "range": "90 feet",
+    "text": "Squirming, ebony tentacles fill a 20-foot square on ground that you can see within range."
+  },
+  {
+    "name": "Blade Barrier",
+    "level": 6,
+    "school": "evocation",
+    "range": "90 feet",
+    "text": "You create a vertical wall of whirling, razor-sharp blades made of magical energy."
+  },
+  {
+    "name": "Bless",
+    "level": 1,
+    "school": "enchantment",
+    "range": "30 feet",
+    "text": "You bless up to three creatures of your choice within range."
+  },
+  {
+    "name": "Blight",
+    "level": 4,
+    "school": "necromancy",
+    "range": "30 feet",
+    "text": "Necromantic energy w ashes over a creature of your choice that you can see within range, draining moisture and vitality from it."
+  },
+  {
+    "name": "Blindness/Deafness",
+    "level": 2,
+    "school": "necromancy",
+    "range": "30 feet",
+    "text": "You can blind or deafen a foe."
+  },
+  {
+    "name": "Blink",
+    "level": 3,
+    "school": "transmutation",
+    "range": "Self",
+    "text": "Roll a d20 at the end of each of your turns for the duration of the spell."
+  },
+  {
+    "name": "Blur",
+    "level": 2,
+    "school": "illusion",
+    "range": "Self",
+    "text": "Your body becomes blurred, shifting and wavering to all who can see you."
+  },
+  {
+    "name": "Branding Smite",
+    "level": 2,
+    "school": "evocation",
+    "range": "Self",
+    "text": "The next time you hit a creature with a weapon attack before this spell ends, the weapon gleams with astral radiance as you strike."
+  },
+  {
+    "name": "Burning Hands",
+    "level": 1,
+    "school": "evocation",
+    "range": "Self (15-foot cone)",
+    "text": "As you hold your hands with thumbs touching and fingers spread, a thin sheet of flames shoots forth from your outstretched fingertips."
+  },
+  {
+    "name": "Call Lightning",
+    "level": 3,
+    "school": "conjuration",
+    "range": "120 feet",
+    "text": "A storm cloud appears in the shape of a cylinder that is 10 feet tall with a 60-foot radius, centered on a point you can see 100 feet directly above you."
+  },
+  {
+    "name": "Calm Emotions",
+    "level": 2,
+    "school": "enchantment",
+    "range": "60 feet",
+    "text": "You attempt to suppress strong emotions in a group of people."
+  },
+  {
+    "name": "Chain Lightning",
+    "level": 6,
+    "school": "evocation",
+    "range": "150 feet",
+    "text": "You create a bolt of lightning that arcs toward a target of your choice that you can see within range."
+  },
+  {
+    "name": "Charm Person",
+    "level": 1,
+    "school": "enchantment",
+    "range": "30 feet",
+    "text": "You attempt to charm a humanoid you can see within range."
+  },
+  {
+    "name": "Chill Touch",
+    "level": 0,
+    "school": "necromancy",
+    "range": "120 feet",
+    "text": "You create a ghostly, skeletal hand in the space of a creature within range."
+  },
+  {
+    "name": "Circle of Death",
+    "level": 6,
+    "school": "necromancy",
+    "range": "150 feet",
+    "text": "A sphere of negative energy ripples out in a 60-foot- radius sphere from a point within range."
+  },
+  {
+    "name": "Clairvoyance",
+    "level": 3,
+    "school": "divination",
+    "range": "1 mile",
+    "text": "You create an invisible sensor within range in a location familiar to you (a place you have visited or seen before) or in an obvious location that is unfamiliar to you (such as behind a door, around a corner, or in a grove of trees)."
+  },
+  {
+    "name": "Clone",
+    "level": 8,
+    "school": "necromancy",
+    "range": "Touch",
+    "text": "This spell grows an inert duplicate of a living creature as a safeguard against death."
+  },
+  {
+    "name": "Cloudkill",
+    "level": 5,
+    "school": "conjuration",
+    "range": "120 feet",
+    "text": "You create a 20-foot-radius sphere of poisonous, yellow-green fog centered on a point you choose within range."
+  },
+  {
+    "name": "Color Spray",
+    "level": 1,
+    "school": "illusion",
+    "range": "Self (15-foot cone)",
+    "text": "A dazzling array of flashing, colored light springs from your hand."
+  },
+  {
+    "name": "Command",
+    "level": 1,
+    "school": "enchantment",
+    "range": "60 feet",
+    "text": "You speak a one-word command to a creature you can see within range."
+  },
+  {
+    "name": "Commune",
+    "level": 5,
+    "school": "divination",
+    "range": "Self",
+    "text": "You contact your deity or a divine proxy and ask up to three questions that can be answ ered with a yes or no."
+  },
+  {
+    "name": "Commune with Nature",
+    "level": 5,
+    "school": "divination",
+    "range": "Self",
+    "text": "You briefly become one with nature and gain knowledge of the surrounding territory."
+  },
+  {
+    "name": "Comprehend Languages",
+    "level": 1,
+    "school": "divination",
+    "range": "Self",
+    "text": "For the duration, you under stand the literal meaning of any spoken language that you hear."
+  },
+  {
+    "name": "Compulsion",
+    "level": 4,
+    "school": "enchantment",
+    "range": "30 feet",
+    "text": "Creatures of your choice that you can see within range and that can hear you must make a Wisdom saving throw."
+  },
+  {
+    "name": "Cone of Cold",
+    "level": 5,
+    "school": "evocation",
+    "range": "Self (60-foot cone)",
+    "text": "A blast of cold air erupts from your hands."
+  },
+  {
+    "name": "Confusion",
+    "level": 4,
+    "school": "enchantment",
+    "range": "90 feet",
+    "text": "This spell assaults and twists creatures' minds, spawning delusions and provoking uncontrolled action."
+  },
+  {
+    "name": "Conjure Animals",
+    "level": 3,
+    "school": "conjuration",
+    "range": "60 feet",
+    "text": "You summon fey spirits that take the form of beasts and appear in unoccupied spaces that you can see within range."
+  },
+  {
+    "name": "Conjure Celestial",
+    "level": 7,
+    "school": "conjuration",
+    "range": "90 feet",
+    "text": "You summon a celestial of challenge rating 4 or lower, which appears in an unoccupied space that you can see within range."
+  },
+  {
+    "name": "Conjure Elemental",
+    "level": 5,
+    "school": "conjuration",
+    "range": "90 feet",
+    "text": "You call forth an elemental servant."
+  },
+  {
+    "name": "Conjure Fey",
+    "level": 6,
+    "school": "conjuration",
+    "range": "90 feet",
+    "text": "You summon a fey creature of challenge rating 6 or lower, or a fey spirit that takes the form of a beast of challenge rating 6 or lower."
+  },
+  {
+    "name": "Conjure Minor Elementals",
+    "level": 4,
+    "school": "conjuration",
+    "range": "90 feet",
+    "text": "You summon elementals that appear in unoccupied spaces that you can see within range."
+  },
+  {
+    "name": "Conjure Woodland Beings",
+    "level": 4,
+    "school": "conjuration",
+    "range": "60 feet",
+    "text": "You summon fey creatures that appear in unoccupied spaces that you can see within range."
+  },
+  {
+    "name": "Contact Other Plane",
+    "level": 5,
+    "school": "divination",
+    "range": "Self",
+    "text": "You mentally contact a demigod, the spirit of a long-dead sage, or some other mysterious entity from another plane."
+  },
+  {
+    "name": "Contagion",
+    "level": 5,
+    "school": "necromancy",
+    "range": "Touch",
+    "text": "Your touch inflicts disease."
+  },
+  {
+    "name": "Contingency",
+    "level": 6,
+    "school": "evocation",
+    "range": "Self",
+    "text": "Choose a spell of 5th level or lower that you can cast, that has a casting time of 1 action, and that can target you."
+  },
+  {
+    "name": "Continual Flame",
+    "level": 2,
+    "school": "evocation",
+    "range": "Touch",
+    "text": "A flame, equivalent in brightness to a torch, springs forth from an object that you touch."
+  },
+  {
+    "name": "Control Water",
+    "level": 4,
+    "school": "transmutation",
+    "range": "300 feet",
+    "text": "Until the spell ends, you control any freestanding water inside an area you choose that is a cube up to 100 feet on a side."
+  },
+  {
+    "name": "Control Weather",
+    "level": 8,
+    "school": "transmutation",
+    "range": "Self (5-mile radius)",
+    "text": "You take control of the weather within 5 miles of you for the duration."
+  },
+  {
+    "name": "Counterspell",
+    "level": 3,
+    "school": "abjuration",
+    "range": "60 feet",
+    "text": "You attempt to interrupt a creature in the process of casting a spell."
+  },
+  {
+    "name": "Create Food and Water",
+    "level": 3,
+    "school": "conjuration",
+    "range": "30 feet",
+    "text": "You create 45 pounds of food and 30 gallons of water on the ground or in containers within range, enough to sustain up to fifteen humanoids or five steeds for 24 hours."
+  },
+  {
+    "name": "Create or Destroy Water",
+    "level": 1,
+    "school": "transmutation",
+    "range": "30 feet",
+    "text": "You either create or destroy water."
+  },
+  {
+    "name": "Create Undead",
+    "level": 6,
+    "school": "necromancy",
+    "range": "10 feet",
+    "text": "You can cast this spell only at night."
+  },
+  {
+    "name": "Creation",
+    "level": 5,
+    "school": "illusion",
+    "range": "30 feet",
+    "text": "You pull wisps of shadow material from the Shadowfell to create a nonliving o bject of vegetable matter within range: soft goods, rope, wood, or something similar."
+  },
+  {
+    "name": "Cure Wounds",
+    "level": 1,
+    "school": "evocation",
+    "range": "Touch",
+    "text": "A creature you touch regains a number of hit points equal to 1d8 + your spellcasting ability modifier."
+  },
+  {
+    "name": "Dancing Lights",
+    "level": 0,
+    "school": "evocation",
+    "range": "120 feet",
+    "text": "You create up to four torch-sized lights withi n range, making them appear as torches, lanterns, or glowing orbs that hover in the air for the duration."
+  },
+  {
+    "name": "Darkness",
+    "level": 2,
+    "school": "evocation",
+    "range": "60 feet",
+    "text": "Magical darkness spreads from a point you choose within range to fill a 15-foot-radius sphere for the duration."
+  },
+  {
+    "name": "Darkvision",
+    "level": 2,
+    "school": "transmutation",
+    "range": "Touch",
+    "text": "You touch a willing creature to grant i t the ability to see in the dark."
+  },
+  {
+    "name": "Daylight",
+    "level": 3,
+    "school": "evocation",
+    "range": "60 feet",
+    "text": "A 60-foot-radius sphere of light spreads out fr om a point you choose within range."
+  },
+  {
+    "name": "Death Ward",
+    "level": 4,
+    "school": "abjuration",
+    "range": "Touch",
+    "text": "You touch a creature and grant it a measure of protection from death."
+  },
+  {
+    "name": "Delayed Blast Fireball",
+    "level": 7,
+    "school": "evocation",
+    "range": "150 feet",
+    "text": "A beam of yellow light flashes from your pointing finger, then condenses to linger at a chosen point within range as a glowing bead for the duration."
+  },
+  {
+    "name": "Demiplane",
+    "level": 8,
+    "school": "conjuration",
+    "range": "60 feet",
+    "text": "You create a shadowy door on a flat solid surface that you can see within range."
+  },
+  {
+    "name": "Detect Evil and Good",
+    "level": 1,
+    "school": "divination",
+    "range": "Self",
+    "text": "For the duration, you know if there is an aberration, celestial, elemental, fey, fiend, or undead within 30 feet of you, as well as where the creature is located."
+  },
+  {
+    "name": "Detect Magic",
+    "level": 1,
+    "school": "divination",
+    "range": "Self",
+    "text": "For the duration, you sense the presence of magic within 30 feet of you."
+  },
+  {
+    "name": "Detect Poison and Disease",
+    "level": 1,
+    "school": "divination",
+    "range": "Self",
+    "text": "For the duration, you can sense the presence and location of poisons, poisonous creature s, and diseases within 30 feet of you."
+  },
+  {
+    "name": "Detect Thoughts",
+    "level": 2,
+    "school": "divination",
+    "range": "Self",
+    "text": "For the duration, you can read the thoughts of certain creatures."
+  },
+  {
+    "name": "Dimension Door",
+    "level": 4,
+    "school": "conjuration",
+    "range": "500 feet",
+    "text": "You teleport yourself from your current location to any other spot within range."
+  },
+  {
+    "name": "Disguise Self",
+    "level": 1,
+    "school": "illusion",
+    "range": "Self",
+    "text": "You make yourself —including your clothing, armor, weapons, and other belongings on your person — look different until the spell ends or u ntil you use your action to dismiss it."
+  },
+  {
+    "name": "Disintegrate",
+    "level": 6,
+    "school": "transmutation",
+    "range": "60 feet",
+    "text": "A thin green ray springs from your pointing finger to a target that you can see within range."
+  },
+  {
+    "name": "Dispel Evil and Good",
+    "level": 5,
+    "school": "abjuration",
+    "range": "Self",
+    "text": "Shimmering energy surrounds and protects you from fey, undead, and creatures originating from beyond the Material Plane."
+  },
+  {
+    "name": "Dispel Magic",
+    "level": 3,
+    "school": "abjuration",
+    "range": "120 feet",
+    "text": "Choose one creature, object, or magical effect within range."
+  },
+  {
+    "name": "Divination",
+    "level": 4,
+    "school": "divination",
+    "range": "Self",
+    "text": "Your magic and an offering put you in contact with a god or a god's servants."
+  },
+  {
+    "name": "Divine Favor",
+    "level": 1,
+    "school": "evocation",
+    "range": "Self",
+    "text": "Your prayer empowers you with divine radiance."
+  },
+  {
+    "name": "Divine Word",
+    "level": 7,
+    "school": "evocation",
+    "range": "30 feet",
+    "text": "You utter a divine word, imbued with the power that shaped the world at the dawn of creation."
+  },
+  {
+    "name": "Dominate Beast",
+    "level": 4,
+    "school": "enchantment",
+    "range": "60 feet",
+    "text": "You attempt to beguile a beast that you can see within range."
+  },
+  {
+    "name": "Dominate Monster",
+    "level": 8,
+    "school": "enchantment",
+    "range": "60 feet",
+    "text": "You attempt to beguile a creature that you can see within range."
+  },
+  {
+    "name": "Dominate Person",
+    "level": 5,
+    "school": "enchantment",
+    "range": "60 feet",
+    "text": "You attempt to beguile a humanoid that you can see within range."
+  },
+  {
+    "name": "Dream",
+    "level": 5,
+    "school": "illusion",
+    "range": "Special",
+    "text": "This spell shap es a creature's dreams."
+  },
+  {
+    "name": "Druidcraft",
+    "level": 0,
+    "school": "transmutation",
+    "range": "30 feet",
+    "text": "Whispering to the spirits of nature, you create one of the following effects within range: • You create a tiny, harmless sensory effect that predicts what the weather will be at your locatio n for the next 24 hours."
+  },
+  {
+    "name": "Earthquake",
+    "level": 8,
+    "school": "evocation",
+    "range": "500 feet",
+    "text": "You create a seismic disturbance at a point on the ground that you can see within range."
+  },
+  {
+    "name": "Eldritch Blast",
+    "level": 0,
+    "school": "evocation",
+    "range": "120 feet",
+    "text": "A beam of crackling energy streaks toward a creature within range."
+  },
+  {
+    "name": "Enhance Ability",
+    "level": 2,
+    "school": "transmutation",
+    "range": "Touch",
+    "text": "You touch a creature and bestow upon it a magical enhancement."
+  },
+  {
+    "name": "Enlarge/Reduce",
+    "level": 2,
+    "school": "transmutation",
+    "range": "30 feet",
+    "text": "You cause a creature or an object you can see within range to grow larger or smaller for the duration."
+  },
+  {
+    "name": "Entangle",
+    "level": 1,
+    "school": "conjuration",
+    "range": "90 feet",
+    "text": "Grasping weeds and vines sprout from the ground in a 20-foot square starting from a point within range."
+  },
+  {
+    "name": "Enthrall",
+    "level": 2,
+    "school": "enchantment",
+    "range": "60 feet",
+    "text": "You weave a distracting string of words, causing creatures of your choice that you can see within range and that can hear you to make a Wisdom saving throw."
+  },
+  {
+    "name": "Etherealness",
+    "level": 7,
+    "school": "transmutation",
+    "range": "Self",
+    "text": "You step into the border regions of the Ethereal Plane, in the area where it overlaps w ith your current plane."
+  },
+  {
+    "name": "Expeditious Retreat",
+    "level": 1,
+    "school": "transmutation",
+    "range": "Self",
+    "text": "This spell allows you to move at an incredible pace."
+  },
+  {
+    "name": "Eyebite",
+    "level": 6,
+    "school": "necromancy",
+    "range": "Self",
+    "text": "For the spell's duration, your eyes become an inky void imbued with dre ad power."
+  },
+  {
+    "name": "Fabricate",
+    "level": 4,
+    "school": "transmutation",
+    "range": "120 feet",
+    "text": "You convert raw materials into products of the same material."
+  },
+  {
+    "name": "Faerie Fire",
+    "level": 1,
+    "school": "evocation",
+    "range": "60 feet",
+    "text": "Each object in a 20-foot cube within range is outlined in blue, green, or violet light (your choice)."
+  },
+  {
+    "name": "Faithful Hound",
+    "level": 4,
+    "school": "conjuration",
+    "range": "30 feet",
+    "text": "You conjure a phantom watchdog in an unoccupied space that you can see within range, where it remains for the duration, until you dismiss it as an action, or until you move more than 100 feet away from it."
+  },
+  {
+    "name": "False Life",
+    "level": 1,
+    "school": "necromancy",
+    "range": "Self",
+    "text": "Bolstering yourself with a necromantic facsimile of life, you gain 1d4 + 4 temporary hit points for the duration."
+  },
+  {
+    "name": "Fear",
+    "level": 3,
+    "school": "illusion",
+    "range": "Self (30-foot cone)",
+    "text": "You project a phantasmal image of a creature's worst fears."
+  },
+  {
+    "name": "Feather Fall",
+    "level": 1,
+    "school": "transmutation",
+    "range": "60 feet",
+    "text": "Choose up to five falling creatures with in range."
+  },
+  {
+    "name": "Feeblemind",
+    "level": 8,
+    "school": "enchantment",
+    "range": "150 feet",
+    "text": "You blast the mind of a creature that you can see within range, attempting to shatter its intellect and personality."
+  },
+  {
+    "name": "Find Familiar",
+    "level": 1,
+    "school": "conjuration",
+    "range": "10 feet",
+    "text": "You gain the service of a familiar, a spirit that takes an animal form you choose: bat, cat, crab, frog (toad), hawk, lizard, octopus, owl, poisonous snake, fish (quipper), rat, raven, sea horse, spider, or weasel."
+  },
+  {
+    "name": "Find Steed",
+    "level": 2,
+    "school": "conjuration",
+    "range": "30 feet",
+    "text": "You summon a spirit that assumes the form of an unusually intelligent, strong, and loyal steed, creating a long-lasting bond with it."
+  },
+  {
+    "name": "Find the Path",
+    "level": 6,
+    "school": "divination",
+    "range": "Self",
+    "text": "This spell allows you to find the shortest, most direct physical route to a specific fixed location that you are familiar with on the same plane of existence."
+  },
+  {
+    "name": "Find Traps",
+    "level": 2,
+    "school": "divination",
+    "range": "120 feet",
+    "text": "You sense the presence of any trap within range that is within line of sight."
+  },
+  {
+    "name": "Finger of Death",
+    "level": 7,
+    "school": "necromancy",
+    "range": "60 feet",
+    "text": "You send negative energy coursing through a creature that you can see within range, causing it searing pain."
+  },
+  {
+    "name": "Fireball",
+    "level": 3,
+    "school": "evocation",
+    "range": "150 feet",
+    "text": "A bright streak flashes from your pointing finger to a point you choose within range and then blossoms with a low roar into an explosion of flame."
+  },
+  {
+    "name": "Fire Bolt",
+    "level": 0,
+    "school": "evocation",
+    "range": "120 feet",
+    "text": "You hurl a mote of fire at a creature or object within range."
+  },
+  {
+    "name": "Fire Shield",
+    "level": 4,
+    "school": "evocation",
+    "range": "Self",
+    "text": "Thin and wispy flames wreathe your body for the duration, shedding bright light in a 10-foot radius and dim light for an additional 10 feet."
+  },
+  {
+    "name": "Fire Storm",
+    "level": 7,
+    "school": "evocation",
+    "range": "150 feet",
+    "text": "A storm made up of sheets of roaring f lame appears in a location you choose within range."
+  },
+  {
+    "name": "Flame Blade",
+    "level": 2,
+    "school": "evocation",
+    "range": "Self",
+    "text": "You evoke a fiery blade in your free hand."
+  },
+  {
+    "name": "Flame Strike",
+    "level": 5,
+    "school": "evocation",
+    "range": "60 feet",
+    "text": "A vertical column of divine fire roars down from the heavens in a location you specify."
+  },
+  {
+    "name": "Flaming Sphere",
+    "level": 2,
+    "school": "conjuration",
+    "range": "60 feet",
+    "text": "A 5-foot-diameter sphere of fire appears in an unoccupied space of your choice within range and lasts for the duration."
+  },
+  {
+    "name": "Flesh to Stone",
+    "level": 6,
+    "school": "transmutation",
+    "range": "60 feet",
+    "text": "You attempt to turn one creature that you can see within range into stone."
+  },
+  {
+    "name": "Floating Disk",
+    "level": 1,
+    "school": "conjuration",
+    "range": "30 feet",
+    "text": "This spell creates a circular, horizontal plane of force, 3 feet in diameter and 1 inch thick, that floats 3 feet above the ground in an unoccupied space of your choice that you can see within range."
+  },
+  {
+    "name": "Fly",
+    "level": 3,
+    "school": "transmutation",
+    "range": "Touch",
+    "text": "You touch a willing creature."
+  },
+  {
+    "name": "Fog Cloud",
+    "level": 1,
+    "school": "conjuration",
+    "range": "120 feet",
+    "text": "You create a 20-foot-radius sphere of fog centered on a point within range."
+  },
+  {
+    "name": "Forbiddance",
+    "level": 6,
+    "school": "abjuration",
+    "range": "Touch",
+    "text": "You create a ward against magical travel that protects up to 40,000 square feet of floor space to a height of 30 feet above the floor."
+  },
+  {
+    "name": "Forcecage",
+    "level": 7,
+    "school": "evocation",
+    "range": "100 feet",
+    "text": "An immobile, invisible, cube-shaped prison composed of magical force springs into existence around an area you choose within range."
+  },
+  {
+    "name": "Foresight",
+    "level": 9,
+    "school": "divination",
+    "range": "Touch",
+    "text": "You touch a willing creature and bestow a limited ability to see into the immediate future."
+  },
+  {
+    "name": "Freedom of Movement",
+    "level": 4,
+    "school": "abjuration",
+    "range": "Touch",
+    "text": "You touch a willing creature."
+  },
+  {
+    "name": "Freezing Sphere",
+    "level": 6,
+    "school": "evocation",
+    "range": "300 feet",
+    "text": "A frigid globe of cold energy streaks from your fingertips to a point of your choice within range, where it explodes in a 60-foot-radius sphere."
+  },
+  {
+    "name": "Gaseous Form",
+    "level": 3,
+    "school": "transmutation",
+    "range": "Touch",
+    "text": "You transform a willing creature you touch, along with everything it's wearing and carrying, into a misty cloud for the duration."
+  },
+  {
+    "name": "Gate",
+    "level": 9,
+    "school": "conjuration",
+    "range": "60 feet",
+    "text": "You conjure a portal linking an unoccupied space you can see within ra nge to a precise location on a different plane of existence."
+  },
+  {
+    "name": "Geas",
+    "level": 5,
+    "school": "enchantment",
+    "range": "60 feet",
+    "text": "You place a magical command on a creature that you can see within range, for cing it to carry out some service or refrain from some action or course of activity as you decide."
+  },
+  {
+    "name": "Gentle Repose",
+    "level": 2,
+    "school": "necromancy",
+    "range": "Touch",
+    "text": "You touch a corpse or other remains."
+  },
+  {
+    "name": "Giant Insect",
+    "level": 4,
+    "school": "transmutation",
+    "range": "30 feet",
+    "text": "You transform up to ten centipedes, three spiders, five wasps, or one scorpion within range into giant versions of their natural forms fo r the duration."
+  },
+  {
+    "name": "Glibness",
+    "level": 8,
+    "school": "transmutation",
+    "range": "Self",
+    "text": "Until the spell ends, when you m ake a Charisma check, you can replace the number you roll with a 15."
+  },
+  {
+    "name": "Globe of Invulnerability",
+    "level": 6,
+    "school": "abjuration",
+    "range": "Self (10-foot radius)",
+    "text": "An immobile, faintly shimmering barrier springs into existence in a 10-foot radius around you and remains for the duration."
+  },
+  {
+    "name": "Glyph of Warding",
+    "level": 3,
+    "school": "abjuration",
+    "range": "Touch",
+    "text": "When you cast this spell, you inscribe a glyph that harms other creatures, either upon a surface (such as a table or a section of floor or wall) or within an object that can be closed (such as a book, a scroll, or a treasure chest) to conceal the glyph."
+  },
+  {
+    "name": "Goodberry",
+    "level": 1,
+    "school": "transmutation",
+    "range": "Touch",
+    "text": "Up to ten berries appear in your hand and are infused with magic for the duration."
+  },
+  {
+    "name": "Grease",
+    "level": 1,
+    "school": "conjuration",
+    "range": "60 feet",
+    "text": "Slick grease covers the ground in a 10-foot square centered on a point within range and turns it into difficult terrain for the duration."
+  },
+  {
+    "name": "Greater Invisibility",
+    "level": 4,
+    "school": "illusion",
+    "range": "Touch",
+    "text": "You or a creature you touch becomes invisible until the spell ends."
+  },
+  {
+    "name": "Greater Restoration",
+    "level": 5,
+    "school": "abjuration",
+    "range": "Touch",
+    "text": "You imbue a creature you touch with positive energy to undo a debilitating e ffect."
+  },
+  {
+    "name": "Guardian of Faith",
+    "level": 4,
+    "school": "conjuration",
+    "range": "30 feet",
+    "text": "A Large spectral guardian appears and hovers for the duration in an uno ccupied space of your choice that you can see within range."
+  },
+  {
+    "name": "Guards and Wards",
+    "level": 6,
+    "school": "abjuration",
+    "range": "Touch",
+    "text": "You create a ward that protects up to 2,500 square feet of floor space (an area 50 feet square, or one hundred 5-foot squares or twenty-five 10-foot squares)."
+  },
+  {
+    "name": "Guidance",
+    "level": 0,
+    "school": "divination",
+    "range": "Touch",
+    "text": "You touch one willing creature."
+  },
+  {
+    "name": "Guiding Bolt",
+    "level": 1,
+    "school": "evocation",
+    "range": "120 feet",
+    "text": "A flash of light streaks toward a creature of your choice within range."
+  },
+  {
+    "name": "Gust of Wind",
+    "level": 2,
+    "school": "evocation",
+    "range": "Self (60-foot line)",
+    "text": "A line of strong wind 60 feet long and 10 feet wide blasts from you in a direction you choose for the spell's duration."
+  },
+  {
+    "name": "Hallow",
+    "level": 5,
+    "school": "evocation",
+    "range": "Touch",
+    "text": "You touch a point and infuse an area around it with holy (or unholy) power."
+  },
+  {
+    "name": "Hallucinatory Terrain",
+    "level": 4,
+    "school": "illusion",
+    "range": "300 feet",
+    "text": "You make natural terrain in a 150-foot cube in range look, sound, and smell like some other sort of natural terrain."
+  },
+  {
+    "name": "Harm",
+    "level": 6,
+    "school": "necromancy",
+    "range": "60 feet",
+    "text": "You unleash a virulent disease on a creature that you can see within range."
+  },
+  {
+    "name": "Haste",
+    "level": 3,
+    "school": "transmutation",
+    "range": "30 feet",
+    "text": "Choose a willing creature that you can see within range."
+  },
+  {
+    "name": "Heal",
+    "level": 6,
+    "school": "evocation",
+    "range": "60 feet",
+    "text": "Choose a creature that you can see within range."
+  },
+  {
+    "name": "Healing Word",
+    "level": 1,
+    "school": "evocation",
+    "range": "60 feet",
+    "text": "A creature of your choice that you can see within range regains hit points equal to 1d4 + your spellcasting ability modifier."
+  },
+  {
+    "name": "Heat Metal",
+    "level": 2,
+    "school": "transmutation",
+    "range": "60 feet",
+    "text": "Choose a manufactured metal object, such as a metal weapon or a suit of heavy or medium metal armor, that you can see within range."
+  },
+  {
+    "name": "Hellish Rebuke",
+    "level": 1,
+    "school": "evocation",
+    "range": "60 feet",
+    "text": "You point your finger, and the creature that damaged you is momentarily surrounded by hellish flames."
+  },
+  {
+    "name": "Heroes' Feast",
+    "level": 6,
+    "school": "conjuration",
+    "range": "30 feet",
+    "text": "You bring forth a great feast, including magnificent food and drink."
+  },
+  {
+    "name": "Heroism",
+    "level": 1,
+    "school": "enchantment",
+    "range": "Touch",
+    "text": "A willing creature you touch is imbued with bravery."
+  },
+  {
+    "name": "Hideous Laughter",
+    "level": 1,
+    "school": "enchantment",
+    "range": "30 feet",
+    "text": "A creature of your choice that you can see within range perceives everything as hilariously funny and falls into fits of laughter if this spell affects it."
+  },
+  {
+    "name": "Hold Monster",
+    "level": 5,
+    "school": "enchantment",
+    "range": "90 feet",
+    "text": "Choose a creature that you can see within range."
+  },
+  {
+    "name": "Hold Person",
+    "level": 2,
+    "school": "enchantment",
+    "range": "60 feet",
+    "text": "Choose a humanoid that you can see within range."
+  },
+  {
+    "name": "Holy Aura",
+    "level": 8,
+    "school": "abjuration",
+    "range": "Self",
+    "text": "Divine light washes out from you and coalesces in a soft radiance in a 30-foot radius around you."
+  },
+  {
+    "name": "Hunter's Mark",
+    "level": 1,
+    "school": "divination",
+    "range": "90 feet",
+    "text": "You choose a creature you can see within range and mystically mark it as your quarry."
+  },
+  {
+    "name": "Hypnotic Pattern",
+    "level": 3,
+    "school": "illusion",
+    "range": "120 feet",
+    "text": "You create a twisting pattern of colors that weaves through the air inside a 30-foot cube within range."
+  },
+  {
+    "name": "Ice Storm",
+    "level": 4,
+    "school": "evocation",
+    "range": "300 feet",
+    "text": "A hail of rock-hard ice pounds to the ground in a 20-foot-radius, 40-foot-high cylinder centered on a point within range."
+  },
+  {
+    "name": "Identify",
+    "level": 1,
+    "school": "divination",
+    "range": "Touch",
+    "text": "You choose one object that you must touch throughout the casting of the spell."
+  },
+  {
+    "name": "Illusory Script",
+    "level": 1,
+    "school": "illusion",
+    "range": "Touch",
+    "text": "You write on parchment, paper, or some other suitable writing material and imbue it with a potent illusion that lasts for the duration."
+  },
+  {
+    "name": "Imprisonment",
+    "level": 9,
+    "school": "abjuration",
+    "range": "30 feet",
+    "text": "You create a magical restraint to hold a creature that you can see within range."
+  },
+  {
+    "name": "Incendiary Cloud",
+    "level": 8,
+    "school": "conjuration",
+    "range": "150 feet",
+    "text": "A swirling cloud of s moke shot through with white-hot embers appears in a 20-foot-radius sphere centered on a point within range."
+  },
+  {
+    "name": "Inflict Wounds",
+    "level": 1,
+    "school": "necromancy",
+    "range": "Touch",
+    "text": "Make a melee spell attack against a creature you can reach."
+  },
+  {
+    "name": "Insect Plague",
+    "level": 5,
+    "school": "conjuration",
+    "range": "300 feet",
+    "text": "Swarming, biting locusts fill a 20-foot-radius sphere centered on a point you choose within range."
+  },
+  {
+    "name": "Instant Summons",
+    "level": 6,
+    "school": "conjuration",
+    "range": "Touch",
+    "text": "You touch an object weighing 10 pounds or less whose longest dimension is 6 feet or le ss."
+  },
+  {
+    "name": "Invisibility",
+    "level": 2,
+    "school": "illusion",
+    "range": "Touch",
+    "text": "A creature you touch becomes invisible until the spell ends."
+  },
+  {
+    "name": "Irresistible Dance",
+    "level": 6,
+    "school": "enchantment",
+    "range": "30 feet",
+    "text": "Choose one creature that you can see within range."
+  },
+  {
+    "name": "Jump",
+    "level": 1,
+    "school": "transmutation",
+    "range": "Touch",
+    "text": "You touch a creature."
+  },
+  {
+    "name": "Knock",
+    "level": 2,
+    "school": "transmutation",
+    "range": "60 feet",
+    "text": "Choose an object that you can see within range."
+  },
+  {
+    "name": "Legend Lore",
+    "level": 5,
+    "school": "divination",
+    "range": "Self",
+    "text": "Name or describe a person, place, or object."
+  },
+  {
+    "name": "Lesser Restoration",
+    "level": 2,
+    "school": "abjuration",
+    "range": "Touch",
+    "text": "You touch a creature and can end either one disease or one condition afflicting it."
+  },
+  {
+    "name": "Levitate",
+    "level": 2,
+    "school": "transmutation",
+    "range": "60 feet",
+    "text": "One creature or object of your choice that you can see within range rises vertically, up to 20 feet, and remains suspended there for the duration."
+  },
+  {
+    "name": "Light",
+    "level": 0,
+    "school": "evocation",
+    "range": "Touch",
+    "text": "You touch one object that is no larger than 10 feet in any dimension."
+  },
+  {
+    "name": "Lightning Bolt",
+    "level": 3,
+    "school": "evocation",
+    "range": "Self (100-foot line)",
+    "text": "A stroke of lightning forming a line 100 feet long and 5 feet wide blasts out from you in a direction you choose."
+  },
+  {
+    "name": "Locate Animals or Plants",
+    "level": 2,
+    "school": "divination",
+    "range": "Self",
+    "text": "Describe or name a s pecific kind of beast or plant."
+  },
+  {
+    "name": "Locate Creature",
+    "level": 4,
+    "school": "divination",
+    "range": "Self",
+    "text": "Describe or name a creature that is familiar to you."
+  },
+  {
+    "name": "Locate Object",
+    "level": 2,
+    "school": "divination",
+    "range": "Self",
+    "text": "Describe or name an object that is fam iliar to you."
+  },
+  {
+    "name": "Longstrider",
+    "level": 1,
+    "school": "transmutation",
+    "range": "Touch",
+    "text": "You touch a creature."
+  },
+  {
+    "name": "Mage Armor",
+    "level": 1,
+    "school": "abjuration",
+    "range": "Touch",
+    "text": "You touch a willing creature who isn't wearing armor, and a protective magical force surrounds it until the spell ends."
+  },
+  {
+    "name": "Mage Hand",
+    "level": 0,
+    "school": "conjuration",
+    "range": "30 feet",
+    "text": "A spectral, floating hand appears at a point you choose within range."
+  },
+  {
+    "name": "Magic Circle",
+    "level": 3,
+    "school": "abjuration",
+    "range": "10 feet",
+    "text": "You create a 10-foot-radius, 20-foot-tall cylinder of magical energy centered on a point on the ground that you can see within range."
+  },
+  {
+    "name": "Magic Jar",
+    "level": 6,
+    "school": "necromancy",
+    "range": "Self",
+    "text": "Your body falls into a catatonic state as your soul leaves it and enters the container you used for the spell's material component."
+  },
+  {
+    "name": "Magic Missile",
+    "level": 1,
+    "school": "evocation",
+    "range": "120 feet",
+    "text": "You create three glowing darts of magical force."
+  },
+  {
+    "name": "Magic Mouth",
+    "level": 2,
+    "school": "illusion",
+    "range": "30 feet",
+    "text": "You implant a message within an object in range, a message that is uttered when a trigger condition is met."
+  },
+  {
+    "name": "Magic Weapon",
+    "level": 2,
+    "school": "transmutation",
+    "range": "Touch",
+    "text": "You touch a nonmagical weapon."
+  },
+  {
+    "name": "Magnificent Mansion",
+    "level": 7,
+    "school": "conjuration",
+    "range": "300 feet",
+    "text": "You conjure an extradimensional dwelling in range that lasts for the duration."
+  },
+  {
+    "name": "Major Image",
+    "level": 3,
+    "school": "illusion",
+    "range": "120 feet",
+    "text": "You create the image of an object, a creature, or some other visible phenomenon that is no larger than a 20-foot cube."
+  },
+  {
+    "name": "Mass Cure Wounds",
+    "level": 5,
+    "school": "evocation",
+    "range": "60 feet",
+    "text": "A wave of healing energy washes out from a point of your choice within range."
+  },
+  {
+    "name": "Mass Heal",
+    "level": 9,
+    "school": "evocation",
+    "range": "60 feet",
+    "text": "A flood of healing energy flows from you into injured creatures around you."
+  },
+  {
+    "name": "Mass Healing Word",
+    "level": 3,
+    "school": "evocation",
+    "range": "60 feet",
+    "text": "As you call out words of restoration, up to six creatures of your choice that you can see within range regain hit points equal to 1d4 + your spellcasting ability modifier."
+  },
+  {
+    "name": "Mass Suggestion",
+    "level": 6,
+    "school": "enchantment",
+    "range": "60 feet",
+    "text": "You suggest a course of activity (limited to a sentence or two) and magically influence up to twelve creatures of your choice that you can see within range and that can hear and understand you."
+  },
+  {
+    "name": "Maze",
+    "level": 8,
+    "school": "conjuration",
+    "range": "60 feet",
+    "text": "You banish a creature that you can see within range into a labyrinthine demiplane."
+  },
+  {
+    "name": "Meld into Stone",
+    "level": 3,
+    "school": "transmutation",
+    "range": "Touch",
+    "text": "You step into a stone object or surface large enough to fully contain your body, melding yourself and all the equipment you carry with the stone for the duration."
+  },
+  {
+    "name": "Mending",
+    "level": 0,
+    "school": "transmutation",
+    "range": "Touch",
+    "text": "This spell repairs a single break or tear in an object you touch, such as a broken chain link, two halves of a broken key, a torn cloak, or a leaking wineskin."
+  },
+  {
+    "name": "Message",
+    "level": 0,
+    "school": "transmutation",
+    "range": "120 feet",
+    "text": "You point your finger toward a creature within range and whisper a message."
+  },
+  {
+    "name": "Meteor Swarm",
+    "level": 9,
+    "school": "evocation",
+    "range": "1 mile",
+    "text": "Blazing orbs of fire plummet to the ground at four different points you can see within range."
+  },
+  {
+    "name": "Mind Blank",
+    "level": 8,
+    "school": "abjuration",
+    "range": "Touch",
+    "text": "Until the spell ends, one willing creature you touch is immune to psychic damage, any effect that would sense its emotions or read its thoughts, divination spells, and the charmed condition."
+  },
+  {
+    "name": "Minor Illusion",
+    "level": 0,
+    "school": "illusion",
+    "range": "30 feet",
+    "text": "You create a sound or an image of an object within range that lasts for the duration."
+  },
+  {
+    "name": "Mirage Arcane",
+    "level": 7,
+    "school": "illusion",
+    "range": "Sight",
+    "text": "You make terrain in an area up to 1 mile square look, sound, smell, and even feel like some other sort of terrain."
+  },
+  {
+    "name": "Mirror Image",
+    "level": 2,
+    "school": "illusion",
+    "range": "Self",
+    "text": "Three illusory duplicates of yourself appear in your space."
+  },
+  {
+    "name": "Mislead",
+    "level": 5,
+    "school": "illusion",
+    "range": "Self",
+    "text": "You become invisible at the same time that an illusory double of you appears where you are standing."
+  },
+  {
+    "name": "Misty Step",
+    "level": 2,
+    "school": "conjuration",
+    "range": "Self",
+    "text": "Briefly surrounded by silvery mist, you teleport up to 30 feet to an unoccupied space that you can see."
+  },
+  {
+    "name": "Modify Memory",
+    "level": 5,
+    "school": "enchantment",
+    "range": "30 feet",
+    "text": "You attempt to reshape another creature's memories."
+  },
+  {
+    "name": "Moonbeam",
+    "level": 2,
+    "school": "evocation",
+    "range": "120 feet",
+    "text": "A silvery beam of pale light shines down in a 5-foot- radius, 40-foot-high cylinder centered on a point within range."
+  },
+  {
+    "name": "Move Earth",
+    "level": 6,
+    "school": "transmutation",
+    "range": "120 feet",
+    "text": "Choose an area of terrain no larger than 40 feet on a side within range."
+  },
+  {
+    "name": "Nondetection",
+    "level": 3,
+    "school": "abjuration",
+    "range": "Touch",
+    "text": "For the duration, you hide a target that you touch from divination magic."
+  },
+  {
+    "name": "Pass without Trace",
+    "level": 2,
+    "school": "abjuration",
+    "range": "Self",
+    "text": "A veil of shadows and silence radiates from you, masking you and your companions from detection."
+  },
+  {
+    "name": "Passwall",
+    "level": 5,
+    "school": "transmutation",
+    "range": "30 feet",
+    "text": "A passage appears at a point of your choice that you can see on a wooden, plaster, or stone surface (such as a wall, a ceiling, or a floor) within range, and lasts for the duration."
+  },
+  {
+    "name": "Phantasmal Killer",
+    "level": 4,
+    "school": "illusion",
+    "range": "120 feet",
+    "text": "You tap into the nightmares of a creature you can see within range and create an illusory manifestation of its deepest fears, visible only to that creature."
+  },
+  {
+    "name": "Phantom Steed",
+    "level": 3,
+    "school": "illusion",
+    "range": "30 feet",
+    "text": "A Large quasi-real, horselike creature appears on the ground in an unoccupied space of your choice within range."
+  },
+  {
+    "name": "Planar Ally",
+    "level": 6,
+    "school": "conjuration",
+    "range": "60 feet",
+    "text": "You beseech an otherworldly entity for aid."
+  },
+  {
+    "name": "Planar Binding",
+    "level": 5,
+    "school": "abjuration",
+    "range": "60 feet",
+    "text": "With this spell, you attempt to bind a celestial, an elemental, a fey, or a fiend to your service."
+  },
+  {
+    "name": "Plane Shift",
+    "level": 7,
+    "school": "conjuration",
+    "range": "Touch",
+    "text": "You and up to eight willing creatures who link hands in a circle are transported to a different plane of existence."
+  },
+  {
+    "name": "Plant Growth",
+    "level": 3,
+    "school": "transmutation",
+    "range": "150 feet",
+    "text": "This spell channels vitality into plants within a specific area."
+  },
+  {
+    "name": "Poison Spray",
+    "level": 0,
+    "school": "conjuration",
+    "range": "10 feet",
+    "text": "You extend your hand toward a creature you can see within range and project a puff of noxious gas from your palm."
+  },
+  {
+    "name": "Polymorph",
+    "level": 4,
+    "school": "transmutation",
+    "range": "60 feet",
+    "text": "This spell transforms a creature that you can see within range into a new form."
+  },
+  {
+    "name": "Power Word Kill",
+    "level": 9,
+    "school": "enchantment",
+    "range": "60 feet",
+    "text": "You utter a word of power that can compel one creature you can see within range to die instantly."
+  },
+  {
+    "name": "Power Word Stun",
+    "level": 8,
+    "school": "enchantment",
+    "range": "60 feet",
+    "text": "You speak a word of power that can overwhelm the mind of one creature you can see within range, leaving it dumbfounded."
+  },
+  {
+    "name": "Prayer of Healing",
+    "level": 2,
+    "school": "evocation",
+    "range": "30 feet",
+    "text": "Up to six creatures of your choice that you can see within range each regain hit points equal to 2d8 + your spellcasting ability modifier."
+  },
+  {
+    "name": "Prestidigitation",
+    "level": 0,
+    "school": "transmutation",
+    "range": "10 feet",
+    "text": "This spell is a minor magical tric k that novice spellcasters use for practice."
+  },
+  {
+    "name": "Prismatic Spray",
+    "level": 7,
+    "school": "evocation",
+    "range": "Self (60-foot cone)",
+    "text": "Eight multicolored rays of light flash from your hand."
+  },
+  {
+    "name": "Prismatic Wall",
+    "level": 9,
+    "school": "abjuration",
+    "range": "60 feet",
+    "text": "A shimmering, multicolored plane of light forms a vertical opaque wall —up to 90 feet long, 30 feet high, and 1 inch thick —centered on a point you can see within range."
+  },
+  {
+    "name": "Private Sanctum",
+    "level": 4,
+    "school": "abjuration",
+    "range": "120 feet",
+    "text": "You make an area within range magically secure."
+  },
+  {
+    "name": "Produce Flame",
+    "level": 0,
+    "school": "conjuration",
+    "range": "Self",
+    "text": "A flickering flame appears in your hand."
+  },
+  {
+    "name": "Programmed Illusion",
+    "level": 6,
+    "school": "illusion",
+    "range": "120 feet",
+    "text": "You create an illusion of an object, a creature, or some other visible phenomenon within range that activates when a specific condition occurs."
+  },
+  {
+    "name": "Project Image",
+    "level": 7,
+    "school": "illusion",
+    "range": "500 miles",
+    "text": "You create an illusory copy of yourself that lasts for the duration."
+  },
+  {
+    "name": "Protection from Energy",
+    "level": 3,
+    "school": "abjuration",
+    "range": "Touch",
+    "text": "For the duration, the willing creature you touch has resistance to one damage type of your choice: acid, cold, fire, lightning, or thunder."
+  },
+  {
+    "name": "Protection from Evil and Good",
+    "level": 1,
+    "school": "abjuration",
+    "range": "Touch",
+    "text": "Until the spell ends, one willing creature you touch is protected against certain types of creatures: aberrations, celestials, elementals, fey, fiends, and undead."
+  },
+  {
+    "name": "Protection from Poison",
+    "level": 2,
+    "school": "abjuration",
+    "range": "Touch",
+    "text": "You touch a creature."
+  },
+  {
+    "name": "Purify Food and Drink",
+    "level": 1,
+    "school": "transmutation",
+    "range": "10 feet",
+    "text": "All nonmagical food and drink within a 5-foot-radius sphere centered on a point of your choice within range is purified and rendered free of poison and disease."
+  },
+  {
+    "name": "Raise Dead",
+    "level": 5,
+    "school": "necromancy",
+    "range": "Touch",
+    "text": "You return a dead creature you touch to life, provided that it has been dead no longer than 10 days."
+  },
+  {
+    "name": "Ray of Enfeeblement",
+    "level": 2,
+    "school": "necromancy",
+    "range": "60 feet",
+    "text": "A black beam of enervating energy springs from your finger toward a creature within range."
+  },
+  {
+    "name": "Ray of Frost",
+    "level": 0,
+    "school": "evocation",
+    "range": "60 feet",
+    "text": "A frigid beam of blue-white light streaks toward a creature within range."
+  },
+  {
+    "name": "Regenerate",
+    "level": 7,
+    "school": "transmutation",
+    "range": "Touch",
+    "text": "You touch a creature and stimulate its natural healing ability."
+  },
+  {
+    "name": "Reincarnate",
+    "level": 5,
+    "school": "transmutation",
+    "range": "Touch",
+    "text": "You touch a dead humanoid or a piece of a dead humanoid."
+  },
+  {
+    "name": "Remove Curse",
+    "level": 3,
+    "school": "abjuration",
+    "range": "Touch",
+    "text": "At your touch, all curses affecting one creature or object end."
+  },
+  {
+    "name": "Resilient Sphere",
+    "level": 4,
+    "school": "evocation",
+    "range": "30 feet",
+    "text": "A sphere of shimmering force encloses a creature or object of Large size or smaller within range."
+  },
+  {
+    "name": "Resistance",
+    "level": 0,
+    "school": "abjuration",
+    "range": "Touch",
+    "text": "You touch one willing creature."
+  },
+  {
+    "name": "Resurrection",
+    "level": 7,
+    "school": "necromancy",
+    "range": "Touch",
+    "text": "You touch a dead creature that has been dead for no more than a century, that didn't die of old age, and that isn't undead."
+  },
+  {
+    "name": "Reverse Gravity",
+    "level": 7,
+    "school": "transmutation",
+    "range": "100 feet",
+    "text": "This spell reverses gravity in a 50-foot-radius, 100- foot high cylinder centered on a point within range."
+  },
+  {
+    "name": "Revivify",
+    "level": 3,
+    "school": "necromancy",
+    "range": "Touch",
+    "text": "You touch a creature that has died within the last minute."
+  },
+  {
+    "name": "Rope Trick",
+    "level": 2,
+    "school": "transmutation",
+    "range": "Touch",
+    "text": "You touch a length of rope that is up to 60 feet long."
+  },
+  {
+    "name": "Sacred Flame",
+    "level": 0,
+    "school": "evocation",
+    "range": "60 feet",
+    "text": "Flame-like radiance descends on a creature that you can see within range."
+  },
+  {
+    "name": "Sanctuary",
+    "level": 1,
+    "school": "abjuration",
+    "range": "30 feet",
+    "text": "You ward a creature within range against attack."
+  },
+  {
+    "name": "Scorching Ray",
+    "level": 2,
+    "school": "evocation",
+    "range": "120 feet",
+    "text": "You create three rays of fire and hurl them at targets within range."
+  },
+  {
+    "name": "Scrying",
+    "level": 5,
+    "school": "divination",
+    "range": "Self",
+    "text": "You can see and hear a particular creature you choose that is on the same plane of existence as you."
+  },
+  {
+    "name": "Secret Chest",
+    "level": 4,
+    "school": "conjuration",
+    "range": "Touch",
+    "text": "You hide a chest, and all its contents, on the Ethereal Plane."
+  },
+  {
+    "name": "See Invisibility",
+    "level": 2,
+    "school": "divination",
+    "range": "Self",
+    "text": "For the duration, you see invisible creatures and objects as if they were visible, and you can see into the Ethereal Plane."
+  },
+  {
+    "name": "Seeming",
+    "level": 5,
+    "school": "illusion",
+    "range": "30 feet",
+    "text": "This spell allows you to change the appearance of any number of creatures that you can see within range."
+  },
+  {
+    "name": "Sending",
+    "level": 3,
+    "school": "evocation",
+    "range": "Unlimited",
+    "text": "You send a short message of twenty-five words or less to a creature with which you are familiar."
+  },
+  {
+    "name": "Sequester",
+    "level": 7,
+    "school": "transmutation",
+    "range": "Touch",
+    "text": "By means of this spell, a willing creature or an object can be hidden away, safe from detection for the duration."
+  },
+  {
+    "name": "Shapechange",
+    "level": 9,
+    "school": "transmutation",
+    "range": "Self",
+    "text": "You assume the form of a different creature for the duration."
+  },
+  {
+    "name": "Shatter",
+    "level": 2,
+    "school": "evocation",
+    "range": "60 feet",
+    "text": "A sudden loud ringing noise, painfully intense, erupts from a point of your choice within range."
+  },
+  {
+    "name": "Shield",
+    "level": 1,
+    "school": "abjuration",
+    "range": "Self",
+    "text": "An invisible barrier of magical force appears and protects you."
+  },
+  {
+    "name": "Shield of Faith",
+    "level": 1,
+    "school": "abjuration",
+    "range": "60 feet",
+    "text": "A shimmering field appears and surrounds a creature of your choice within range, granting it a +2 bonus to AC for the duration."
+  },
+  {
+    "name": "Shillelagh",
+    "level": 0,
+    "school": "transmutation",
+    "range": "Touch",
+    "text": "The wood of a club or quarterstaff you are holding is imbued with nature's power."
+  },
+  {
+    "name": "Shocking Grasp",
+    "level": 0,
+    "school": "evocation",
+    "range": "Touch",
+    "text": "Lightning springs from your hand to deliver a shock to a creature you try to touch."
+  },
+  {
+    "name": "Silence",
+    "level": 2,
+    "school": "illusion",
+    "range": "120 feet",
+    "text": "For the duration, no sound can be created within or pass through a 20-foot-radius sphere centered on a point you choose within range."
+  },
+  {
+    "name": "Silent Image",
+    "level": 1,
+    "school": "illusion",
+    "range": "60 feet",
+    "text": "You create the image of an object, a creature, or some other visible phenomenon that is no larger than a 15-foot cube."
+  },
+  {
+    "name": "Simulacrum",
+    "level": 7,
+    "school": "illusion",
+    "range": "Touch",
+    "text": "You shape an illusory duplicate of one beast or humanoid that is within range for the entire casting time of the spell."
+  },
+  {
+    "name": "Sleep",
+    "level": 1,
+    "school": "enchantment",
+    "range": "90 feet",
+    "text": "This spell sends creatures into a magical slumber."
+  },
+  {
+    "name": "Sleet Storm",
+    "level": 3,
+    "school": "conjuration",
+    "range": "150 feet",
+    "text": "Until the spell ends, freezing rain and sleet fall in a 20-foot-tall cylinder with a 40-foot radius centered on a point you choose within range."
+  },
+  {
+    "name": "Slow",
+    "level": 3,
+    "school": "transmutation",
+    "range": "120 feet",
+    "text": "You alter time around up to six creatures of your choice in a 40-foot cube within range."
+  },
+  {
+    "name": "Spare the Dying",
+    "level": 0,
+    "school": "necromancy",
+    "range": "Touch",
+    "text": "You touch a living cr eature that has 0 hit points."
+  },
+  {
+    "name": "Speak with Animals",
+    "level": 1,
+    "school": "divination",
+    "range": "Self",
+    "text": "You gain the ability to c omprehend and verbally communicate with beasts for the duration."
+  },
+  {
+    "name": "Speak with Dead",
+    "level": 3,
+    "school": "necromancy",
+    "range": "10 feet",
+    "text": "You grant the semblance of life and intelligence to a corpse of your choice within range, allowing it to answer the questions you pose."
+  },
+  {
+    "name": "Speak with Plants",
+    "level": 3,
+    "school": "transmutation",
+    "range": "Self (30-foot radius)",
+    "text": "You imbue plants within 30 feet of you with limited sentience and animation, giving them the ability to communicate with you and follow your simple commands."
+  },
+  {
+    "name": "Spider Climb",
+    "level": 2,
+    "school": "transmutation",
+    "range": "Touch",
+    "text": "Until the spell ends, one willing creature you touch gains the ability to move up, down, and across vertical surfaces and upside down along ceilings, while leaving its hands free."
+  },
+  {
+    "name": "Spike Growth",
+    "level": 2,
+    "school": "transmutation",
+    "range": "150 feet",
+    "text": "The ground in a 20-foot radius centered on a point within range twists and sprouts hard spikes and thorns."
+  },
+  {
+    "name": "Spirit Guardians",
+    "level": 3,
+    "school": "conjuration",
+    "range": "Self (15-foot radius)",
+    "text": "You call forth spirits to protect you."
+  },
+  {
+    "name": "Spiritual Weapon",
+    "level": 2,
+    "school": "evocation",
+    "range": "60 feet",
+    "text": "You create a floating, spectral weapon within range that lasts for the duration or until you cast this spell again."
+  },
+  {
+    "name": "Stinking Cloud",
+    "level": 3,
+    "school": "conjuration",
+    "range": "90 feet",
+    "text": "You create a 20-foot-radius sphere of yellow, nauseating gas centered on a point within range."
+  },
+  {
+    "name": "Stone Shape",
+    "level": 4,
+    "school": "transmutation",
+    "range": "Touch",
+    "text": "You touch a stone object of Medium size or smaller or a section of stone no more than 5 feet in any dimension and form it into any shape t hat suits your purpose."
+  },
+  {
+    "name": "Stoneskin",
+    "level": 4,
+    "school": "abjuration",
+    "range": "Touch",
+    "text": "This spell turns the flesh of a willing creature you touch as hard as stone."
+  },
+  {
+    "name": "Storm of Vengeance",
+    "level": 9,
+    "school": "conjuration",
+    "range": "Sight",
+    "text": "A churning storm cloud forms, centered on a point you can see and spreading to a radius of 360 feet."
+  },
+  {
+    "name": "Suggestion",
+    "level": 2,
+    "school": "enchantment",
+    "range": "30 feet",
+    "text": "You suggest a course of activity (limited to a sentence or two) and magically influence a creature you can see within range that can hear a nd understand you."
+  },
+  {
+    "name": "Sunbeam",
+    "level": 6,
+    "school": "evocation",
+    "range": "Self (60-foot line)",
+    "text": "A beam of brilliant light flashes out from your hand in a 5-foot-wide, 60-foot-long line."
+  },
+  {
+    "name": "Sunburst",
+    "level": 8,
+    "school": "evocation",
+    "range": "150 feet",
+    "text": "Brilliant sunlight flashes in a 60-foot radius centered on a point you choose within range."
+  },
+  {
+    "name": "Symbol",
+    "level": 7,
+    "school": "abjuration",
+    "range": "Touch",
+    "text": "When you cast this sp ell, you inscribe a harmful glyph either on a surface (such as a section of floor, a wall, or a table) or within an object that can be closed to conceal the glyph (such as a book, a scroll, or a treasure chest)."
+  },
+  {
+    "name": "Telekinesis",
+    "level": 5,
+    "school": "transmutation",
+    "range": "60 feet",
+    "text": "You gain the ability to move or manipulate creatures or objects by thought."
+  },
+  {
+    "name": "Telepathic Bond",
+    "level": 5,
+    "school": "divination",
+    "range": "30 feet",
+    "text": "You forge a telepathic link among up to eight willing creatures of your choice within range, psychically linking each creature to all the others for the duration."
+  },
+  {
+    "name": "Teleport",
+    "level": 7,
+    "school": "conjuration",
+    "range": "10 feet",
+    "text": "This spell instantly transports you and up to eight willing creatures of your choice that you can see within range, or a single object that you can see within range, to a destination you select."
+  },
+  {
+    "name": "Teleportation Circle",
+    "level": 5,
+    "school": "conjuration",
+    "range": "10 feet",
+    "text": "As you cast the spell, you draw a 10-foot-diameter circle on the ground inscribed with sigils that link your location to a permanent teleportation circle of your choice whose sig il sequence you know and that is on the same plane of existence as you."
+  },
+  {
+    "name": "Thaumaturgy",
+    "level": 0,
+    "school": "transmutation",
+    "range": "30 feet",
+    "text": "You manifest a minor wonder, a sign of supernatural power, within range."
+  },
+  {
+    "name": "Thunderwave",
+    "level": 1,
+    "school": "evocation",
+    "range": "Self (15-foot cube)",
+    "text": "A wave of thunderous force sweeps out from you."
+  },
+  {
+    "name": "Time Stop",
+    "level": 9,
+    "school": "transmutation",
+    "range": "Self",
+    "text": "You briefly stop the flow of time for everyone but yourself."
+  },
+  {
+    "name": "Tiny Hut",
+    "level": 3,
+    "school": "evocation",
+    "range": "Self (10-foot-radius hemisphere)",
+    "text": "A 10-foot-radius immobile dome of force springs into existence around and above you and remains stationary for the duration."
+  },
+  {
+    "name": "Tongues",
+    "level": 3,
+    "school": "divination",
+    "range": "Touch",
+    "text": "This spell grants the creature you touch the ability to understand any spoken language it hears."
+  },
+  {
+    "name": "Transport via Plants",
+    "level": 6,
+    "school": "conjuration",
+    "range": "10 feet",
+    "text": "This spell creates a magical link between a Large or larger inanimate plant within range and another plant, at any distance, on the same plane of existence."
+  },
+  {
+    "name": "Tree Stride",
+    "level": 5,
+    "school": "conjuration",
+    "range": "Self",
+    "text": "You gain the ability to enter a tree and move from inside it to inside another tree of the same kind within 500 feet."
+  },
+  {
+    "name": "True Polymorph",
+    "level": 9,
+    "school": "transmutation",
+    "range": "30 feet",
+    "text": "Choose one creature or nonmagical object that you can see within range."
+  },
+  {
+    "name": "True Resurrection",
+    "level": 9,
+    "school": "necromancy",
+    "range": "Touch",
+    "text": "You touch a creature that has been dead for no longer than 200 years and that died for any reason except old age."
+  },
+  {
+    "name": "True Seeing",
+    "level": 6,
+    "school": "divination",
+    "range": "Touch",
+    "text": "This spell gives the willing creature you touch the ability to see things as they actually are."
+  },
+  {
+    "name": "True Strike",
+    "level": 0,
+    "school": "divination",
+    "range": "30 feet",
+    "text": "You extend your hand and point a finger at a target in range."
+  },
+  {
+    "name": "Unseen Servant",
+    "level": 1,
+    "school": "conjuration",
+    "range": "60 feet",
+    "text": "This spell creates an invisible, mindless, shapeless force that performs simple tasks at your command until the spell ends."
+  },
+  {
+    "name": "Vampiric Touch",
+    "level": 3,
+    "school": "necromancy",
+    "range": "Self",
+    "text": "The touch of your shadow-wreathed hand can siphon life force from others to heal your wounds."
+  },
+  {
+    "name": "Vicious Mockery",
+    "level": 0,
+    "school": "enchantment",
+    "range": "60 feet",
+    "text": "You unleash a string of insults laced with subtle enchantments at a creature you can see within range."
+  },
+  {
+    "name": "Wall of Fire",
+    "level": 4,
+    "school": "evocation",
+    "range": "120 feet",
+    "text": "You create a wall of fire on a solid surface within range."
+  },
+  {
+    "name": "Wall of Force",
+    "level": 5,
+    "school": "evocation",
+    "range": "120 feet",
+    "text": "An invisible wall of force springs into existence at a point you choose within range."
+  },
+  {
+    "name": "Wall of Ice",
+    "level": 6,
+    "school": "evocation",
+    "range": "120 feet",
+    "text": "You create a wall of ice on a solid surface within range."
+  },
+  {
+    "name": "Wall of Stone",
+    "level": 5,
+    "school": "evocation",
+    "range": "120 feet",
+    "text": "A nonmagical wall of solid stone springs into existence at a point you choose within range."
+  },
+  {
+    "name": "Wall of Thorns",
+    "level": 6,
+    "school": "conjuration",
+    "range": "120 feet",
+    "text": "You create a wall of tough, pliable, tangled brush bristling with needle-sharp thorns."
+  },
+  {
+    "name": "Warding Bond",
+    "level": 2,
+    "school": "abjuration",
+    "range": "Touch",
+    "text": "This spell wards a willing creature you touch and creates a mystic connection between you and the target until the spell ends."
+  },
+  {
+    "name": "Water Breathing",
+    "level": 3,
+    "school": "transmutation",
+    "range": "30 feet",
+    "text": "This spell grants up to ten willing creatures you can see within range the ability to breathe underwater until the spell ends."
+  },
+  {
+    "name": "Water Walk",
+    "level": 3,
+    "school": "transmutation",
+    "range": "30 feet",
+    "text": "This spell grants the ability to move across any liquid surface—such as water, acid, mud, snow, quicksand, or lava —as if it were harmless solid ground (creatures crossing molten lava can still take damage from the heat)."
+  },
+  {
+    "name": "Web",
+    "level": 2,
+    "school": "conjuration",
+    "range": "60 feet",
+    "text": "You conjure a mass of thick, sticky webbing at a point of your choice within range."
+  },
+  {
+    "name": "Weird",
+    "level": 9,
+    "school": "illusion",
+    "range": "120 feet",
+    "text": "Drawing on the deepest fears of a group of creatures, you create illusory creatures in their minds, visible only to them."
+  },
+  {
+    "name": "Wind Walk",
+    "level": 6,
+    "school": "transmutation",
+    "range": "30 feet",
+    "text": "You and up to ten willing creatures you can see within range assume a gaseous form for the duration, appearing as wisps of cloud."
+  },
+  {
+    "name": "Wind Wall",
+    "level": 3,
+    "school": "evocation",
+    "range": "120 feet",
+    "text": "A wall of strong wind rises from the ground at a point you choose within range."
+  },
+  {
+    "name": "Wish",
+    "level": 9,
+    "school": "conjuration",
+    "range": "Self",
+    "text": "Wish is the mightiest spell a mortal creature can cast."
+  },
+  {
+    "name": "Word of Recall",
+    "level": 6,
+    "school": "conjuration",
+    "range": "5 feet",
+    "text": "You and up to five willing creatures within 5 feet of you instantly teleport to a previously designated sanctuary."
+  },
+  {
+    "name": "Zone of Truth",
+    "level": 2,
+    "school": "enchantment",
+    "range": "60 feet",
+    "text": "You create a magical zone that guards against deception in a 15-foot-radius sphere centered on a point of your choice within range."
+  }
+]

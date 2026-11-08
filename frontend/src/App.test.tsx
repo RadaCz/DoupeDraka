@@ -1,0 +1,463 @@
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import App from './App';
+import type { Character, JournalEvent } from './types';
+
+const mockCharacter: Character = {
+  id: 'hero-1',
+  name: 'Rada',
+  race: 'human',
+  character_class: 'ranger',
+  level: 1,
+  abilities: { strength: 10, dexterity: 15, constitution: 14, intelligence: 8, wisdom: 13, charisma: 12 },
+  hp: 12,
+  max_hp: 12,
+  armor_class: 14,
+  mana: 3,
+  max_mana: 3,
+  xp: 0,
+  gold: 0,
+  inventory: ['Traveler’s clothes', 'Longbow'],
+  location: 'The Whispering Cellar',
+  in_combat: false,
+  combatant: null,
+  spell_slots: {},
+  max_spell_slots: {},
+  known_spells: [],
+  prepared_spells: [],
+  spellcasting_ability: '',
+  difficulty: 'normal',
+  tone: 'balanced',
+  humor: 'rare',
+  verbose: true,
+};
+
+const presetList = [
+  { key: 'tank', name: 'Grath', race: 'half_orc', character_class: 'barbarian', role: 'Tank' },
+  { key: 'skirmisher', name: 'Vela', race: 'human', character_class: 'rogue', role: 'Skirmisher' },
+];
+
+const referenceData = {
+  races: [
+    { key: 'human', name: 'Human', speed: 30, ability_increase: { strength: 1 }, subraces: [], traits: [{ name: 'Versatile', text: 'An extra language.' }] },
+    { key: 'elf', name: 'Elf', speed: 30, ability_increase: { dexterity: 2 }, subraces: ['high_elf'], traits: [{ name: 'Keen Senses', text: 'Perception training.' }] },
+  ],
+  classes: [
+    { key: 'fighter', name: 'Fighter', hit_die: 10, primary: 'strength', saving_throws: ['strength', 'constitution'], armor: ['light', 'heavy'], weapons: ['simple', 'martial'], subclasses: [{ name: 'Champion', text: 'A focused martial path.' }] },
+    { key: 'wizard', name: 'Wizard', hit_die: 6, primary: 'intelligence', saving_throws: ['intelligence', 'wisdom'], armor: [], weapons: ['daggers'], subclasses: [{ name: 'School of Evocation', text: 'Shape your spells.' }] },
+  ],
+  feats: [{ name: 'Grappler', prerequisite: 'Strength 13', benefits: ['Pin a foe.'] }],
+  backgrounds: [{ name: 'Acolyte', skill_proficiencies: ['Insight', 'Religion'], languages: 'Two', equipment: [], feature: { name: 'Shelter', text: 'Help from temples.' } }],
+  draconic_ancestry: {},
+  locations: [
+    { name: 'The Whispering Cellar', connections: ['The Sunken Corridor'] },
+    { name: 'The Sunken Corridor', connections: ['The Whispering Cellar', 'The Shrine of the Forgotten'] },
+    { name: 'The Shrine of the Forgotten', connections: ['The Sunken Corridor', 'The Goblin Market'] },
+    { name: 'The Goblin Market', connections: ['The Shrine of the Forgotten'] },
+  ],
+};
+
+const economyData = {
+  balance: 100,
+  balance_tenths: 1000,
+  tier: 'normal',
+  tiers: [
+    { key: 'lite', label: 'Lite', cost: 0, description: 'Free narration for the core game loop.' },
+    { key: 'normal', label: 'Normal', cost: 1, description: 'Balanced for most turns.' },
+    { key: 'pro', label: 'Pro', cost: 1.4, description: 'Highest reasoning.' },
+  ],
+  packages: [{ key: 'starter', label: 'Starter', mana: 50, price_rub: 100 }],
+};
+
+const spellList = [
+  { name: 'Light', level: 0, school: 'evocation', range: 'Touch', text: 'An object shines.', effect_modeled: true },
+  { name: 'Fire Bolt', level: 0, school: 'evocation', range: '120 feet', text: 'A mote of fire.', effect_modeled: true },
+  { name: 'Cure Wounds', level: 1, school: 'evocation', range: 'Touch', text: 'Restore hit points.', effect_modeled: true },
+  { name: 'Magic Missile', level: 1, school: 'evocation', range: '120 feet', text: 'Darts of force.', effect_modeled: true },
+  { name: 'Shield', level: 1, school: 'abjuration', range: 'Self', text: 'A magical barrier.', effect_modeled: false },
+  { name: 'Fireball', level: 3, school: 'evocation', range: '150 feet', text: 'A bright streak flashes.', effect_modeled: false },
+];
+
+function jsonResponse(body: unknown, status = 200) {
+  return Promise.resolve({
+    ok: status >= 200 && status < 300,
+    status,
+    statusText: status === 402 ? 'Payment Required' : 'Error',
+    json: () => Promise.resolve(body),
+  } as Response);
+}
+
+function setupApp(initialCharacters: Character[] = [], initialHistory: Record<string, JournalEvent[]> = {}) {
+  let characters = [...initialCharacters];
+  const history = { ...initialHistory };
+  const requests: Array<{ url: string; method: string; body: Record<string, unknown> | null }> = [];
+  vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = new URL(String(input), 'http://localhost');
+    const method = init?.method ?? 'GET';
+    const body = typeof init?.body === 'string' ? JSON.parse(init.body) as Record<string, unknown> : null;
+    requests.push({ url: `${url.pathname}${url.search}`, method, body });
+
+    if (url.pathname === '/api/auth/telegram') return jsonResponse({ access_token: 'memory-only-token' });
+    if (url.pathname === '/api/characters' && method === 'GET') return jsonResponse(characters);
+    if (url.pathname === '/api/characters/presets' && method === 'GET') return jsonResponse(presetList);
+    if (url.pathname === '/api/reference') return jsonResponse(referenceData);
+    if (url.pathname === '/api/reference/spells') return jsonResponse(spellList);
+    if (url.pathname === '/api/economy' && method === 'GET') return jsonResponse(economyData);
+
+    const eventMatch = url.pathname.match(/^\/api\/characters\/([^/]+)\/events$/);
+    if (eventMatch && method === 'GET') return jsonResponse(history[eventMatch[1]] ?? []);
+
+    if (url.pathname === '/api/characters' && method === 'POST') {
+      const created = {
+        ...mockCharacter,
+        ...body,
+        id: 'created-hero',
+        abilities: mockCharacter.abilities,
+        max_hp: 12,
+        hp: 12,
+        location: 'The Whispering Cellar',
+      } as Character;
+      characters = [...characters, created];
+      return jsonResponse(created, 201);
+    }
+
+    const presetMatch = url.pathname.match(/^\/api\/characters\/presets\/([^/]+)$/);
+    if (presetMatch && method === 'POST') {
+      const preset = presetList.find(item => item.key === presetMatch[1]);
+      const created = { ...mockCharacter, id: `preset-${presetMatch[1]}`, ...preset } as Character;
+      characters = [...characters, created];
+      return jsonResponse(created, 201);
+    }
+
+    const settingsMatch = url.pathname.match(/^\/api\/characters\/([^/]+)\/settings$/);
+    if (settingsMatch && method === 'PATCH') {
+      const updated = { ...characters.find(item => item.id === settingsMatch[1])!, ...body } as Character;
+      characters = characters.map(item => item.id === updated.id ? updated : item);
+      return jsonResponse(updated);
+    }
+
+    if (url.pathname === '/api/economy/tier' && method === 'POST') return jsonResponse({ tier: body?.tier });
+    if (url.pathname === '/api/tools/combat-calculator' && method === 'POST') {
+      return jsonResponse({ base_xp: 50, adjusted_xp: 50, multiplier: 1, band: 'medium', thresholds: { easy: 25, medium: 50, hard: 75, deadly: 100 } });
+    }
+
+    const actionMatch = url.pathname.match(/^\/api\/characters\/([^/]+)\/actions\/stream$/);
+    if (actionMatch && method === 'POST') {
+      const current = characters.find(item => item.id === actionMatch[1])!;
+      const updated = { ...current, hp: current.hp - 1 };
+      characters = characters.map(item => item.id === updated.id ? updated : item);
+      const nextEvent = { id: (history[updated.id]?.length ?? 0) + 1, action: String(body?.action), result: 'Steel rings.\n\nAttack roll: hit.', created_at: new Date().toISOString() };
+      history[updated.id] = [...(history[updated.id] ?? []), nextEvent];
+      const payload = {
+        events: ['Attack roll: hit.'],
+        narration: 'Steel rings.',
+        narration_status: 'fallback',
+        character: updated,
+        energy: 99,
+        energy_tenths: 990,
+        tier: 'normal',
+      };
+      const encoder = new TextEncoder();
+      const frames = [
+        `event: turn\ndata: ${JSON.stringify(payload)}\n\n`,
+        'event: delta\ndata: {"text":"Steel "}\n\n',
+        'event: delta\ndata: {"text":"rings."}\n\n',
+        'event: complete\ndata: {"narration":"Steel rings.","narration_status":"fallback"}\n\n',
+      ];
+      return new Response(new ReadableStream({
+        start(controller) {
+          void (async () => {
+            controller.enqueue(encoder.encode(frames[0]));
+            controller.enqueue(encoder.encode(frames[1]));
+            await new Promise(resolve => setTimeout(resolve, 80));
+            frames.slice(2).forEach(frame => controller.enqueue(encoder.encode(frame)));
+            controller.close();
+          })();
+        },
+      }), { headers: { 'Content-Type': 'text/event-stream' } });
+    }
+    return jsonResponse({ detail: `Unhandled mock route ${method} ${url.pathname}` }, 404);
+  }));
+  window.Telegram = { WebApp: { initData: 'signed-init-data', ready: vi.fn(), expand: vi.fn() } };
+  return requests;
+}
+
+describe('Telegram Mini App', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+    vi.stubGlobal('fetch', vi.fn());
+    window.Telegram = { WebApp: { initData: 'signed-init-data' } };
+  });
+
+  it('requires Telegram initData and does not call the API outside Telegram', async () => {
+    delete window.Telegram;
+    render(<App />);
+    expect(await screen.findByRole('heading', { name: /your story begins in telegram/i })).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent('Open this app from Telegram');
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('loads the real home hub and keeps the access token out of localStorage', async () => {
+    const requests = setupApp();
+    render(<App />);
+    expect(await screen.findByRole('heading', { name: /an adventure awaits/i })).toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: 'Main navigation' })).toBeInTheDocument();
+    expect(screen.getByText('100.0')).toBeInTheDocument();
+    expect(requests.map(item => item.url)).toContain('/api/reference');
+    expect(localStorage.getItem('api_token')).toBeNull();
+    expect(localStorage.getItem('active_character_id')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Character' })).toBeInTheDocument();
+  });
+
+  it('restores a selected hero and loads its saved campaign journal', async () => {
+    localStorage.setItem('active_character_id', mockCharacter.id);
+    const requests = setupApp([mockCharacter]);
+    render(<App />);
+    expect(await screen.findByRole('heading', { name: /welcome back, rada/i })).toBeInTheDocument();
+    await waitFor(() => expect(requests.some(item => item.url === `/api/characters/${mockCharacter.id}/events`)).toBe(true));
+    expect(screen.getByText(/ranger/i)).toBeInTheDocument();
+  });
+
+  it('shows the active enemy and only relevant combat choices during a fight', async () => {
+    const combatant = { name: 'Goblin scout', hp: 4, max_hp: 7, armor_class: 13 };
+    setupApp([{ ...mockCharacter, in_combat: true, combatant }]);
+    render(<App />);
+    await screen.findByRole('heading', { name: /welcome back, rada/i });
+    fireEvent.click(screen.getByRole('button', { name: /continue adventure/i }));
+
+    expect(await screen.findByText('Goblin scout')).toBeInTheDocument();
+    expect(screen.getByRole('progressbar', { name: 'Enemy hit points' })).toHaveAttribute('aria-valuenow', '57.14285714285714');
+    expect(screen.getByRole('button', { name: 'Attack' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Try to escape' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Recover your strength' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Attack' }));
+    expect(screen.getByRole('textbox', { name: 'Your action' })).toHaveValue('attack Goblin scout');
+  });
+
+  it('shows known spells, slot counts, and blocks an unmodeled spell before submit', async () => {
+    const wizard: Character = {
+      ...mockCharacter,
+      character_class: 'wizard',
+      in_combat: true,
+      combatant: { name: 'Goblin scout', hp: 7, max_hp: 7, armor_class: 13 },
+      spell_slots: { '1': 2 },
+      max_spell_slots: { '1': 2 },
+      known_spells: ['Fire Bolt', 'Magic Missile', 'Shield'],
+      spellcasting_ability: 'int',
+    };
+    const requests = setupApp([wizard]);
+    render(<App />);
+    await screen.findByRole('heading', { name: /welcome back, rada/i });
+    fireEvent.click(screen.getByRole('button', { name: /continue adventure/i }));
+
+    expect(await screen.findByText('L1: 2/2')).toBeInTheDocument();
+    const picker = screen.getByRole('combobox', { name: 'Your spells' });
+    expect(within(picker).getByRole('option', { name: 'Choose a spell to cast' })).toBeInTheDocument();
+    expect(within(picker).getByRole('option', { name: 'Fire Bolt' })).toBeInTheDocument();
+    expect(within(picker).getByRole('option', { name: 'Magic Missile' })).toBeInTheDocument();
+    expect(within(picker).queryByRole('option', { name: 'Cure Wounds' })).not.toBeInTheDocument();
+
+    fireEvent.change(picker, { target: { value: 'Shield' } });
+    expect(screen.getByRole('status')).toHaveTextContent(/no modeled effect yet/i);
+    expect(screen.getByRole('button', { name: 'Send action' })).toBeDisabled();
+    expect(requests.some(item => item.url.endsWith('/actions'))).toBe(false);
+  });
+
+  it('suggests recovery and responds to the latest discovery outside combat', async () => {
+    const injured = { ...mockCharacter, hp: 5 };
+    const discovery = {
+      id: 1,
+      action: 'search',
+      result: 'You find fresh tracks leading deeper into the cellar.',
+      created_at: new Date().toISOString(),
+    };
+    setupApp([injured], { [injured.id]: [discovery] });
+    render(<App />);
+    await screen.findByRole('heading', { name: /welcome back, rada/i });
+    fireEvent.click(screen.getByRole('button', { name: /continue adventure/i }));
+
+    expect(screen.getByRole('button', { name: 'Recover your strength' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Study the fresh tracks' }));
+    expect(screen.getByRole('textbox', { name: 'Your action' })).toHaveValue('inspect the fresh tracks');
+    expect(screen.queryByRole('button', { name: 'Attack' })).not.toBeInTheDocument();
+  });
+
+  it('creates a character through the guided race, class and campaign steps', async () => {
+    const requests = setupApp();
+    render(<App />);
+    fireEvent.click(await screen.findByRole('button', { name: /create your character/i }));
+    fireEvent.click(screen.getByRole('button', { name: /create your own/i }));
+    fireEvent.click(screen.getByRole('button', { name: /elf/i }));
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+    fireEvent.click(screen.getByRole('button', { name: /wizard/i }));
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+    fireEvent.change(screen.getByLabelText('Character name'), { target: { value: 'Rada' } });
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+    expect(await screen.findByRole('heading', { name: /meet your adventurer/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /enter the adventure/i }));
+    expect(await screen.findByRole('heading', { name: /the whispering cellar/i })).toBeInTheDocument();
+    const createRequest = requests.find(item => item.url === '/api/characters' && item.method === 'POST');
+    expect(createRequest?.body).toMatchObject({ name: 'Rada', race: 'elf', character_class: 'wizard', difficulty: 'normal' });
+  });
+
+  it('creates a ready-made hero from the quick start cards', async () => {
+    const requests = setupApp();
+    render(<App />);
+    fireEvent.click(await screen.findByRole('button', { name: /grath.*tank.*barbarian/i }));
+    expect(await screen.findByRole('heading', { name: /the whispering cellar/i })).toBeInTheDocument();
+    expect(requests.some(item => item.url === '/api/characters/presets/tank' && item.method === 'POST')).toBe(true);
+  });
+
+  it('shows the character sheet and navigates to the spell library', async () => {
+    setupApp([mockCharacter]);
+    render(<App />);
+    await screen.findByRole('heading', { name: /welcome back, rada/i });
+    fireEvent.click(screen.getByRole('button', { name: 'Character' }));
+    expect(await screen.findByRole('heading', { name: /character sheet/i })).toBeInTheDocument();
+    expect(screen.getByText('ABILITY SCORES')).toBeInTheDocument();
+    expect(screen.getByText('Longbow')).toBeInTheDocument();
+    expect(screen.queryByText('LEGACY CHARACTER MANA')).not.toBeInTheDocument();
+    const legacyMana = screen.getByText('Mana (historical)');
+    expect(legacyMana).toBeInTheDocument();
+    expect(screen.queryByText('3 / 3')).not.toBeInTheDocument();
+    fireEvent.click(legacyMana);
+    expect(screen.getByText('This legacy character resource does not power spells or Adventure Mana.')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Tools' }));
+    expect(await screen.findByRole('heading', { name: /adventurer's tools/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: /spell library/i }));
+    expect(screen.getByText(/does not currently have spell levels/i)).toBeInTheDocument();
+    expect(screen.queryByText('Cure Wounds')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Full SRD reference' }));
+    expect(screen.getByText('Cure Wounds')).toBeInTheDocument();
+    fireEvent.change(screen.getByRole('textbox', { name: /search spell library/i }), { target: { value: 'light' } });
+    expect(screen.getByText('Light')).toBeInTheDocument();
+    expect(screen.queryByText('Cure Wounds')).not.toBeInTheDocument();
+  });
+
+  it('limits the default spell reference to the character level', async () => {
+    const wizard = { ...mockCharacter, character_class: 'wizard', level: 1 };
+    setupApp([wizard]);
+    render(<App />);
+    await screen.findByRole('heading', { name: /welcome back, rada/i });
+    fireEvent.click(screen.getByRole('button', { name: 'Tools' }));
+    fireEvent.click(await screen.findByRole('tab', { name: /spell library/i }));
+    expect(screen.getByText('Cure Wounds')).toBeInTheDocument();
+    expect(screen.queryByText('Fireball')).not.toBeInTheDocument();
+    expect(screen.getByText(/class spell lists and known spells are not enforced yet/i)).toBeInTheDocument();
+  });
+
+  it('runs the encounter calculator against the game API', async () => {
+    const requests = setupApp([mockCharacter]);
+    render(<App />);
+    await screen.findByRole('heading', { name: /welcome back, rada/i });
+    fireEvent.click(screen.getByRole('button', { name: 'Tools' }));
+    fireEvent.click(await screen.findByRole('tab', { name: /combat balance/i }));
+    fireEvent.click(screen.getByRole('button', { name: /rate this encounter/i }));
+    expect(await screen.findByText('Medium')).toBeInTheDocument();
+    expect(requests.some(item => item.url === '/api/tools/combat-calculator' && item.method === 'POST')).toBe(true);
+  });
+
+  it('offers travel to a connected location from the game screen', async () => {
+    const requests = setupApp([mockCharacter]);
+    render(<App />);
+    await screen.findByRole('heading', { name: /welcome back, rada/i });
+    fireEvent.click(screen.getByRole('button', { name: /continue adventure/i }));
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Travel to The Sunken Corridor' }));
+    expect(screen.getByRole('textbox', { name: 'Your action' })).toHaveValue('travel to The Sunken Corridor');
+    fireEvent.click(screen.getByRole('button', { name: 'Send action' }));
+
+    await waitFor(() => {
+      expect(requests.some(item =>
+        item.url.endsWith('/actions/stream') && item.body?.action === 'travel to The Sunken Corridor',
+      )).toBe(true);
+    });
+  });
+
+  it('offers the shrine quest at the correct location', async () => {
+    setupApp([{
+      ...mockCharacter,
+      location: 'The Shrine of the Forgotten',
+      quest_flags: {},
+    }]);
+    render(<App />);
+    await screen.findByRole('heading', { name: /welcome back, rada/i });
+    fireEvent.click(screen.getByRole('button', { name: /continue adventure/i }));
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Talk to Caldus' }));
+
+    expect(screen.getByRole('textbox', { name: 'Your action' })).toHaveValue(
+      'talk to Caldus about the shrine bell',
+    );
+  });
+
+  it('saves campaign settings and shows persistent journal events', async () => {
+    const requests = setupApp([mockCharacter]);
+    render(<App />);
+    await screen.findByRole('heading', { name: /welcome back, rada/i });
+    fireEvent.click(screen.getByRole('button', { name: 'Campaign' }));
+    expect(await screen.findByRole('heading', { name: /your campaign/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /dangerous hard/i }));
+    await waitFor(() => expect(requests.some(item => item.url === `/api/characters/${mockCharacter.id}/settings` && item.body?.difficulty === 'hard')).toBe(true));
+    fireEvent.click(screen.getByRole('button', { name: 'Home' }));
+    fireEvent.click(screen.getByRole('button', { name: /continue adventure/i }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Your action' }), { target: { value: 'attack goblin' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send action' }));
+    await waitFor(() => expect(requests.some(item => item.url.endsWith('/actions/stream'))).toBe(true));
+    const journal = screen.getByRole('log', { name: 'Adventure journal' });
+    await waitFor(() => expect(journal.querySelector('.journal-narration')).toHaveTextContent('Steel rings.'));
+    expect(await screen.findByText(/Attack roll: hit\./)).toBeInTheDocument();
+    expect(within(journal).getByText('attack goblin')).toBeInTheDocument();
+    expect(await screen.findByText(/offline storyteller is active/i)).toBeInTheDocument();
+    expect(requests.some(item => item.url.endsWith('/actions/stream') && item.method === 'POST')).toBe(true);
+  });
+
+  it('changes narrator tier but makes no false promise of payments', async () => {
+    const requests = setupApp([mockCharacter]);
+    render(<App />);
+    await screen.findByRole('heading', { name: /welcome back, rada/i });
+    fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+    expect(await screen.findByRole('heading', { name: 'Settings' })).toBeInTheDocument();
+    fireEvent.click(screen.getByText('?', { selector: 'summary' }));
+    expect(screen.getByText('Adventure Mana pays for changed turns at paid narration tiers. Lite turns, rests and no-op actions are free.')).toBeInTheDocument();
+    expect(screen.getByText('Top-ups are not available yet', { selector: 'p' })).toBeInTheDocument();
+    expect(screen.getByText('Separate from spell slots; spellcaster classes spend slots to cast spells.')).toBeInTheDocument();
+    expect(screen.getByText('Spell slots power casting for spellcaster classes. They are separate from Adventure Mana, which pays only for story turns.')).toBeInTheDocument();
+    expect(screen.queryByText(/spell effects are not implemented yet/i)).not.toBeInTheDocument();
+    fireEvent.change(screen.getByRole('combobox', { name: 'Language' }), { target: { value: 'cs' } });
+    expect(screen.getByText('Kouzlene sloty pohani sesilani u sesilacich povolani. Jsou oddelene od dobrodruzne many, ktera plati pouze za herni tahy.')).toBeInTheDocument();
+    expect(screen.getByText('Je oddelena od kouzelnych slotu; kouzelnicke tridy pouzivaji sloty k sesilani kouzel.')).toBeInTheDocument();
+    fireEvent.change(screen.getByRole('combobox', { name: 'Jazyk' }), { target: { value: 'en' } });
+    expect(screen.queryByText(/SRD 5\.1 · Creative Commons/i)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByText('Show attribution and license'));
+    expect(screen.getByRole('link', { name: /official srd page/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /lite free narration for the core game loop/i }));
+    await waitFor(() => expect(requests.some(item => item.url === '/api/economy/tier' && item.body?.tier === 'lite')).toBe(true));
+    expect(screen.getByText(/top-ups are not available yet/i, { selector: 'p' })).toBeInTheDocument();
+  });
+
+  it('switches the interface to Czech without diacritics and saves the preference', async () => {
+    setupApp([mockCharacter]);
+    const { container } = render(<App />);
+    await screen.findByRole('heading', { name: /welcome back, rada/i });
+    fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+    fireEvent.change(screen.getByRole('combobox', { name: 'Language' }), { target: { value: 'cs' } });
+
+    expect(await screen.findByRole('heading', { name: 'Nastaveni' })).toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: 'Hlavni navigace' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Uvod' })).toBeInTheDocument();
+    expect(localStorage.getItem('app_locale')).toBe('cs');
+    expect(document.documentElement.lang).toBe('cs');
+    expect(container.textContent).not.toMatch(/[áčďéěíňóřšťúůýžÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]/);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Uvod' }));
+    expect(await screen.findByRole('heading', { name: 'Vitej zpet, Rada.' })).toBeInTheDocument();
+    expect(container.textContent).not.toMatch(/[áčďéěíňóřšťúůýžÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]/);
+    fireEvent.click(screen.getByRole('button', { name: 'Vytvorit vlastni' }));
+    fireEvent.click(await screen.findByRole('button', { name: /Vytvorit vlastniho/ }));
+    expect(await screen.findByRole('heading', { name: 'Vyber rasu' })).toBeInTheDocument();
+    expect(container.textContent).not.toMatch(/[áčďéěíňóřšťúůýžÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]/);
+  });
+});

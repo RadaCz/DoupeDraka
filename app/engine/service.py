@@ -1,0 +1,830 @@
+import random, re, uuid
+from .catalog import ABILITY_ORDER, CLASSES, RACES, standard_abilities
+from .encounters import MONSTERS, build_monster
+from .locations import LOCATIONS, is_travel_action, travel_destination
+from .models import DIFFICULTIES, HUMORS, TONES, CharacterState, MonsterState, RollResult, TurnResult
+from .spells import (
+    CLASS_SPELL_LISTS,
+    MODELED_SPELL_EFFECTS,
+    SPELLCASTING_ABILITIES,
+    advance_spellcasting,
+    ensure_spellcasting,
+    initialize_spellcasting,
+    learn_level_up_spells,    spell_level,
+)
+XP_THRESHOLD = 100  # XP needed per levelMANA_REGEN = 1  # mana restored after any costly turn
+
+# Verbs the engine understands. Free text is mapped onto this closed set so a
+# model can suggest an intent but can never invent a new mechanic.
+ATTACK_VERBS = ("attack", "strike", "hit", "útok", "zaútoč")
+CAST_VERBS = ("cast", "kouzl")
+REST_VERBS = ("rest", "sleep", "odpočiň", "odpočívat")
+SHORT_REST_VERBS = ("short rest", "take a breather", "brief rest", "kratky odpocinek", "kratky oddech")
+DEFEND_VERBS = ("dodge", "defend", "guard", "brace", "uhni", "bran")
+ITEM_VERBS = ("use potion", "drink potion", "use item", "pouzij lektvar", "vypij lektvar")
+SHOP_VERBS = ("buy", "purchase", "kup", "nakup")
+FLEE_VERBS = ("flee", "retreat", "run away", "utek", "útěk")
+EXPLORE_PHRASES = (
+    "look around", "look for", "explore", "search", "investigate",
+    "scout", "travel", "go to", "head to", "move to", "journey", "prowl",
+    "jdi do", "vydej se", "průzkum", "prozkoumej",
+    "rozhléd", "hledej", "prohledej", "cestuj", "putuj",
+)
+FLEE_DC = 10
+ENCOUNTER_TRIGGER = 1
+
+ACTION_ABILITIES = (
+    ("strength", ("lift", "push", "pull", "break", "force", "shove", "climb", "grapple", "zved", "zatlac", "rozbij", "rozlom", "vypac")),
+    ("dexterity", ("sneak", "hide", "dodge", "pick lock", "lockpick", "steal", "balance", "jump", "pliz", "schovej", "uhni", "zamek", "skoc")),
+    ("constitution", ("endure", "resist", "hold breath", "withstand", "survive", "vydrz", "prezij", "odol")),
+    ("intelligence", ("inspect", "investigate", "recall", "remember", "decipher", "solve", "analyze", "study", "examine", "prozkoumej", "prohliz", "prohled", "zanalyz")),
+    ("wisdom", ("notice", "listen", "spot", "perceive", "track", "sense", "watch", "observe", "vsim", "poslouch", "naslouchej", "sleduj", "pozor")),
+    ("charisma", ("talk", "persuade", "convince", "deceive", "lie", "intimidate", "perform", "negotiate", "mluv", "presved", "domluv", "lzi", "zastras", "vyjedn", "zazpivej")),
+)
+
+
+class GameEngine:
+    """Rules only — no database, Telegram, or LLM calls here."""
+    def __init__(self, rng: random.Random | None = None): self.rng = rng or random.Random()
+    @staticmethod
+    def modifier(score: int) -> int: return (score - 10) // 2
+
+    def create_character(self, owner_id: int, name: str, race: str, character_class: str, abilities: dict[str, int] | None = None) -> CharacterState:
+        if race not in RACES or character_class not in CLASSES: raise ValueError("Unknown race or class")
+        # Falling back to the standard array keeps a blank character able to hit AC 13.
+        scores = abilities or standard_abilities(character_class)
+        if set(scores) != set(ABILITY_ORDER) or any(not 3 <= score <= 20 for score in scores.values()): raise ValueError("Ability scores must contain each ability in range 3–20")
+        spec = CLASSES[character_class]; hp = max(1, spec.hit_die + self.modifier(scores["constitution"]))
+        # Only classes with a spellcasting pool get mana; martial classes never do.
+        mana = spec.mana + max(0, self.modifier(scores[spec.primary])) if spec.mana else 0
+        dexterity = self.modifier(scores["dexterity"])
+        armor_class = spec.armor[0] + (dexterity if spec.armor[1] is None else min(dexterity, spec.armor[1]))
+        character = CharacterState(
+            str(uuid.uuid4()), owner_id, name.strip()[:48], race, character_class,
+            abilities=scores, max_hp=hp, hp=hp, armor_class=armor_class,
+            mana=mana, max_mana=mana,
+        )
+        character.visited_locations = [character.location]
+        initialize_spellcasting(character)
+        return character
+
+    def roll(self, dice: str, modifier: int = 0, critical: bool = False) -> RollResult:
+        match = re.fullmatch(r"(\d+)d(\d+)", dice)
+        if not match: raise ValueError("Dice must use NdM format")
+        count, sides = map(int, match.groups())
+        if not (1 <= count <= 20 and 2 <= sides <= 100): raise ValueError("Unsupported dice")
+        values = tuple(self.rng.randint(1, sides) for _ in range(count * (2 if critical else 1)))
+        return RollResult(dice, values, modifier, sum(values) + modifier, critical)
+
+    def _level_up(self, character: CharacterState) -> tuple[list[str], dict]:
+        if character.xp < XP_THRESHOLD:
+            return [], {}
+        ensure_spellcasting(character)
+        character.xp -= XP_THRESHOLD
+        character.level += 1
+        spec = CLASSES[character.character_class]
+        hp_roll = self.roll(f"1d{spec.hit_die}", self.modifier(character.abilities["constitution"]))
+        hp_gained = max(1, hp_roll.total)
+        character.max_hp += hp_gained
+        character.hp = min(character.max_hp, character.hp + hp_gained)
+        character.mana += spec.mana
+        character.max_mana = character.mana
+        advance_spellcasting(character)
+        new_spells = learn_level_up_spells(character, self.rng)
+        facts = {
+            "new_level": character.level,
+            "hp_gained": hp_gained,
+            "current_hp": character.hp,
+            "max_hp": character.max_hp,
+            "spell_slots": dict(character.spell_slots),
+            "max_spell_slots": dict(character.max_spell_slots),
+            "new_spells": new_spells,
+        }
+        events = [
+            f"LEVEL UP! You are now level {character.level}. Your maximum and current HP increase by {hp_gained}."
+        ]
+        if new_spells:
+            events.append(f"New spells learned or prepared: {', '.join(new_spells)}.")
+        return events, facts
+
+    @staticmethod
+    def _spellcasting_modifier(character: CharacterState) -> int:
+        ability = character.spellcasting_ability or SPELLCASTING_ABILITIES[character.character_class]
+        ability_name = {"int": "intelligence", "wis": "wisdom", "cha": "charisma"}[ability]
+        return GameEngine.modifier(character.abilities[ability_name])
+
+    @staticmethod
+    def _spell_attack_bonus(character: CharacterState) -> int:
+        proficiency = 2 + max(0, (character.level - 1) // 4)
+        return proficiency + GameEngine._spellcasting_modifier(character)
+
+    @staticmethod
+    def _cantrip_dice_count(level: int) -> int:
+        return 1 + sum(level >= threshold for threshold in (5, 11, 17))
+
+    @staticmethod
+    def _spell_action_parts(text: str) -> tuple[str, str | None]:
+        action = re.sub(r"\s+", " ", text.strip())
+        match = re.match(r"^(?:cast|kouzli(?:t)?)\b\s*(.*)$", action, re.IGNORECASE)
+        if not match:
+            return "", None
+        spell_and_target = match.group(1).strip()
+        target_match = re.search(r"\s+at\s+", spell_and_target, re.IGNORECASE)
+        if target_match:
+            return spell_and_target[:target_match.start()].strip(), spell_and_target[target_match.end():].strip()
+        return spell_and_target, None
+
+    @staticmethod
+    def _enemy_matches_target(monster: MonsterState, target: str) -> bool:
+        target_key = re.sub(r"\s+", " ", target.strip()).casefold()
+        enemy_name = re.sub(r"\s+", " ", monster.name.strip()).casefold()
+        return target_key in {enemy_name, enemy_name.split(" ", 1)[0]}
+
+    def _named_spell_target(self, character: CharacterState, target: str) -> MonsterState | None:
+        target_key = re.sub(r"\s+", " ", target.strip()).casefold()
+        for key, template in MONSTERS.items():
+            if target_key in {key.casefold(), template.name.casefold(), template.name.split(" ", 1)[0].casefold()}:
+                return build_monster(character.difficulty, key)
+        return None
+
+    @staticmethod
+    def _roll_facts(result: RollResult) -> dict:
+        return {
+            "dice": result.dice,
+            "rolls": list(result.values),
+            "modifier": result.modifier,
+            "total": result.total,
+        }
+
+    def _enemy_turn(self, character: CharacterState, monster: MonsterState, disadvantage: bool = False) -> list[str]:
+        if character.hp <= 0:
+            return []
+        enemy = self.roll("2d20", monster.attack_bonus) if disadvantage else self.roll("1d20", monster.attack_bonus)
+        attack_total = min(enemy.values[:2]) + enemy.modifier if disadvantage else enemy.total
+        if enemy.values[0] != 1 and (enemy.values[0] == 20 or enemy.total >= character.armor_class):
+            if disadvantage and attack_total < character.armor_class:
+                return [f"{monster.name}'s disadvantaged attack misses. You keep your guard."]
+            dice, _, bonus = monster.damage.partition("+")
+            damage = self.roll(dice, int(bonus) if bonus else 0)
+            character.hp = max(0, character.hp - damage.total)
+            if character.hp == 0:
+                character.death_state = "fallen"
+                character.in_combat = False
+            return [f"{monster.name} hits you for {damage.total}. Your HP: {character.hp}/{character.max_hp}."]
+        return [f"{monster.name}'s attack misses."]
+
+    def _use_item(self, character: CharacterState, action: str, monster: MonsterState | None) -> tuple[TurnResult, MonsterState | None]:
+        potion = next((item for item in character.inventory if "potion" in item.casefold()), None)
+        if potion is None:
+            return TurnResult(action, ["You have no usable potion."], False), monster
+        if character.hp >= character.max_hp:
+            return TurnResult(action, ["You are already at full health."], False), monster
+        healing = self.roll("2d4", self.modifier(character.abilities.get("constitution", 10)) + 2)
+        amount = min(character.max_hp - character.hp, max(1, healing.total))
+        character.hp += amount
+        character.inventory.remove(potion)
+        events = [f"You drink a healing potion and recover {amount} HP. Your HP: {character.hp}/{character.max_hp}."]
+        if monster and character.in_combat:
+            events.extend(self._enemy_turn(character, monster))
+        return TurnResult(action, events, True), monster if character.in_combat else None
+
+    def _shop(self, character: CharacterState, action: str) -> TurnResult:
+        if character.location != "The Goblin Market":
+            return TurnResult(action, ["There is no shop here."], False)
+        if "potion" not in action.casefold():
+            return TurnResult(action, ["Nib sells healing potions for 3 gold each."], False)
+        if character.gold < 3:
+            return TurnResult(action, ["A healing potion costs 3 gold. You cannot afford it."], False)
+        character.gold -= 3
+        character.inventory.append("healing potion")
+        return TurnResult(action, ["You buy a healing potion from Nib for 3 gold."], True)
+
+    def _cast_spell(
+        self, character: CharacterState, action: str, monster: MonsterState | None
+    ) -> tuple[TurnResult, MonsterState | None]:
+        spell_name, target_name = self._spell_action_parts(action)
+        if not spell_name:
+            return TurnResult(action, ["Name a spell to cast. No spell slot was spent."], False), monster
+
+        if (
+            character.character_class in {"paladin", "ranger"}
+            and character.level < 2
+            and re.sub(r"\s+", " ", spell_name).casefold()
+            in {name.casefold() for name in CLASS_SPELL_LISTS[character.character_class][1]}
+        ):
+            return TurnResult(
+                action,
+                ["You have no spell slots yet. Paladins and rangers gain their first slots at level 2."],
+                False,
+                spell_facts={
+                    "spell_name": spell_name,
+                    "spell_level": 1,
+                    "slot_level": None,
+                    "slot_consumed": False,
+                    "effect": {"type": "unavailable"},
+                    "target_hp_after": monster.hp if monster else None,
+                    "save_result": None,
+                },
+            ), monster
+
+        accessible = character.known_spells + character.prepared_spells
+        normalized_name = re.sub(r"\s+", " ", spell_name).casefold()
+        selected = next(
+            (known for known in accessible if re.sub(r"\s+", " ", known).casefold() == normalized_name),
+            None,
+        )
+        if selected is None:
+            catalog_level = spell_level(spell_name)
+            message = (
+                f"You have not learned or prepared {spell_name}. No spell slot was spent."
+                if catalog_level is not None
+                else f"Spell '{spell_name}' is not implemented or in your spell list. No spell slot was spent."
+            )
+            facts = {
+                "spell_name": spell_name,
+                "spell_level": catalog_level,
+                "slot_level": None,
+                "slot_consumed": False,
+                "effect": {"type": "unavailable"},
+                "target_hp_after": monster.hp if monster else None,
+                "save_result": None,
+            }
+            return TurnResult(action, [message], False, spell_facts=facts), monster
+
+        level = spell_level(selected)
+        if level is None:
+            return TurnResult(action, [f"{selected} is not in the SRD spell catalog. No spell slot was spent."], False), monster
+        modeled = MODELED_SPELL_EFFECTS.get(selected)
+        if modeled is None:
+            facts = {
+                "spell_name": selected,
+                "spell_level": level,
+                "slot_level": None,
+                "slot_consumed": False,
+                "effect": {"type": "not_modeled"},
+                "target_hp_after": monster.hp if monster else None,
+                "save_result": None,
+            }
+            return TurnResult(
+                action,
+                [f"Spell resolved, effect not yet modeled: {selected}. No spell slot was spent."],
+                False,
+                spell_facts=facts,
+            ), monster
+
+        kind, dice, save_ability, save_on_success = modeled
+        if kind == "escape" and monster is None and not character.in_combat:
+            facts = {
+                "spell_name": selected,
+                "spell_level": level,
+                "slot_level": None,
+                "slot_consumed": False,
+                "effect": {"type": "no_destination"},
+                "target_hp_after": None,
+                "save_result": None,
+            }
+            return TurnResult(
+                action,
+                [f"{selected} has no modeled destination outside combat. No spell slot was spent."],
+                False,
+                spell_facts=facts,
+            ), monster
+        slot_level = None
+        if level > 0:
+            available_slots = {
+                int(slot): count for slot, count in character.spell_slots.items()
+            }
+            slot_level = next(
+                (slot for slot in sorted(available_slots) if slot >= level and available_slots[slot] > 0),
+                None,
+            )
+            if slot_level is None:
+                facts = {
+                    "spell_name": selected, "spell_level": level, "slot_level": None,
+                    "slot_consumed": False, "effect": {"type": "unavailable"},
+                    "target_hp_after": monster.hp if monster else None, "save_result": None,
+                }
+                return TurnResult(
+                    action,
+                    [f"You have no level {level} spell slots available. No slot was spent."],
+                    False,
+                    spell_facts=facts,
+                ), monster
+
+        damage_kind = kind in {"spell_attack", "multi_attack", "auto_damage", "save_damage"}
+        if damage_kind:
+            if monster and target_name and not self._enemy_matches_target(monster, target_name):
+                facts = {
+                    "spell_name": selected, "spell_level": level, "slot_level": None,
+                    "slot_consumed": False, "effect": {"type": "unavailable"},
+                    "target_hp_after": monster.hp, "save_result": None,
+                }
+                return TurnResult(
+                    action,
+                    [f"{target_name} is not the active enemy. No spell slot was spent."],
+                    False,
+                    spell_facts=facts,
+                ), monster
+            if monster is None and target_name:
+                monster = self._named_spell_target(character, target_name)
+                if monster is None:
+                    return TurnResult(
+                        action,
+                        [f"No known enemy matches {target_name}. No spell slot was spent."],
+                        False,
+                        spell_facts={
+                            "spell_name": selected, "spell_level": level, "slot_level": None,
+                            "slot_consumed": False, "effect": {"type": "unavailable"},
+                            "target_hp_after": None, "save_result": None,
+                        },
+                    ), None
+            if monster is None:
+                return TurnResult(
+                    action,
+                    [f"{selected} needs a target. Explore first or name an enemy. No spell slot was spent."],
+                    False,
+                    spell_facts={
+                        "spell_name": selected, "spell_level": level, "slot_level": None,
+                        "slot_consumed": False, "effect": {"type": "unavailable"},
+                        "target_hp_after": None, "save_result": None,
+                    },
+                ), None
+        elif target_name and target_name.casefold() not in {
+            "self", "you", "me", "myself", character.name.casefold()
+        }:
+            return TurnResult(
+                action,
+                [f"{selected} can only target you in this solo adventure. No spell slot was spent."],
+                False,
+                spell_facts={
+                    "spell_name": selected, "spell_level": level, "slot_level": None,
+                    "slot_consumed": False, "effect": {"type": "unavailable"},
+                    "target_hp_after": None, "save_result": None,
+                },
+            ), monster
+
+        if kind == "heal" and character.hp >= character.max_hp:
+            return TurnResult(
+                action,
+                ["You are already at full health. No spell slot was spent."],
+                False,
+                spell_facts={
+                    "spell_name": selected, "spell_level": level, "slot_level": None,
+                    "slot_consumed": False, "effect": {"type": "heal", "healing": 0},
+                    "target_hp_after": None, "save_result": None,
+                },
+            ), monster
+
+        if character.invisible and selected != "Invisibility":
+            character.invisible = False
+
+        if monster and damage_kind:
+            character.in_combat = True
+
+        ability_bonus = self._spell_attack_bonus(character)
+        upcast = max(0, (slot_level or level) - level)
+        effect_facts: dict = {"type": kind}
+        save_result = None
+        events: list[str] = []
+        damage = 0
+
+        if kind == "heal":
+            extra_dice = upcast
+            healing = self.roll(
+                f"{1 + extra_dice}d{dice.split('d', 1)[1]}",
+                self._spellcasting_modifier(character),
+            )
+            before = character.hp
+            character.hp = min(character.max_hp, character.hp + max(0, healing.total))
+            amount = character.hp - before
+            effect_facts.update({"dice_result": self._roll_facts(healing), "healing": amount})
+            if selected == "Healing Word":
+                effect_facts["bonus_action_not_applied"] = True
+                events.append(
+                    f"{selected} restores {amount} HP as your main action in this MVP; bonus-action timing is not modeled."
+                )
+            else:
+                events.append(f"{selected} restores {amount} HP. Your HP: {character.hp}/{character.max_hp}.")
+        elif kind == "auto_damage":
+            darts = 3 + upcast
+            rolls = [self.roll("1d4", 1) for _ in range(darts)]
+            damage = sum(roll.total for roll in rolls)
+            effect_facts.update({
+                "darts": [self._roll_facts(roll) for roll in rolls],
+                "damage": damage,
+            })
+            events.append(f"{selected} hits automatically with {darts} darts for {damage} damage.")
+        elif kind in {"spell_attack", "multi_attack"}:
+            if selected == "Scorching Ray":
+                beams = 3 + upcast
+            elif selected == "Eldritch Blast":
+                beams = self._cantrip_dice_count(character.level)
+            else:
+                beams = 1
+            damage_die = dice.split("d", 1)[1]
+            damage_count = (
+                int(dice.split("d", 1)[0]) if kind == "multi_attack" else
+                self._cantrip_dice_count(character.level) if selected == "Fire Bolt" else 1
+            )
+            attacks = []
+            total_damage = 0
+            for _ in range(beams):
+                attack_roll = self.roll("1d20", ability_bonus)
+                hit = attack_roll.values[0] == 20 or (
+                    attack_roll.values[0] != 1 and attack_roll.total >= monster.armor_class
+                )
+                attack_facts = {"roll": self._roll_facts(attack_roll), "hit": hit}
+                if hit:
+                    critical = attack_roll.values[0] == 20
+                    rolled = self.roll(
+                        f"{damage_count}d{damage_die}",
+                        critical=critical,
+                    )
+                    total_damage += rolled.total
+                    attack_facts["damage_roll"] = self._roll_facts(rolled)
+                attacks.append(attack_facts)
+            damage = total_damage
+            effect_facts.update({"attacks": attacks, "damage": damage})
+            if damage:
+                events.append(f"{selected} hits {monster.name} for {damage} damage.")
+            else:
+                events.append(f"{selected} misses {monster.name}.")
+        elif kind == "escape":
+            escaped = monster is not None or character.in_combat
+            if escaped:
+                character.in_combat = False
+                character.exploration_cooldown = 1
+                monster = None
+            effect_facts.update({"escaped_combat": escaped})
+            events.append(
+                f"{selected} lets you blink to a nearby safe space and escape combat."
+                if escaped else
+                f"{selected} lets you blink to a nearby space; this adventure has no mapped distance to track."
+            )
+        elif kind == "condition":
+            character.invisible = True
+            effect_facts.update({"condition": "invisible", "active": True})
+            events.append(
+                "You become invisible. The modeled invisibility ends when you attack or cast another spell."
+            )
+        else:
+            damage_count = int(dice.split("d", 1)[0]) + upcast
+            if level == 0:
+                damage_count += self._cantrip_dice_count(character.level) - 1
+            damage_die = dice.split("d", 1)[1]
+            rolled = self.roll(f"{damage_count}d{damage_die}")
+            save_roll = self.roll("1d20", monster.saving_throws.get(save_ability, 0))
+            saved = save_roll.total >= 8 + (2 + max(0, (character.level - 1) // 4)) + ability_bonus
+            damage = rolled.total
+            if saved:
+                damage = damage // 2 if save_on_success == "half" else 0
+            save_result = {
+                "ability": save_ability,
+                "roll": self._roll_facts(save_roll),
+                "dc": 8 + (2 + max(0, (character.level - 1) // 4)) + ability_bonus,
+                "succeeded": saved,
+            }
+            effect_facts.update({
+                "dice_result": self._roll_facts(rolled),
+                "damage": damage,
+                "debuff_not_applied": selected == "Vicious Mockery" and not saved,
+            })
+            events.append(
+                f"{monster.name} {'succeeds' if saved else 'fails'} a {save_ability.title()} save against {selected} "
+                f"(DC {save_result['dc']}); takes {damage} damage."
+            )
+            if effect_facts["debuff_not_applied"]:
+                events.append("Vicious Mockery's attack-disadvantage effect is not modeled.")
+
+        if monster and damage_kind:
+            monster.hp = max(0, monster.hp - max(0, damage))
+        slot_consumed = slot_level is not None
+        if slot_consumed:
+            character.spell_slots[slot_level] = max(0, character.spell_slots.get(slot_level, 0) - 1)
+            if character.spell_slots[slot_level] == 0:
+                del character.spell_slots[slot_level]
+            events.append(f"Spell slot level {slot_level} spent; remaining slots: {character.spell_slots}.")
+
+        level_up_facts: dict = {}
+        combat_over = bool(effect_facts.get("escaped_combat"))
+        if monster and monster.hp == 0:
+            character.in_combat = False
+            character.exploration_cooldown = 1
+            character.xp += monster.reward_xp
+            events.append(f"{monster.name} is defeated. You gain {monster.reward_xp} XP.")
+            level_events, level_up_facts = self._level_up(character)
+            events.extend(level_events)
+            combat_over = True
+            monster = None
+        elif monster:
+            events.append(f"{monster.name} has {monster.hp}/{monster.max_hp} HP.")
+            events.extend(self._enemy_turn(character, monster))
+
+        facts = {
+            "spell_name": selected,
+            "spell_level": level,
+            "slot_level": slot_level,
+            "slot_consumed": slot_consumed,
+            "effect": effect_facts,
+            "target_hp_after": (
+                character.hp if kind == "heal" else
+                monster.hp if monster else (0 if combat_over and damage_kind else None)
+            ),
+            "save_result": save_result,
+        }
+        return TurnResult(
+            action, events, True, combat_over, facts,
+            level_up_facts=level_up_facts if combat_over else {},
+        ), monster
+
+    def _regenerate_mana(self, character: CharacterState) -> None:
+        """Restore a little mana so spellcasting is not a one-way resource."""
+        if character.max_mana and character.mana < character.max_mana:
+            character.mana = min(character.max_mana, character.mana + MANA_REGEN)
+
+    def _random_encounter(self, character: CharacterState) -> MonsterState:
+        """Pick a threat suitable for the character's current tier."""
+        location = LOCATIONS.get(character.location)
+        pool = list(location.encounter_pool) if location else ["kobold", "goblin", "wolf", "bandit"]
+        if character.level >= 3:
+            if "ghoul" not in pool:
+                pool.append("ghoul")
+        if character.level >= 5:
+            if "ogre" not in pool:
+                pool.append("ogre")
+        return build_monster(character.difficulty, self.rng.choice(pool))
+
+    def _travel(self, character: CharacterState, action: str) -> TurnResult:
+        destination = travel_destination(character.location, action)
+        current = LOCATIONS.get(character.location)
+        if destination is None:
+            if current is None or not current.connections:
+                message = "You cannot find a known route from here."
+            else:
+                message = f"That route is not open. Nearby destinations: {', '.join(current.connections)}."
+            return TurnResult(action, [message], False)
+
+        if character.location not in character.visited_locations:
+            character.visited_locations.append(character.location)
+        character.location = destination
+        location = LOCATIONS[destination]
+        first_visit = destination not in character.visited_locations
+        if first_visit:
+            character.visited_locations.append(destination)
+        events = [f"You travel to {destination}."]
+        if first_visit:
+            events.append(location.arrival_beat)
+        return TurnResult(action, events, True)
+
+    def _resolve_quest_action(self, character: CharacterState, action: str) -> TurnResult | None:
+        text = re.sub(r"\s+", " ", action.casefold().strip())
+        if character.in_combat and any(word in text for word in ("caldus", "nib", "shrine bell")):
+            return TurnResult(action, ["You cannot deal with the quest while a fight is still raging."], False)
+        flags = character.quest_flags
+        if character.location == "The Shrine of the Forgotten" and "bell" in text and any(
+            word in text for word in ("return", "give", "deliver")
+        ):
+            if flags.get("bell_quest_complete"):
+                return TurnResult(action, ["Caldus has already received the shrine bell."], False)
+            if not flags.get("bell_found"):
+                return TurnResult(action, ["You do not have the shrine bell to return."], False)
+            flags["bell_found"] = False
+            flags["bell_quest_complete"] = True
+            character.inventory = [item for item in character.inventory if item.casefold() != "shrine bell"]
+            character.gold += 5
+            character.xp += 30
+            events = ["You return the shrine bell to Caldus and receive 5 gold pieces and 30 XP."]
+            level_events, level_up_facts = self._level_up(character)
+            events.extend(level_events)
+            return TurnResult(action, events, True, level_up_facts=level_up_facts), None
+
+        if character.location == "The Shrine of the Forgotten" and "caldus" in text and any(
+            word in text for word in ("talk", "speak", "ask", "help", "accept")
+        ):
+            if flags.get("bell_quest_complete"):
+                return TurnResult(action, ["Caldus thanks you again for returning the shrine bell."], False)
+            if flags.get("bell_quest_accepted"):
+                return TurnResult(action, ["Caldus reminds you that Nib at the market saw the stolen bell."], False)
+            flags["bell_quest_accepted"] = True
+            return TurnResult(
+                action,
+                ["You agree to recover the stolen shrine bell. Caldus says Nib at the Goblin Market may know where it went."],
+                True,
+            ), None
+
+        if character.location == "The Goblin Market" and "nib" in text and any(
+            word in text for word in ("talk", "speak", "ask")
+        ):
+            if flags.get("bell_quest_complete") or flags.get("bell_found"):
+                return TurnResult(action, ["Nib has nothing more to say about the shrine bell."], False)
+            if not flags.get("bell_quest_accepted"):
+                return TurnResult(action, ["Nib shrugs. You need a better reason to ask about the shrine bell."], False)
+            flags["bell_found"] = True
+            if "Shrine bell" not in character.inventory:
+                character.inventory.append("Shrine bell")
+            return TurnResult(action, ["Nib admits the theft and hands you the shrine bell."], True)
+        return None
+
+    def _explore(self, character: CharacterState, action: str) -> tuple[TurnResult, MonsterState | None]:
+        if character.exploration_cooldown:
+            character.exploration_cooldown -= 1
+            return TurnResult(
+                action,
+                ["You take a moment to catch your breath. No new threat appears."],
+                True,
+            ), None
+
+        encounter_roll = self.roll("1d6")
+        if encounter_roll.total == ENCOUNTER_TRIGGER:
+            monster = self._random_encounter(character)
+            character.in_combat = True
+            character.exploration_cooldown = 1
+            return TurnResult(
+                action,
+                [
+                    f"Exploration roll: {encounter_roll.total} on a six-sided die.",
+                    f"An enemy appears: {monster.name} ({monster.hp} HP).",
+                    "The creature has not attacked yet. Choose your next action.",
+                ],
+                True,
+            ), monster
+
+        if encounter_roll.total == 3:
+            gold = self.roll("1d4").total
+            character.gold += gold
+            discovery = f"You find {gold} gold pieces tucked beneath loose stones (a random 1 to 4)."
+        elif encounter_roll.total == 2:
+            discovery = LOCATIONS.get(character.location, LOCATIONS["The Whispering Cellar"]).track_discovery
+        elif encounter_roll.total == 4:
+            discovery = LOCATIONS.get(character.location, LOCATIONS["The Whispering Cellar"]).clue_discovery
+        else:
+            discovery = "You explore the area but find no immediate threat."
+        return TurnResult(
+            action,
+            [f"Exploration roll: {encounter_roll.total} on a six-sided die.", discovery],
+            True,
+        ), None
+
+    def apply_settings(self, character: CharacterState, difficulty: str | None = None, tone: str | None = None, humor: str | None = None, verbose: bool | None = None) -> CharacterState:
+        """Validate campaign settings. Unknown values raise so the API can answer 422."""
+        for value, allowed, label in (
+            (difficulty, DIFFICULTIES, "difficulty"),
+            (tone, TONES, "tone"),
+            (humor, HUMORS, "humor"),
+        ):
+            if value is not None and value not in allowed:
+                raise ValueError(f"Unknown {label}: {value}. Expected one of {', '.join(allowed)}.")
+        if difficulty is not None: character.difficulty = difficulty
+        if tone is not None: character.tone = tone
+        if humor is not None: character.humor = humor
+        if verbose is not None: character.verbose = bool(verbose)
+        return character
+
+    def ability_check(self, character: CharacterState, ability: str, dc: int) -> tuple[RollResult, bool]:
+        result = self.roll("1d20", self.modifier(character.abilities[ability]))
+        return result, result.values[0] == 20 or (result.values[0] != 1 and result.total >= dc)
+
+    @staticmethod
+    def _ability_for_action(text: str) -> str:
+        for ability, cues in ACTION_ABILITIES:
+            if any(re.search(rf"\b{re.escape(cue)}", text) for cue in cues):
+                return ability
+        return "dexterity"
+
+    def attack(self, character: CharacterState, monster: MonsterState) -> list[str]:
+        primary = CLASSES[character.character_class].primary; attack = self.roll("1d20", self.modifier(character.abilities[primary]))
+        if attack.values[0] == 1: return [f"Attack roll {attack.total}: critical miss."]
+        if attack.values[0] != 20 and attack.total < monster.armor_class: return [f"Attack roll {attack.total} against AC {monster.armor_class}: miss."]
+        damage = self.roll("1d8", self.modifier(character.abilities[primary]), attack.values[0] == 20)
+        monster.hp = max(0, monster.hp - max(1, damage.total))
+        return [f"Attack roll {attack.total}: hit.", f"Damage {damage.total}; {monster.name} has {monster.hp}/{monster.max_hp} HP."]
+
+    def resolve_action(self, character: CharacterState, action: str, monster: MonsterState | None) -> tuple[TurnResult, MonsterState | None]:
+        if character.hp <= 0:
+            return TurnResult(action, [f"{character.name} has fallen and can no longer act."], False), monster
+        text = action.lower().strip()
+        if not text: return TurnResult(action, ["Say what your character attempts."], False), monster
+        if any(word in text for word in SHOP_VERBS):
+            return self._shop(character, action), monster
+        if any(word in text for word in ITEM_VERBS):
+            return self._use_item(character, action, monster)
+        if any(word in text for word in DEFEND_VERBS):
+            if monster is None or not character.in_combat:
+                return TurnResult(action, ["You take a guarded stance, but there is no active enemy."], False), monster
+            character.dodging = True
+            events = ["You dodge and gain disadvantage protection against the next enemy attack."]
+            events.extend(self._enemy_turn(character, monster, disadvantage=True))
+            character.dodging = False
+            return TurnResult(action, events, True), monster if character.in_combat else None
+        if any(phrase in text for phrase in SHORT_REST_VERBS):
+            if monster is not None or character.in_combat:
+                return TurnResult(action, ["You cannot take a short rest while a fight is raging."], False), monster
+            healing = self.roll("1d6", self.modifier(character.abilities.get("constitution", 10)))
+            restored = min(character.max_hp - character.hp, max(0, healing.total))
+            character.hp += restored
+            return TurnResult(
+                action,
+                [f"You take a short rest and recover {restored} HP. Your HP: {character.hp}/{character.max_hp}."],
+                restored > 0,
+                costs_adventure_mana=False,
+                rest_facts={"kind": "short", "hp_restored": restored},
+            ), monster
+        quest_result = self._resolve_quest_action(character, action)
+        if quest_result is not None:
+            return quest_result, monster
+        if any(word in text for word in CAST_VERBS):
+            original_spell_state = (
+                character.spell_slots,
+                character.max_spell_slots,
+                character.known_spells,
+                character.prepared_spells,
+                character.spellcasting_ability,
+            )
+            ensure_spellcasting(character)
+            result, monster = self._cast_spell(character, action, monster)
+            if not result.state_changed:
+                (
+                    character.spell_slots,
+                    character.max_spell_slots,
+                    character.known_spells,
+                    character.prepared_spells,
+                    character.spellcasting_ability,
+                ) = original_spell_state
+            return result, monster
+        if any(word in text for word in ATTACK_VERBS):
+            # Difficulty and target are the engine's decision, never the model's.
+            character.invisible = False
+            monster = monster or build_monster(character.difficulty, text)
+            character.in_combat = True; events = self.attack(character, monster)
+            if monster.hp == 0:
+                character.in_combat = False; reward = monster.reward_xp; character.xp += reward
+                character.exploration_cooldown = 1
+                events.append(f"{monster.name} is defeated. You gain {reward} XP.")
+                level_events, level_up_facts = self._level_up(character)
+                events.extend(level_events)
+                return TurnResult(action, events, True, True, level_up_facts=level_up_facts), None
+            events.extend(self._enemy_turn(character, monster))
+            self._regenerate_mana(character)
+            return TurnResult(action, events, True), monster
+        if any(word in text for word in FLEE_VERBS):
+            # Without an escape hatch a mismatched fight becomes an unwinnable
+            # stalemate that only burns the paid currency.
+            check, success = self.ability_check(character, "dexterity", FLEE_DC)
+            if not success:
+                return TurnResult(action, [f"Dexterity check: {check.total} vs DC {FLEE_DC} — you fail to break away."], True), monster
+            character.in_combat = False
+            character.exploration_cooldown = 1
+            return TurnResult(action, [f"Dexterity check: {check.total} vs DC {FLEE_DC} — you break away and escape the fight."], True, True), None
+        if any(phrase in text for phrase in EXPLORE_PHRASES):
+            if monster is not None or character.in_combat:
+                return TurnResult(action, ["You cannot explore safely while a fight is still raging."], False), monster
+            if is_travel_action(action):
+                return self._travel(character, action), monster
+            return self._explore(character, action)
+        if any(word in text for word in REST_VERBS):
+            if monster is not None or character.in_combat:
+                return TurnResult(action, ["You cannot rest while a fight is still raging."], False), monster
+            character.spell_slots = {
+                int(level): int(count) for level, count in character.spell_slots.items()
+            }
+            character.max_spell_slots = {
+                int(level): int(count) for level, count in character.max_spell_slots.items()
+            }
+            hp_restored = character.max_hp - character.hp
+            slots_restored = {
+                int(level): max(0, count - character.spell_slots.get(int(level), 0))
+                for level, count in character.max_spell_slots.items()
+                if count > character.spell_slots.get(int(level), 0)
+            }
+            if not hp_restored and not slots_restored:
+                return TurnResult(
+                    action,
+                    ["You are already at full health and all spell slots are restored."],
+                    False,
+                    costs_adventure_mana=False,
+                ), monster
+            character.hp = character.max_hp
+            character.spell_slots = {
+                int(level): count for level, count in character.max_spell_slots.items() if count > 0
+            }
+            slot_total = sum(slots_restored.values())
+            events = [
+                f"You take a long rest and recover {hp_restored} HP; all spell slots are restored."
+                if slot_total else
+                f"You take a long rest and recover {hp_restored} HP."
+            ]
+            return TurnResult(
+                action,
+                events,
+                True,
+                rest_facts={
+                    "hp_restored": hp_restored,
+                    "slots_restored": slots_restored,
+                    "slots_restored_total": slot_total,
+                },
+                costs_adventure_mana=False,
+            ), monster
+        ability = self._ability_for_action(text)
+        check, success = self.ability_check(character, ability, 12)
+        self._regenerate_mana(character)
+        return TurnResult(action, [f"{ability.title()} check: {check.total} vs DC 12 — {'success' if success else 'failure'}."], True), monster
