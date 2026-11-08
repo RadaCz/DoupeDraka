@@ -10,6 +10,8 @@ from .ai.base import NarrationContext, NarrationRequest
 from .ai.offline import OfflineProvider, narrate_offline as render_offline
 from .ai.ollama import PROVIDER_ERRORS
 from .ai.registry import provider_for
+from .engine.models import SAFE_RESPAWN_LOCATION
+from .narration_language import LANGUAGE_NAMES, language_output_instruction, normalize_narration_language
 from .settings import get_settings
 import asyncio
 
@@ -34,8 +36,7 @@ LENGTH_DIRECTIVES = {
 }
 
 # The GDD keeps mechanics in English and localizes narrative flavor. The engine
-# emits English facts, so the narrator translates them into the player's language.
-LANGUAGE_NAMES = {"en": "English", "ru": "Russian", "cs": "Czech"}
+# emits English facts; the narrator describes them in the player's chosen language.
 
 # Spells out the hard boundary so a chatty model cannot narrate a win it did not earn.
 FACT_RULE = ("Narrate ONLY the supplied facts. Never invent or alter dice, hit points, damage, "
@@ -48,14 +49,28 @@ class Narrator:
 
     @staticmethod
     def system_prompt(context: NarrationContext) -> str:
-        language = LANGUAGE_NAMES.get(context.language, LANGUAGE_NAMES["en"])
-        return " ".join((
-            f"You are a D&D narrator writing in {language}.",
+        language_code = normalize_narration_language(context.language)
+        parts = [
+            language_output_instruction(language_code),
             FACT_RULE,
             TONE_DIRECTIVES.get(context.tone, TONE_DIRECTIVES["balanced"]),
             HUMOR_DIRECTIVES.get(context.humor, HUMOR_DIRECTIVES["rare"]),
             LENGTH_DIRECTIVES[bool(context.verbose)],
-        ))
+        ]
+        defeat = Narrator._defeat_scene_instruction(context)
+        if defeat:
+            parts.append(defeat)
+        return " ".join(parts)
+
+    @staticmethod
+    def _defeat_scene_instruction(context: NarrationContext) -> str:
+        if not context.defeat_facts:
+            return ""
+        location = context.defeat_facts.get("respawn_location", SAFE_RESPAWN_LOCATION)
+        return (
+            f"The player just experienced a defeat and woke at {location} with 1 HP. "
+            "Describe this transition dramatically. Do not describe the fight continuing."
+        )
 
     @staticmethod
     def _structured_facts(context: NarrationContext) -> str:
@@ -63,6 +78,7 @@ class Narrator:
             "spell": context.spell_facts,
             "rest": context.rest_facts,
             "level_up": context.level_up_facts,
+            "defeat": context.defeat_facts,
         }
         return json.dumps(
             {key: value for key, value in facts.items() if value},
@@ -113,12 +129,18 @@ class Narrator:
     def _request(self, context: NarrationContext) -> NarrationRequest:
         facts = "\n".join(f"- {event}" for event in context.events)
         memories = "\n".join(f"- {memory}" for memory in context.memories[-5:]) or "(none)"
+        language_code = normalize_narration_language(context.language)
+        language_name = LANGUAGE_NAMES[language_code]
+        defeat_line = self._defeat_scene_instruction(context)
         prompt = (
             f"Location: {context.location}\nPlayer action: {context.action}\n"
+            f"Narration language: {language_name} ({language_code}); prose only — mechanics stay English.\n"
             f"Engine result:\n{facts}\n"
             f"Structured engine facts: {self._structured_facts(context)}\n"
             f"Previous beats:\n{memories}"
         )
+        if defeat_line:
+            prompt += f"\nScene directive: {defeat_line}"
         return NarrationRequest(
             context=context,
             system_prompt=self.system_prompt(context),

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { TurnPhase } from '../pendingTurn';
 import type { Character, JournalEvent, LocationReference, Spell } from '../types';
 import { useI18n } from '../i18n';
@@ -92,7 +92,22 @@ export function PlayJournal({
   onCancelTurn,
 }: Pick<PlayScreenProps, 'character' | 'events' | 'busy' | 'turnPhase' | 'narrationStatus' | 'onResumePending' | 'onCancelTurn'>) {
   const { t } = useI18n();
+  const journalRef = useRef<HTMLDivElement>(null);
   const [thinkingSeconds, setThinkingSeconds] = useState(0);
+  const scrollJournalToLatest = useCallback((behavior: ScrollBehavior = 'smooth') => {
+    const node = journalRef.current;
+    if (!node) return;
+    const top = node.scrollHeight;
+    if (typeof node.scrollTo === 'function') {
+      try {
+        node.scrollTo({ top, behavior });
+        return;
+      } catch {
+        // JSDOM and some embedded WebViews only support scrollTop.
+      }
+    }
+    node.scrollTop = top;
+  }, []);
   useEffect(() => {
     if (!busy) { setThinkingSeconds(0); return; }
     setThinkingSeconds(0);
@@ -100,8 +115,14 @@ export function PlayJournal({
     const timer = window.setInterval(() => setThinkingSeconds(Math.floor((Date.now() - started) / 1000)), 1000);
     return () => window.clearInterval(timer);
   }, [busy]);
+  useEffect(() => {
+    scrollJournalToLatest(events.length > 1 ? 'smooth' : 'auto');
+  }, [events, scrollJournalToLatest]);
+  useEffect(() => {
+    if (!busy) scrollJournalToLatest('smooth');
+  }, [busy, scrollJournalToLatest]);
   return (
-    <div className="journal-scene" role="log" aria-label={t('Adventure journal')} aria-live="polite">
+    <div className="journal-scene" ref={journalRef} role="log" aria-label={t('Adventure journal')} aria-live="polite">
       {events.length === 0 && (
         <div className="scene-empty">
           <span aria-hidden="true">✦</span>

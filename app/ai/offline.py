@@ -1,5 +1,6 @@
 from collections.abc import AsyncIterator
 
+from ..narration_language import normalize_narration_language
 from .base import NarrationContext, NarrationRequest
 
 
@@ -13,7 +14,17 @@ class OfflineProvider:
 
 def narrate_offline(context: NarrationContext) -> str:
     """Turn resolved engine facts into varied prose without changing them."""
-    if context.language == "cs":
+    if context.defeat_facts or any(event.startswith("Defeated in combat.") for event in context.events):
+        location = (context.defeat_facts or {}).get("respawn_location", "The Whispering Cellar")
+        if normalize_narration_language(context.language) == "cs":
+            return (
+                f"Tma tě pohltí. Probudíš se v {location} s jedním životem — boj skončil dřív, než přišel konec."
+            )
+        return (
+            f"Darkness swallows you. You wake in {location} with a single breath left — "
+            "the fight ended before you could fall for good."
+        )
+    if normalize_narration_language(context.language) == "cs":
         from .offline_cs import narrate_offline_cs
         return narrate_offline_cs(context)
     facts = " ".join(context.events).lower()

@@ -13,11 +13,14 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   forbidOnly: Boolean(process.env.CI),
+  timeout: 120_000,
   retries: process.env.CI ? 1 : 0,
   reporter: 'line',
   outputDir: '../.playwright-results',
   use: {
-    ...devices['Desktop Chrome'],
+    // iPhone 13 metrics + UA; Chromium matches Telegram Android WebView and runs headless in CI.
+    ...devices['iPhone 13'],
+    browserName: 'chromium',
     baseURL: 'http://127.0.0.1:5174',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',

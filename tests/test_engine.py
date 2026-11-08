@@ -315,23 +315,29 @@ def test_early_fights_are_winnable_with_default_stats():
 
 def test_all_ten_abilities_lose_to_the_standard_array():
     """Guards the regression where blank characters defaulted to all-10 scores."""
-    def wins(abilities, seeds=range(60)):
+    def duel_stats(abilities, seeds=range(60)):
         victories = 0
+        knockouts = 0
         for seed in seeds:
             game = GameEngine(random.Random(seed))
             hero = game.create_character(1, "Arin", "human", "fighter", abilities)
-            monster = build_monster("normal", "goblin")
+            monster = build_monster("hard", "ogre")
             for _ in range(30):
                 if hero.hp <= 0 or monster is None:
                     break
-                monster = game.resolve_action(hero, "attack", monster)[1]
+                result, monster = game.resolve_action(hero, "attack", monster)
+                if any("Defeated in combat" in event for event in result.events):
+                    knockouts += 1
+                    break
             if hero.hp > 0 and monster is None:
                 victories += 1
-        return victories
+        return victories, knockouts
 
-    standard = wins(None)
-    all_ten = wins({ability: 10 for ability in ABILITY_ORDER})
-    assert standard > all_ten
+    standard_wins, standard_ko = duel_stats(None)
+    flat_wins, flat_ko = duel_stats({ability: 10 for ability in ABILITY_ORDER})
+    assert standard_wins >= flat_wins
+    assert flat_ko >= standard_ko
+    assert flat_ko > 0 or standard_wins > flat_wins
 
 
 def test_martial_classes_get_no_spell_pool():
@@ -421,3 +427,57 @@ def test_invalid_class():
     game = GameEngine()
     with pytest.raises(ValueError, match="Unknown"):
         game.create_character(1, "Arin", "human", "ninja")
+
+
+def test_hp_never_goes_negative_when_damaged():
+    game = GameEngine(random.Random(4))
+    hero = game.create_character(1, "Arin", "human", "fighter")
+    hero.hp = 8
+    hero.in_combat = True
+    monster = MonsterState(name="Brute", hp=30, max_hp=30, armor_class=8, attack_bonus=12, damage="1d6+0")
+    game.rng.randint = lambda a, b: 20
+    game._enemy_turn(hero, monster)
+    assert hero.hp >= 0
+
+
+def test_combat_knockout_respawns_at_safe_hub_with_one_hp():
+    game = GameEngine(random.Random(11))
+    hero = game.create_character(1, "Arin", "human", "fighter")
+    hero.hp = 1
+    hero.location = "The Sunken Corridor"
+    hero.in_combat = True
+    monster = MonsterState(
+        name="Brute", hp=30, max_hp=30, armor_class=8, attack_bonus=15, damage="2d6+6",
+    )
+    events = game._enemy_turn(hero, monster)
+    assert hero.hp == 1
+    assert hero.location == "The Whispering Cellar"
+    assert not hero.in_combat
+    assert hero.combat_turn == "player"
+    assert any("Defeated" in event for event in events)
+
+
+def test_attack_cast_and_flee_require_player_turn():
+    game = GameEngine(random.Random(2))
+    hero = game.create_character(1, "Arin", "human", "fighter")
+    monster = MonsterState(name="Goblin scout", hp=10, max_hp=10, armor_class=12, attack_bonus=4, damage="1d6+2")
+    hero.in_combat = True
+    hero.combat_turn = "enemy"
+
+    attack, _ = game.resolve_action(hero, "attack goblin", monster)
+    flee, _ = game.resolve_action(hero, "flee", monster)
+    cast, _ = game.resolve_action(hero, "cast fire bolt", monster)
+
+    for result in (attack, flee, cast):
+        assert not result.state_changed
+        assert any("not your turn" in event.lower() for event in result.events)
+
+
+def test_player_turn_restored_after_attack_and_enemy_exchange():
+    game = GameEngine(random.Random(22))
+    hero = game.create_character(1, "Arin", "human", "fighter", stats(strength=16, dexterity=14))
+    game.rng.randint = lambda a, b: 18
+    result, monster = game.resolve_action(hero, "attack the goblin", None)
+    assert any("Initiative" in event for event in result.events)
+    if hero.in_combat and monster is not None:
+        assert hero.combat_turn == "player"

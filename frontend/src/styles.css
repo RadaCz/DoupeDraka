@@ -1617,7 +1617,7 @@ summary:focus-visible {
 
 .game-screen.text-first .game-play-story .journal-scene {
   flex: 1 1 auto;
-  min-height: min(70vh, 70%);
+  min-height: min(70dvh, 70%);
 }
 
 .game-screen.text-first .action-composer-wrap {
@@ -3846,4 +3846,61 @@ summary:focus-visible {
   border-radius: 14px;
   padding: 12px;
   border: 1px solid #2f3d32;
+}
+
+.turn-moment-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 24px 18px calc(24px + var(--tg-safe-bottom, env(safe-area-inset-bottom, 0px)));
+  background: rgba(8, 12, 10, 0.55);
+  backdrop-filter: blur(4px);
+}
+
+.turn-moment-overlay-dim {
+  background: rgba(4, 6, 5, 0.72);
+}
+
+.turn-moment-card {
+  width: min(100%, 360px);
+  padding: 22px 20px;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+  display: grid;
+  gap: 10px;
+  text-align: center;
+}
+
+.level-up-card .eyebrow {
+  color: var(--gold);
+  letter-spacing: 0.12em;
+  font-size: 0.72rem;
+  margin: 0;
+}
+
+.defeat-moment-card .eyebrow {
+  color: #c97a7a;
+  letter-spacing: 0.12em;
+  font-size: 0.72rem;
+  margin: 0;
+}
+
+.turn-moment-card h2 {
+  margin: 0;
+  font-size: 1.45rem;
+}
+
+.turn-moment-body {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.turn-moment-card .primary {
+  margin-top: 6px;
+  width: 100%;
 }

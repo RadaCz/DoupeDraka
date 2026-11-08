@@ -25,6 +25,8 @@ import type {
 import { CHARACTER_HUB_SCREENS, MORE_HUB_SCREENS } from './types';
 import { isFallenError } from './game/gameActions';
 import { formatTurnDelta } from './game/turnDelta';
+import { DefeatOverlay, LevelUpModal, type LevelUpNotice } from './components/TurnMoments';
+import { isCombatDefeatRespawn, noticeFromLevelUp } from './game/turnMoments';
 import { FallenScreen } from './screens/FallenScreen';
 import { applyTelegramTheme, applyTelegramViewport, haptic, syncTelegramBackButton, syncTelegramMainButton } from './telegramWebApp';
 import { LocaleProvider, useI18n } from './i18n';
@@ -80,6 +82,7 @@ interface ActionResponse {
   energy: number;
   energy_tenths: number;
   tier: string;
+  level_up_facts?: { new_level?: number; hp_gained?: number } | null;
 }
 
 interface StreamActionEvent {
@@ -198,6 +201,8 @@ function AppContent() {
   const [calculation, setCalculation] = useState<Record<string, unknown> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [turnDelta, setTurnDelta] = useState<string | null>(null);
+  const [levelUpNotice, setLevelUpNotice] = useState<LevelUpNotice | null>(null);
+  const [showDefeatOverlay, setShowDefeatOverlay] = useState(false);
 
   const refreshEvents = useCallback(async (characterId: string) => {
     const history = await request<JournalEvent[]>(`/characters/${characterId}/events`);
@@ -390,7 +395,11 @@ function AppContent() {
     let streamCompleted = false;
     let streamedNarration = '';
     let resolvedFacts: string[] = [];
+    let pendingLevelUp: LevelUpNotice | null = null;
+    let pendingDefeatOverlay = false;
     setTurnPhase('sending');
+    setLevelUpNotice(null);
+    setShowDefeatOverlay(false);
     const updatePendingNarration = (narration: string, facts: string[]) => {
       setEvents(previous => previous.map(event => event.id === pendingEventId
         ? { ...event, result: [narration, facts.join('\n')].filter(Boolean).join('\n\n') }
@@ -410,6 +419,11 @@ function AppContent() {
           resolvedFacts = result.events;
           const delta = formatTurnDelta(snapshot, result.character);
           if (delta) setTurnDelta(delta);
+          if (isCombatDefeatRespawn(result.events)) {
+            pendingDefeatOverlay = true;
+          }
+          const levelNotice = noticeFromLevelUp(snapshot, result.character, result.level_up_facts);
+          if (levelNotice) pendingLevelUp = levelNotice;
           updateCharacter(result.character);
           const narrationBlob = `${result.events.join('\n')} ${streamedNarration}`;
           if (/critical hit|misses|miss\b/i.test(narrationBlob)) {
@@ -434,6 +448,8 @@ function AppContent() {
           if (typeof event.data.narration === 'string') streamedNarration = event.data.narration;
           updatePendingNarration(streamedNarration, resolvedFacts);
           setNarrationStatus(event.data.narration_status === 'narrated' ? 'narrated' : 'fallback');
+          if (pendingDefeatOverlay) setShowDefeatOverlay(true);
+          if (pendingLevelUp) setLevelUpNotice(pendingLevelUp);
           haptic('success');
           clearPendingAction();
           setTurnPhase('idle');
@@ -671,6 +687,13 @@ function AppContent() {
 
       {character && screen !== 'create' && (
         <BottomNav screen={screen} onNavigate={navigate} />
+      )}
+
+      {levelUpNotice && (
+        <LevelUpModal notice={levelUpNotice} onDismiss={() => setLevelUpNotice(null)} />
+      )}
+      {showDefeatOverlay && (
+        <DefeatOverlay onDismiss={() => setShowDefeatOverlay(false)} />
       )}
     </div>
   );

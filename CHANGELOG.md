@@ -2,8 +2,16 @@
 
 ## Unreleased (2026-11-08)
 
+### Engine: defeat recovery & initiative
+- Combat knockout resets to `The Whispering Cellar` at 1 HP (no negative HP); `attack`/`cast`/`flee`/`defend`/potion require `combat_turn == player`; initiative uses DEX for both sides.
+
+### Language-aware narration
+- `character.narration_language` (`en`/`cs`) flows into `NarrationContext`; system/user prompts require prose in the target language while mechanic lines stay English; Czech offline templates expanded.
+
 ### Text-first play screen
 - Adventure/combat play view: journal uses ~70% height; slim HP/Mana chrome; scrollable action chips; inline composer icons (no 2×2 grid).
+- Playwright runs on iPhone 13 viewport (Chromium); `mobile-text-first.spec.ts` covers keyboard overlap and journal auto-scroll; narrative min-height uses `70dvh`.
+- E2E API lifts auth/action rate limits; journal auto-scrolls on new beats (JSDOM-safe).
 
 ### UX & E2E follow-up
 - Bottom nav 4 tabs; slim composer; quest fog; Czech diacritics layer; offline narrator `cs` branch.

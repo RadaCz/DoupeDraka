@@ -20,7 +20,16 @@ from .intent import (
     parse_action_intent,
 )
 from .locations import LOCATIONS, is_travel_action, travel_allowed, travel_destination, visible_connections
-from .models import DIFFICULTIES, HUMORS, TONES, CharacterState, MonsterState, RollResult, TurnResult
+from .models import (
+    DIFFICULTIES,
+    HUMORS,
+    SAFE_RESPAWN_LOCATION,
+    TONES,
+    CharacterState,
+    MonsterState,
+    RollResult,
+    TurnResult,
+)
 from .spells import (
     CLASS_SPELL_LISTS,
     MODELED_SPELL_EFFECTS,
@@ -180,24 +189,66 @@ class GameEngine:
             "total": result.total,
         }
 
+    @staticmethod
+    def _recover_from_combat_defeat(character: CharacterState) -> list[str]:
+        """MVP defeat: combat ends, hero wakes at the safe hub with 1 HP."""
+        character.hp = 1
+        character.location = SAFE_RESPAWN_LOCATION
+        character.in_combat = False
+        character.combat_turn = "player"
+        character.combat_round = 0
+        character.dodging = False
+        character.invisible = False
+        character.death_state = "alive"
+        return [
+            "Defeated in combat. You black out and wake at "
+            f"{SAFE_RESPAWN_LOCATION} with 1 HP ({character.hp}/{character.max_hp}).",
+        ]
+
+    def _require_player_combat_turn(self, character: CharacterState, action: str) -> TurnResult | None:
+        if character.in_combat and character.combat_turn != "player":
+            return TurnResult(
+                action,
+                ["It is not your turn yet — wait until initiative returns to you."],
+                False,
+                costs_adventure_mana=False,
+            )
+        return None
+
+    @staticmethod
+    def _finish_player_combat_round(character: CharacterState) -> None:
+        if character.in_combat:
+            character.combat_turn = "player"
+            character.combat_round += 1
+
     def _enemy_turn(self, character: CharacterState, monster: MonsterState, disadvantage: bool = False) -> list[str]:
         if character.hp <= 0:
             return []
         enemy = self.roll("2d20", monster.attack_bonus) if disadvantage else self.roll("1d20", monster.attack_bonus)
         attack_total = min(enemy.values[:2]) + enemy.modifier if disadvantage else enemy.total
-        if enemy.values[0] != 1 and (enemy.values[0] == 20 or enemy.total >= character.armor_class):
+        if enemy.values[0] != 1 and (enemy.values[0] == 20 or attack_total >= character.armor_class):
             if disadvantage and attack_total < character.armor_class:
-                return [f"{monster.name}'s disadvantaged attack misses. You keep your guard."]
+                events = [f"{monster.name}'s disadvantaged attack misses. You keep your guard."]
+                self._finish_player_combat_round(character)
+                return events
             dice, _, bonus = monster.damage.partition("+")
             damage = self.roll(dice, int(bonus) if bonus else 0)
             character.hp = max(0, character.hp - damage.total)
+            events = [f"{monster.name} hits you for {damage.total}. Your HP: {character.hp}/{character.max_hp}."]
             if character.hp == 0:
-                character.death_state = "fallen"
-                character.in_combat = False
-            return [f"{monster.name} hits you for {damage.total}. Your HP: {character.hp}/{character.max_hp}."]
-        return [f"{monster.name}'s attack misses."]
+                events.extend(self._recover_from_combat_defeat(character))
+                return events
+            self._finish_player_combat_round(character)
+            return events
+        events = [f"{monster.name}'s attack misses."]
+        self._finish_player_combat_round(character)
+        return events
 
     def _use_item(self, character: CharacterState, action: str, monster: MonsterState | None) -> tuple[TurnResult, MonsterState | None]:
+        if monster is not None and character.in_combat:
+            blocked = self._require_player_combat_turn(character, action)
+            if blocked:
+                return blocked, monster
         potion = next((item for item in character.inventory if "potion" in item.casefold()), None)
         if potion is None:
             return TurnResult(action, ["You have no usable potion."], False), monster
@@ -210,7 +261,7 @@ class GameEngine:
         events = [f"You drink a healing potion and recover {amount} HP. Your HP: {character.hp}/{character.max_hp}."]
         if monster and character.in_combat:
             events.extend(self._enemy_turn(character, monster))
-        return TurnResult(action, events, True), monster if character.in_combat else None
+        return TurnResult(action, events, True), None if not character.in_combat else monster
 
     def _shop(self, character: CharacterState, action: str) -> TurnResult:
         if character.location != "The Goblin Market":
@@ -226,6 +277,10 @@ class GameEngine:
     def _cast_spell(
         self, character: CharacterState, action: str, monster: MonsterState | None
     ) -> tuple[TurnResult, MonsterState | None]:
+        if character.in_combat:
+            blocked = self._require_player_combat_turn(character, action)
+            if blocked:
+                return blocked, monster
         spell_name, target_name = self._spell_action_parts(action)
         if not spell_name:
             return TurnResult(action, ["Name a spell to cast. No spell slot was spent."], False), monster
@@ -543,6 +598,7 @@ class GameEngine:
         elif monster:
             events.append(f"{monster.name} has {monster.hp}/{monster.max_hp} HP.")
             events.extend(self._enemy_turn(character, monster))
+            monster = None if not character.in_combat else monster
 
         facts = {
             "spell_name": selected,
@@ -675,6 +731,8 @@ class GameEngine:
         if encounter_roll.total == ENCOUNTER_TRIGGER:
             monster = self._random_encounter(character)
             character.in_combat = True
+            character.combat_turn = "player"
+            character.combat_round = 0
             character.exploration_cooldown = 1
             return TurnResult(
                 action,
@@ -741,7 +799,8 @@ class GameEngine:
 
     def _roll_initiative(self, character: CharacterState, monster: MonsterState) -> list[str]:
         player = self.roll("1d20", self.modifier(character.abilities.get("dexterity", 10)))
-        enemy = self.roll("1d20", 0)
+        enemy_initiative = monster.saving_throws.get("dexterity", 0)
+        enemy = self.roll("1d20", enemy_initiative)
         character.combat_round = 1
         if enemy.total > player.total:
             character.combat_turn = "enemy"
@@ -750,7 +809,7 @@ class GameEngine:
             character.combat_turn = "player"
             order = "You act first"
         return [
-            f"Initiative: you {player.total}, {monster.name} {enemy.total}. {order}.",
+            f"Initiative: you {player.total} (DEX), {monster.name} {enemy.total} (DEX). {order}.",
         ]
 
     def attack(self, character: CharacterState, monster: MonsterState) -> list[str]:
@@ -786,12 +845,18 @@ class GameEngine:
             events.extend(self._roll_initiative(character, monster))
             if character.combat_turn == "enemy":
                 events.extend(self._enemy_turn(character, monster))
-                character.combat_turn = "player"
+                if not character.in_combat:
+                    return TurnResult(action, events, True, True), None
         elif not character.in_combat:
             character.in_combat = True
             events.extend(self._roll_initiative(character, monster))
-        if character.combat_turn != "player":
-            return TurnResult(action, ["It is not your turn yet — defend, flee, or wait."], False), monster
+            if character.combat_turn == "enemy":
+                events.extend(self._enemy_turn(character, monster))
+                if not character.in_combat:
+                    return TurnResult(action, events, True, True), None
+        blocked = self._require_player_combat_turn(character, action)
+        if blocked:
+            return blocked, monster
         events.extend(self.attack(character, monster))
         if monster.hp == 0:
             character.in_combat = False
@@ -811,7 +876,7 @@ class GameEngine:
             return TurnResult(action, events, True, True, level_up_facts=level_up_facts), None
         events.extend(self._enemy_turn(character, monster))
         self._regenerate_mana(character)
-        return TurnResult(action, events, True), monster
+        return TurnResult(action, events, True), None if not character.in_combat else monster
 
     def resolve_action(self, character: CharacterState, action: str, monster: MonsterState | None) -> tuple[TurnResult, MonsterState | None]:
         if character.hp <= 0:
@@ -851,6 +916,9 @@ class GameEngine:
         if intent.kind == DEFEND:
             if monster is None or not character.in_combat:
                 return TurnResult(action, ["You take a guarded stance, but there is no active enemy."], False), monster
+            blocked = self._require_player_combat_turn(character, action)
+            if blocked:
+                return blocked, monster
             character.dodging = True
             events = ["You dodge and gain disadvantage protection against the next enemy attack."]
             events.extend(self._enemy_turn(character, monster, disadvantage=True))
@@ -934,6 +1002,10 @@ class GameEngine:
             return self._resolve_attack_turn(character, action, monster)
 
         if intent.kind == FLEE:
+            if character.in_combat:
+                blocked = self._require_player_combat_turn(character, action)
+                if blocked:
+                    return blocked, monster
             check, success = self.ability_check(character, "dexterity", FLEE_DC)
             if not success:
                 return TurnResult(action, [f"Dexterity check: {check.total} vs DC {FLEE_DC} — you fail to break away."], True), monster

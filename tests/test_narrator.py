@@ -3,6 +3,38 @@ import asyncio
 from app.narrator import NarrationContext, Narrator
 
 
+def test_offline_narrates_combat_defeat_respawn():
+    context = NarrationContext(
+        action="attack",
+        events=(
+            "Defeated in combat. You black out and wake in The Whispering Cellar with 1 HP.",
+        ),
+        location="The Whispering Cellar",
+        memories=(),
+        defeat_facts={
+            "kind": "combat_respawn",
+            "respawn_location": "The Whispering Cellar",
+            "current_hp": 1,
+        },
+    )
+    narration = Narrator.narrate_offline(context)
+    assert "Whispering Cellar" in narration
+    assert "wake" in narration.lower() or "probud" in narration.lower()
+
+
+def test_defeat_instruction_in_system_prompt():
+    context = NarrationContext(
+        action="attack",
+        events=("Defeated in combat. You black out...",),
+        location="The Whispering Cellar",
+        memories=(),
+        defeat_facts={"respawn_location": "The Whispering Cellar", "current_hp": 1},
+    )
+    instruction = Narrator._defeat_scene_instruction(context)
+    assert "1 HP" in instruction
+    assert "Do not describe the fight continuing" in instruction
+
+
 def test_fallback_does_not_repeat_previous_narration():
     context = NarrationContext(
         action="cast",

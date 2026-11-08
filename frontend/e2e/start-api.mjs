@@ -25,6 +25,8 @@ const child = spawn(
       BOT_TOKEN: E2E_BOT_TOKEN,
       DATABASE_URL: `sqlite+aiosqlite:///${databasePath}`,
       LLM_PROVIDER: 'fallback',
+      AUTH_RATE_LIMIT: '240/minute',
+      ACTION_RATE_LIMIT: '240/minute',
     },
     stdio: 'inherit',
   },

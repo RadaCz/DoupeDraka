@@ -19,6 +19,8 @@ from .engine.models import CharacterState, MonsterState
 from .engine.locations import LOCATIONS
 from .engine.service import GameEngine
 from .heroes import HEROES, get_hero
+from .narration_events import defeat_facts_from_events
+from .narration_language import normalize_narration_language
 from .narrator import NarrationContext, Narrator
 from .schemas import ActionRequest, ActionResponse, CharacterCreate, CharacterSettings, CharacterTier, CombatCalculatorRequest, TelegramAuthRequest, Token, TopUpRequest, UserCreate, UserResponse
 from .settings import get_settings
@@ -427,9 +429,11 @@ def build_narration_context(
     return NarrationContext(
         text, events, character.location, tuple(history),
         difficulty=character.difficulty, tone=character.tone, humor=character.humor,
-        verbose=character.verbose, language=character.narration_language,
+        verbose=character.verbose, language=normalize_narration_language(character.narration_language),
         spell_facts=spell_facts,
-        rest_facts=rest_facts, level_up_facts=level_up_facts,
+        rest_facts=rest_facts,
+        level_up_facts=level_up_facts,
+        defeat_facts=defeat_facts_from_events(events),
     )
 
 

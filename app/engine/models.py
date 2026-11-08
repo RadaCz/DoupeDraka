@@ -3,6 +3,8 @@ from dataclasses import dataclass, field
 TONES = ("light", "balanced", "dark", "grimdark")
 HUMORS = ("serious", "rare", "frequent", "comedy")
 DIFFICULTIES = ("easy", "normal", "hard")
+DEATH_STATES = ("alive", "defeated", "fallen")
+SAFE_RESPAWN_LOCATION = "The Whispering Cellar"
 
 @dataclass
 class CharacterState:
@@ -25,7 +27,9 @@ class CharacterState:
     prepared_spells: list[str] = field(default_factory=list)
     spellcasting_ability: str = ""
     invisible: bool = False
-    # Explicit state for recovery/UX. Existing payloads default to alive.
+    # Explicit life cycle for UX and API. Existing payloads default to alive.
+    # defeated = knocked out in combat and moved to a safe hub (MVP auto-recover).
+    # fallen = 0 HP and cannot act until revived.
     death_state: str = "alive"
     dodging: bool = False
     memory_summary: str = ""

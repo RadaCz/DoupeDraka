@@ -17,6 +17,7 @@ class NarrationContext:
     spell_facts: dict | None = None
     rest_facts: dict | None = None
     level_up_facts: dict | None = None
+    defeat_facts: dict | None = None
 
 
 @dataclass(frozen=True)
