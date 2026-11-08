@@ -6,14 +6,17 @@ from .intent import (
     AMBIGUOUS,
     ATTACK,
     CAST,
-    CHECK,
     DEFEND,
     EXPLORE,
     FLEE,
+    QUEST,
+    REJECTED,
     REST,
+    SHOP,
     TALK,
     TRAVEL,
     UNKNOWN,
+    USE_ITEM,
     parse_action_intent,
 )
 from .locations import LOCATIONS, is_travel_action, travel_allowed, travel_destination, visible_connections
@@ -604,14 +607,12 @@ class GameEngine:
             events.append(location.arrival_beat)
         return TurnResult(action, events, True)
 
-    def _resolve_quest_action(self, character: CharacterState, action: str) -> TurnResult | None:
+    def _resolve_quest_action(self, character: CharacterState, action: str, step: str) -> TurnResult | None:
         text = re.sub(r"\s+", " ", action.casefold().strip())
-        if character.in_combat and any(word in text for word in ("caldus", "nib", "shrine bell")):
+        if character.in_combat:
             return TurnResult(action, ["You cannot deal with the quest while a fight is still raging."], False)
         flags = character.quest_flags
-        if character.location == "The Shrine of the Forgotten" and "bell" in text and any(
-            word in text for word in ("return", "give", "deliver")
-        ):
+        if step == "return_bell" and character.location == "The Shrine of the Forgotten":
             if flags.get("bell_quest_complete"):
                 return TurnResult(action, ["Caldus has already received the shrine bell."], False)
             if not (flags.get("bell_found") or flags.get("bell_acquired")):
@@ -626,9 +627,7 @@ class GameEngine:
             events.extend(level_events)
             return TurnResult(action, events, True, level_up_facts=level_up_facts)
 
-        if character.location == "The Shrine of the Forgotten" and "caldus" in text and any(
-            word in text for word in ("talk", "speak", "ask", "help", "accept")
-        ):
+        if step == "accept_caldus" and character.location == "The Shrine of the Forgotten":
             if flags.get("bell_quest_complete"):
                 if not flags.get("vault_hint_given"):
                     flags["vault_hint_given"] = True
@@ -651,9 +650,7 @@ class GameEngine:
                 True,
             )
 
-        if character.location == "The Goblin Market" and "nib" in text and any(
-            word in text for word in ("talk", "speak", "ask")
-        ):
+        if step == "ask_nib" and character.location == "The Goblin Market":
             if flags.get("bell_quest_complete") or flags.get("bell_acquired"):
                 return TurnResult(action, ["Nib has nothing more to say about the shrine bell."], False)
             if not flags.get("bell_quest_accepted"):
@@ -832,13 +829,24 @@ class GameEngine:
             ), monster
         if intent.kind == UNKNOWN:
             return TurnResult(action, ["Say what your character attempts."], False), monster
-        if any(word in text for word in SHOP_VERBS):
+        if intent.kind == REJECTED:
+            return TurnResult(
+                action,
+                ["You hold back and do nothing — the game state is unchanged."],
+                False,
+                costs_adventure_mana=False,
+            ), monster
+
+        if intent.kind == QUEST:
+            quest_result = self._resolve_quest_action(character, action, intent.quest_step)
+            if quest_result is not None:
+                return quest_result, monster
+            return TurnResult(action, ["That quest step cannot be resolved here."], False, costs_adventure_mana=False), monster
+
+        if intent.kind == SHOP:
             return self._shop(character, action), monster
-        if any(word in text for word in ITEM_VERBS):
+        if intent.kind == USE_ITEM:
             return self._use_item(character, action, monster)
-        quest_result = self._resolve_quest_action(character, action)
-        if quest_result is not None:
-            return quest_result, monster
 
         if intent.kind == DEFEND:
             if monster is None or not character.in_combat:
@@ -941,9 +949,6 @@ class GameEngine:
             return self._explore(character, action)
 
         if intent.kind == TALK:
-            quest_result = self._resolve_quest_action(character, action)
-            if quest_result is not None:
-                return quest_result, monster
             check, success = self.ability_check(character, "charisma", 12)
             self._regenerate_mana(character)
             return TurnResult(

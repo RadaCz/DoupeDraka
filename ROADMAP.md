@@ -3,7 +3,7 @@
 Updated 2026-11-08. Chapter one is a gated six-location slice on `clean-main`. ActionIntent routes player commands; Pro narration tier is disabled until OpenRouter exists.
 
 ## Priority 0 - Ship chapter one branch
-- [x] ActionIntent routing, ability-check DC rules, class weapon proficiency.
+- [x] ActionIntent routing with negation, shop/item/quest intents, ability-check DC rules, class weapon proficiency.
 - [x] Vault/pit travel gating, `bell_acquired` quest persistence, Map/Quest UI.
 - [x] CI on `clean-main`: pytest, Vitest/build, Postgres `alembic upgrade` + concurrency, Playwright E2E.
 - [ ] Confirm GitHub Actions green on latest `origin/clean-main`.

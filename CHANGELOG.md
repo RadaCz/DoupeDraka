@@ -2,6 +2,11 @@
 
 ## Unreleased (2026-11-08)
 
+### Chapter one stabilization
+- ActionIntent: `rejected`, `shop`, `use_item`, and `quest` routing; per-clause CS/EN negation; no substring shop/quest triggers.
+- PostgreSQL CI uses matching `DATABASE_URL` and `PYTEST_DATABASE_URL`, `alembic check`, and skips `create_all` when pytest uses Postgres.
+- Removed duplicate `CAMPAIGN` key in `frontend/src/i18n.tsx`.
+
 ### Chapter one etapa
 - ActionIntent exclusively routes combat, spells, travel, talk, and checks (CS/EN negation; ambiguous commands clarified).
 - Ability checks follow DC totals; weapon proficiency respects class lists in `reference.CLASS_SPECS`.

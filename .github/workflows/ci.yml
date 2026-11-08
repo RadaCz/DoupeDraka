@@ -5,6 +5,9 @@ on:
     branches: [main, master, clean-main]
   pull_request:
 
+env:
+  POSTGRES_URL: postgresql+asyncpg://doupe:doupe@localhost:5432/doupedraka
+
 jobs:
   backend:
     runs-on: ubuntu-latest
@@ -37,7 +40,8 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     env:
-      PYTEST_DATABASE_URL: postgresql+asyncpg://doupe:doupe@localhost:5432/doupedraka
+      DATABASE_URL: ${{ env.POSTGRES_URL }}
+      PYTEST_DATABASE_URL: ${{ env.POSTGRES_URL }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -49,6 +53,8 @@ jobs:
           pip install -r requirements.txt
       - name: Alembic upgrade
         run: alembic upgrade head
+      - name: Verify database matches Alembic head
+        run: alembic check
       - name: Pytest on PostgreSQL
         run: python -m pytest -q tests/test_concurrency.py
 

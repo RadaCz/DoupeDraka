@@ -73,3 +73,8 @@ Narration failure falls back without blocking or undoing a committed turn.
 
 Real payments are not enabled. Top-up routes remain admin-gated; do not configure a
 production payment flow without a separate product/security review.
+
+## Known deprecation warnings (documented, not yet refactored)
+
+- FastAPI `@app.on_event("startup")` — migrate to lifespan handlers when touching `app/api.py` startup.
+- `datetime.utcnow()` in `app/api.py` — replace with timezone-aware `datetime.now(datetime.UTC)` in a focused pass.

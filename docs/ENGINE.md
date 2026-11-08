@@ -9,13 +9,16 @@ to the narrator is already resolved.
 ## ActionIntent routing
 
 Player text is classified in `app/engine/intent.py` (`parse_action_intent`). Kinds
-include attack, cast_spell, flee, defend, rest, travel, explore, talk, ability_check,
-ambiguous, and unknown. `resolve_action` branches only on `intent.kind`.
+include quest, shop, use_item, attack, cast_spell, flee, defend, rest, travel,
+explore, talk, rejected, ambiguous, unknown, and ability_check. `resolve_action`
+branches only on `intent.kind`.
 
-- Negated attack/cast/flee in English or Czech is stripped (for example “nechci
-  zaútočit, chci mluvit” resolves to talk, not combat).
-- Conflicting verbs in one sentence return `ambiguous` with no combat or spell spend.
-- Shop, item use, and engine quest hooks still run as special cases before intent routing.
+- Negation is evaluated per clause (comma/semicolon separated) in Czech and English.
+  Purely negated commands return `rejected` and do not change state or spend Adventure Mana.
+- “Nechci zaútočit, chci mluvit” resolves to talk; “don't buy a potion” is rejected.
+- Conflicting positive verbs (for example rest + attack, travel + cast) return `ambiguous`.
+- Chapter-one quest steps (`accept_caldus`, `ask_nib`, `return_bell`) route only through
+  `intent.kind == quest` with `quest_step`; they are not substring guesses on raw text.
 
 ## Supported actions
 

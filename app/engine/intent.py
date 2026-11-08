@@ -14,6 +14,10 @@ DEFEND = "defend"
 CHECK = "ability_check"
 AMBIGUOUS = "ambiguous"
 UNKNOWN = "unknown"
+REJECTED = "rejected"
+SHOP = "shop"
+USE_ITEM = "use_item"
+QUEST = "quest"
 
 CAST_PATTERN = re.compile(r"\b(cast|kouzl)\b", re.IGNORECASE)
 ATTACK_PATTERN = re.compile(r"\b(attack|strike|hit|útok|zaútoč|zaútočit)\b", re.IGNORECASE)
@@ -28,13 +32,45 @@ TRAVEL_EXPLORE_PATTERN = re.compile(
     re.IGNORECASE,
 )
 TRAVEL_PATTERN = re.compile(
-    r"\b(?:travel|go|head|move|cestuj|jdi|vydej se)\s+(?:to|do|k)\s+",
+    r"\b(?:travel(?:ing)?|go(?:ing)?|head(?:ing)?|move|cestuj|jdi|vydej se)\s+(?:to|do|k)\s+",
     re.IGNORECASE,
 )
 TALK_PATTERN = re.compile(r"\b(talk|speak|ask|mluv|mluvit|zeptej|promluv)\b", re.IGNORECASE)
 DEFEND_PATTERN = re.compile(r"\b(dodge|defend|brace|on guard|guard up|uhni|bran)\b", re.IGNORECASE)
+SHOP_PATTERN = re.compile(r"\b(buy|purchase|kup|nakup|koupit|koup)\w*\b", re.IGNORECASE)
+USE_ITEM_PATTERN = re.compile(
+    r"\b(?:use|drink|pouzij|vypij)\w*\s+(?:a\s+)?(?:healing\s+)?(?:potion|item|lektvar)\b",
+    re.IGNORECASE,
+)
+QUEST_RETURN_PATTERN = re.compile(
+    r"\b(?:return|give|deliver|vrat\w*|vrát\w*|odevz\w*|pred\w*|před\w*)\b.{0,48}\b(?:shrine\s+bell|bell|zvon)\b",
+    re.IGNORECASE,
+)
+QUEST_CALDUS_PATTERN = re.compile(
+    r"(?:\b(?:talk|speak|ask|mluv\w*|zeptej)\b.{0,48}\bcaldus\b.{0,48}\b(?:shrine\s+bell|stolen\s+bell|zvon)\b)"
+    r"|(?:\bcaldus\b.{0,48}\b(?:shrine\s+bell|stolen\s+bell|zvon)\b)"
+    r"|(?:\baccept\b.{0,24}\bcaldus\b)",
+    re.IGNORECASE,
+)
+QUEST_NIB_PATTERN = re.compile(
+    r"\b(?:ask|talk|speak|mluv\w*|zeptej)\b.{0,48}\bnib\b.{0,48}\b(?:shrine\s+bell|bell|zvon)\b"
+    r"|\bnib\b.{0,48}\b(?:shrine\s+bell|bell|zvon)\b",
+    re.IGNORECASE,
+)
 
-_KIND_ORDER = (CAST, FLEE, DEFEND, REST, TRAVEL, EXPLORE, TALK, ATTACK)
+_KIND_ORDER = (
+    QUEST,
+    SHOP,
+    USE_ITEM,
+    CAST,
+    FLEE,
+    DEFEND,
+    REST,
+    TRAVEL,
+    EXPLORE,
+    TALK,
+    ATTACK,
+)
 
 _PATTERNS: dict[str, re.Pattern[str]] = {
     CAST: CAST_PATTERN,
@@ -45,9 +81,28 @@ _PATTERNS: dict[str, re.Pattern[str]] = {
     TRAVEL: TRAVEL_PATTERN,
     EXPLORE: EXPLORE_PATTERN,
     TALK: TALK_PATTERN,
+    SHOP: SHOP_PATTERN,
+    USE_ITEM: USE_ITEM_PATTERN,
 }
 
-_NEGATABLE = {ATTACK, CAST, FLEE}
+_NEGATION_BY_KIND: dict[str, tuple[str, ...]] = {
+    ATTACK: ("attack", "strike", "hit", "útok", "zaútoč", "zaútočit"),
+    CAST: ("cast", "kouzl"),
+    FLEE: ("flee", "retreat", "utek", "útěk"),
+    REST: ("rest", "sleep", "odpočí", "odpocin", "odpočin"),
+    DEFEND: ("dodge", "defend", "brace", "uhni", "bran"),
+    TRAVEL: ("travel", "cestuj", "jdi", "vydej"),
+    TALK: ("talk", "speak", "ask", "mluv", "mluvit", "zeptej", "promluv"),
+    SHOP: ("buy", "purchase", "kup", "nakup", "koupit", "koup"),
+    USE_ITEM: ("use", "drink", "pouzij", "vypij", "potion", "lektvar"),
+    EXPLORE: ("explore", "search", "investigate", "prozkoumej", "prohledej"),
+}
+
+_QUEST_NEGATION: dict[str, tuple[str, ...]] = {
+    "return_bell": ("return", "give", "deliver", "vratit", "vrátit", "vrat", "vrát", "odevzdat", "predat", "předat", "zvon", "bell"),
+    "accept_caldus": ("talk", "speak", "ask", "mluv", "mluvit", "zeptej", "accept", "caldus"),
+    "ask_nib": ("ask", "talk", "speak", "mluv", "zeptej", "nib"),
+}
 
 
 @dataclass(frozen=True)
@@ -58,22 +113,48 @@ class ActionIntent:
     needs_clarification: bool = False
     skill_hint: str = ""
     target_hint: str = ""
+    quest_step: str = ""
 
 
-def _attack_terms() -> tuple[str, ...]:
-    return ("attack", "strike", "hit", "útok", "zaútoč", "zaútočit")
+def _clause_negates(clause: str, escaped_term: str) -> bool:
+    if re.search(rf"\b(?:no|not|never|don't|dont)\b.{{0,32}}{escaped_term}\b", clause):
+        return True
+    if re.search(rf"\b(?:nechci|nechce|nebud|nesmi|nemam|nemůžu|nemuzu)\b.{{0,32}}{escaped_term}\b", clause):
+        return True
+    if re.search(rf"\bne\s+\w+(?:\s+\w+){{0,4}}\s+{escaped_term}\b", clause):
+        return True
+    if re.search(rf"{escaped_term}\b.{{0,16}}\b(?:ne|not)\b", clause):
+        return True
+    return False
 
 
 def _negated(folded: str, terms: tuple[str, ...]) -> bool:
+    clauses = re.split(r"[,;]", folded)
     for term in terms:
         escaped = re.escape(term)
-        if re.search(rf"\b(?:no|not|never|don't|dont)\b.{{0,32}}{escaped}\b", folded):
-            return True
-        if re.search(rf"\b(?:ne|nechci|nechce|nebud)\w*\b.{{0,24}}{escaped}\b", folded):
-            return True
-        if re.search(rf"{escaped}\b.{{0,16}}\b(?:ne|not)\b", folded):
-            return True
+        for clause in clauses:
+            if not re.search(rf"{escaped}", clause):
+                continue
+            if _clause_negates(clause, escaped):
+                return True
     return False
+
+
+def _detect_quest_step(text: str, folded: str) -> tuple[str | None, bool]:
+    """Return (quest_step, was_negated)."""
+    if QUEST_RETURN_PATTERN.search(text):
+        if _negated(folded, _QUEST_NEGATION["return_bell"]):
+            return None, True
+        return "return_bell", False
+    if QUEST_NIB_PATTERN.search(text):
+        if _negated(folded, _QUEST_NEGATION["ask_nib"]):
+            return None, True
+        return "ask_nib", False
+    if QUEST_CALDUS_PATTERN.search(text):
+        if _negated(folded, _QUEST_NEGATION["accept_caldus"]):
+            return None, True
+        return "accept_caldus", False
+    return None, False
 
 
 def _matched_kinds(text: str) -> set[str]:
@@ -86,19 +167,35 @@ def _matched_kinds(text: str) -> set[str]:
     return found
 
 
+def _apply_negation(kinds: set[str], folded: str) -> set[str]:
+    filtered = set(kinds)
+    for kind in list(filtered):
+        terms = _NEGATION_BY_KIND.get(kind)
+        if terms and _negated(folded, terms):
+            filtered.discard(kind)
+    return filtered
+
+
 def parse_action_intent(action: str) -> ActionIntent:
     text = action.strip()
     folded = re.sub(r"\s+", " ", text.casefold())
     if not text:
         return ActionIntent(UNKNOWN, text, confidence=0.0, needs_clarification=True)
 
-    kinds = _matched_kinds(text)
-    if ATTACK in kinds and _negated(folded, _attack_terms()):
-        kinds.discard(ATTACK)
-    if CAST in kinds and _negated(folded, ("cast", "kouzl")):
-        kinds.discard(CAST)
-    if FLEE in kinds and _negated(folded, ("flee", "retreat", "utek", "útěk")):
-        kinds.discard(FLEE)
+    raw_kinds = _matched_kinds(text)
+    quest_step, quest_negated = _detect_quest_step(text, folded)
+    if quest_step:
+        raw_kinds.add(QUEST)
+
+    kinds = _apply_negation(raw_kinds, folded)
+    if quest_step:
+        kinds.add(QUEST)
+
+    if quest_negated and not kinds:
+        return ActionIntent(REJECTED, text, confidence=0.9, needs_clarification=True)
+
+    if raw_kinds - kinds and not kinds:
+        return ActionIntent(REJECTED, text, confidence=0.85, needs_clarification=True)
 
     if ATTACK in kinds and TALK in kinds:
         return ActionIntent(AMBIGUOUS, text, confidence=0.45, needs_clarification=True)
@@ -110,13 +207,21 @@ def parse_action_intent(action: str) -> ActionIntent:
         {ATTACK, FLEE},
         {CAST, FLEE},
         {ATTACK, DEFEND},
+        {REST, ATTACK},
+        {TRAVEL, CAST},
+        {REST, CAST},
+        {SHOP, USE_ITEM},
     )
     if len(kinds) >= 2 and any(pair <= kinds for pair in conflict_pairs):
         return ActionIntent(AMBIGUOUS, text, confidence=0.4, needs_clarification=True)
 
     for kind in _KIND_ORDER:
         if kind in kinds:
-            confidence = 0.9 if kind in (CAST, ATTACK, TRAVEL) else 0.8
-            return ActionIntent(kind, text, confidence=confidence)
+            confidence = 0.9 if kind in (CAST, ATTACK, TRAVEL, QUEST) else 0.8
+            step = quest_step if kind == QUEST else ""
+            return ActionIntent(kind, text, confidence=confidence, quest_step=step)
+
+    if quest_negated:
+        return ActionIntent(REJECTED, text, confidence=0.85, needs_clarification=True)
 
     return ActionIntent(CHECK, text, confidence=0.5)

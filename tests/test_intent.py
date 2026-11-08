@@ -7,8 +7,10 @@ def test_intent_recognizes_attack_and_cast():
 
 
 def test_intent_flags_negated_attack():
+    from app.engine.intent import REJECTED
+
     intent = parse_action_intent("do not attack the guard")
-    assert intent.kind == CHECK
+    assert intent.kind == REJECTED
 
 
 def test_czech_talk_over_negated_attack():

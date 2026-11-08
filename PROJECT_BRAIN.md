@@ -5,7 +5,7 @@
 - **Repository:** `D:\DoupeDraka`
 - **Development branch:** `clean-main` (merge to `main` after green CI only)
 - **Last updated:** 2026-11-08
-- **Verified baseline:** backend **223 passed**; frontend **18 passed** Vitest; E2E via `npm run test:e2e`; CI includes Postgres concurrency job on push to `clean-main`.
+- **Verified baseline:** backend **238 passed**; frontend **18 passed** Vitest; E2E via `npm run test:e2e`; CI Postgres job runs `alembic upgrade head`, `alembic check`, then concurrency tests.
 - **External verification:** real Telegram visual QA and Docker/Postgres in production-like deploy remain **UNVERIFIED** by the maintainer.
 
 ## 1. Directives

@@ -187,7 +187,7 @@ cd D:\DoupeDraka
 python -m pytest -q
 ```
 
-Aktuální baseline: **223** pytest; frontend **18** Vitest. CI na větvi `clean-main` spouští
+Aktuální baseline: **238** pytest; frontend **18** Vitest. CI na větvi `clean-main` spouští
 navíc Postgres migrace a Playwright (viz [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)).
 
 ### Lokální AI přes Ollama

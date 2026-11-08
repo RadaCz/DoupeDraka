@@ -185,7 +185,6 @@ const cs: Record<string, string> = {
   'Your pack is empty': 'Tvuj batoh je prazdny',
   'ROSTER': 'DRUZINA',
   'Switch adventurer': 'Prepnout dobrodruha',
-  'CAMPAIGN': 'KAMPAN',
   'Your world awaits': 'Tvuj svet ceka',
   'Create a character to begin a campaign.': 'Pro zacatek kampane vytvor postavu.',
   'Your campaign': 'Tvoje kampan',

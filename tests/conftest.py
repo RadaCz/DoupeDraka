@@ -23,6 +23,7 @@ _TEST_DB_PATH = os.path.join(_TEST_DB_DIR, f"test-{uuid.uuid4().hex}.db")
 _LIVE_DB = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "dnd.db"))
 
 _postgres = os.environ.get("PYTEST_DATABASE_URL", "").strip()
+_USE_ALEMBIC_DB = bool(_postgres)
 if _postgres:
     os.environ["DATABASE_URL"] = _postgres
 else:
@@ -52,11 +53,12 @@ _assert_isolated()
 def isolated_database():
     _assert_isolated()
 
-    async def create() -> None:
-        async with app_db.engine.begin() as connection:
-            await connection.run_sync(_Base.metadata.create_all)
+    if not _USE_ALEMBIC_DB:
+        async def create() -> None:
+            async with app_db.engine.begin() as connection:
+                await connection.run_sync(_Base.metadata.create_all)
 
-    asyncio.run(create())
+        asyncio.run(create())
     yield _TEST_DB_PATH
 
     async def dispose() -> None:
