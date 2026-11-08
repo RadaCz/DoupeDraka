@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { TurnPhase } from '../pendingTurn';
-import type { Character, JournalEvent, LocationReference, Spell } from '../types';
+import type { Character, Economy, JournalEvent, LocationReference, Spell } from '../types';
 import { useI18n } from '../i18n';
-import { isFallenError, playActionChips, scenePrompt } from '../game/gameActions';
+import { isFallenError, playActionChips } from '../game/gameActions';
 import { JournalResultBody } from '../components/journalBlocks';
+import { SpellSlots } from '../components/characterVitals';
 import { ShareButton } from '../components/ShareButton';
 import { buildJournalShareMessage, journalExcerpt } from '../share/adventureShare';
-import { SpellSlots } from '../components/characterVitals';
 
 export interface PlayScreenProps {
   character: Character;
+  economy?: Economy | null;
   events: JournalEvent[];
   spells: Spell[];
   locations: LocationReference[];
@@ -34,47 +35,63 @@ export function TurnDeltaStrip({ message }: { message: string | null | undefined
 
 export function PlaySceneChrome({
   character,
-  events,
-  onOpenSheet,
+  economy,
   combat,
 }: {
   character: Character;
-  events: JournalEvent[];
-  onOpenSheet: () => void;
+  economy?: Economy | null;
+  events?: JournalEvent[];
+  onOpenSheet?: () => void;
   combat?: boolean;
 }) {
   const { t } = useI18n();
+  const enemy = character.combatant;
   const hpRatio = character.max_hp > 0
     ? Math.max(0, Math.min(100, (character.hp / character.max_hp) * 100))
     : 0;
-  const sceneLine = combat ? t('Combat in progress') : (character.location || t('The Whispering Cellar'));
+  const placeLine = combat
+    ? (enemy?.name ?? t('Combat in progress'))
+    : (character.location || t('The Whispering Cellar'));
+  const manaLabel = economy ? economy.balance.toFixed(1) : '—';
 
   return (
-    <header className="play-scene-chrome">
-      <div className="play-scene-chrome-titles">
-        {!combat && <p className="play-scene-eyebrow">{t('CHAPTER ONE')}</p>}
-        <h1 className="play-scene-title">{sceneLine}</h1>
-        {!combat && <p className="play-scene-hint">{scenePrompt(character, events, t)}</p>}
-      </div>
-      <div className="play-status-bar" role="group" aria-label={t('Hit points')}>
-        <div className="play-status-hp">
-          <span className="play-status-label">HP</span>
-          <div
-            className="play-status-track"
-            role="progressbar"
-            aria-valuenow={hpRatio}
-            aria-valuemin={0}
-            aria-valuemax={100}
-          >
-            <span style={{ width: `${hpRatio}%` }} className={hpRatio <= 25 ? 'critical' : ''} />
-          </div>
-          <strong className="play-status-numbers">{character.hp}<small>/{character.max_hp}</small></strong>
+    <header className="play-immersive-bar" role="banner">
+      <div className="play-immersive-bar-inner">
+        <h1 className="play-immersive-place" id="play-scene-title">
+          {combat && <span className="play-immersive-combat-glyph" aria-hidden="true">⚔</span>}
+          <span className="play-immersive-place-text">{placeLine}</span>
+        </h1>
+        <div className="play-immersive-vitals" role="group" aria-label={t('Hit points')}>
+          <span className="play-immersive-stat play-immersive-hp">
+            <span className="play-immersive-hp-track" aria-hidden="true">
+              <span style={{ width: `${hpRatio}%` }} className={hpRatio <= 25 ? 'critical' : ''} />
+            </span>
+            <span className="play-immersive-stat-label">HP</span>
+            <span className="play-immersive-num tabular-nums">
+              {character.hp}<span className="play-immersive-num-dim">/{character.max_hp}</span>
+            </span>
+          </span>
+          <span className="play-immersive-stat play-immersive-ac" title={t('ARMOR CLASS')}>
+            <span className="play-immersive-stat-glyph" aria-hidden="true">🛡️</span>
+            <span className="play-immersive-num tabular-nums">{character.armor_class}</span>
+          </span>
+          {(character.known_spells?.length ?? 0) > 0 && (
+            <span className="play-immersive-stat play-immersive-slots tabular-nums" title={t('Spell slots')}>
+              <span className="play-immersive-stat-glyph" aria-hidden="true">✨</span>
+              <SpellSlots character={character} t={t} />
+            </span>
+          )}
+          <span className="play-immersive-stat play-immersive-mana" title={t('ADVENTURE MANA')}>
+            <span className="play-immersive-stat-glyph" aria-hidden="true">⚡</span>
+            <span className="play-immersive-num tabular-nums">{manaLabel}</span>
+          </span>
+          {combat && enemy && (
+            <span className="play-immersive-stat play-immersive-enemy-hp tabular-nums" title={enemy.name}>
+              <span className="play-immersive-stat-label">vs</span>
+              <span className="play-immersive-num">{enemy.hp}/{enemy.max_hp}</span>
+            </span>
+          )}
         </div>
-        <div className="play-status-meta">
-          <span className="play-status-slots" title={t('Spell slots')}><SpellSlots character={character} t={t} /></span>
-          <span>{t('AC')} {character.armor_class}</span>
-        </div>
-        <button type="button" className="play-status-icon" aria-label={t('Inventory')} title={t('Inventory')} onClick={onOpenSheet}>🎒</button>
       </div>
     </header>
   );
@@ -237,6 +254,7 @@ export function ActionComposer(props: PlayScreenProps) {
   const actionInputRef = useRef<HTMLInputElement>(null);
   const [action, setAction] = useState('');
   const [selectedSpell, setSelectedSpell] = useState('');
+  const [actionMenuOpen, setActionMenuOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const enemy = character.in_combat ? character.combatant : null;
   const accessibleSpells = new Set([...(character.known_spells ?? []), ...(character.prepared_spells ?? [])]);
@@ -283,78 +301,37 @@ export function ActionComposer(props: PlayScreenProps) {
     if (chip.action) onAction(chip.action);
   };
 
+  const closeActionMenu = () => setActionMenuOpen(false);
+
+  const runMenuAction = (runner: () => void) => {
+    closeActionMenu();
+    runner();
+  };
+
   return (
-    <div className="action-composer-wrap action-composer-text-first">
+    <div className="action-composer-wrap action-composer-text-first action-composer-immersive">
       {chips.length > 0 && (
         <div className="suggested-actions-scroll">
           <div className="suggested-actions suggested-actions-row" aria-label={t('Suggested actions')}>
             {chips.map(chip => (
-              <button type="button" key={chip.key} disabled={busy} onClick={() => handleChip(chip)}>{chip.label}</button>
+              <button type="button" key={chip.key} disabled={busy} onClick={() => handleChip(chip)}>{t(chip.label)}</button>
             ))}
           </div>
         </div>
       )}
-      <form className="composer-input-shell" onSubmit={handleSubmit}>
-        <div className="composer-field">
-          <div className="composer-field-tools" aria-hidden={false}>
-            {character.in_combat ? (
-              <button
-                type="button"
-                className="composer-inline-icon"
-                disabled={busy}
-                aria-label={t('Attack')}
-                title={t('Attack')}
-                onClick={() => onAction(`attack ${enemy?.name ?? 'the enemy'}`)}
-              >
-                ⚔
-              </button>
-            ) : (
-              <button
-                type="button"
-                className="composer-inline-icon"
-                disabled={busy}
-                aria-label={t('Travel')}
-                title={t('Travel')}
-                onClick={() => onOpenMap?.()}
-              >
-                ⌖
-              </button>
-            )}
-            <button
-              type="button"
-              className="composer-inline-icon"
-              disabled={busy}
-              aria-label={t('Inventory')}
-              title={t('Inventory')}
-              onClick={onOpenSheet}
-            >
-              🎒
-            </button>
-            {characterSpells.length > 0 && (
-              <button
-                type="button"
-                className="composer-inline-icon"
-                disabled={busy}
-                aria-label={t('Cast spell')}
-                title={t('Cast spell')}
-                onClick={openSpellPicker}
-              >
-                ✦
-              </button>
-            )}
-            {character.in_combat && hasPotion && (
-              <button
-                type="button"
-                className="composer-inline-icon"
-                disabled={busy}
-                aria-label={t('Use potion')}
-                title={t('Use potion')}
-                onClick={() => onAction('use potion')}
-              >
-                ⚗
-              </button>
-            )}
-          </div>
+      <form className="composer-input-shell composer-input-immersive" onSubmit={handleSubmit}>
+        <div className="composer-field composer-field-immersive">
+          <button
+            type="button"
+            className="composer-menu-toggle"
+            disabled={busy}
+            aria-label={t('Play actions')}
+            aria-expanded={actionMenuOpen}
+            aria-haspopup="dialog"
+            onClick={() => setActionMenuOpen(open => !open)}
+          >
+            <span aria-hidden="true">🎲</span>
+          </button>
           <input
             ref={actionInputRef}
             value={action}
@@ -365,25 +342,69 @@ export function ActionComposer(props: PlayScreenProps) {
             id="adventure-action-input"
           />
           <button
-            type="button"
-            className="composer-inline-icon composer-help-toggle"
-            aria-label={t('How actions and exploration work')}
-            aria-expanded={helpOpen}
-            onClick={() => setHelpOpen(open => !open)}
-          >
-            ?
-          </button>
-          <button
             type="submit"
-            className="composer-send"
+            className="composer-send composer-send-immersive"
             disabled={busy || !action.trim() || Boolean(spellWarning)}
             aria-label={t('Send action')}
             aria-busy={busy}
           >
-            {busy ? <span className="composer-send-spinner" aria-hidden="true" /> : '→'}
+            {busy ? <span className="composer-send-spinner" aria-hidden="true" /> : <span aria-hidden="true">→</span>}
           </button>
         </div>
       </form>
+      {actionMenuOpen && (
+        <>
+          <button type="button" className="composer-sheet-backdrop" aria-label={t('Close')} onClick={closeActionMenu} />
+          <div className="composer-action-sheet" role="dialog" aria-modal="true" aria-label={t('Play actions')}>
+            <p className="composer-action-sheet-title">{t('Play actions')}</p>
+            <ul className="composer-action-sheet-list">
+              {character.in_combat ? (
+                <li>
+                  <button type="button" disabled={busy} onClick={() => runMenuAction(() => onAction(`attack ${enemy?.name ?? 'the enemy'}`))}>
+                    ⚔ {t('Attack')}
+                  </button>
+                </li>
+              ) : (
+                <li>
+                  <button type="button" disabled={busy} onClick={() => runMenuAction(() => onOpenMap?.())}>
+                    ⌖ {t('Travel')}
+                  </button>
+                </li>
+              )}
+              <li>
+                <button type="button" disabled={busy} onClick={() => runMenuAction(onOpenSheet)}>🎒 {t('Inventory')}</button>
+              </li>
+              {characterSpells.length > 0 && (
+                <li>
+                  <button type="button" disabled={busy} onClick={() => runMenuAction(openSpellPicker)}>✦ {t('Cast spell')}</button>
+                </li>
+              )}
+              {character.in_combat && hasPotion && (
+                <li>
+                  <button type="button" disabled={busy} onClick={() => runMenuAction(() => onAction('use potion'))}>⚗ {t('Use potion')}</button>
+                </li>
+              )}
+              {!character.in_combat && character.hp < character.max_hp && (
+                <li>
+                  <button type="button" disabled={busy} onClick={() => runMenuAction(() => onAction('rest'))}>◎ {t('Rest')}</button>
+                </li>
+              )}
+              <li>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => {
+                    closeActionMenu();
+                    setHelpOpen(true);
+                  }}
+                >
+                  ? {t('How actions and exploration work')}
+                </button>
+              </li>
+            </ul>
+          </div>
+        </>
+      )}
       {characterSpells.length > 0 && (
         <div className="spell-picker spell-picker-compact">
           <select

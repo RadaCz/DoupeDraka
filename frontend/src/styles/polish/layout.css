@@ -1,19 +1,34 @@
 /* Phase 2 — Hub, bottom nav, More */
 
-.home-screen .continue-button {
-  width: 100%;
-  min-height: 48px;
-  margin-top: 4px;
-  font-size: 1.05rem;
+.home-screen .active-hero-card .continue-button {
+  width: auto;
+  max-width: 100%;
+  align-self: flex-start;
+  min-height: 44px;
+  margin-top: 8px;
+  padding: 10px 22px;
+  font-size: 0.94rem;
   font-weight: 700;
   background: var(--accent-verb);
   border-color: var(--accent-verb);
   color: var(--accent-ink, #0d120e);
+  border-radius: 999px;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--accent-verb) 35%, transparent),
+    0 6px 22px color-mix(in srgb, var(--accent-verb) 38%, transparent);
 }
 
-.home-screen .continue-button:not(:disabled):hover {
+.home-screen .active-hero-card .continue-button:not(:disabled):hover {
   background: var(--accent-hover);
   border-color: var(--accent-hover);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--accent-verb) 45%, transparent),
+    0 8px 26px color-mix(in srgb, var(--accent-verb) 45%, transparent);
+}
+
+.home-screen .active-hero-card {
+  display: flex;
+  flex-direction: column;
 }
 
 .home-shortcut {

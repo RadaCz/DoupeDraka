@@ -1,0 +1,33 @@
+/* Global elevated surfaces — Home, Character, Map, Settings */
+
+.screen .stat-card,
+.screen .active-hero-card,
+.screen .empty-adventure-card,
+.screen .home-invite-card,
+.screen .profile-card,
+.screen .character-panel,
+.screen .ability-card,
+.screen .inventory-item-card,
+.screen .inventory-card,
+.screen .balance-card,
+.screen .tier-card,
+.screen .notice-card,
+.screen .map-routes-card,
+.screen .map-graph-node,
+.screen .map-location-sheet-card,
+.screen .roster-card,
+.screen .quest-main-card,
+.screen .quest-next-card,
+.screen .section-block.locale-setting {
+  background: var(--tg-surface, var(--surface));
+  border: 1px solid var(--tg-border, var(--border-subtle));
+}
+
+.screen .character-panel {
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.screen .character-panel > summary {
+  background: color-mix(in srgb, var(--tg-surface) 92%, var(--tg-bg));
+}

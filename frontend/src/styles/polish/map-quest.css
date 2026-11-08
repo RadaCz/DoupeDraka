@@ -1,5 +1,38 @@
 /* Phase 3 — Map & quests */
 
+.map-graph .map-edge {
+  stroke: color-mix(in srgb, var(--accent-verb) 55%, #5a7a62);
+  stroke-width: 0.7;
+  stroke-dasharray: 4 3.5;
+  stroke-linecap: round;
+  opacity: 0.9;
+}
+
+.map-graph .map-edge.locked {
+  stroke: var(--muted);
+  stroke-dasharray: 2 4;
+  opacity: 0.55;
+}
+
+.map-node-place-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.map-graph-node .map-node-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+.map-route-list button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .map-graph-wrap {
   border-color: var(--border-subtle);
   background: var(--surface-deep);

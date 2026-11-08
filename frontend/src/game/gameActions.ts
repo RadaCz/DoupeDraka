@@ -116,8 +116,8 @@ export function suggestedActions(
 
   if (character.in_combat) {
     const enemy = character.combatant?.name ?? 'the enemy';
-    const escape = { label: 'Try to escape', action: 'flee' };
-    const attack = { label: 'Attack', action: `attack ${enemy}` };
+    const escape = { label: t('Try to escape'), action: 'flee' };
+    const attack = { label: t('Attack'), action: `attack ${enemy}` };
     return injured && character.hp / character.max_hp <= 0.3
       ? [escape, attack]
       : [attack, escape];

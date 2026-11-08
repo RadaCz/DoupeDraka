@@ -12,7 +12,7 @@ import type {
   Spell,
 } from './types';
 import { useI18n } from './i18n';
-import { CHAPTER_ONE_LAYOUT, mapEdges, mapLockReason, mapNodeState, routeOpen } from './chapterOneMap';
+import { CHAPTER_ONE_LAYOUT, mapEdges, mapLocationEmoji, mapLockReason, mapNodeState, routeOpen } from './chapterOneMap';
 import { chapterOneQuestProgress, visibleQuestTimeline } from './questProgress';
 import { JournalResultBody } from './components/journalBlocks';
 import { InventoryList } from './components/InventoryList';
@@ -198,6 +198,7 @@ export function HomeScreen({
 
 export function GameScreen(props: {
   character: Character;
+  economy?: Economy | null;
   events: JournalEvent[];
   spells: Spell[];
   locations: LocationReference[];
@@ -212,6 +213,7 @@ export function GameScreen(props: {
   onOpenMap?: () => void;
   onOpenSettings?: () => void;
   onCancelTurn?: () => void;
+  onRetryError?: () => void;
 }) {
   return <GameScreenRouter {...props} turnPhase={props.turnPhase ?? 'idle'} />;
 }
@@ -572,7 +574,10 @@ export function MapScreen({
                 <span className="map-node-glyph" aria-hidden="true">
                   {state === 'current' ? '◉' : state === 'locked' ? '🔒' : state === 'visited' ? '◎' : '○'}
                 </span>
-                <span className="map-node-label">{shortLabel(place)}</span>
+                <span className="map-node-label">
+                  <span className="map-node-place-icon" aria-hidden="true">{mapLocationEmoji(place)}</span>
+                  {shortLabel(place)}
+                </span>
               </button>
             );
           })}
@@ -590,7 +595,9 @@ export function MapScreen({
           <ol className="map-route-list">
             {node.connections.filter(route => routeOpen(route, quests)).map(route => (
               <li key={route}>
-                <button type="button" className="text-button" onClick={() => setSelected(route)}>{route}</button>
+                <button type="button" className="text-button" onClick={() => setSelected(route)}>
+                  <span aria-hidden="true">{mapLocationEmoji(route)}</span> {route}
+                </button>
               </li>
             ))}
           </ol>
@@ -601,7 +608,7 @@ export function MapScreen({
           <article className="map-location-sheet-card">
             <button type="button" className="icon-button map-sheet-close" aria-label={t('Close')} onClick={() => setSelected(null)}>×</button>
             <p className="eyebrow">{t(selectedState === 'current' ? 'You are here' : selectedState === 'visited' ? 'Visited' : selectedState === 'locked' ? 'Locked route' : 'Discovered')}</p>
-            <h2 id="map-sheet-title">{selected}</h2>
+            <h2 id="map-sheet-title"><span aria-hidden="true">{mapLocationEmoji(selected)}</span> {selected}</h2>
             <p>{selectedRef.arrival_beat ? t(selectedRef.arrival_beat) : t('No description yet for this place.')}</p>
             {canTravelToSelected ? (
               <button
@@ -770,10 +777,13 @@ export function SettingsScreen({
 }) {
   const { t, locale, setLocale } = useI18n();
   return (
-    <section className="screen">
+    <section className="screen settings-screen">
       <div className="page-title"><p className="eyebrow">{t('YOUR PREFERENCES')}</p><h1>{t('Settings')}</h1><p>{t('Manage how each adventure turn is narrated.')}</p></div>
       <section className="section-block locale-setting">
-        <label className="field-label" htmlFor="app-language">{t('Language')}</label>
+        <label className="field-label" htmlFor="app-language">
+          <span className="settings-section-icon" aria-hidden="true">🌍</span>
+          {t('Language')}
+        </label>
         <select id="app-language" className="form-select" value={locale} onChange={event => {
           const next = event.target.value === 'cs' ? 'cs' : 'en';
           setLocale(next);
@@ -792,10 +802,11 @@ export function SettingsScreen({
         )}
       </div>
       <article className="balance-card">
-        <div className="balance-icon">✧</div><div className="balance-copy"><small>{t('AVAILABLE ADVENTURE MANA')}</small><strong>{economy ? economy.balance.toFixed(1) : '—'} <i>⚡</i></strong><p>{t('Separate from spell slots; spellcaster classes spend slots to cast spells.')}</p></div><ManaHelp />
+        <div className="balance-icon" aria-hidden="true">⚡</div>
+        <div className="balance-copy"><small>{t('AVAILABLE ADVENTURE MANA')}</small><strong>{economy ? economy.balance.toFixed(1) : '—'} <i>⚡</i></strong><p>{t('Separate from spell slots; spellcaster classes spend slots to cast spells.')}</p></div><ManaHelp />
       </article>
       <section className="section-block">
-        <div className="section-heading"><div><p className="eyebrow">{t('THE STORYTELLER')}</p><h2>{t('Choose narration quality')}</h2></div></div>
+        <div className="section-heading"><div><p className="eyebrow"><span aria-hidden="true">🎭</span> {t('THE STORYTELLER')}</p><h2>{t('Choose narration quality')}</h2></div></div>
         <div className="tier-list">
           {economy?.tiers.map(tier => (
             <button type="button" className={`tier-card ${economy.tier === tier.key ? 'selected' : ''}`} key={tier.key} disabled={busy || economy.tier === tier.key} onClick={() => onChangeTier(tier.key)}>
@@ -807,7 +818,7 @@ export function SettingsScreen({
       </section>
       <article className="notice-card"><span aria-hidden="true">ⓘ</span><div><strong>{t('Top-ups are not available yet')}</strong><p>{t('This build does not process payments. No real-money purchase can be made from the Mini App.')}</p></div></article>
       <section className="section-block">
-        <div className="section-heading"><div><p className="eyebrow">{t('HOW IT WORKS')}</p><h2>{t('Adventure Mana')}</h2></div></div>
+        <div className="section-heading"><div><p className="eyebrow"><span aria-hidden="true">⚡</span> {t('HOW IT WORKS')}</p><h2>{t('Adventure Mana')}</h2></div></div>
         <div className="mana-explainer">
           <div><strong>⚡ {t('Adventure Mana')}</strong><p>{t('Pays for a story turn when the game state changes. Balance is shared by your Telegram account.')}</p></div>
           <div><strong>✦ {t('Spell slots')}</strong><p>{t('Spell slots power casting for spellcaster classes. They are separate from Adventure Mana, which pays only for story turns.')}</p></div>

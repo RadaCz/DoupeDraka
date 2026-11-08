@@ -12,6 +12,7 @@
   --tg-text: #edf1e5;
   --tg-hint: #aebaa8;
   --tg-button: #4a8f5c;
+  --tg-border: color-mix(in srgb, var(--tg-hint, #aebaa8) 22%, var(--tg-bg, #0d120e));
   --tg-safe-top: env(safe-area-inset-top, 0px);
   --tg-safe-bottom: env(safe-area-inset-bottom, 0px);
 
@@ -52,5 +53,6 @@ html.telegram-themed {
   --text: var(--tg-text, #d8e6d8);
   --muted: var(--tg-hint, #9aa89b);
   --border: color-mix(in srgb, var(--tg-hint, #3e503a) 35%, var(--tg-bg));
+  --tg-border: color-mix(in srgb, var(--tg-hint, #9aa89b) 24%, var(--tg-bg));
   --accent-verb: var(--tg-button, #4a8f5c);
 }

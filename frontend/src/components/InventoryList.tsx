@@ -23,10 +23,10 @@ export function InventoryList({ items }: { items: string[] }) {
               key={`${item}-${index}`}
               className="inventory-item-card"
               onClick={() => setSelected(item)}
-              aria-label={t('View item details')}
+              aria-label={`${t(meta.nameKey)}: ${item}`}
             >
               <span className="inventory-item-icon" aria-hidden="true">{meta.icon}</span>
-              <span className="inventory-item-label">{item}</span>
+              <span className="inventory-item-label">{t(meta.nameKey)}</span>
             </button>
           );
         })}

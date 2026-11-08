@@ -22,6 +22,10 @@ const RULES: Array<{ match: (key: string) => boolean; meta: InventoryItemMeta }>
     },
   },
   {
+    match: key => key.includes('longbow'),
+    meta: { icon: '🏹', nameKey: 'Longbow', descriptionKey: 'Ranged weapon. Uses Dexterity for attack and damage.' },
+  },
+  {
     match: key => key.includes('bow') || key.includes('crossbow'),
     meta: { icon: '🏹', nameKey: 'Ranged weapon', descriptionKey: 'Ranged weapon. Uses Dexterity for attack and damage.' },
   },

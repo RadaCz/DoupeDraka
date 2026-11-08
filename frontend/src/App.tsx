@@ -669,6 +669,7 @@ function AppContent() {
         {screen === 'game' && character && character.hp > 0 && (
           <GameScreen
             character={character}
+            economy={economy}
             events={events}
             spells={spells}
             locations={catalog?.locations ?? []}

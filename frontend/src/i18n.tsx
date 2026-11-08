@@ -171,6 +171,7 @@ const cs: Record<string, string> = {
   'One-handed blade. 1d6 piercing damage; martial characters fight with full proficiency.':
     'Jednorucni cepel, 1d6 bodneho poskozeni; bojovnici ji ovladaji s plnou zrucnosti.',
   'Ranged weapon': 'Strelna zbran',
+  Longbow: 'Dlouhy luk',
   'Ranged weapon. Uses Dexterity for attack and damage.': 'Strelna zbran. Utok i poskozeni z obratnosti.',
   Dagger: 'Dyka',
   'Light blade. 1d4 piercing; finesse and throwable.': 'Lehka cepel, 1d4 bodne, obratnost, hoditelna.',
@@ -231,6 +232,7 @@ const cs: Record<string, string> = {
   'YOUR MOVE': 'TVUJ TAH',
   'YOU COULD': 'MUZES ZKUSIT',
   'Suggested next moves': 'Navrhovane dalsi tahy',
+  'Play actions': 'Herni akce',
   'How actions and exploration work': 'Jak funguji akce a pruzkum',
   'or describe anything': 'nebo popis vlastni akci',
   'The narrator is writing…': 'Vypravec pise…',

@@ -62,6 +62,22 @@ export function mapNodeState(
   return 'hidden';
 }
 
+const LOCATION_EMOJI: Record<string, string> = {
+  'The Whispering Cellar': '🕸️',
+  'The Sunken Corridor': '🌊',
+  'The Shrine of the Forgotten': '🏛️',
+  'The Goblin Market': '🏮',
+  'The Bandit Camp': '⛺',
+  'The Vault of Echoes': '🔔',
+  'The Forgotten Crypt': '⚰️',
+  'The Underground River': '💧',
+  "The Bell Warden's Pit": '⛓️',
+};
+
+export function mapLocationEmoji(place: string): string {
+  return LOCATION_EMOJI[place] ?? '⌖';
+}
+
 export function mapEdges(locations: LocationReference[]) {
   const seen = new Set<string>();
   const edges: Array<{ from: string; to: string }> = [];

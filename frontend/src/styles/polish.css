@@ -1,4 +1,5 @@
 /* Late-loaded UI polish (phases 2–4). Split from monolithic styles.css incrementally. */
+@import url("./polish/surfaces.css");
 @import url("./polish/layout.css");
 @import url("./polish/wizard.css");
 @import url("./polish/map-quest.css");
