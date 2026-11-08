@@ -121,6 +121,45 @@ def test_valid_buy_and_use_change_state_when_appropriate():
     assert hero.hp > hero.max_hp - 4
 
 
+@pytest.mark.parametrize(
+    "action",
+    [
+        "Caldus is standing beside the shrine bell",
+        "Nib stole the bell",
+        "I heard Caldus talking about the bell",
+    ],
+)
+def test_narrative_mentions_do_not_trigger_quest_intent(action):
+    intent = parse_action_intent(action)
+    assert intent.kind != QUEST
+    assert intent.quest_step != "accept_caldus"
+    assert intent.quest_step != "ask_nib"
+
+
+@pytest.mark.parametrize(
+    ("action", "location", "flags"),
+    [
+        ("Caldus is standing beside the shrine bell", "The Shrine of the Forgotten", {}),
+        ("Nib stole the bell", "The Goblin Market", {"bell_quest_accepted": True}),
+        ("I heard Caldus talking about the bell", "The Shrine of the Forgotten", {}),
+    ],
+)
+def test_narrative_mentions_do_not_change_quest_state(action, location, flags):
+    game = GameEngine()
+    hero = game.create_character(1, "Narrate", "human", "fighter")
+    hero.location = location
+    hero.quest_flags = dict(flags)
+    before_flags = copy.deepcopy(hero.quest_flags)
+    before_inventory = list(hero.inventory)
+    game.resolve_action(hero, action, None)
+    assert hero.quest_flags.get("bell_quest_accepted") == before_flags.get("bell_quest_accepted")
+    assert hero.quest_flags.get("bell_acquired") == before_flags.get("bell_acquired")
+    assert hero.quest_flags.get("bell_quest_complete") == before_flags.get("bell_quest_complete")
+    assert [i for i in hero.inventory if "bell" in i.casefold()] == [
+        i for i in before_inventory if "bell" in i.casefold()
+    ]
+
+
 def test_valid_quest_chain_still_works():
     game = GameEngine()
     hero = game.create_character(1, "Quest", "human", "fighter")

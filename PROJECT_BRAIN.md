@@ -5,7 +5,7 @@
 - **Repository:** `D:\DoupeDraka`
 - **Development branch:** `clean-main` (merge to `main` after green CI only)
 - **Last updated:** 2026-11-08
-- **Verified baseline:** backend **238 passed**; frontend **18 passed** Vitest; E2E via `npm run test:e2e`; CI Postgres job runs `alembic upgrade head`, `alembic check`, then concurrency tests.
+- **Verified baseline:** backend **244 passed**; frontend **18 passed** Vitest; E2E via `npm run test:e2e`; CI Postgres job runs `alembic upgrade head`, `alembic check`, then concurrency tests.
 - **External verification:** real Telegram visual QA and Docker/Postgres in production-like deploy remain **UNVERIFIED** by the maintainer.
 
 ## 1. Directives
@@ -36,7 +36,7 @@ Do not conflate resources:
 - Narration: `app/narrator.py` + `app/ai/` (Ollama when configured). **Pro tier is disabled** in API/UI until an OpenRouter adapter exists.
 - Lite narration is free; new accounts start with 100.0 Adventure Mana. No payment gateway is connected.
 - Spell MVP supports 8 caster classes, cantrips, selected level-1/2 effects, rest recovery, and bounded level progression.
-- Six engine-owned locations, travel gating for vault/pit, bell quest with persistent `bell_acquired`, Bell Warden boss flag `chapter_one_complete`.
+- Six engine-owned locations, travel gating for vault/pit, bell quest with persistent `bell_acquired`, Bell Warden boss flag `chapter_one_complete`. Quest intents require explicit player commands to Caldus/Nib.
 - Historical patch scripts are preserved under `tools/archive/` and are not maintained utilities.
 
 ## 4. Current priorities

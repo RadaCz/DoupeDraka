@@ -5,9 +5,6 @@ on:
     branches: [main, master, clean-main]
   pull_request:
 
-env:
-  POSTGRES_URL: postgresql+asyncpg://doupe:doupe@localhost:5432/doupedraka
-
 jobs:
   backend:
     runs-on: ubuntu-latest
@@ -40,8 +37,8 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     env:
-      DATABASE_URL: ${{ env.POSTGRES_URL }}
-      PYTEST_DATABASE_URL: ${{ env.POSTGRES_URL }}
+      DATABASE_URL: postgresql+asyncpg://doupe:doupe@localhost:5432/doupedraka
+      PYTEST_DATABASE_URL: postgresql+asyncpg://doupe:doupe@localhost:5432/doupedraka
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

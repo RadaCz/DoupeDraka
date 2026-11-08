@@ -18,7 +18,9 @@ branches only on `intent.kind`.
 - “Nechci zaútočit, chci mluvit” resolves to talk; “don't buy a potion” is rejected.
 - Conflicting positive verbs (for example rest + attack, travel + cast) return `ambiguous`.
 - Chapter-one quest steps (`accept_caldus`, `ask_nib`, `return_bell`) route only through
-  `intent.kind == quest` with `quest_step`; they are not substring guesses on raw text.
+  `intent.kind == quest` with `quest_step`. Caldus/Nib patterns require an imperative
+  verb addressed to the NPC (for example “talk to Caldus about the shrine bell”);
+  narrative mentions do not start quests.
 
 ## Supported actions
 

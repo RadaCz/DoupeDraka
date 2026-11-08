@@ -5,6 +5,8 @@
 ### Chapter one stabilization
 - ActionIntent: `rejected`, `shop`, `use_item`, and `quest` routing; per-clause CS/EN negation; no substring shop/quest triggers.
 - PostgreSQL CI uses matching `DATABASE_URL` and `PYTEST_DATABASE_URL`, `alembic check`, and skips `create_all` when pytest uses Postgres.
+- Quest Caldus/Nib patterns require imperative player commands (no narrative mention triggers).
+- PostgreSQL CI job sets database URLs literally (no workflow `env` indirection).
 - Removed duplicate `CAMPAIGN` key in `frontend/src/i18n.tsx`.
 
 ### Chapter one etapa

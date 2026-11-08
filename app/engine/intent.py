@@ -46,15 +46,17 @@ QUEST_RETURN_PATTERN = re.compile(
     r"\b(?:return|give|deliver|vrat\w*|vrát\w*|odevz\w*|pred\w*|před\w*)\b.{0,48}\b(?:shrine\s+bell|bell|zvon)\b",
     re.IGNORECASE,
 )
+_QUEST_ADDRESS_VERB = (
+    r"(?:talk|speak|ask|accept|help|mluv\w*|zeptej|promluv)"
+)
 QUEST_CALDUS_PATTERN = re.compile(
-    r"(?:\b(?:talk|speak|ask|mluv\w*|zeptej)\b.{0,48}\bcaldus\b.{0,48}\b(?:shrine\s+bell|stolen\s+bell|zvon)\b)"
-    r"|(?:\bcaldus\b.{0,48}\b(?:shrine\s+bell|stolen\s+bell|zvon)\b)"
-    r"|(?:\baccept\b.{0,24}\bcaldus\b)",
+    rf"\b{_QUEST_ADDRESS_VERB}\s+(?:to\s+|with\s+|s\s+)?caldus\b"
+    rf"(?:\s+.+?\b(?:about\s+)?(?:the\s+)?(?:shrine\s+bell|stolen\s+bell|zvon)\b)?",
     re.IGNORECASE,
 )
 QUEST_NIB_PATTERN = re.compile(
-    r"\b(?:ask|talk|speak|mluv\w*|zeptej)\b.{0,48}\bnib\b.{0,48}\b(?:shrine\s+bell|bell|zvon)\b"
-    r"|\bnib\b.{0,48}\b(?:shrine\s+bell|bell|zvon)\b",
+    rf"\b{_QUEST_ADDRESS_VERB}\s+(?:to\s+|with\s+)?nib\b"
+    rf"(?:\s+.+?\b(?:about\s+)?(?:the\s+)?(?:shrine\s+bell|bell|zvon)\b)?",
     re.IGNORECASE,
 )
 
