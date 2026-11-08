@@ -9,7 +9,7 @@ Podpůrný dokument k [`DICE_AND_ECONOMY_V1.md`](./DICE_AND_ECONOMY_V1.md). **Ne
 | Kategorie | Význam | Příklad |
 |-----------|--------|---------|
 | **Známé (engine / API)** | Ověřeno v kódu | Lite 0 / Normal 1,0 / Pro 1,4 kreditu; start 100 kreditů |
-| **Modelové předpoklady** | Odhad pro plánování | 60 % tahů mění stav; 40 % z nich u aktivního hráče |
+| **Modelové předpoklady** | Odhad pro plánování | **60 % všech tahů** má `state_changed=true` (zbytek neúčtuje kredity ani při Normal) |
 | **Dosud neměřené** | Chybí telemetrie | Tokeny/tah, model mix, délka streamu, fallback rate |
 | **Budoucí telemetrie** | Co logovat před monetizací | Viz §5 |
 
@@ -112,13 +112,17 @@ Všechny vstupy kromě **flat cost per tier** jsou dnes **hypotézy nebo neměř
 
 **Účel:** plánovací stůl — **ne** účetní závěr.
 
-| Scénář | Předpoklad | Kredity při Normal (všechny platné) |
-|--------|------------|-------------------------------------|
-| 100 tahů | 60 % state_changed | až 60 kreditů |
-| 500 tahů | stejné | až 300 kreditů |
-| 1000 tahů | stejné | až 600 kreditů |
+**Jednoznačný předpoklad 60 %:** u každého scénáře počítáme `platných_tahů = floor(počet_tahů × 0,6)`; každý takový tah na **Normal** spotřebuje **1,0** kreditu (známá hodnota z `MODEL_TIERS`). Tahy s `state_changed=false` se do součtu **nepočítají** (shodné s D10 / billing contract).
 
-**Lite:** vždy 0 kreditů za tah bez ohledu na počet.
+| Scénář | Počet tahů | Platných tahů (×0,6) | Kredity Normal (max) | Ověření |
+|--------|------------|----------------------|----------------------|---------|
+| Krátký | 100 | 60 | **60** | 100×0,6×1,0 |
+| Střední | 500 | 300 | **300** | 500×0,6×1,0 |
+| Dlouhý | 1000 | 600 | **600** | 1000×0,6×1,0 |
+
+**Lite:** vždy **0** kreditů na tah (známé), bez ohledu na `state_changed`.
+
+Scénáře **nepředpokládají** měřený mix tierů ani měřený podíl `state_changed` — 60 % je **pouze modelová hypotéza** do doby, než E5 telemetrie dodá reálná čísla.
 
 **Poznámka k nesrovnalosti as-is:** pokud hráč platí při fallbacku, **reálná spotřeba kreditů ≠ užitná hodnota** — opravit v E2b před monetizací.
 

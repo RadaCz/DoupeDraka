@@ -7,7 +7,21 @@ Updated 2026-11-08. Chapter one is a gated six-location slice on `clean-main`. A
 - [x] [`design/DICE_AND_ECONOMY_V1.md`](design/DICE_AND_ECONOMY_V1.md) — kostky, zdroje, billing contract, D6 doporučení
 - [x] [`design/ECONOMY_MODEL_V1.md`](design/ECONOMY_MODEL_V1.md) — session model, náklady (známé/hypotézy)
 - [x] [`design/CHAPTER_ONE_PLAYTEST_V1.md`](design/CHAPTER_ONE_PLAYTEST_V1.md) — closed beta 10–15 hráčů
-- [ ] Produktové sign-off GDS01 → epiky E1–E6 (viz hlavní spec)
+- [ ] **Produktové sign-off GDS01** (dokumentace připravena k review; **ne** schválená implementace)
+- [ ] Implementační epiky (až po sign-off) v tomto pořadí:
+
+| # | Epic | Obsah |
+|---|------|--------|
+| 1 | **E1** | UI copy: Kredity vypravěče; legacy mana |
+| 2 | **E2** | Default Lite + tier gating dle providera |
+| 3 | **E2b** | Billing: no charge / refund při fallback |
+| 4 | **Min. telemetrie** | `state_changed`, narration outcome, turn/session (E5 minimální rozsah) |
+| 5 | **Playtest** | `CHAPTER_ONE_PLAYTEST_V1` — 10–15 hráčů, kvalitativní go/no-go |
+| 6 | **E3** | Dice v1.1 (DC, D6 varianta A) |
+| 7 | **E4** | Kapitola 1 motivation polish |
+| 8 | **E6** | Monetizace / platby — **až po** go z playtestu a validaci produktu |
+
+Platby a produkční top-up zůstávají v **Deferred product decisions** (Priority roadmap) do dokončení řetězce výše.
 
 ## Priority 0 - Ship chapter one branch
 - [x] ActionIntent routing with negation, shop/item/quest intents, ability-check DC rules, class weapon proficiency.

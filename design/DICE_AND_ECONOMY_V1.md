@@ -135,10 +135,14 @@ Platba: `atomic_debit_energy` po **změněném stavu hře** (`state_changed`), n
 | 2 | 17 % | Stopa |
 | 3 | 17 % | 1–4 gp |
 | 4 | 17 % | Indicie |
-| 5 | 17 % | Atmosférický detail + **malá stopa** (např. označení visited clue bez combat) |
-| 6 | 17 % | Klid; **žádný** combat; krátký „safe“ beat |
+| 5 | 17 % | **Persistovaná stopa** v lokaci (viz níže) + krátký beat v logu |
+| 6 | 17 % | Klid; **žádný** combat; krátký „safe“ beat (**bez nového flagu**) |
 
-**Modelový dopad (Whispering Cellar, 4× search):** stále ~44 % „nižší drama“ na 5–6, ale 5 přidává mikro-progres (stopa), 6 je explicitně bezpečný odpočinek.
+**D6=5 ve variantě A (závazná specifikace pro E3):** engine uloží **trvalý fakt** na postavě — např. `quest_flags["explore_track:<location>"]` nebo ekvivalentní pole — se stejným herním významem jako text `track_discovery` pro danou lokaci. Journal a vypravěč smí stopu parafrázovat, ale **nesmí** být jediným „důkazem“ stopy (narativní detail sám o sobě nestačí). Opakovaný D6=5 v téže lokaci buď nic nového nepřidá, nebo vrátí „už známou stopu“ (implementační detail E3).
+
+**D6=6:** pouze prose beat; **žádná** nová persistovaná stopa (odlišení od 5).
+
+**Modelový dopad (Whispering Cellar, 4× search):** stále ~44 % „nižší drama“ na 5–6, ale 5 přidává mikro-progres ověřitelný enginem, 6 je explicitně bezpečný odpočinek.
 
 #### Varianta B — každý výsledek mění stav
 
@@ -162,7 +166,7 @@ Platba: `atomic_debit_energy` po **změněném stavu hře** (`state_changed`), n
 | INT inspect panel | Odemkne hint / quest flag | Škrábanina beze změny; nebo „něco prasklo“ → +1 noise, ne damage |
 | CHA persuade Nib | Quest krok | Nib se urazí; vyšší DC příště, ne combat |
 | Search D6=1 | Combat | — |
-| Flee | Únik z combatu | Stále v combatu / damage dle engine |
+| Flee | DEX vs **DC 10** — úspěch ukončí boj (`in_combat=false`), nastaví `exploration_cooldown=1` | Neúspěch: zůstáváš **v boji**, monster aktivní; **as-is** v tom samém tahu **neprobíhá** automatický `_enemy_turn` (na rozdíl od útoku / defend). Další poškození až z jiné hráčovy akce, která předá tah nepříteli. |
 
 ---
 
@@ -172,7 +176,7 @@ Platba: `atomic_debit_energy` po **změněném stavu hře** (`state_changed`), n
 |-------|----------|------|--------|
 | **HP** | Postava | Přežití | Léčení, potion, rest (D24), level-up částečně |
 | **Spell slots** | Postava | Kouzla (whitelist) | Long rest; casting dle D17 |
-| **Gold** | Postava | Nib shop, budoucí služby ve světě | Loot, quest, průzkum |
+| **Gold** | Postava | Nib shop, budoucí služby ve světě | Questy, kapitola (+25 gp po Bell Warden), průzkum (1–4 gp); **ne** generický loot z monster (as-is jen XP z boje) |
 | **Kredity vypravěče** | **Účet** (Telegram) | Volitelná kvalita AI narace za **změněný tah** | Start 100; budoucí top-up (admin-only dnes) |
 
 **Legacy `CharacterState.mana`:** technický pozůstatek staršího návrhu; **neprezentovat** jako aktivní herní zdroj (cíl UI: skrýt nebo pouze archiv).
@@ -241,7 +245,7 @@ Konstanta v kódu **≠** funkční produkt.
 
 | Aktivita | Odměna (engine) |
 |----------|-----------------|
-| Boj (vítězství) | XP dle monstra; loot dle encounter |
+| Boj (vítězství) | XP dle `reward_xp` šablony; **žádný** obecný loot drop (kapitola 1) |
 | Main quest krok | XP/gp/flags dle `quests.py` |
 | Side Crypt | 10 XP, 15 gp, Echo shard (jednou) |
 | Průzkum D6 | gp / stopa / combat |
@@ -268,8 +272,9 @@ Odhady délky a ekonomiky: **`design/ECONOMY_MODEL_V1.md`** (30 min / 2 h scén�
 | 3 | Travel → Shrine | travel intent, location | arrival_beat | quest dostupný |
 | 4 | Talk Caldus, accept quest | `bell_quest_accepted` | dialog prose | quest flag |
 | 5 | Market, ask Nib | `bell_acquired`, item bell | prose | inventář |
-| 6 | Return bell / vault hint | flags, vault_unlocked | prose | XP+gp, new routes |
-| 7 | Vault, Bell Warden, victory | combat, chapter reward | prose | 25 gp, chapter flag, XP |
+| 6 | Return bell (Caldus) | `bell_quest_complete` | prose | **30 XP + 5 gp** (`return_bell`) |
+| 7 | Talk Caldus znovu (po vrácení) | `vault_hint_given`, `vault_unlocked` | prose | cesta do Vault (druhý dialog — **ne** ve stejném tahu jako vrácení) |
+| 8 | Vault, Bell Warden, victory | combat, `chapter_one_complete` | prose | 180 XP (boss) + **25 gp** chapter reward |
 
 Detailní playtest scénář: **`design/CHAPTER_ONE_PLAYTEST_V1.md`**.
 
@@ -301,7 +306,9 @@ Detailní playtest scénář: **`design/CHAPTER_ONE_PLAYTEST_V1.md`**.
 | E2b | Billing při fallback / interrupted stream |
 | E3 | DC + D6 varianta A |
 | E4 | Kapitola 1 motivation polish |
-| E5 | Telemetrie nákladů + closed beta |
-| E6 | Monetizace (až po E5) |
+| E5* | Minimální telemetrie před playtestem (náklady/billing signály) |
+| E6 | Monetizace až po validaci produktu playtestem |
+
+**Pořadí implementace:** E1 → E2 → E2b → minimální telemetrie → closed beta playtest → E3 → E4 → **E6** (platby až po go z playtestu). Viz `ROADMAP.md`.
 
 Viz `DECISIONS.md` D30+, `ROADMAP.md`.
