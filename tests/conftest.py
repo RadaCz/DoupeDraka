@@ -29,14 +29,13 @@ if _postgres:
 else:
     os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///" + _TEST_DB_PATH.replace(os.sep, "/")
 os.environ.setdefault("LLM_PROVIDER", "fallback")
+# Session fixture runs init_db(); disable FastAPI startup bootstrap to avoid parallel SQLite writers.
+os.environ["DB_BOOTSTRAP"] = "none"
 
 import pytest  # noqa: E402
 
 import app.api as app_api  # noqa: E402
 import app.db as app_db  # noqa: E402
-from app.db import Base as _Base  # noqa: E402
-
-
 def _assert_isolated() -> None:
     """Hard stop if anything points the engine at the player's live database."""
     url = str(app_db.engine.url)
@@ -54,11 +53,9 @@ def isolated_database():
     _assert_isolated()
 
     if not _USE_ALEMBIC_DB:
-        async def create() -> None:
-            async with app_db.engine.begin() as connection:
-                await connection.run_sync(_Base.metadata.create_all)
+        from app.db import init_db
 
-        asyncio.run(create())
+        asyncio.run(init_db())
     yield _TEST_DB_PATH
 
     async def dispose() -> None:

@@ -1,5 +1,6 @@
 import json
 import os
+import threading
 from datetime import datetime, timedelta
 from pathlib import Path
 from sqlalchemy import BigInteger, DateTime, ForeignKey, Integer, String, Text, text
@@ -100,17 +101,28 @@ class AnalyticsEvent(Base):
     character_id: Mapped[str | None] = mapped_column(String(36), index=True, nullable=True)
     metadata_json: Mapped[dict] = mapped_column(JsonMetadata, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+
+_init_db_lock = threading.Lock()
+# Pytest and TestClient call asyncio.run(init_db()) from many loops; SQLite must not bootstrap in parallel.
+_init_db_ready_urls: set[str] = set()
+
+
 async def init_db() -> None:
-    # Local SQLite development database; production PostgreSQL needs no directory.
-    if get_settings().database_url.startswith("sqlite"):
-        Path("data").mkdir(exist_ok=True)
-    async with engine.begin() as connection:
-        if get_settings().database_url.startswith("sqlite"):
-            await connection.execute(text("PRAGMA journal_mode=WAL"))
-            await connection.execute(text("PRAGMA busy_timeout=30000"))
-        await connection.run_sync(Base.metadata.create_all)
-        await connection.run_sync(_migrate_character_version)
-        await connection.run_sync(_migrate_action_receipt_expiry)
+    """Create tables and apply sqlite-only legacy patches (idempotent, serialized)."""
+    url = get_settings().database_url
+    with _init_db_lock:
+        if url in _init_db_ready_urls:
+            return
+        if url.startswith("sqlite"):
+            Path("data").mkdir(exist_ok=True)
+        async with engine.begin() as connection:
+            if url.startswith("sqlite"):
+                await connection.execute(text("PRAGMA journal_mode=WAL"))
+                await connection.execute(text("PRAGMA busy_timeout=30000"))
+            await connection.run_sync(Base.metadata.create_all)
+            await connection.run_sync(_migrate_character_version)
+            await connection.run_sync(_migrate_action_receipt_expiry)
+        _init_db_ready_urls.add(url)
 
 def _migrate_character_version(connection) -> None:
     """Add characters.version to a database created before STEP 1.
