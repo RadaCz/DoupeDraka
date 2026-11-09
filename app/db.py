@@ -2,7 +2,7 @@ import json
 import os
 from datetime import datetime, timedelta
 from pathlib import Path
-from sqlalchemy import BigInteger, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import BigInteger, DateTime, ForeignKey, Integer, String, Text, text
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.pool import NullPool
@@ -27,6 +27,9 @@ def build_async_engine() -> AsyncEngine:
         else:
             kwargs["pool_size"] = settings.db_pool_size
             kwargs["max_overflow"] = settings.db_max_overflow
+    elif url.startswith("sqlite"):
+        # Concurrent Mini App logins (React StrictMode) should wait on the writer, not fail instantly.
+        kwargs["connect_args"] = {"timeout": 30}
     return create_async_engine(url, **kwargs)
 
 
@@ -102,6 +105,9 @@ async def init_db() -> None:
     if get_settings().database_url.startswith("sqlite"):
         Path("data").mkdir(exist_ok=True)
     async with engine.begin() as connection:
+        if get_settings().database_url.startswith("sqlite"):
+            await connection.execute(text("PRAGMA journal_mode=WAL"))
+            await connection.execute(text("PRAGMA busy_timeout=30000"))
         await connection.run_sync(Base.metadata.create_all)
         await connection.run_sync(_migrate_character_version)
         await connection.run_sync(_migrate_action_receipt_expiry)

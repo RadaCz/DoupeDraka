@@ -6,6 +6,7 @@ data/*.db
 frontend/node_modules/
 frontend/dist/
 frontend/.playwright-results/
+frontend/test-results/
 .aider*
 .andromity/
 

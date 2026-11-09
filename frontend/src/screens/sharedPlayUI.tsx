@@ -159,7 +159,7 @@ export function PlayJournal({
       )}
       {narrationStatus === 'fallback' && (
         <p className="storyteller-status" role="status">
-          {t('Offline storyteller is active. Set up Ollama in `.env` for AI-written narration.')}
+          {t('The built-in offline storyteller is narrating this turn (Lite tier or fallback).')}
         </p>
       )}
       {events.map(event => (
@@ -196,9 +196,9 @@ export function PlayJournal({
                   : turnPhase === 'recovering'
                     ? t('Restoring the saved result…')
                     : thinkingSeconds >= 12
-                      ? t('Still weaving. Local models can take a moment.')
+                      ? t('The narrator is still writing this moment…')
                       : thinkingSeconds >= 5
-                        ? t('A.U.R.I.O.N. is weighing your fate…')
+                        ? t('Doupě Draka is weighing your fate…')
                         : t('The narrator is shaping the moment…')}
             </span>
           </div>
@@ -235,7 +235,7 @@ export function PlayErrorPanel({
   return (
     <div className="error-panel" role="alert" title={error} data-error={error}>
       <p className="error-panel-title">{t('The thread of the weave has slipped.')}</p>
-      <p className="error-panel-body">{t('A.U.R.I.O.N. lost its connection to the narrator. Check your narrator settings and try again.')}</p>
+      <p className="error-panel-body">{t('The storyteller lost its connection. Check narrator tier and connection, then try again.')}</p>
       <div className="error-panel-actions">
         {onOpenSettings && (
           <button type="button" className="primary" onClick={onOpenSettings}>{t('Open settings')}</button>

@@ -62,7 +62,7 @@ const economyData = {
   balance_tenths: 1000,
   tier: 'normal',
   tiers: [
-    { key: 'lite', label: 'Lite', cost: 0, description: 'Free narration for the core game loop.' },
+    { key: 'lite', label: 'Lite', cost: 0, description: 'Built-in offline storyteller; free changed turns.' },
     { key: 'normal', label: 'Normal', cost: 1, description: 'Balanced for most turns.' },
   ],
   packages: [{ key: 'starter', label: 'Starter', mana: 50, price_rub: 100 }],
@@ -438,7 +438,7 @@ describe('Telegram Mini App', () => {
     await waitFor(() => expect(journal.querySelector('.journal-narration')).toHaveTextContent('Steel rings.'));
     expect(await screen.findByText(/Attack roll: hit\./)).toBeInTheDocument();
     expect(within(journal).getByText('attack goblin')).toBeInTheDocument();
-    expect(await screen.findByText(/offline storyteller is active/i)).toBeInTheDocument();
+    expect(await screen.findByText(/built-in offline storyteller is narrating/i)).toBeInTheDocument();
     expect(requests.some(item => item.url.endsWith('/actions/stream') && item.method === 'POST')).toBe(true);
   });
 
@@ -471,7 +471,7 @@ describe('Telegram Mini App', () => {
     expect(screen.queryByText(/SRD 5\.1 · Creative Commons/i)).not.toBeInTheDocument();
     fireEvent.click(screen.getByText('Show attribution and license'));
     expect(screen.getByRole('link', { name: /official srd page/i })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /lite free narration for the core game loop/i }));
+    fireEvent.click(screen.getByRole('button', { name: /lite built-in offline storyteller/i }));
     await waitFor(() => expect(requests.some(item => item.url === '/api/economy/tier' && item.body?.tier === 'lite')).toBe(true));
     expect(screen.getByText(/top-ups are not available yet/i, { selector: 'p' })).toBeInTheDocument();
   });

@@ -14,7 +14,7 @@ describe('adventureShare', () => {
     expect(message).toContain('Level 2');
     expect(message).toContain('Half-Elf');
     expect(message).toContain('Bard');
-    expect(message).toContain('A.U.R.I.O.N.');
+    expect(message).toContain('Doupě Draka');
   });
 
   it('extracts prose from journal results', () => {

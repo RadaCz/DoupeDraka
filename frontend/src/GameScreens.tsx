@@ -824,7 +824,7 @@ export function SettingsScreen({
         </div>
       </section>
       <article className="notice-card storyteller-note" role="note">
-        <div><strong>{t('When is the storyteller using AI?')}</strong><p>{t('AI-written narration requires')} <code>MODEL_PROVIDER=ollama</code> {t('and a running Ollama service. Otherwise the game uses its built-in offline storyteller. Narrator tiers do not change game rules.')} {t("You can confirm it's live in Settings → Narrator when the offline-storyteller banner disappears.")}</p></div>
+        <div><strong>{t('When is the storyteller using AI?')}</strong><p>{t('Lite always uses the built-in offline storyteller for free. Normal charges narrator credits only when an external provider (for example NVIDIA NIM or Groq) is configured and delivers paid narration. Local Ollama is not billed on Normal. Pro is disabled in closed beta. Tiers never change game rules.')}</p></div>
       </article>
       <section className="section-block license-section">
         <div className="section-heading"><div><p className="eyebrow">{t('CONTENT CREDITS')}</p><h2>{t('SRD 5.1 license')}</h2></div></div>

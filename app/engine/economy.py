@@ -22,9 +22,14 @@ class ModelTier:
 
 
 MODEL_TIERS = {
-    "lite": ModelTier("lite", "Lite", 0, "Free narration for the core game loop."),
-    "normal": ModelTier("normal", "Normal", 10, "Balanced quality and speed for most turns."),
-    "pro": ModelTier("pro", "Pro", 14, "Highest reasoning for complex combat and roleplay."),
+    "lite": ModelTier("lite", "Lite", 0, "Built-in offline storyteller; free changed turns."),
+    "normal": ModelTier(
+        "normal",
+        "Normal",
+        10,
+        "External AI narration when configured; 1.0 ⚡ per delivered paid turn.",
+    ),
+    "pro": ModelTier("pro", "Pro", 14, "Disabled in closed beta until OpenRouter is available."),
 }
 DEFAULT_TIER = "lite"
 

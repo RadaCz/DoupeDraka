@@ -35,6 +35,7 @@ import {
   syncTelegramMainButton,
   teardownTelegramMainButton,
 } from './telegramWebApp';
+import { loginWithTelegramInitData } from './telegramAuth';
 import { LocaleProvider, useI18n } from './i18n';
 import {
   clearPendingAction,
@@ -302,13 +303,7 @@ function AppContent() {
 
     void (async () => {
       try {
-        const token = await request<{ access_token: string }>('/auth/telegram', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ init_data: initData }),
-        });
-        if (!token.access_token) throw new Error('Invalid authentication response from server.');
-        sessionToken = token.access_token;
+        sessionToken = await loginWithTelegramInitData(initData);
         setAuthenticated(true);
 
         const [characterList, presetList, referenceData, economyData, spellList] = await Promise.all([
@@ -340,7 +335,6 @@ function AppContent() {
     return () => {
       unbindChrome();
       teardownTelegramMainButton();
-      sessionToken = null;
     };
   }, []);
 
@@ -644,7 +638,7 @@ function AppContent() {
     <div className={`app-shell${screen === 'game' ? ' play-active' : ''}`}>
       <header className="app-header">
         <button type="button" className="brand-mark" onClick={() => navigate('home')} aria-label={t('Go to home')}>
-          <span className="brand-sigil">✦</span><span>A.U.R.I.O.N.<small>{t('ADVENTURE COMPANION')}</small></span>
+          <span className="brand-sigil">✦</span><span>Doupě Draka<small>{t('ADVENTURE COMPANION')}</small></span>
         </button>
         {character && <div className="header-balance"><span>✧</span>{economy ? economy.balance.toFixed(1) : '—'} <small>⚡</small></div>}
       </header>

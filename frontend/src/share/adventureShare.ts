@@ -30,7 +30,7 @@ export function buildLevelUpShareMessage(character: Character, level: number): s
   const race = titleCase(character.race);
   const cls = titleCase(character.character_class);
   const link = inviteLink();
-  return `I just reached Level ${level} in A.U.R.I.O.N. as a ${race} ${cls}! Join my adventure: ${link}`;
+  return `I just reached Level ${level} in Doupě Draka as a ${race} ${cls}! Join my adventure: ${link}`;
 }
 
 export function buildJournalShareMessage(character: Character, excerpt: string, action?: string): string {
@@ -39,9 +39,9 @@ export function buildJournalShareMessage(character: Character, excerpt: string, 
   const link = inviteLink();
   const beat = excerpt || action || 'A new chapter unfolds';
   if (/bell warden|chapter complete/i.test(beat)) {
-    return `I faced a boss in A.U.R.I.O.N. as a ${race} ${cls}! ${beat} Join my adventure: ${link}`;
+    return `I faced a boss in Doupě Draka as a ${race} ${cls}! ${beat} Join my adventure: ${link}`;
   }
-  return `A moment from my A.U.R.I.O.N. adventure (${race} ${cls}): "${beat}" — Join me: ${link}`;
+  return `A moment from my Doupě Draka adventure (${race} ${cls}): "${beat}" — Join me: ${link}`;
 }
 
 export async function shareText(message: string): Promise<ShareOutcome> {
@@ -64,7 +64,7 @@ export async function shareText(message: string): Promise<ShareOutcome> {
 
   if (typeof navigator.share === 'function') {
     try {
-      await navigator.share({ title: 'A.U.R.I.O.N.', text: message, url: link });
+      await navigator.share({ title: 'Doupě Draka', text: message, url: link });
       return 'web';
     } catch {
       // User cancelled or share failed — fall through to clipboard.

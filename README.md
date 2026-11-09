@@ -110,9 +110,10 @@ setkání.
 AI je **vypravěč**: převádí pevně vyhodnocené výsledky enginu na prózu. Nerozhoduje o
 hodech, poškození ani pravidlech. Změna kvality vypravěče mění modelový tier, ne pravidla.
 Ve výchozí konfiguraci (`LLM_PROVIDER=fallback`) neběží jazykový model; hru rámuje
-vestavěný offline vypravěč. Lokální Ollama umí generovat prózu v **Lite** režimu zdarma;
-**Normal** (placený tier) vyžaduje nakonfigurovaného **externího** poskytovatele (např. NVIDIA NIM
-nebo Groq), jinak se účtuje a chová se jako Lite. Tah se uloží před začátkem streamování prózy;
+vestavěný offline vypravěč. **Lite** vždy používá tento offline vypravěč zdarma (⚡ 0).
+**Normal** účtuje 1,0 ⚡ jen při doručené placené naraci z **externího** providera (např. NVIDIA NIM
+nebo Groq); lokální Ollama se na Normal neúčtuje. Bez externího providera se Normal chová jako Lite.
+Tah se uloží před začátkem streamování prózy;
 Mini App ji postupně zobrazuje a při chybě placeného modelu vrátí kredit a použije offline fallback.
 Lite stojí 0,0 ⚡, Normal 1,0 ⚡ za zpoplatněný změněný tah s doručenou placenou narací; tier Pro je
 v této verzi vypnutý (až do OpenRouter adapteru).
@@ -194,19 +195,14 @@ funkční Playwright E2E **7** speců (+ volitelný visual). CI na větvi `clean
 `requirements-dev.txt`, Alembic `v005` + `alembic check` na PostgreSQL,
 navíc Postgres migrace a Playwright (viz [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)).
 
-### Lokální AI přes Ollama
+### Volitelný LLM chain (vývoj / budoucí DM)
 
-Nainstalujte Ollama, stáhněte jeden model a spusťte ji (výchozí API je
-`http://127.0.0.1:11434`). Například:
+V closed beta Mini App používá **Lite** vždy vestavěný offline vypravěč. **Normal** volá jen
+nakonfigurované **externí** API (NVIDIA NIM, Groq, Cerebras, …) — ne lokální Ollama.
 
-```powershell
-ollama pull qwen2.5:7b
-ollama serve
-```
-
-V `.env` nastavte `LLM_PROVIDER=ollama`, `OLLAMA_MODEL=qwen2.5:7b` a restartujte
-backend. Pokud Ollama nebo zvolený model neběží, hra se nezastaví: použije lokální
-deterministický textový fallback.
+Ollama zůstává v řetězci `narration_gateway_for` pro testy a budoucí serverové nasazení; po
+nastavení `LLM_PROVIDER=ollama` v `.env` ji lze použít mimo placený Normal tier. Pokud žádný
+provider neodpoví, hra nespadne: engine výsledek zůstane a prose doplní offline vypravěč.
 
 **Databázové migrace:** Po aktualizaci modelu stačí spustit `alembic upgrade head`. Pro vytvoření nové migrace použijte `alembic revision --autogenerate -m "Popis"`.
 

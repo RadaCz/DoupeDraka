@@ -12,7 +12,7 @@ from slowapi.util import get_remote_address
 from sqlalchemy import func, select, text, update
 from sqlalchemy.exc import IntegrityError
 import bcrypt
-from .auth.telegram import InitDataError, verify_init_data
+from .auth.telegram import InitDataError, TelegramUser, verify_init_data
 from .db import ActionReceipt, AnalyticsEvent, CharacterRecord, EventRecord, EnergyTransaction, User, ApiKey, Session, decode_character_state, decode_state, encode_character_state, encode_state, init_db
 from .engine import economy, reference, tools
 from .engine.models import CharacterState, MonsterState
@@ -143,6 +143,48 @@ async def prune_api_keys(session, user_id: int) -> None:
     )).all()
     for stale in keys[MAX_API_KEYS_PER_USER:]:
         await session.delete(stale)
+
+
+async def get_or_create_telegram_user(session, tg_user: TelegramUser) -> User:
+    """Create a Telegram account once; concurrent initData logins must converge on one row."""
+    for attempt in range(6):
+        existing = await session.scalar(select(User).where(User.telegram_id == tg_user.id))
+        if existing is not None:
+            return existing
+
+        base = tg_user.display_name
+        candidate = base
+        for name_attempt in range(5):
+            taken = await session.scalar(select(User).where(User.username == candidate))
+            if taken is None:
+                break
+            candidate = f"{base[:26]}_{tg_user.id % 10000}_{name_attempt}"[:32]
+
+        user = User(
+            username=candidate,
+            hashed_password=UNUSABLE_PASSWORD,
+            telegram_id=tg_user.id,
+        )
+        session.add(user)
+        try:
+            await session.flush()
+            logger.info(f"Telegram user created: {user.username} (tg {tg_user.id})")
+            return user
+        except IntegrityError as error:
+            await session.rollback()
+            # Unique telegram_id or username collision from a concurrent login — retry lookup.
+            logger.debug(
+                "Telegram user insert race for tg %s (attempt %s): %s",
+                tg_user.id,
+                attempt + 1,
+                error.orig if hasattr(error, "orig") else error,
+            )
+            if attempt == 5:
+                break
+    existing = await session.scalar(select(User).where(User.telegram_id == tg_user.id))
+    if existing is not None:
+        return existing
+    raise HTTPException(409, "Telegram account setup conflicted; retry sign-in")
 
 async def require_energy(session, user_id: int, tier: str) -> User:
     """Load the stored user and refuse the turn (402) when it cannot be paid for.
@@ -375,31 +417,7 @@ async def telegram_login(request: Request, payload: TelegramAuthRequest) -> Toke
         raise HTTPException(401, f"Invalid Telegram credentials: {error}") from error
 
     async with Session() as session:
-        result = await session.execute(select(User).where(User.telegram_id == tg_user.id))
-        user = result.scalar_one_or_none()
-        if user is None:
-            # Pick a username that is free; suffix the numeric id on collision so a
-            # shared Telegram username can never hijack an existing local account.
-            base = tg_user.display_name
-            candidate = base
-            for attempt in range(5):
-                taken = await session.execute(select(User).where(User.username == candidate))
-                if taken.scalar_one_or_none() is None:
-                    break
-                candidate = f"{base[:26]}_{tg_user.id % 10000}_{attempt}"[:32]
-            user = User(username=candidate, hashed_password=UNUSABLE_PASSWORD, telegram_id=tg_user.id)
-            session.add(user)
-            try:
-                await session.flush()
-                logger.info(f"Telegram user created: {user.username} (tg {tg_user.id})")
-            except IntegrityError as error:
-                # React StrictMode and client retries can submit the same signed
-                # initData concurrently. The unique Telegram id chooses one winner.
-                await session.rollback()
-                user = await session.scalar(select(User).where(User.telegram_id == tg_user.id))
-                if user is None:
-                    raise HTTPException(409, "Telegram account setup conflicted; retry sign-in") from error
-
+        user = await get_or_create_telegram_user(session, tg_user)
         token = secrets.token_urlsafe(32)
         session.add(ApiKey(token_hash=hash_token(token), user_id=user.id))
         await prune_api_keys(session, user.id)
