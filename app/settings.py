@@ -45,6 +45,10 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("LLM_PROVIDER_CHAIN", "llm_provider_chain"),
     )
     llm_read_timeout_s: float = Field(default=120.0, validation_alias=AliasChoices("LLM_READ_TIMEOUT_S", "llm_read_timeout_s"))
+    paid_narration_strict: bool = Field(
+        default=False,
+        validation_alias=AliasChoices("PAID_NARRATION_STRICT", "paid_narration_strict"),
+    )
     nvidia_api_key: str = Field(default="", validation_alias=AliasChoices("NVIDIA_API_KEY", "nvidia_api_key"))
     nvidia_base_url: str = Field(
         default="https://integrate.api.nvidia.com/v1",
@@ -116,6 +120,9 @@ class Settings(BaseSettings):
         _set("llm_provider", "LLM_PROVIDER", "MODEL_PROVIDER")
         _set("ollama_url", "OLLAMA_URL", "OLLAMA_BASE_URL")
         _set("ollama_model", "OLLAMA_MODEL", "MODEL_NAME")
+        _set("nvidia_api_key", "NVIDIA_API_KEY", "NVIDIA_NIM_API_KEY")
+        _set("nvidia_base_url", "NVIDIA_BASE_URL", "NVIDIA_NIM_BASE_URL")
+        _set("nvidia_model", "NVIDIA_MODEL", "NVIDIA_NIM_MODEL")
         return values
 
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"

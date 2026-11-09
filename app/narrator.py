@@ -9,6 +9,7 @@ import json
 from .ai.base import NarrationContext, NarrationRequest
 from .ai.offline import OfflineProvider, narrate_offline as render_offline
 from .ai.ollama import PROVIDER_ERRORS
+from .ai.completion_meta import set_completion_meta
 from .ai.registry import narration_gateway_for, paid_narration_gateway_for
 from .ai.stream_frames import StreamReplaceFrame
 from .engine.models import SAFE_RESPAWN_LOCATION
@@ -40,9 +41,12 @@ LENGTH_DIRECTIVES = {
 # emits English facts; the narrator describes them in the player's chosen language.
 
 # Spells out the hard boundary so a chatty model cannot narrate a win it did not earn.
-FACT_RULE = ("Narrate ONLY the supplied facts. Never invent or alter dice, hit points, damage, "
-             "rewards, rule outcomes, or locations. You may describe what the facts imply, "
-             "never what they contradict. Do not mention being an AI.")
+FACT_RULE = (
+    "Narrate ONLY the supplied facts and the read-only scene dossier. "
+    "Never invent or alter dice, hit points, damage, rewards, rule outcomes, inventory, "
+    "quests, or locations. You may describe what the facts imply, never what they contradict. "
+    "Do not mention being an AI."
+)
 
 
 class Narrator:
@@ -104,13 +108,33 @@ class Narrator:
         )
         request = self._request(context)
         if billing_tier == "lite":
+            set_completion_meta(
+                "offline",
+                "offline",
+                provider_request_status="offline_builtin",
+                delivered_to_player=True,
+            )
             return await OfflineProvider().complete(request), "offline"
         if not gateway.has_online_providers:
+            set_completion_meta(
+                "offline",
+                "offline",
+                provider_request_status="offline_fallback",
+                fallback_reason="no_online_provider",
+                delivered_to_player=True,
+            )
             return await OfflineProvider().complete(request), "fallback"
         try:
             async with _provider_gate(settings.llm_max_concurrency):
                 narration, status = await gateway.complete(request)
         except PROVIDER_ERRORS:
+            set_completion_meta(
+                "offline",
+                "offline",
+                provider_request_status="offline_fallback",
+                fallback_reason="provider_exception",
+                delivered_to_player=True,
+            )
             return await OfflineProvider().complete(request), "fallback"
         return narration, status
 
@@ -126,6 +150,7 @@ class Narrator:
         )
         request = self._request(context)
         if billing_tier == "lite":
+            set_completion_meta("offline", "offline")
             async for chunk in OfflineProvider().stream(request):
                 yield chunk
             return
@@ -149,9 +174,11 @@ class Narrator:
         language_code = normalize_narration_language(context.language)
         language_name = LANGUAGE_NAMES[language_code]
         defeat_line = self._defeat_scene_instruction(context)
+        dossier = json.dumps(context.scene_dossier or {}, ensure_ascii=False)
         prompt = (
             f"Location: {context.location}\nPlayer action: {context.action}\n"
             f"Narration language: {language_name} ({language_code}); prose only — mechanics stay English.\n"
+            f"Scene dossier (read-only game state):\n{dossier}\n"
             f"Engine result:\n{facts}\n"
             f"Structured engine facts: {self._structured_facts(context)}\n"
             f"Previous beats:\n{memories}"

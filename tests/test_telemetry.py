@@ -32,7 +32,7 @@ def test_analytics_rows_from_turn_detects_level_death_purchase():
 def test_gateway_fallback_schedules_telemetry(monkeypatch):
     logged: list[tuple[str, str]] = []
 
-    def capture(failed: str, fallback: str, character_id=None):
+    def capture(failed: str, fallback: str, character_id=None, **kwargs):
         logged.append((failed, fallback))
 
     monkeypatch.setattr("app.telemetry.record_llm_fallback", capture)

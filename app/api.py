@@ -19,7 +19,9 @@ from .engine.models import CharacterState, MonsterState
 from .engine.locations import LOCATIONS
 from .engine.service import GameEngine
 from .heroes import HEROES, get_hero
+from .narration_dossier import narration_beats_from_journal, scene_dossier_for_character
 from .narration_events import defeat_facts_from_events
+from .ai.completion_meta import take_completion_meta
 from .narration_language import normalize_narration_language
 from .memory_summarizer import maybe_archive_journal
 from .admin_stats import aggregate_admin_stats
@@ -29,6 +31,7 @@ from .telemetry import (
     append_analytics,
     record_character_created,
     record_llm_narration_status,
+    record_llm_provider_usage,
     record_turn_billing,
 )
 from .narrator import NarrationContext, Narrator
@@ -276,6 +279,8 @@ async def reconcile_narrator_billing(
     state_changed: bool,
     receipt_key: str,
     response: ActionResponse,
+    narration_provider: str | None = None,
+    narration_model: str | None = None,
 ) -> None:
     """Refund the commit-time hold when paid narration did not land (D32 / E2b)."""
     refunded = 0
@@ -309,6 +314,8 @@ async def reconcile_narrator_billing(
         narration_status=narration_status,
         energy_charged_tenths=net_charged,
         energy_refunded_tenths=refunded,
+        narration_provider=narration_provider,
+        narration_model=narration_model,
     )
 
 async def get_user_by_token(credentials: HTTPAuthorizationCredentials = Depends(security)) -> User:
@@ -632,7 +639,30 @@ def build_narration_context(
         level_up_facts=level_up_facts,
         defeat_facts=defeat_facts_from_events(events),
         long_term_memory=character.long_term_memory,
+        scene_dossier=scene_dossier_for_character(character),
     )
+
+
+def record_narration_delivery(character_id: str | None, status: str) -> tuple[str | None, str | None]:
+    meta = take_completion_meta()
+    provider = meta.provider if meta else None
+    model = (meta.model or None) if meta else None
+    record_llm_narration_status(character_id, status, provider=provider, model=model)
+    if meta:
+        record_llm_provider_usage(
+            character_id,
+            provider=meta.provider,
+            model=meta.model,
+            narration_status=status,
+            delivered_to_player=meta.delivered_to_player or status in ("narrated", "offline", "fallback"),
+            latency_ms=meta.latency_ms,
+            prompt_tokens=meta.prompt_tokens,
+            completion_tokens=meta.completion_tokens,
+            total_tokens=meta.total_tokens,
+            provider_request_status=meta.provider_request_status,
+            fallback_reason=meta.fallback_reason,
+        )
+    return provider, model
 
 
 def journal_result(narration: str, events: tuple[str, ...]) -> str:
@@ -668,7 +698,7 @@ async def narrate_committed(
     fallback: str,
     character_id: str | None = None,
     billing_tier: str = "lite",
-) -> tuple[str, str]:
+) -> tuple[str, str, str | None, str | None]:
     """Narrate a turn that is already durable.
 
     The model only chooses wording, and it runs after the commit, so a slow or
@@ -679,14 +709,14 @@ async def narrate_committed(
         narration, status = await narrator.narrate_detailed(context, billing_tier=billing_tier)
     except Exception:  # a broken model must never cost the player their turn
         logger.exception(f"Narration failed for event {event_id}; keeping fallback prose")
-        record_llm_narration_status(character_id, "fallback")
-        return fallback, "fallback"
+        provider, model = record_narration_delivery(character_id, "fallback")
+        return fallback, "fallback", provider, model
     if not narration.strip():
-        record_llm_narration_status(character_id, "fallback")
-        return fallback, "fallback"
-    record_llm_narration_status(character_id, status)
+        provider, model = record_narration_delivery(character_id, "fallback")
+        return fallback, "fallback", provider, model
+    provider, model = record_narration_delivery(character_id, status)
     if status not in ("narrated", "offline"):
-        return fallback, "fallback"
+        return fallback, "fallback", provider, model
     from .narration_prose_guard import maybe_record_prose_language_mismatch
 
     maybe_record_prose_language_mismatch(context.language, narration, character_id)
@@ -703,7 +733,7 @@ async def narrate_committed(
                 receipt.response = encode_state(stored)
                 receipt.status = "complete"
         await session.commit()
-    return narration, status
+    return narration, status, provider, model
 
 
 @app.patch("/characters/{character_id}/settings")
@@ -766,8 +796,9 @@ async def action(
     assert context is not None and event_id is not None
     if narration_mock_requested(request):
         response.narration_status = "fallback"
+        delivery_provider, delivery_model = None, None
     else:
-        response.narration, response.narration_status = await narrate_committed(
+        response.narration, response.narration_status, delivery_provider, delivery_model = await narrate_committed(
             context,
             event_id,
             key,
@@ -786,6 +817,8 @@ async def action(
         state_changed=state_changed,
         receipt_key=key,
         response=response,
+        narration_provider=delivery_provider,
+        narration_model=delivery_model,
     )
     logger.info(f"Action processed for character {character_id}: {payload.action.strip()[:50]}")
     return response
@@ -836,10 +869,12 @@ async def action_stream(
             )
         )
         narration = response.narration
+        delivery_provider: str | None = None
+        delivery_model: str | None = None
         billing_settled = False
 
         async def finalize_turn() -> None:
-            nonlocal billing_settled, narration, status
+            nonlocal billing_settled, narration, status, delivery_provider, delivery_model
             if billing_settled:
                 return
             billing_settled = True
@@ -858,7 +893,7 @@ async def action_stream(
             from .narration_prose_guard import maybe_record_prose_language_mismatch
 
             maybe_record_prose_language_mismatch(context.language, narration, character_id)
-            record_llm_narration_status(character_id, status)
+            delivery_provider, delivery_model = record_narration_delivery(character_id, status)
             await reconcile_narrator_billing(
                 user_id=user.id,
                 stored_tier=stored_tier,
@@ -870,6 +905,8 @@ async def action_stream(
                 state_changed=state_changed,
                 receipt_key=key,
                 response=response,
+                narration_provider=delivery_provider,
+                narration_model=delivery_model,
             )
 
         try:
@@ -975,7 +1012,9 @@ async def commit_action_turn(
                 .order_by(EventRecord.id.desc())
                 .limit(5)
             )).all()
-            memories = [row.result for row in reversed(history)]
+            memories = list(
+                narration_beats_from_journal([row.result or "" for row in reversed(history)])
+            )
             if character.long_term_memory.strip():
                 memories.insert(0, f"Long-term memory: {character.long_term_memory.strip()}")
             elif character.memory_summary:

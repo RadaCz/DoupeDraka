@@ -19,6 +19,7 @@ class NarrationContext:
     level_up_facts: dict | None = None
     defeat_facts: dict | None = None
     long_term_memory: str = ""
+    scene_dossier: dict | None = None
 
 
 @dataclass(frozen=True)

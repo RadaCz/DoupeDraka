@@ -68,10 +68,14 @@ async def test_normal_calls_configured_provider(monkeypatch):
 
 
 def test_normal_without_external_provider_downgrades_billing_tier(monkeypatch):
-    settings = get_settings()
     monkeypatch.setenv("LLM_PROVIDER", "ollama")
     monkeypatch.setenv("OLLAMA_URL", "http://127.0.0.1:11434")
     monkeypatch.setenv("GROQ_API_KEY", "")
+    monkeypatch.setenv("NVIDIA_API_KEY", "")
+    monkeypatch.setenv("CEREBRAS_API_KEY", "")
+    monkeypatch.setenv("OPENROUTER_API_KEY", "")
+    get_settings.cache_clear()
+    settings = get_settings()
 
     from app.engine import economy
 

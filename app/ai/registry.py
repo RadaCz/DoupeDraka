@@ -108,8 +108,8 @@ def narration_gateway_for(settings: Settings) -> NarrationGateway:
     return NarrationGateway(providers)
 
 
-def paid_narration_gateway_for(settings: Settings) -> NarrationGateway:
-    """Provider chain for Normal billing — external APIs only, never local Ollama."""
+def external_paid_providers(settings: Settings) -> list[NamedProvider]:
+    """Configured external APIs for Normal billing (never Ollama)."""
     providers: list[NamedProvider] = []
     for name in get_chain_names(settings):
         if name == "ollama":
@@ -117,7 +117,15 @@ def paid_narration_gateway_for(settings: Settings) -> NarrationGateway:
         provider = _provider_for_name(name, settings)
         if provider is not None:
             providers.append(provider)
-    return NarrationGateway(providers)
+    return providers
+
+
+def paid_narration_gateway_for(settings: Settings) -> NarrationGateway:
+    """Provider chain for Normal billing — external APIs only, never local Ollama."""
+    providers = external_paid_providers(settings)
+    if settings.paid_narration_strict and providers:
+        providers = providers[:1]
+    return NarrationGateway(providers, paid_strict=settings.paid_narration_strict)
 
 
 def provider_for(settings: Settings):

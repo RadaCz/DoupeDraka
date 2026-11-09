@@ -4,6 +4,7 @@ import httpx
 import pytest
 
 from app.ai.base import NarrationContext, NarrationRequest
+from app.ai.completion_meta import take_completion_meta
 from app.ai.errors import ProviderRateLimitError, ProviderStreamAbortedError
 from app.ai.gateway import NamedProvider, NarrationGateway
 from app.ai.stream_frames import StreamReplaceFrame
@@ -47,7 +48,10 @@ def test_gateway_falls_back_after_rate_limit():
             NamedProvider("Groq", second),
         ])
         text, status = await gateway.complete(_request())
+        meta = take_completion_meta()
         assert first.calls == 1
+        assert meta is not None
+        assert meta.provider == "Groq"
         assert second.calls == 1
         assert text == "Groq narrates the beat."
         assert status == "narrated"

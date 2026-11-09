@@ -110,20 +110,86 @@ def record_character_created(session: AsyncSession, character_id: str, race: str
     )
 
 
-def record_llm_fallback(failed_provider: str, fallback_provider: str, character_id: str | None = None) -> None:
-    schedule_analytics_event(
-        "llm_fallback_triggered",
-        character_id,
-        {"failed_provider": failed_provider, "fallback_provider": fallback_provider},
-    )
+def record_llm_fallback(
+    failed_provider: str,
+    fallback_provider: str,
+    character_id: str | None = None,
+    *,
+    error_kind: str = "",
+) -> None:
+    metadata: dict[str, Any] = {
+        "failed_provider": failed_provider,
+        "fallback_provider": fallback_provider,
+    }
+    if error_kind:
+        metadata["error_kind"] = error_kind
+    schedule_analytics_event("llm_fallback_triggered", character_id, metadata)
 
 
-def record_llm_narration_status(character_id: str | None, status: str) -> None:
-    schedule_analytics_event(
-        "llm_narration",
-        character_id,
-        {"status": status},
-    )
+def record_llm_provider_usage(
+    character_id: str | None,
+    *,
+    provider: str,
+    model: str,
+    narration_status: str,
+    delivered_to_player: bool,
+    latency_ms: int | None = None,
+    prompt_tokens: int | None = None,
+    completion_tokens: int | None = None,
+    total_tokens: int | None = None,
+    provider_request_status: str = "",
+    fallback_reason: str = "",
+) -> None:
+    """Provider call telemetry — tokens only when the API returned them."""
+    metadata: dict[str, Any] = {
+        "provider": provider,
+        "model": model,
+        "narration_status": narration_status,
+        "delivered_to_player": delivered_to_player,
+    }
+    if latency_ms is not None:
+        metadata["latency_ms"] = latency_ms
+    if prompt_tokens is not None:
+        metadata["prompt_tokens"] = prompt_tokens
+    if completion_tokens is not None:
+        metadata["completion_tokens"] = completion_tokens
+    if total_tokens is not None:
+        metadata["total_tokens"] = total_tokens
+    if provider_request_status:
+        metadata["provider_request_status"] = provider_request_status
+    if fallback_reason:
+        metadata["fallback_reason"] = fallback_reason
+    schedule_analytics_event("llm_provider_usage", character_id, metadata)
+
+
+def narration_status_with_delivery(
+    status: str,
+    *,
+    provider: str | None = None,
+    model: str | None = None,
+) -> dict[str, str]:
+    """Merge delivery metadata for turn_billing / analytics consumers."""
+    payload: dict[str, str] = {"narration_status": status}
+    if provider:
+        payload["narration_provider"] = provider
+    if model:
+        payload["narration_model"] = model
+    return payload
+
+
+def record_llm_narration_status(
+    character_id: str | None,
+    status: str,
+    *,
+    provider: str | None = None,
+    model: str | None = None,
+) -> None:
+    metadata: dict[str, Any] = {"status": status}
+    if provider:
+        metadata["provider"] = provider
+    if model:
+        metadata["model"] = model
+    schedule_analytics_event("llm_narration", character_id, metadata)
 
 
 def record_turn_billing(
@@ -135,17 +201,20 @@ def record_turn_billing(
     narration_status: str,
     energy_charged_tenths: int,
     energy_refunded_tenths: int = 0,
+    narration_provider: str | None = None,
+    narration_model: str | None = None,
 ) -> None:
     """Minimal playtest telemetry (GDS01 E5 scope)."""
-    schedule_analytics_event(
-        "turn_billing",
-        character_id,
-        {
-            "billing_tier": billing_tier,
-            "stored_tier": stored_tier,
-            "state_changed": state_changed,
-            "narration_status": narration_status,
-            "energy_charged_tenths": energy_charged_tenths,
-            "energy_refunded_tenths": energy_refunded_tenths,
-        },
-    )
+    metadata: dict[str, Any] = {
+        "billing_tier": billing_tier,
+        "stored_tier": stored_tier,
+        "state_changed": state_changed,
+        "narration_status": narration_status,
+        "energy_charged_tenths": energy_charged_tenths,
+        "energy_refunded_tenths": energy_refunded_tenths,
+    }
+    if narration_provider:
+        metadata["narration_provider"] = narration_provider
+    if narration_model:
+        metadata["narration_model"] = narration_model
+    schedule_analytics_event("turn_billing", character_id, metadata)

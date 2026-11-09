@@ -22,6 +22,19 @@ def test_offline_narrates_combat_defeat_respawn():
     assert "wake" in narration.lower() or "probud" in narration.lower()
 
 
+def test_scene_dossier_in_user_prompt():
+    context = NarrationContext(
+        action="look",
+        events=("A latch clicks.",),
+        location="The Whispering Cellar",
+        memories=(),
+        scene_dossier={"hero": {"name": "Test", "hp": 8}},
+    )
+    prompt = Narrator()._request(context).user_prompt
+    assert "Scene dossier" in prompt
+    assert '"name": "Test"' in prompt
+
+
 def test_long_term_memory_in_system_prompt():
     context = NarrationContext(
         action="look",
