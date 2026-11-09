@@ -1,9 +1,11 @@
 import json
+import os
 from datetime import datetime, timedelta
 from pathlib import Path
 from sqlalchemy import BigInteger, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.pool import NullPool
 
 from .db_types import JsonMetadata
 from .engine.economy import STARTING_BALANCE_TENTHS
@@ -17,9 +19,14 @@ def build_async_engine() -> AsyncEngine:
     url = settings.database_url
     kwargs: dict = {}
     if url.startswith("postgresql"):
-        kwargs["pool_size"] = settings.db_pool_size
-        kwargs["max_overflow"] = settings.db_max_overflow
         kwargs["pool_pre_ping"] = True
+        # CI Postgres suite: TestClient and asyncio.run() use different event loops.
+        # Pooling asyncpg connections across loops raises "Future attached to a different loop".
+        if os.environ.get("PYTEST_DATABASE_URL", "").strip():
+            kwargs["poolclass"] = NullPool
+        else:
+            kwargs["pool_size"] = settings.db_pool_size
+            kwargs["max_overflow"] = settings.db_max_overflow
     return create_async_engine(url, **kwargs)
 
 
