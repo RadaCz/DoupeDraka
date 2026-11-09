@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased (2026-11-09)
+
+### Narrator V2 P3 (journal + offline)
+- Offline narrator: `scene_kind` fallback prose (EN/CS), return-visit leads, `variety_seed` anti-repeat (`offline_variety.py`).
+- Journal UX: stream story-before-mechanics; hub + play share `journal-presentation-text-first`; CZ mechanic labels.
+- SSE recovery: `mergeJournalAfterRefresh` / `dedupeJournalEvents` after `refreshEvents`.
+- Tests: `test_offline_scene_kind.py`, `journalFormat.test.ts` (53 Vitest total).
+
+### CI lifecycle (`ec646fc`, pushed)
+- SQLite NullPool under `DOUPE_TEST_DB`; pytest drains for fire-and-forget analytics; Telegram module `TestClient` fixture.
+- GitHub Actions run `42679663584` on `clean-main`: backend, backend-postgres, frontend, e2e — all SUCCESS.
+
 ## Unreleased (2026-11-08)
 
 ### Closed beta audit (clean-main, pre-commit)

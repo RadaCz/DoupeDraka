@@ -1,12 +1,13 @@
 """Czech prose for the offline narrator (engine facts stay English)."""
 
 from .base import NarrationContext
+from .offline_variety import generic_scene_prose, variety_seed
 
 
 def narrate_offline_cs(context: NarrationContext) -> str:
     facts = " ".join(context.events).lower()
     action = context.action.strip().rstrip(".!?")
-    seed = sum(ord(char) for char in "|".join(context.events))
+    seed = variety_seed(context)
 
     def choose(options: tuple[str, ...]) -> str:
         return options[seed % len(options)]
@@ -120,8 +121,4 @@ def narrate_offline_cs(context: NarrationContext) -> str:
             f"Pokus o {action.lower()} se nepovede podle plánu.",
             f"Snažíš se {action.lower()}, ale bez výhody.",
         ))
-    return choose((
-        f"Rozhodneš se: {action}. Scéna se posune dál.",
-        f"Zavážeš se k tahu: {action}.",
-        f"Tvoje volba — {action} — rozhýbe děj.",
-    ))
+    return generic_scene_prose(context, language="cs")

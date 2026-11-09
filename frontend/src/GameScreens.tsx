@@ -732,7 +732,7 @@ export function JournalScreen({
   return (
     <section className="screen">
       <div className="page-title"><p className="eyebrow">{t('HISTORY')}</p><h1>{t('Journal')}</h1></div>
-      <div className="journal-scene" role="log" aria-label={t('Adventure journal')}>
+      <div className="journal-scene journal-presentation-text-first" role="log" aria-label={t('Adventure journal')}>
         {events.length === 0 && <p>{t('Your story has not begun yet.')}</p>}
         {events.map(event => (
           <article className="journal-beat" key={event.id}>

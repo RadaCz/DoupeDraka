@@ -9,6 +9,16 @@ describe('journalBlocks', () => {
     expect(parts.facts).toContain('Attack roll');
   });
 
+  it('localizes Czech mechanic lines', () => {
+    const blocks = splitJournalResult(
+      'Scéna.\n\nDexterity check: 14 vs DC 12 — success.',
+      'cs',
+    );
+    const mechanic = blocks.find(block => block.kind === 'mechanic');
+    expect(mechanic?.text).toContain('obratnosti');
+    expect(mechanic?.text).toContain('úspěch');
+  });
+
   it('labels quest and mechanic lines in the facts block', () => {
     const blocks = splitJournalResult(
       'Caldus nods grimly.\n\nYou accept the quest to recover the shrine bell.\n\nAttack roll: 12 vs AC 10 — hit.',

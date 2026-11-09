@@ -2,6 +2,7 @@ from collections.abc import AsyncIterator
 
 from ..narration_language import normalize_narration_language
 from .base import NarrationContext, NarrationRequest
+from .offline_variety import generic_scene_prose, variety_seed
 
 
 class OfflineProvider:
@@ -31,7 +32,7 @@ def narrate_offline(context: NarrationContext) -> str:
         return narrate_offline_cs(context)
     facts = " ".join(context.events).lower()
     action = context.action.strip().rstrip(".!?")
-    seed = sum(ord(char) for char in "|".join(context.events))
+    seed = variety_seed(context)
 
     def choose(options: tuple[str, ...]) -> str:
         return options[seed % len(options)]
@@ -147,8 +148,4 @@ def narrate_offline(context: NarrationContext) -> str:
             f"Your attempt to {action.lower()} does not go as planned.",
             f"You make the effort to {action.lower()}, but gain no advantage.",
         ))
-    return choose((
-        f"You take action: {action}. The scene shifts around your choice.",
-        f"Your decision sets events in motion: {action}.",
-        f"You commit to your approach: {action}.",
-    ))
+    return generic_scene_prose(context, language="en")

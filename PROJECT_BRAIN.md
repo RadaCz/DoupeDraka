@@ -4,8 +4,9 @@
 
 - **Repository:** `D:\DoupeDraka`
 - **Development branch:** `clean-main` (merge to `main` after green CI only)
-- **Last updated:** 2026-11-08
-- **Verified baseline (local, 2026-11-09):** backend **381 passed**, **2 skipped** pytest (včetně `tests/test_memory_hardening.py`); frontend **48** Vitest; `npm run build` OK; E2E **8** functional specs (po `npx playwright install chromium`). Alembic head **v005**. **Closed beta** = green CI + playtest 10–15 hráčů.
+- **Last updated:** 2026-11-09 (Narrator V2 P3 working tree)
+- **Verified baseline commit:** `ec646fc` — GitHub Actions `42679663584` (4/4 SUCCESS).
+- **Local (P3 pre-commit, 2026-11-09):** backend **386 passed**, **2 skipped**; strict `-W error` thread warnings **386 passed**; frontend **53** Vitest; **8** E2E; secret scan OK; Alembic **v005**. **Telefonní playtest** stále **NEOVĚŘEN**.
 - **External verification:** real Telegram visual QA and Docker/Postgres in production-like deploy remain **UNVERIFIED** by the maintainer.
 
 ## 1. Directives

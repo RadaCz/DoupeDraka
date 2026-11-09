@@ -1,7 +1,9 @@
 # Narrator V2 (P2) — kvalita vypravěče a paměť
 
-**Baseline commit (P2):** `adceca6` · **Branch:** `clean-main`  
-**P2.1 (memory hardening):** `journal_prose` — sanitizace legacy/journal pro narrator
+**Baseline commit (P2):** `adceca6` · **P2.1:** memory hardening (`journal_prose`)  
+**P3 (working tree na `ec646fc`):** offline `scene_kind` fallbacky, journal stream order, CZ mechaniky v UI  
+**CI baseline:** `ec646fc` — Actions run `42679663584` (backend, backend-postgres, frontend, e2e) SUCCESS  
+**Branch:** `clean-main`
 
 ## Co bylo špatně / matoucí (P1)
 
@@ -40,8 +42,30 @@
 
 Engine authority, commit → narrate → billing, Lite/Normal/Strict, žádné nové mechaniky.
 
-## Otevřené (P3+)
+## P3 (Journal UX + offline V2)
 
-- Dynamické NPC vztahy v DB.
-- Offline šablony rozšířené o scene_kind.
-- Journal UI oddělení story vs mechanics (frontend).
+### Journal (frontend)
+
+- `journalBlocks.tsx` — prose vs mechanic/quest/state bloky; CZ překlady řádků hodů.
+- `journalFormat.formatJournalStreamResult` — během SSE se mechanika neukáže, dokud nepřijde narativní prose.
+- `PlayJournal` + `play.css` — text-first mobilní deník (viz P2 UX); HP/zlato dál v `TurnDeltaStrip`.
+- Hub `JournalScreen` — sdílí `journal-presentation-text-first` s play deníkem (prose + mechanic pills).
+
+### Offline narrator
+
+- `app/ai/offline_variety.py` — `scene_kind` fallback šablony (talk/combat/explore/travel/rest/story_moment/general), EN + CS.
+- `variety_seed` míchá fakta, paměť a `scene_kind` (anti-repeat vůči předchozím beatům).
+- `familiarity_lead` z dossier `location.first_visit_here` — návrat do lokace nepůsobí jako první návštěva.
+- Specifické větve (quest bell, combat roll, …) zůstávají fact-driven; generika jde přes `scene_kind`.
+
+### Testy P3
+
+- Backend: `tests/test_offline_scene_kind.py`
+- Frontend: `journalBlocks.test.ts`, `journalFormat.test.ts`
+
+## Otevřené (P4+)
+
+- Dynamické NPC vztahy v DB (mimo quest flags).
+- E2E test přerušeného streamu end-to-end (Vitest: `mergeJournalAfterRefresh` + dedupe po `refreshEvents`).
+- `visualViewport` pro klávesnici v Telegramu (E2E jen proxy přes zmenšený viewport).
+- Telefonní playtest GDS01 — **ne** označený hotový v docs.

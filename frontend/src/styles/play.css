@@ -156,11 +156,13 @@
   box-shadow: none;
 }
 
-.game-screen.text-first .journal-beat {
+.game-screen.text-first .journal-beat,
+.journal-presentation-text-first .journal-beat {
   margin-bottom: 22px;
 }
 
-.game-screen.text-first .journal-beat-head {
+.game-screen.text-first .journal-beat-head,
+.journal-presentation-text-first .journal-beat-head {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
@@ -168,12 +170,14 @@
   opacity: 0.65;
 }
 
-.game-screen.text-first .journal-beat-head time {
+.game-screen.text-first .journal-beat-head time,
+.journal-presentation-text-first .journal-beat-head time {
   font-size: 0.68rem;
   color: var(--muted);
 }
 
-.game-screen.text-first .journal-action {
+.game-screen.text-first .journal-action,
+.journal-presentation-text-first .journal-action {
   margin: 0 0 6px;
   padding: 0;
   border-radius: 0;
@@ -184,29 +188,35 @@
   text-transform: uppercase;
 }
 
-.game-screen.text-first .journal-action span {
+.game-screen.text-first .journal-action span,
+.journal-presentation-text-first .journal-action span {
   display: none;
 }
 
-.game-screen.text-first .journal-narration {
+.game-screen.text-first .journal-narration,
+.journal-presentation-text-first .journal-narration {
   font-weight: 400;
   color: var(--text-soft);
 }
 
 .game-screen.text-first .journal-prose,
-.game-screen.text-first .journal-narration-prose {
+.game-screen.text-first .journal-narration-prose,
+.journal-presentation-text-first .journal-prose,
+.journal-presentation-text-first .journal-narration-prose {
   margin: 0 0 14px;
   padding: 0;
   background: transparent;
   border: 0;
 }
 
-.game-screen.text-first .journal-narration-prose {
+.game-screen.text-first .journal-narration-prose,
+.journal-presentation-text-first .journal-narration-prose {
   font: 400 1rem/1.72 var(--font-body, serif);
   color: var(--text);
 }
 
-.game-screen.text-first .journal-quest {
+.game-screen.text-first .journal-quest,
+.journal-presentation-text-first .journal-quest {
   margin: 10px 0;
   padding: 8px 12px;
   border-left: 2px solid color-mix(in srgb, var(--gold, #b58a3c) 70%, transparent);
@@ -214,7 +224,8 @@
   color: var(--text-soft);
 }
 
-.game-screen.text-first .journal-state {
+.game-screen.text-first .journal-state,
+.journal-presentation-text-first .journal-state {
   margin: 8px 0;
   padding: 6px 10px;
   font-size: 0.75rem;
@@ -234,15 +245,19 @@
 }
 
 .game-screen.text-first .journal-scene > .journal-beat:first-child,
-.game-screen.text-first .journal-scene > .scene-empty:first-child {
+.game-screen.text-first .journal-scene > .scene-empty:first-child,
+.journal-presentation-text-first > .journal-beat:first-child,
+.journal-presentation-text-first > .scene-empty:first-child {
   padding-top: 10px;
 }
 
-.game-screen.text-first .journal-narration > .journal-prose:first-child {
+.game-screen.text-first .journal-narration > .journal-prose:first-child,
+.journal-presentation-text-first .journal-narration > .journal-prose:first-child {
   padding-top: 6px;
 }
 
-.game-screen.text-first .journal-mechanic {
+.game-screen.text-first .journal-mechanic,
+.journal-presentation-text-first .journal-mechanic {
   margin: 18px auto;
   padding: 10px 14px;
   max-width: 22rem;
@@ -257,17 +272,20 @@
   line-height: 1.4;
 }
 
-.game-screen.text-first .journal-mechanic-success {
+.game-screen.text-first .journal-mechanic-success,
+.journal-presentation-text-first .journal-mechanic-success {
   color: color-mix(in srgb, var(--accent-verb) 60%, var(--muted));
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-verb) 25%, transparent);
 }
 
-.game-screen.text-first .journal-mechanic-failure {
+.game-screen.text-first .journal-mechanic-failure,
+.journal-presentation-text-first .journal-mechanic-failure {
   color: color-mix(in srgb, #c98a7f 55%, var(--muted));
   box-shadow: inset 0 0 0 1px color-mix(in srgb, #9a5f55 30%, transparent);
 }
 
-.game-screen.text-first .journal-mechanic-neutral {
+.game-screen.text-first .journal-mechanic-neutral,
+.journal-presentation-text-first .journal-mechanic-neutral {
   box-shadow: inset 0 0 0 1px var(--border-subtle);
 }
 

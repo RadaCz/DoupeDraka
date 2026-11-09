@@ -1,6 +1,7 @@
 # Master plan — stav (sync s DOUPEDRAKA_MASTER_PLAN.md v1.0)
 
-Poslední revize: **2026-11-09**. Etapy 7–9 záměrně otevřené až po uzavření sólo smyčky.
+Poslední revize: **2026-11-09 (P3 journal/offline)**. Etapy 7–9 záměrně otevřené až po uzavření sólo smyčky.  
+**Ověřený CI commit:** `ec646fc` · GitHub Actions `42679663584` — 4/4 SUCCESS (lokální P3 změny zatím necommitnuté).
 
 | Etapa | Název | Stav | Poznámka |
 |------:|-------|------|----------|
@@ -9,7 +10,7 @@ Poslední revize: **2026-11-09**. Etapy 7–9 záměrně otevřené až po uzav�
 | 2 | Deploy & DB lifecycle | Hotovo v kódu | Alembic v003, Docker, health 503, PG job v CI |
 | 3 | Ruleset v1 | Průběžně | `ruleset_v1.py` + MVP lock při tvorbě; UI „Planned“; iniciativa/akce — backlog |
 | 4 | First campaign slice | Průběžně | `quests.py` + `/reference` katalog; side quest Crypt; hlavní quest refaktor |
-| 5 | AI DM CZ | **P2 + P2.1** | Narrator V2 paměť + scene kind; P2.1 sanitizace legacy/journal (`journal_prose`), regrese v `tests/test_memory_hardening.py` |
+| 5 | AI DM CZ | **P2 + P2.1 + P3 (WT)** | Paměť, online `scene_kind`, offline fallbacky (`offline_variety`), journal UX stream order + CZ mechaniky |
 | 6 | Mini App & Telegram QA | Hotovo (uživatel) | Checklist vyplněn; CS chips; frontend polish fáze 0–6 (theme-dark, play, polish moduly, `styles/README.md`, volitelný `e2e/visual-baseline.spec.ts`) |
 | 7 | Closed beta | **E1–E2b + minimální telemetrie implementováno** (lokální audit nad `e012532`); **E3 pozastaveno** | Postgres migrace **v005**, CI/dev deps, racial bonusy, vault hint, tier billing; playtest 10–15 hráčů ať po sign-off commitu |
 | 8 | Co-op MP | Nezačato | Záměrně po sólo kapitole |
@@ -32,7 +33,7 @@ Poslední revize: **2026-11-09**. Etapy 7–9 záměrně otevřené až po uzav�
 ## Ověření (release gate)
 
 ```bash
-python -m pytest -q   # lokálně 381 passed, 2 skipped (2026-11-09, včetně P2.1)
+python -m pytest -q   # lokálně 382 passed, 2 skipped (ec646fc); P3 +test_offline_scene_kind
 python scripts/secret_scan.py
 cd frontend && npm run test -- --run && npm run build && npm run test:e2e
 ```

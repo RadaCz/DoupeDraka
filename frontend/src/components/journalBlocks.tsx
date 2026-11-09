@@ -1,7 +1,7 @@
 import { useI18n } from '../i18n';
 
 const MECHANIC_LINE = /^(Attack roll:|.*\bdamage\b|Saving throw:|Exploration roll:|Intelligence check:|Wisdom check:|Strength check:|Dexterity check:|Constitution check:|Charisma check:|.* vs DC \d+)/i;
-const QUEST_LINE = /\b(quest|shrine bell|return the bell|caldus|nib|vault of echoes|bell warden|echo shard)\b/i;
+const QUEST_LINE = /\b(quest|shrine bell|return the bell|caldus|nib|vault of echoes|bell warden|echo shard|úkol|zvon|chrámový zvon|nibovo|krypta|strážce zvonu)\b/i;
 const STATE_LINE = /\b(your hp:|hp:|gold|inventory|level up!|xp|recover \d+ hp|ready your|you ready your|spell slot)\b/i;
 
 export function splitNarrationAndFacts(result: string): { narration: string; facts: string } {
@@ -22,9 +22,13 @@ export function splitNarrationAndFacts(result: string): { narration: string; fac
 
 const MECHANIC_CS: Array<[RegExp, string]> = [
   [/Exploration roll: (\d+) on a six-sided die\.(.*)/i, 'Průzkum: $1 na šestistranné kostce.$2'],
-  [/Intelligence check: (\d+) vs DC (\d+) — (success|failure)\./i, 'Test inteligence: $1 proti ST $2 — $3.'],
-  [/Wisdom check: (\d+) vs DC (\d+) — (success|failure)\./i, 'Test moudrosti: $1 proti ST $2 — $3.'],
+  [/Intelligence check: (\d+) vs DC (\d+) [-—] (success|failure)\.?/i, 'Test inteligence: $1 proti ST $2 — $3.'],
+  [/Wisdom check: (\d+) vs DC (\d+) [-—] (success|failure)\.?/i, 'Test moudrosti: $1 proti ST $2 — $3.'],
   [/Attack roll: (.*)/i, 'Útočný hod: $1'],
+  [/Charisma check: (\d+) vs DC (\d+) [-—] (success|failure)\.?/i, 'Test charismy: $1 proti ST $2 — $3.'],
+  [/Strength check: (\d+) vs DC (\d+) [-—] (success|failure)\.?/i, 'Test síly: $1 proti ST $2 — $3.'],
+  [/Dexterity check: (\d+) vs DC (\d+) [-—] (success|failure)\.?/i, 'Test obratnosti: $1 proti ST $2 — $3.'],
+  [/Constitution check: (\d+) vs DC (\d+) [-—] (success|failure)\.?/i, 'Test výdrže: $1 proti ST $2 — $3.'],
   [/ — success\.?$/i, ' — úspěch.'],
   [/ — failure\.?$/i, ' — neúspěch.'],
 ];

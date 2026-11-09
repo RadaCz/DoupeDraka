@@ -25,6 +25,7 @@ import type {
 import { CHARACTER_HUB_SCREENS, MORE_HUB_SCREENS } from './types';
 import { isFallenError } from './game/gameActions';
 import { formatTurnDelta } from './game/turnDelta';
+import { formatJournalStreamResult, mergeJournalAfterRefresh } from './journalFormat';
 import { DefeatOverlay, LevelUpModal, type LevelUpNotice } from './components/TurnMoments';
 import { isCombatDefeatRespawn, noticeFromLevelUp } from './game/turnMoments';
 import { FallenScreen } from './screens/FallenScreen';
@@ -226,7 +227,7 @@ function AppContent() {
 
   const refreshEvents = useCallback(async (characterId: string) => {
     const history = await request<JournalEvent[]>(`/characters/${characterId}/events`);
-    setEvents(history);
+    setEvents(previous => mergeJournalAfterRefresh(history, previous));
   }, []);
 
   const selectCharacter = useCallback(async (selected: Character) => {
@@ -430,8 +431,9 @@ function AppContent() {
     setLevelUpNotice(null);
     setShowDefeatOverlay(false);
     const updatePendingNarration = (narration: string, facts: string[]) => {
+      const result = formatJournalStreamResult(narration, facts);
       setEvents(previous => previous.map(event => event.id === pendingEventId
-        ? { ...event, result: [narration, facts.join('\n')].filter(Boolean).join('\n\n') }
+        ? { ...event, result }
         : event));
     };
     try {
@@ -462,9 +464,10 @@ function AppContent() {
           setEvents(previous => [...previous, {
             id: pendingEventId,
             action,
-            result: result.events.join('\n'),
+            result: '',
             created_at: new Date().toISOString(),
           }]);
+          updatePendingNarration(streamedNarration, resolvedFacts);
         } else if (event.type === 'delta' && typeof event.data.text === 'string') {
           setTurnPhase('narrating');
           streamedNarration += event.data.text;

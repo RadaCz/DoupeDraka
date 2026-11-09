@@ -148,7 +148,7 @@ export function PlayJournal({
     if (!busy) scrollJournalToLatest('smooth');
   }, [busy, scrollJournalToLatest]);
   return (
-    <div className="journal-scene" ref={journalRef} role="log" aria-label={t('Adventure journal')} aria-live="polite">
+    <div className="journal-scene journal-presentation-text-first" ref={journalRef} role="log" aria-label={t('Adventure journal')} aria-live="polite">
       {events.length === 0 && (
         <div className="scene-empty">
           <span aria-hidden="true">✦</span>
