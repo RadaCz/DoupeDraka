@@ -7,24 +7,15 @@ import logging
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .ai.base import NarrationContext, NarrationRequest
-from .ai.registry import narration_gateway_for
 from .db import EventRecord
 from .engine.models import CharacterState
-from .settings import get_settings
+from .narration_dossier import narration_beats_from_journal
 
 logger = logging.getLogger(__name__)
 
 ARCHIVE_EVERY_TURNS = 20
 ARCHIVE_BATCH_SIZE = 10
 MAX_LONG_TERM_CHARS = 4000
-
-SUMMARY_SYSTEM = (
-    "Summarize the supplied past adventure journal into a single concise paragraph. "
-    "Focus on key NPCs, active quests, important loot, and location changes. "
-    "Do not invent events. Write in English."
-)
-
 
 def should_archive_journal(turn_count: int) -> bool:
     return turn_count > 0 and turn_count % ARCHIVE_EVERY_TURNS == 0
@@ -38,41 +29,20 @@ def merge_long_term_memory(existing: str, addition: str) -> str:
 
 
 def heuristic_summary(entries: list[EventRecord]) -> str:
-    parts = []
-    for row in entries:
-        snippet = (row.result or row.action).replace("\n", " ").strip()
-        if snippet:
-            parts.append(snippet[:160])
-    text = " ".join(parts)
-    return text[:800] if text else "Earlier adventures are remembered only in broad strokes."
+    prose_beats = narration_beats_from_journal(
+        [(row.result or row.action or "") for row in entries],
+        limit=len(entries),
+    )
+    if not prose_beats:
+        return "Earlier adventures are remembered only in broad strokes."
+    text = " ".join(prose_beats)
+    return text[:800]
 
 
 async def summarize_entries(entries: list[EventRecord]) -> str:
+    """Always offline/heuristic — journal archive must not incur paid API calls."""
     if not entries:
         return ""
-    lines = []
-    for row in entries:
-        lines.append(f"Action: {row.action}\nJournal:\n{(row.result or '')[:900]}")
-    user_prompt = "\n\n---\n\n".join(lines)
-    gateway = narration_gateway_for(get_settings())
-    request = NarrationRequest(
-        context=NarrationContext(
-            action="summarize journal",
-            events=(),
-            location="",
-            memories=(),
-            verbose=False,
-        ),
-        system_prompt=SUMMARY_SYSTEM,
-        user_prompt=user_prompt,
-    )
-    if gateway.has_online_providers:
-        try:
-            text, status = await gateway.complete(request)
-            if status == "narrated" and text.strip():
-                return text.strip()
-        except Exception:
-            logger.exception("LLM journal summarization failed; using heuristic summary")
     return heuristic_summary(entries)
 
 

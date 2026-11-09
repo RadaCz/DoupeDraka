@@ -81,6 +81,16 @@ def _combat_snapshot(character: CharacterState) -> dict[str, Any] | None:
 def scene_dossier_for_character(character: CharacterState) -> dict[str, Any]:
     """Structured, read-only RPG context the model may describe but not override."""
     loc = LOCATIONS.get(character.location)
+    visit_count = sum(1 for name in character.visited_locations if name == character.location)
+    first_visit = visit_count <= 1 and character.location in character.visited_locations
+    loc_block: dict[str, Any] = {
+        "name": character.location,
+        "atmosphere": loc.arrival_beat if loc else "",
+        "first_visit_here": first_visit,
+        "times_visited": visit_count,
+    }
+    if loc and not first_visit:
+        loc_block["familiarity"] = "The hero has been here before."
     dossier: dict[str, Any] = {
         "hero": {
             "name": character.name,
@@ -92,10 +102,7 @@ def scene_dossier_for_character(character: CharacterState) -> dict[str, Any]:
             "gold": character.gold,
             "death_state": character.death_state,
         },
-        "location": {
-            "name": character.location,
-            "atmosphere": loc.arrival_beat if loc else "",
-        },
+        "location": loc_block,
         "quests": _quest_progress(dict(character.quest_flags)),
         "inventory_highlights": list(character.inventory[:8]),
         "in_combat": character.in_combat,

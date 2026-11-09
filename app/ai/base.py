@@ -20,6 +20,7 @@ class NarrationContext:
     defeat_facts: dict | None = None
     long_term_memory: str = ""
     scene_dossier: dict | None = None
+    scene_kind: str = "general"
 
 
 @dataclass(frozen=True)

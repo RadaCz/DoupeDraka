@@ -1,7 +1,7 @@
 # Narrator V1 — audit, kontrakty, closed-beta
 
-**Repo:** `RadaCz/DoupeDraka` · **Branch:** `clean-main` · **Baseline commit:** `31b1346`  
-**P1 krok 1–2:** necommitnuté v pracovním stromu
+**Repo:** `RadaCz/DoupeDraka` · **Branch:** `clean-main` · **P1 shipped:** `2e55059`  
+**P2 kvalita vypravěče:** viz `NARRATOR_V2.md`
 
 ## Neměnná pravidla
 

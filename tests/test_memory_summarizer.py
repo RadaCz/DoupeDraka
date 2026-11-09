@@ -26,6 +26,17 @@ def test_merge_long_term_memory_truncates():
     assert "beta" in text
 
 
+def test_summarize_entries_is_heuristic_only():
+    from datetime import datetime
+
+    rows = [
+        EventRecord(id=1, character_id="c1", action="a", result="Story.\n\nMechanics.", created_at=datetime.utcnow())
+    ]
+    summary = asyncio.run(summarize_entries(rows))
+    assert "Story" in summary
+    assert "Mechanics" not in summary
+
+
 def test_summarize_entries_heuristic_without_providers(monkeypatch):
     from datetime import datetime
 
@@ -45,10 +56,6 @@ def test_summarize_entries_heuristic_without_providers(monkeypatch):
             created_at=datetime.utcnow(),
         ),
     ]
-    monkeypatch.setattr(
-        "app.memory_summarizer.narration_gateway_for",
-        lambda settings: type("G", (), {"has_online_providers": False})(),
-    )
     summary = asyncio.run(summarize_entries(rows))
     assert "latch" in summary
     assert "bell" in summary

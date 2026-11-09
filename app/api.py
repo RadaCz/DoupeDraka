@@ -19,7 +19,9 @@ from .engine.models import CharacterState, MonsterState
 from .engine.locations import LOCATIONS
 from .engine.service import GameEngine
 from .heroes import HEROES, get_hero
+from .campaign_memory import effective_long_term_memory
 from .narration_dossier import narration_beats_from_journal, scene_dossier_for_character
+from .narration_scene import infer_scene_kind
 from .narration_events import defeat_facts_from_events
 from .ai.completion_meta import take_completion_meta
 from .narration_language import normalize_narration_language
@@ -638,8 +640,9 @@ def build_narration_context(
         rest_facts=rest_facts,
         level_up_facts=level_up_facts,
         defeat_facts=defeat_facts_from_events(events),
-        long_term_memory=character.long_term_memory,
+        long_term_memory=effective_long_term_memory(character),
         scene_dossier=scene_dossier_for_character(character),
+        scene_kind=infer_scene_kind(text, events, in_combat=character.in_combat),
     )
 
 
@@ -1012,13 +1015,9 @@ async def commit_action_turn(
                 .order_by(EventRecord.id.desc())
                 .limit(5)
             )).all()
-            memories = list(
-                narration_beats_from_journal([row.result or "" for row in reversed(history)])
+            short_term_beats = narration_beats_from_journal(
+                [row.result or "" for row in reversed(history)]
             )
-            if character.long_term_memory.strip():
-                memories.insert(0, f"Long-term memory: {character.long_term_memory.strip()}")
-            elif character.memory_summary:
-                memories.insert(0, f"Campaign memory: {character.memory_summary}")
 
             turn_location = character.location
             active_monster = MonsterState(**character.combatant) if character.combatant else None
@@ -1031,12 +1030,8 @@ async def commit_action_turn(
             if account is None:
                 raise HTTPException(401, "User not found")
             character.combatant = asdict(monster) if monster else None
-            if result.events:
-                prior = character.memory_summary.strip()
-                fresh = " ".join(result.events)
-                character.memory_summary = (f"{prior} {fresh}".strip())[-1200:]
             context = build_narration_context(
-                character, text, tuple(result.events), memories,
+                character, text, tuple(result.events), list(short_term_beats),
                 result.spell_facts or None,
                 result.rest_facts or None,
                 result.level_up_facts or None,
@@ -1187,7 +1182,12 @@ async def revive_character(character_id: str, user: User = Depends(get_user_by_t
         character.in_combat = False
         character.combatant = None
         character.death_state = "alive"
-        character.memory_summary = (character.memory_summary + " Revived at the last safe location.")[-1200:]
+        from .memory_summarizer import merge_long_term_memory
+
+        character.long_term_memory = merge_long_term_memory(
+            character.long_term_memory,
+            "Revived at the last safe location.",
+        )
         claimed = await session.execute(update(CharacterRecord).where(
             CharacterRecord.id == character_id,
             CharacterRecord.owner_id == user.id,

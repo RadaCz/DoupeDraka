@@ -63,6 +63,22 @@ def test_npc_dossier_hides_bell_topic_before_quest_accepted():
     assert not any("shrine bell theft is a live topic" in k.lower() for k in nib.get("knows", []))
 
 
+def test_location_visit_familiarity_on_return():
+    character = CharacterState(
+        id="c5",
+        owner_id=1,
+        name="E",
+        race="Dwarf",
+        character_class="Cleric",
+        location="The Whispering Cellar",
+        visited_locations=["The Whispering Cellar", "The Sunken Corridor", "The Whispering Cellar"],
+    )
+    dossier = scene_dossier_for_character(character)
+    assert dossier["location"]["times_visited"] == 2
+    assert dossier["location"]["first_visit_here"] is False
+    assert "familiarity" in dossier["location"]
+
+
 def test_scene_dossier_includes_quest_and_combat():
     character = CharacterState(
         id="c1",

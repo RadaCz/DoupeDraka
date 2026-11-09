@@ -45,7 +45,27 @@ FACT_RULE = (
     "Narrate ONLY the supplied facts and the read-only scene dossier. "
     "Never invent or alter dice, hit points, damage, rewards, rule outcomes, inventory, "
     "quests, or locations. You may describe what the facts imply, never what they contradict. "
-    "Do not mention being an AI."
+    "Do not mention being an AI or game rules unless the player asked."
+)
+
+VARIETY_RULE = (
+    "Do not reuse the same opening line or stock phrase as in Previous beats. "
+    "Vary sensory details and sentence rhythm while staying faithful to the facts."
+)
+
+SCENE_KIND_DIRECTIVES = {
+    "talk": "This is a social scene: give NPCs distinct voices from the dossier; let dialogue carry the beat.",
+    "combat": "This is combat: keep tension high, brief sentences, clear who acted and what happened mechanically.",
+    "explore": "This is exploration: foreground atmosphere and discoveries implied by the facts.",
+    "travel": "This is travel: convey motion and arrival without inventing new locations.",
+    "rest": "This is a quiet moment: slower pacing, recovery and stillness.",
+    "story_moment": "This is a story beat: emphasize consequence and emotional weight without new rewards.",
+    "general": "Keep prose tight and specific to the player action.",
+}
+
+CS_PROSE_DIRECTIVE = (
+    "Write natural Czech fantasy prose — idiomatic, readable on a phone, short paragraphs. "
+    "Avoid stiff calques from English and repeated formulaic intros."
 )
 
 
@@ -58,10 +78,14 @@ class Narrator:
         parts = [
             language_output_instruction(language_code),
             FACT_RULE,
+            VARIETY_RULE,
+            SCENE_KIND_DIRECTIVES.get(context.scene_kind, SCENE_KIND_DIRECTIVES["general"]),
             TONE_DIRECTIVES.get(context.tone, TONE_DIRECTIVES["balanced"]),
             HUMOR_DIRECTIVES.get(context.humor, HUMOR_DIRECTIVES["rare"]),
             LENGTH_DIRECTIVES[bool(context.verbose)],
         ]
+        if language_code == "cs":
+            parts.append(CS_PROSE_DIRECTIVE)
         memory = (context.long_term_memory or "").strip()
         if memory:
             parts.append(f"Long-term campaign memory: {memory}")
@@ -177,6 +201,7 @@ class Narrator:
         dossier = json.dumps(context.scene_dossier or {}, ensure_ascii=False)
         prompt = (
             f"Location: {context.location}\nPlayer action: {context.action}\n"
+            f"Scene kind: {context.scene_kind}\n"
             f"Narration language: {language_name} ({language_code}); prose only — mechanics stay English.\n"
             f"Scene dossier (read-only game state):\n{dossier}\n"
             f"Engine result:\n{facts}\n"
