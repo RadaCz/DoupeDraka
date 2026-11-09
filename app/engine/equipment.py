@@ -106,6 +106,59 @@ def damage_modifier(character: CharacterState, weapon: WeaponDefinition) -> int:
     return _ability_mod(character.abilities.get(weapon.ability, strength))
 
 
+def weapon_for_inventory_label(label: str) -> WeaponDefinition | None:
+    key = label.casefold().strip()
+    gear = INVENTORY_GEAR.get(key)
+    if gear and gear[0]:
+        return WEAPONS.get(gear[0])
+    if key in WEAPONS:
+        return WEAPONS[key]
+    return None
+
+
+def resolve_inventory_label(inventory: list[str], query: str) -> str | None:
+    """Match a player phrase to one carried item label."""
+    needle = query.casefold().strip()
+    if not needle:
+        return None
+    for item in inventory:
+        if item.casefold().strip() == needle:
+            return item
+    for item in inventory:
+        if needle in item.casefold():
+            return item
+    return None
+
+
+def set_equipped_weapon(character: CharacterState, query: str) -> tuple[bool, str]:
+    label = resolve_inventory_label(character.inventory, query)
+    if label is None:
+        return False, f"You do not carry {query.strip() or 'that item'}."
+    weapon = weapon_for_inventory_label(label)
+    if weapon is None:
+        return False, f"{label} cannot be wielded as a weapon."
+    if not weapon_proficiency(character, weapon.key):
+        return False, (
+            f"Your {character.character_class.replace('_', ' ')} training does not cover "
+            f"a {weapon.name}."
+        )
+    key = label.casefold().strip()
+    gear = INVENTORY_GEAR.get(key)
+    attack_bonus = gear[1] if gear else 0
+    instances = default_item_instances(character.inventory)
+    for entry in instances:
+        entry_weapon = weapon_for_inventory_label(entry.get("name", ""))
+        if entry.get("name", "").casefold().strip() == key:
+            entry["equipped"] = True
+            entry["attack_bonus"] = attack_bonus
+        elif entry_weapon:
+            entry["equipped"] = False
+            entry["attack_bonus"] = 0
+    character.item_instances = instances
+    bonus_text = f" (+{attack_bonus} attack)" if attack_bonus else ""
+    return True, f"You ready your {weapon.name}{bonus_text}."
+
+
 def default_item_instances(inventory: list[str]) -> list[dict]:
     instances: list[dict] = []
     equipped_weapon_set = False

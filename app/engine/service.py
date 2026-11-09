@@ -2,7 +2,14 @@ import random, re, uuid
 from . import catalog
 from .catalog import ABILITY_ORDER, CLASSES, RACES, standard_abilities
 from .encounters import MONSTERS, build_monster, filter_encounter_pool
-from .equipment import attack_modifier, damage_modifier, default_item_instances, equipped_weapon, item_attack_bonus
+from .equipment import (
+    attack_modifier,
+    damage_modifier,
+    default_item_instances,
+    equipped_weapon,
+    item_attack_bonus,
+    set_equipped_weapon,
+)
 from .intent import (
     AMBIGUOUS,
     ATTACK,
@@ -18,6 +25,7 @@ from .intent import (
     TRAVEL,
     UNKNOWN,
     USE_ITEM,
+    EQUIP,
     parse_action_intent,
 )
 from .locations import LOCATIONS, is_travel_action, travel_allowed, travel_destination, visible_connections
@@ -264,10 +272,27 @@ class GameEngine:
         amount = min(character.max_hp - character.hp, max(1, healing.total))
         character.hp += amount
         character.inventory.remove(potion)
+        character.item_instances = default_item_instances(character.inventory)
         events = [f"You drink a healing potion and recover {amount} HP. Your HP: {character.hp}/{character.max_hp}."]
         if monster and character.in_combat:
             events.extend(self._enemy_turn(character, monster))
         return TurnResult(action, events, True), None if not character.in_combat else monster
+
+    def _equip_item(
+        self, character: CharacterState, action: str, monster: MonsterState | None
+    ) -> tuple[TurnResult, MonsterState | None]:
+        if monster is not None and character.in_combat:
+            blocked = self._require_player_combat_turn(character, action)
+            if blocked:
+                return blocked, monster
+        from .intent import EQUIP_PATTERN
+
+        match = EQUIP_PATTERN.search(action)
+        query = match.group(1).strip() if match else action
+        ok, message = set_equipped_weapon(character, query)
+        if not ok:
+            return TurnResult(action, [message], False, costs_adventure_mana=False), monster
+        return TurnResult(action, [message], True, costs_adventure_mana=False), monster
 
     def _shop(self, character: CharacterState, action: str) -> TurnResult:
         if character.location != SHOP_LOCATION:
@@ -886,6 +911,9 @@ class GameEngine:
             return self._shop(character, action), monster
         if intent.kind == USE_ITEM:
             return self._use_item(character, action, monster)
+
+        if intent.kind == EQUIP:
+            return self._equip_item(character, action, monster)
 
         if intent.kind == DEFEND:
             if monster is None or not character.in_combat:

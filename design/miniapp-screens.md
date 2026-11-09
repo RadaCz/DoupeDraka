@@ -69,6 +69,8 @@ Tok: Map → `travel to X` → Adventure scéna → Talk/Explore → stream → 
 ```
 [ Přehled AC/HP/XP ]
 [ Vlastnosti | Inventář | Kouzla ]
+[ Inventář: sekce Vybavené / Zbraně / Spotřební / Ostatní ]
+[ Detail předmětu: Equip | Use potion → POST /actions (engine intent) ]
 ```
 
 ### Hub / More / Settings
@@ -84,6 +86,8 @@ Beze změny architektury: Hub = mana, continue, invite; More = journal, settings
 | Travel | `!in_combat && hp>0` | otevře Map / `travel to …` | locked routes |
 | Bojovat | **`in_combat` only** | attack/defend/flee/cast | nikdy v průzkumu |
 | Shop | intent SHOP + lokace | text shop | **ne** globální tlačítko (jen chip pokud engine vrátí shop) |
+| Equip weapon | inventář, zbraň v `item_instances` | `equip {label}` (EQUIP intent) | třída bez proficiency → engine odmítne |
+| Use potion | inventář / combat chip | `use potion` (USE_ITEM) | plné HP, prázdný inventář |
 | Kouzlo submit | `effect_modeled` | cast | jinak warning, disabled submit |
 | Revive | `hp <= 0` | `POST /characters/{id}/revive` | jinak skryté |
 | Akce obecně | `hp > 0` | stream | 409 fallen → Fallen UI, ne error-panel |

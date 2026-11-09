@@ -79,3 +79,14 @@ export function inventoryItemMeta(rawLabel: string): InventoryItemMeta & { displ
   const meta = rule?.meta ?? DEFAULT_META;
   return { ...meta, displayName: rawLabel };
 }
+
+export type InventoryCategory = 'weapon' | 'consumable' | 'gear';
+
+export function inventoryItemCategory(rawLabel: string): InventoryCategory {
+  const key = rawLabel.toLowerCase().trim();
+  if (key.includes('potion') || key.includes('lektvar')) return 'consumable';
+  if (key.includes('sword') || key.includes('dagger') || key.includes('mace') || key.includes('rapier') || key.includes('bow')) {
+    return 'weapon';
+  }
+  return 'gear';
+}

@@ -19,12 +19,15 @@ Otestuj na **Android** i **iOS** v oficiálním Telegramu (ne jen prohlížeč).
 | 6   | CS jazyk                      | Chips a UI česky; engine řádky mohou být EN                         | pass        |
 | 7   | Mapa / quest                  | 9 uzlů (6 hlavních + 3 vedlejší); vault hint → Caldus po zvonu       | manual      |
 | 8   | Fallen + revive               | 409 fallen, revive obnoví hru                                       | pass        |
+| 9   | Inventář → Equip / lektvar    | Character → inventář → Equip nebo Use potion; výsledek v deníku; reload zachová stav | manual |
+| 10  | Deník po tahu                 | Akce / vyprávění / mechanika (hod, dmg) vizuálně oddělené             | manual      |
+| 11  | Boj                           | Banner „Tvůj tah“; HP nepřítele; žádná ⚡ jako mana kouzel            | manual      |
 
 ## Poznámky z posledního playtestu
 
 - Closed beta: výchozí **Lite** (offline vypravěč); **Normal** jen s externím providerem.
 - Nová postava při `cs` UI dostane `narration_language=cs` (lze změnit v Settings).
 - ⚡ = **kredity vypravěče**, ne mana kouzel ani pay-to-win.
-- Automatické testy: funkční E2E 7, visual volitelně `npm run test:e2e:visual`; Postgres migrace v005 v CI.
+- Automatické testy: funkční E2E **8** (`inventory-equip` + stávající sada), visual volitelně `npm run test:e2e:visual`; Postgres migrace v005 v CI.
 - Telefonní PASS/FAIL v tabulce výše zůstávají **ruční** až do reálného playtestu.
 - Screenshoty ukládat k bugům s časem a buildem (`git rev-parse --short HEAD`).

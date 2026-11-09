@@ -9,9 +9,47 @@
   min-height: 76px;
 }
 
+.inventory-section {
+  margin-bottom: 14px;
+}
+
+.inventory-section-label {
+  margin: 0 0 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+}
+
 .inventory-item-card {
   gap: 8px;
   padding: 14px 10px 12px;
+}
+
+.inventory-item-card.equipped {
+  border-color: var(--accent-verb);
+  box-shadow: inset 3px 0 0 var(--accent-verb);
+}
+
+.inventory-equipped-tag {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--accent-verb);
+}
+
+.inventory-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.inventory-stat-line {
+  margin: 8px 0 0;
+  font-size: 0.9rem;
+  color: var(--text-soft);
 }
 
 .inventory-item-label {

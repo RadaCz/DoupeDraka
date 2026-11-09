@@ -710,6 +710,11 @@ function AppContent() {
             onSelect={selectCharacter}
             onCreate={() => navigate('create')}
             onOpenMap={() => navigate('map')}
+            busy={busy}
+            onInventoryAction={action => {
+              navigate('game');
+              void takeAction(action);
+            }}
           />
         )}
         {screen === 'campaign' && <CampaignScreen character={character} events={events} busy={busy} onUpdate={updateCampaign} />}

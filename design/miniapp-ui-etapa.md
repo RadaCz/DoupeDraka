@@ -27,6 +27,7 @@
 
 - Character sheet split into collapsible panels: combat & resources, abilities, inventory.
 - Summary strip with AC / HP / gold.
+- Inventory grouped (equipped / weapons / consumables / other); **Equip** and **Use potion** call the same `/actions` pipeline as Play.
 
 ## UI-6 Done
 
@@ -36,7 +37,9 @@
 
 ## Playability pass
 
-- Contextual **Suggested** chips on Play screen (rest, tracks, travel targets, quest lines).
+- Journal entry splits narrator prose from engine facts; quest/state/mechanic lines tagged separately.
+- Combat header shows turn banner and enemy HP beside player vitals.
+- Contextual **Suggested** chips on Play screen (quest NPC lines, discovery follow-ups, rest, travel — no generic „listen for movement“ chip).
 - **Hub** bottom-nav tab; map/quest shortcuts and invite on home.
 - **Quick generate** + step-by-step wizard on character path.
 

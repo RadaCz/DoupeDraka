@@ -13,10 +13,12 @@ export interface Character {
   xp: number;
   gold: number;
   inventory: string[];
+  item_instances?: ItemInstance[];
   location: string;
   visited_locations?: string[];
   quest_flags?: Record<string, boolean>;
   in_combat: boolean;
+  combat_turn?: string;
   combatant?: Combatant | null;
   spell_slots: Record<string, number>;
   max_spell_slots: Record<string, number>;
@@ -29,6 +31,14 @@ export interface Character {
   humor: string;
   verbose: boolean;
   narration_language?: string;
+}
+
+export interface ItemInstance {
+  instance_id: string;
+  definition_id: string;
+  name: string;
+  equipped: boolean;
+  attack_bonus: number;
 }
 
 export interface Combatant {

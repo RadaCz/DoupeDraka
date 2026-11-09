@@ -193,11 +193,44 @@
   color: var(--text-soft);
 }
 
-.game-screen.text-first .journal-prose {
+.game-screen.text-first .journal-prose,
+.game-screen.text-first .journal-narration-prose {
   margin: 0 0 14px;
   padding: 0;
   background: transparent;
   border: 0;
+}
+
+.game-screen.text-first .journal-narration-prose {
+  font: 400 1rem/1.72 var(--font-body, serif);
+  color: var(--text);
+}
+
+.game-screen.text-first .journal-quest {
+  margin: 10px 0;
+  padding: 8px 12px;
+  border-left: 2px solid color-mix(in srgb, var(--gold, #b58a3c) 70%, transparent);
+  font-size: 0.78rem;
+  color: var(--text-soft);
+}
+
+.game-screen.text-first .journal-state {
+  margin: 8px 0;
+  padding: 6px 10px;
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  color: var(--muted);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface-raised) 40%, transparent);
+}
+
+.combat-turn-banner {
+  margin: 6px 0 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent-verb);
 }
 
 .game-screen.text-first .journal-scene > .journal-beat:first-child,
@@ -251,6 +284,13 @@
 }
 
 /* Composer — minimal bar + action sheet */
+.composer-send-immersive,
+.composer-menu-toggle,
+.suggested-actions-row button {
+  min-height: 44px;
+  min-width: 44px;
+}
+
 .action-composer-immersive {
   padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
   padding-bottom: calc(12px + var(--tg-safe-bottom, var(--safe-bottom, 0px)));

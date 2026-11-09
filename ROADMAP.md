@@ -30,6 +30,7 @@ Platby a produkční top-up zůstávají v **Deferred product decisions** (Prior
 - [x] Vault/pit travel gating, `bell_acquired` quest persistence, Map/Quest UI.
 - [x] CI on `clean-main`: pytest, Vitest/build, Postgres `alembic upgrade` + concurrency, Playwright E2E.
 - [ ] Confirm GitHub Actions green on latest `origin/clean-main`.
+- [x] Inventory equip/use + journal fact layering + chapter-one engine journey tests (local; phone QA pending).
 - [ ] Merge `clean-main` → `main` only after full CI pass (see [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)).
 
 ## Priority 1 - Verify actual deployment

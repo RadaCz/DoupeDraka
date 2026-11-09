@@ -17,6 +17,7 @@ UNKNOWN = "unknown"
 REJECTED = "rejected"
 SHOP = "shop"
 USE_ITEM = "use_item"
+EQUIP = "equip"
 QUEST = "quest"
 
 CAST_PATTERN = re.compile(r"\b(cast|kouzl)\b", re.IGNORECASE)
@@ -42,6 +43,10 @@ USE_ITEM_PATTERN = re.compile(
     r"\b(?:use|drink|pouzij|vypij)\w*\s+(?:a\s+)?(?:healing\s+)?(?:potion|item|lektvar)\b",
     re.IGNORECASE,
 )
+EQUIP_PATTERN = re.compile(
+    r"\b(?:equip|wield|draw|ready|vybav\w*|vzít do ruky)\s+(?:the\s+|a\s+|my\s+)?(.+)",
+    re.IGNORECASE,
+)
 QUEST_RETURN_PATTERN = re.compile(
     r"\b(?:return|give|deliver|vrat\w*|vrát\w*|odevz\w*|pred\w*|před\w*)\b.{0,48}\b(?:shrine\s+bell|bell|zvon)\b",
     re.IGNORECASE,
@@ -64,6 +69,7 @@ _KIND_ORDER = (
     QUEST,
     SHOP,
     USE_ITEM,
+    EQUIP,
     CAST,
     FLEE,
     DEFEND,
@@ -85,6 +91,7 @@ _PATTERNS: dict[str, re.Pattern[str]] = {
     TALK: TALK_PATTERN,
     SHOP: SHOP_PATTERN,
     USE_ITEM: USE_ITEM_PATTERN,
+    EQUIP: EQUIP_PATTERN,
 }
 
 _NEGATION_BY_KIND: dict[str, tuple[str, ...]] = {
@@ -97,6 +104,7 @@ _NEGATION_BY_KIND: dict[str, tuple[str, ...]] = {
     TALK: ("talk", "speak", "ask", "mluv", "mluvit", "zeptej", "promluv"),
     SHOP: ("buy", "purchase", "kup", "nakup", "koupit", "koup"),
     USE_ITEM: ("use", "drink", "pouzij", "vypij", "potion", "lektvar"),
+    EQUIP: ("equip", "wield", "draw", "vybav", "vzít"),
     EXPLORE: ("explore", "search", "investigate", "prozkoumej", "prohledej"),
 }
 

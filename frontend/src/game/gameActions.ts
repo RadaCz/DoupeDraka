@@ -193,29 +193,41 @@ export function playActionChips(
     out.push({ key, label, action, run });
   };
 
-  for (const item of suggestedActions(character, events, locations, t)) {
-    push(item.action, typeof item.label === 'string' ? item.label : t(item.label), item.action);
-  }
-
   if (character.in_combat) {
+    for (const item of suggestedActions(character, events, locations, t)) {
+      push(item.action, item.label, item.action);
+    }
     for (const quick of buildQuickActions(character, events, locations, t, hasSpells, hasPotion)) {
       if (quick.action) push(quick.id, quick.label, quick.action);
     }
     return out.slice(0, 10);
   }
 
+  const npcTalk = resolveNpcTalkAction(character, t);
+  if (npcTalk) push(npcTalk.action, npcTalk.label, npcTalk.action);
+
+  const latest = events[events.length - 1]?.result.toLowerCase() ?? '';
+  if (latest.includes('tracks')) {
+    push('tracks', t('Study the fresh tracks'), 'inspect the fresh tracks');
+  } else if (latest.includes('panel') || latest.includes('scratches')) {
+    push('panel', t('Inspect the stone panel'), 'inspect the stone panel');
+  }
+
   const quick = buildQuickActions(character, events, locations, t, hasSpells, hasPotion);
   const explore = quick.find(item => item.id === 'explore');
   if (explore?.action) push('explore', explore.label, explore.action);
   const talk = quick.find(item => item.id === 'talk');
-  if (talk?.action) {
+  if (talk?.action && talk.action !== npcTalk?.action) {
     push('talk', talk.label, talk.action);
-  } else if (talk) {
+  } else if (talk && !npcTalk) {
     push('talk', talk.label, undefined, 'focus');
+  }
+  if (character.hp < character.max_hp && !character.in_combat) {
+    push('rest', t('Rest'), 'rest');
   }
   push('travel', t('Travel'), undefined, 'map');
   push('custom', t('Custom action'), undefined, 'focus');
-  return out.slice(0, 12);
+  return out.slice(0, 8);
 }
 
 export function scenePrompt(character: Character, events: JournalEvent[], t: (value: string) => string) {

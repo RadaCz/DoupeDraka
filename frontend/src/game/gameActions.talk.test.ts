@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Character } from '../types';
-import { buildQuickActions, resolveNpcTalkAction } from './gameActions';
+import { buildQuickActions, playActionChips, resolveNpcTalkAction } from './gameActions';
 
 const t = (value: string) => value;
 
@@ -36,6 +36,11 @@ describe('Talk quick action', () => {
     expect(talk?.action).toBeUndefined();
     expect(talk?.mode).toBe('focus');
     expect(talk?.action).not.toBe('listen for movement');
+  });
+
+  it('does not surface listen-for-movement as a quick chip', () => {
+    const chips = playActionChips(base, [], [], t, false, false);
+    expect(chips.some(chip => (chip.action ?? '').includes('listen for movement'))).toBe(false);
   });
 
   it('offers Caldus dialogue only at the shrine with the right flags', () => {

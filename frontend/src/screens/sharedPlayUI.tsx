@@ -52,6 +52,7 @@ export function PlaySceneChrome({
   const placeLine = combat
     ? (enemy?.name ?? t('Combat in progress'))
     : (character.location || t('The Whispering Cellar'));
+  const playerTurn = !combat || (character as Character & { combat_turn?: string }).combat_turn !== 'enemy';
   const manaLabel = economy ? economy.balance.toFixed(1) : '—';
 
   return (
@@ -92,6 +93,11 @@ export function PlaySceneChrome({
             </span>
           )}
         </div>
+        {combat && (
+          <p className="combat-turn-banner" role="status">
+            {playerTurn ? t('Your turn — choose an action.') : t('Enemy turn — wait for the outcome.')}
+          </p>
+        )}
       </div>
     </header>
   );

@@ -226,6 +226,8 @@ export function CharacterScreen({
   onSelect,
   onCreate,
   onOpenMap,
+  onInventoryAction,
+  busy,
 }: {
   character: Character | null;
   characters: Character[];
@@ -234,6 +236,8 @@ export function CharacterScreen({
   onSelect: (character: Character) => void;
   onCreate: () => void;
   onOpenMap?: () => void;
+  onInventoryAction?: (action: string) => void;
+  busy?: boolean;
 }) {
   const { t } = useI18n();
   const [tab, setTab] = useState<'sheet' | 'quests'>('sheet');
@@ -296,7 +300,7 @@ export function CharacterScreen({
       <details className="character-panel" open>
         <summary>{t('Inventory')}</summary>
         <div className="inventory-card">
-          <InventoryList items={character.inventory ?? []} />
+          <InventoryList character={character} busy={busy} onInventoryAction={onInventoryAction} />
         </div>
       </details>
       <details className="character-panel" open>

@@ -5,7 +5,7 @@ import {
   assertLocatorInPageViewport,
   simulateMobileKeyboard,
 } from './mobile-helpers.ts';
-import { completeWizardFighter, mockTelegramWebApp, signedTelegramInitData } from './telegram.ts';
+import { completeWizardFighter, ensureTelegramHome, mockTelegramWebApp, signedTelegramInitData } from './telegram.ts';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -78,6 +78,7 @@ test.describe('text-first mobile layout', () => {
     const telegramId = 742_000_000 + testInfo.workerIndex;
     await mockTelegramWebApp(page, signedTelegramInitData(telegramId));
     await page.goto('/');
+    await ensureTelegramHome(page);
     await completeWizardFighter(page, 'Mobile Dvh E2E');
 
     const stylesheetUsesDvh = await page.evaluate(() => {

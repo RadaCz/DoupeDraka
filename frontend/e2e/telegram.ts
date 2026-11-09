@@ -8,7 +8,7 @@ const E2E_API_BASE = 'http://127.0.0.1:8001';
 export function signedTelegramInitData(userId: number) {
   const fields = {
     auth_date: Math.floor(Date.now() / 1000).toString(),
-    user: JSON.stringify({ id: userId, first_name: 'E2E Adventurer', language_code: 'en' }),
+    user: JSON.stringify({ id: userId, first_name: `E2E ${userId}`, language_code: 'en' }),
   };
   const checkString = Object.keys(fields)
     .sort()
@@ -42,7 +42,23 @@ export async function mockTelegramWebApp(page: Page, initData: string) {
   }));
 }
 
+export async function ensureTelegramHome(page: Page) {
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const home = page.getByRole('heading', { name: /adventure awaits|Welcome back/i });
+    if (await home.isVisible().catch(() => false)) return;
+    const conflict = page.getByRole('alert').filter({ hasText: /conflicted|retry sign-in/i });
+    if (await conflict.isVisible().catch(() => false)) {
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      continue;
+    }
+    await home.waitFor({ state: 'visible', timeout: 15_000 });
+    return;
+  }
+  throw new Error('Telegram sign-in did not reach the home screen');
+}
+
 export async function completeWizardFighter(page: Page, name: string) {
+  await ensureTelegramHome(page);
   await page.getByRole('button', { name: /create your character/i }).click();
   await page.getByRole('button', { name: 'Step-by-step wizard' }).click();
   await page.getByRole('button', { name: 'Human' }).click();
