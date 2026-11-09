@@ -8,7 +8,8 @@ zranění, HP a mana provádí deterministický Python engine.
 - [Project brain](./PROJECT_BRAIN.md) — aktuální stav a invarianty.
 - [Roadmap](./ROADMAP.md) · [Decision log](./DECISIONS.md) · [session history](./CHANGELOG.md).
 - Technické příručky: [architecture](./docs/ARCHITECTURE.md), [engine](./docs/ENGINE.md),
-  [campaign content](./docs/CONTENT.md), [deployment](./docs/DEPLOYMENT.md).
+  [campaign content](./docs/CONTENT.md), [deployment](./docs/DEPLOYMENT.md),
+  [narrator V2 + paměť (P2/P2.1)](./docs/NARRATOR_V2.md).
 
 ## Interface languages
 

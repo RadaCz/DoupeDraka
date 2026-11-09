@@ -1,6 +1,7 @@
 # Narrator V2 (P2) — kvalita vypravěče a paměť
 
-**Baseline commit (P1):** `2e55059` · **Branch:** `clean-main`
+**Baseline commit (P2):** `adceca6` · **Branch:** `clean-main`  
+**P2.1 (memory hardening):** `journal_prose` — sanitizace legacy/journal pro narrator
 
 ## Co bylo špatně / matoucí (P1)
 
@@ -18,9 +19,10 @@
 ### Paměť (kanonické)
 
 - **Krátkodobá:** poslední prose beats z journalu (`narration_beats_from_journal`), max ~5, bez mechanických řádků.
-- **Dlouhodobá:** `effective_long_term_memory()` — primárně `long_term_memory`; legacy `memory_summary` jen při prázdném LTM (bez ztráty starých postav).
+- **Dlouhodobá:** `effective_long_term_memory()` — primárně `long_term_memory`; legacy `memory_summary` jen při prázdném LTM. Pole na disku se nemění — narrator dostává **projekci** přes `sanitize_legacy_memory_text()` (mechanika/ prefixy ven, příběh zůstává).
 - Už **nepřidáváme** mechanické řádky do `memory_summary` po tahu.
-- Archivace journalu: **jen heuristika** (prose beats), žádný LLM.
+- Archivace journalu: **jen heuristika** (`journal_prose.narration_beats_from_journal` → `summarize_entries`), žádný LLM.
+- **P2.1:** `app/journal_prose.py` — filtrování mechanických řádků, deduplikace, odstranění prefixů `Long-term memory:` / `Campaign memory:`, prose i bez `\n\n` (větné členění).
 - Revive zapisuje do `long_term_memory` via `merge_long_term_memory`.
 
 ### Vypravěč

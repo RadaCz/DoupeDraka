@@ -10,22 +10,12 @@ from .engine.npc_presence import npc_presence_for_location
 from .engine.quests import CHAPTER_ONE_STEPS, SIDE_QUESTS
 
 
+from .journal_prose import narration_beats_from_journal as _narration_beats_from_journal
+
+
 def narration_beats_from_journal(entries: list[str], *, limit: int = 5) -> tuple[str, ...]:
-    """Previous story beats without re-sending engine fact lines already in this turn."""
-    beats: list[str] = []
-    for raw in entries[-limit:]:
-        text = (raw or "").strip()
-        if not text:
-            continue
-        if text.startswith("Long-term memory:") or text.startswith("Campaign memory:"):
-            beats.append(text[:500])
-            continue
-        if "\n\n" in text:
-            prose = text.split("\n\n", 1)[0].strip()
-            beats.append((prose or text)[:500])
-        else:
-            beats.append(text[:500])
-    return tuple(beats)
+    """Previous story beats without mechanical lines (implemented in journal_prose)."""
+    return _narration_beats_from_journal(entries, limit=limit)
 
 
 def _quest_hint_for_flags(step_id: str, hint: str, flags: dict[str, bool]) -> str:

@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from .db import EventRecord
 from .engine.models import CharacterState
-from .narration_dossier import narration_beats_from_journal
+from .journal_prose import narration_beats_from_journal
 
 logger = logging.getLogger(__name__)
 

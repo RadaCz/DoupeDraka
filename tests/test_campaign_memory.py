@@ -16,6 +16,13 @@ def test_legacy_memory_summary_used_when_long_term_empty():
     assert effective_long_term_memory(character) == "Remembered a promise to Mara."
 
 
+def test_legacy_mechanical_summary_becomes_empty_projection():
+    character = CharacterState("c1", 1, "H", "human", "fighter")
+    character.memory_summary = "Exploration roll: 2 on a d6. Attack roll: 5."
+    assert effective_long_term_memory(character) == ""
+    assert character.memory_summary  # stored field untouched
+
+
 def test_long_term_ignores_legacy_summary_when_primary_set():
     character = CharacterState("c1", 1, "H", "human", "fighter")
     character.long_term_memory = "Full campaign arc with Mara promise."
