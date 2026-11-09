@@ -22,7 +22,9 @@ Playtest protokol primárně hodnotí **první session**; dokončení celé kapi
 ### 1.1 Build a prostředí
 
 - Větev `clean-main` (nebo release candidate po merge).
-- Telegram Mini App na reálném telefonu (Android / iOS).
+- **Baseline kódu (audit listopad 2026):** `17ae9d2` (docs P3), herní obsah P3 `b7f1315`, CI SQLite/telemetry `ec646fc`.
+- Telegram Mini App na reálném telefonu (**Android a iOS zvlášť** — viz [`docs/TELEGRAM_PHONE_QA.md`](../docs/TELEGRAM_PHONE_QA.md)).
+- **Telefonní QA zatím neprovedeno** — automatické testy a kontrola kódu nejsou náhrada za zařízení.
 - Instrukce v **češtině** (UI locale `cs`).
 
 ### 1.2 Výchozí režim vypravěče (cíl bety)
@@ -41,6 +43,8 @@ Playtest protokol primárně hodnotí **první session**; dokončení celé kapi
 - [ ] Vytvoří nebo vybere postavu (fighter/wizard smoke OK).
 - [ ] Lite tier potvrzen.
 - [ ] **45–90 min** první session (úplná kapitola ~2 h je volitelný follow-up).
+- [ ] Pokud session testuje **Normal**: facilitator ověří LLM provider v `.env` / Docker; volitelně přidělí testovací ⚡ přes `POST /economy/topup` (admin token), ne sdílet token s hráčem.
+- [ ] Po session vyplnit [`docs/TELEGRAM_PHONE_QA.md`](../docs/TELEGRAM_PHONE_QA.md) včetně scénářů N1–N6 a tabulky Android/iOS.
 
 ---
 
@@ -96,11 +100,21 @@ Pouze pokud je nakonfigurován **online AI provider**:
 
 | Kanál | Co |
 |-------|-----|
-| Dotazník (5 min) | KPI tabulka |
+| Dotazník (5 min) | KPI tabulka (níže) |
 | Facilitator notes | Drop-off krok, bugy, confusion |
+| [`docs/TELEGRAM_PHONE_QA.md`](../docs/TELEGRAM_PHONE_QA.md) | PASS/FAIL per platforma + Normal/SSE |
 | Server logy (volitelně) | `analytics_events`, fallback rate |
 
 Doporučené eventy ke kontrole po session: `death`, `level_up`, `llm_fallback_triggered`.
+
+### 4.1 Krátký feedback formulář (5 min, po první session)
+
+1. **Return intent:** Otevřel(a) bys hru zítra? (nízká / střední / vysoká; volitelně 0–10)
+2. **Kostky:** Chápal(a) jsi výsledek hodů? (ano / částečně / ne)
+3. **Zdroje:** Rozlišuješ kouzla (sloty) a ⚡? (ano / ne)
+4. **Tempo:** Kde ses ztratil(a) nebo nudil(a)? (volný text)
+5. **Platforma:** Android / iOS, build `git rev-parse --short HEAD`
+6. *(Jen pokud testoval Normal)* Cítil jsi rozdíl oproti Lite? Stálo to za kredit? (volný text)
 
 ---
 
