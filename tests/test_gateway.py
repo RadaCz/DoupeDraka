@@ -3,6 +3,8 @@ import asyncio
 import httpx
 import pytest
 
+from tests._async_drain import drain_pending_asyncio_tasks
+
 from app.ai.base import NarrationContext, NarrationRequest
 from app.ai.completion_meta import take_completion_meta
 from app.ai.errors import ProviderRateLimitError, ProviderStreamAbortedError
@@ -55,6 +57,7 @@ def test_gateway_falls_back_after_rate_limit():
         assert second.calls == 1
         assert text == "Groq narrates the beat."
         assert status == "narrated"
+        await drain_pending_asyncio_tasks()
 
     asyncio.run(run())
 
@@ -70,6 +73,7 @@ def test_gateway_streams_from_second_provider_when_first_fails():
         chunks = [chunk async for chunk in gateway.stream(_request())]
         assert chunks == ["streamed"]
         assert first.calls == 1
+        await drain_pending_asyncio_tasks()
 
     asyncio.run(run())
 
@@ -106,6 +110,7 @@ def test_gateway_mid_stream_abort_yields_replace_not_duplicate_chunks():
                 buffered += frame
         final = buffered
         assert token.strip() not in final
+        await drain_pending_asyncio_tasks()
 
     asyncio.run(run())
 
@@ -119,5 +124,6 @@ def test_gateway_stream_yields_replace_when_all_providers_fail_before_first_toke
         assert len(frames) == 1
         assert isinstance(frames[0], StreamReplaceFrame)
         assert frames[0].narration.strip()
+        await drain_pending_asyncio_tasks()
 
     asyncio.run(run())

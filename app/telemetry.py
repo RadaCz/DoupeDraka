@@ -5,6 +5,8 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
+import weakref
 from collections.abc import Iterable
 from typing import Any
 
@@ -15,6 +17,12 @@ from .engine.models import TurnResult
 from .narration_events import DEFEAT_EVENT_PREFIX
 
 logger = logging.getLogger(__name__)
+
+# Pytest only: track tasks per event loop so drains never cross loops.
+_loop_analytics_tasks: weakref.WeakKeyDictionary[
+    asyncio.AbstractEventLoop,
+    set[asyncio.Task[None]],
+] = weakref.WeakKeyDictionary()
 
 
 def _metadata(data: dict[str, Any]) -> dict[str, Any]:
@@ -97,7 +105,22 @@ def schedule_analytics_event(
         loop = asyncio.get_running_loop()
     except RuntimeError:
         return
-    loop.create_task(_persist_analytics_event(event_type, character_id, metadata))
+    task = loop.create_task(_persist_analytics_event(event_type, character_id, metadata))
+    if os.environ.get("DOUPE_TEST_DB", "").strip() == "1":
+        _loop_analytics_tasks.setdefault(loop, set()).add(task)
+
+
+async def drain_scheduled_analytics_events() -> None:
+    """Wait for in-flight scheduled analytics on the active loop (pytest / TestClient)."""
+    loop = asyncio.get_running_loop()
+    bucket = _loop_analytics_tasks.get(loop)
+    if not bucket:
+        return
+    pending = [task for task in list(bucket) if not task.done()]
+    if pending:
+        await asyncio.gather(*pending, return_exceptions=True)
+    for finished in [task for task in list(bucket) if task.done()]:
+        bucket.discard(finished)
 
 
 def record_character_created(session: AsyncSession, character_id: str, race: str, character_class: str) -> None:

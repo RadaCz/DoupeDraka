@@ -7,8 +7,8 @@ directory *before* ``app.db.engine`` is imported, so every module that binds the
 engine lands on the scratch file instead of ``./data/dnd.db``.
 
 pytest-asyncio runs in strict mode here, so the schema is created through
-``asyncio.run`` inside a plain session fixture rather than an async one --
-autouse async fixtures are not supported by pytest itself.
+``asyncio.run`` inside a plain session fixture. Async autouse drain uses
+``pytest_asyncio.fixture`` so only ``@pytest.mark.asyncio`` tests pay the cost.
 """
 
 import asyncio
@@ -31,8 +31,11 @@ else:
 os.environ.setdefault("LLM_PROVIDER", "fallback")
 # Session fixture runs init_db(); disable FastAPI startup bootstrap to avoid parallel SQLite writers.
 os.environ["DB_BOOTSTRAP"] = "none"
+# aiosqlite + TestClient use many ephemeral event loops; never pool SQLite across them.
+os.environ["DOUPE_TEST_DB"] = "1"
 
 import pytest  # noqa: E402
+import pytest_asyncio  # noqa: E402
 
 import app.api as app_api  # noqa: E402
 import app.db as app_db  # noqa: E402
@@ -48,6 +51,39 @@ def _assert_isolated() -> None:
 _assert_isolated()
 
 
+def _patch_asyncio_run_for_telemetry() -> None:
+    """asyncio.run() tests must not close the loop before fire-and-forget analytics DB tasks finish."""
+
+    original_run = asyncio.run
+
+    def run(main, *, debug=None):
+        async def wrapped():
+            try:
+                return await main
+            finally:
+                from tests._async_drain import drain_pending_asyncio_tasks
+
+                await drain_pending_asyncio_tasks()
+
+        return original_run(wrapped(), debug=debug)
+
+    asyncio.run = run  # type: ignore[misc, assignment]
+
+
+_patch_asyncio_run_for_telemetry()
+
+
+@app_api.app.middleware("http")
+async def _drain_test_analytics_after_http_request(request, call_next):
+    """Finish scheduled analytics on the same loop TestClient uses for this request."""
+    try:
+        return await call_next(request)
+    finally:
+        from app.telemetry import drain_scheduled_analytics_events
+
+        await drain_scheduled_analytics_events()
+
+
 @pytest.fixture(scope="session", autouse=True)
 def isolated_database():
     _assert_isolated()
@@ -55,17 +91,31 @@ def isolated_database():
     if not _USE_ALEMBIC_DB:
         from app.db import init_db
 
-        asyncio.run(init_db())
+        async def bootstrap() -> None:
+            await init_db()
+            # Close aiosqlite worker/loop pairing from bootstrap before tests open their own loops.
+            await app_db.engine.dispose()
+
+        asyncio.run(bootstrap())
     yield _TEST_DB_PATH
 
-    async def dispose() -> None:
+    async def shutdown() -> None:
         await app_db.engine.dispose()
 
-    asyncio.run(dispose())
+    asyncio.run(shutdown())
     try:
         os.remove(_TEST_DB_PATH)
     except OSError:
         pass
+
+
+@pytest_asyncio.fixture(autouse=True)
+async def drain_analytics_after_asyncio_test():
+    """Runs on pytest-asyncio's loop after each @pytest.mark.asyncio test."""
+    yield
+    from app.telemetry import drain_scheduled_analytics_events
+
+    await drain_scheduled_analytics_events()
 
 
 @pytest.fixture(autouse=True)
@@ -77,7 +127,11 @@ def clear_rate_limit_counters():
 
 @pytest.fixture(autouse=True)
 def reset_async_engine_pool_between_tests():
-    """Postgres CI: drop asyncpg connections bound to a closed event loop."""
+    """Postgres: drop asyncpg handles bound to a closed loop.
+
+    SQLite tests use NullPool (no cross-loop reuse). Per-test dispose here races
+    aiosqlite worker threads and can raise 'Event loop is closed' on teardown.
+    """
     yield
     if _USE_ALEMBIC_DB:
         asyncio.run(app_db.engine.dispose())

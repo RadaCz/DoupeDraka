@@ -19,7 +19,13 @@ from fastapi.testclient import TestClient
 from app.settings import Settings
 
 BOT_TOKEN = "123456:TEST-TOKEN-not-a-real-secret"
-client = TestClient(app)
+
+
+@pytest.fixture(scope="module")
+def client():
+    """One lifespan portal for this module; concurrent posts still use per-thread portals."""
+    with TestClient(app) as test_client:
+        yield test_client
 
 
 def make_init_data(user_id: int = 42, username: str = "valenok", auth_date: int | None = None, **extra):
@@ -191,7 +197,7 @@ def test_expected_hash_ignores_the_hash_field():
     assert expected_hash(fields, BOT_TOKEN) == expected_hash({**fields, "hash": "whatever"}, BOT_TOKEN)
 
 
-def test_telegram_auth_is_rate_limited():
+def test_telegram_auth_is_rate_limited(client):
     limiter.reset()
     responses = [
         client.post("/auth/telegram", json={"init_data": "invalid"})
@@ -213,7 +219,7 @@ def test_cors_requires_explicit_origins():
         Settings(_env_file=None, cors_origins="https://mini.example/game")
 
 
-def test_cors_preflight_allows_only_configured_development_origin():
+def test_cors_preflight_allows_only_configured_development_origin(client):
     allowed_origin = "http://localhost:5173"
     response = client.options(
         "/auth/telegram",
@@ -248,14 +254,14 @@ def telegram_bot_token(monkeypatch):
     get_settings.cache_clear()
 
 
-def test_telegram_login_creates_user_and_token(telegram_bot_token):
+def test_telegram_login_creates_user_and_token(client, telegram_bot_token):
     init_data = make_init_data(501_001, "login_once")
     response = client.post("/auth/telegram", json={"init_data": init_data})
     assert response.status_code == 200
     assert response.json()["access_token"]
 
 
-def test_concurrent_telegram_login_same_new_user(telegram_bot_token):
+def test_concurrent_telegram_login_same_new_user(client, telegram_bot_token):
     """React StrictMode can fire parallel /auth/telegram calls for the same initData."""
     init_data = make_init_data(501_002, "race_create")
     with ThreadPoolExecutor(max_workers=8) as pool:
@@ -280,7 +286,7 @@ def test_concurrent_telegram_login_same_new_user(telegram_bot_token):
     assert key_count == 5
 
 
-def test_repeated_telegram_login_prunes_api_keys(telegram_bot_token):
+def test_repeated_telegram_login_prunes_api_keys(client, telegram_bot_token):
     init_data = make_init_data(501_003, "repeat_login")
     for _ in range(9):
         assert client.post("/auth/telegram", json={"init_data": init_data}).status_code == 200
@@ -301,7 +307,7 @@ def _auth_headers(token: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {token}"}
 
 
-def test_concurrent_telegram_login_existing_user(telegram_bot_token):
+def test_concurrent_telegram_login_existing_user(client, telegram_bot_token):
     init_data = make_init_data(501_004, "existing_user")
     bootstrap = client.post("/auth/telegram", json={"init_data": init_data})
     assert bootstrap.status_code == 200
@@ -321,7 +327,7 @@ def test_concurrent_telegram_login_existing_user(telegram_bot_token):
     assert len(working) == 5
 
 
-def test_user_creation_race_both_tokens_authorize(telegram_bot_token):
+def test_user_creation_race_both_tokens_authorize(client, telegram_bot_token):
     """Concurrent first logins exercise IntegrityError recovery; both tokens must work."""
     init_data = make_init_data(501_005, "integrity_recovery")
     with ThreadPoolExecutor(max_workers=2) as pool:
@@ -335,7 +341,7 @@ def test_user_creation_race_both_tokens_authorize(telegram_bot_token):
         assert client.get("/characters", headers=_auth_headers(token)).status_code == 200
 
 
-def test_get_or_create_existing_user_mints_working_api_key(telegram_bot_token):
+def test_get_or_create_existing_user_mints_working_api_key(client, telegram_bot_token):
     """Rollback-safe path: existing telegram row → ApiKey commit → bearer works."""
     import secrets
 
@@ -358,7 +364,7 @@ def test_get_or_create_existing_user_mints_working_api_key(telegram_bot_token):
     assert client.get("/characters", headers=_auth_headers(token)).status_code == 200
 
 
-def test_pruned_api_key_returns_401(telegram_bot_token):
+def test_pruned_api_key_returns_401(client, telegram_bot_token):
     init_data = make_init_data(501_006, "prune401")
     tokens: list[str] = []
     for _ in range(6):

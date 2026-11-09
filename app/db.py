@@ -31,6 +31,10 @@ def build_async_engine() -> AsyncEngine:
     elif url.startswith("sqlite"):
         # Concurrent Mini App logins (React StrictMode) should wait on the writer, not fail instantly.
         kwargs["connect_args"] = {"timeout": 30}
+        # Pytest/TestClient spin a fresh event loop per thread; pooled aiosqlite connections
+        # then raise "Event loop is closed" or wedge SQLite with stale handles.
+        if os.environ.get("DOUPE_TEST_DB", "").strip() == "1":
+            kwargs["poolclass"] = NullPool
     return create_async_engine(url, **kwargs)
 
 
