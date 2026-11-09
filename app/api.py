@@ -465,11 +465,11 @@ async def combat_calculator(request: CombatCalculatorRequest) -> dict:
     except ValueError as error: raise HTTPException(422, str(error)) from error
 
 def _available_narration_tiers() -> list[dict]:
-    from .ai.registry import narration_gateway_for
+    from .ai.registry import has_external_paid_narration_provider
 
     settings = get_settings()
     tiers = economy.tier_list()
-    if not narration_gateway_for(settings).has_online_providers:
+    if not has_external_paid_narration_provider(settings):
         return [tier for tier in tiers if tier["key"] == "lite"]
     if settings.llm_provider.lower() != "openrouter" or not settings.openrouter_api_key.strip():
         return [tier for tier in tiers if tier["key"] != "pro"]
@@ -479,7 +479,9 @@ def _available_narration_tiers() -> list[dict]:
 @app.get("/economy")
 async def get_economy(user: User = Depends(get_user_by_token)) -> dict:
     tier = user.model_tier
-    if not narration_gateway_for(get_settings()).has_online_providers and tier != "lite":
+    from .ai.registry import has_external_paid_narration_provider
+
+    if not has_external_paid_narration_provider(get_settings()) and tier != "lite":
         async with Session() as session:
             record = await session.get(User, user.id)
             if record is not None:
@@ -501,8 +503,10 @@ async def set_tier(request: CharacterTier, user: User = Depends(get_user_by_toke
         raise HTTPException(422, f"Unknown tier: {request.tier}")
     if request.tier == "pro":
         raise HTTPException(422, "Pro tier is not available in this build.")
-    if request.tier != "lite" and not narration_gateway_for(get_settings()).has_online_providers:
-        raise HTTPException(422, "Paid narration tiers require a configured AI provider; use lite.")
+    from .ai.registry import has_external_paid_narration_provider
+
+    if request.tier != "lite" and not has_external_paid_narration_provider(get_settings()):
+        raise HTTPException(422, "Paid narration tiers require a configured external provider; use lite.")
     async with Session() as session:
         record = await session.get(User, user.id)
         if not record: raise HTTPException(404, "User not found")
@@ -677,11 +681,11 @@ async def narrate_committed(
             if receipt is not None:
                 stored = decode_state(receipt.response)
                 stored["narration"] = narration
-                stored["narration_status"] = "narrated"
+                stored["narration_status"] = status
                 receipt.response = encode_state(stored)
                 receipt.status = "complete"
         await session.commit()
-    return narration, "narrated"
+    return narration, status
 
 
 @app.patch("/characters/{character_id}/settings")
@@ -806,9 +810,11 @@ async def action_stream(
         assert context is not None and event_id is not None
         chunks: list[str] = []
         mock = narration_mock_requested(request)
+        from .ai.registry import has_external_paid_narration_provider
+
         status = "fallback" if mock else (
             "offline" if billing_tier == "lite" else (
-                "narrated" if narration_gateway_for(get_settings()).has_online_providers else "fallback"
+                "narrated" if has_external_paid_narration_provider(get_settings()) else "fallback"
             )
         )
         narration = response.narration

@@ -76,3 +76,11 @@ def clear_rate_limit_counters():
     app_api.limiter.reset()
     yield
     app_api.limiter.reset()
+
+
+@pytest.fixture(autouse=True)
+def reset_async_engine_pool_between_tests():
+    """Postgres CI: drop asyncpg connections bound to a closed event loop."""
+    yield
+    if _USE_ALEMBIC_DB:
+        asyncio.run(app_db.engine.dispose())

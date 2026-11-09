@@ -9,7 +9,7 @@ import json
 from .ai.base import NarrationContext, NarrationRequest
 from .ai.offline import OfflineProvider, narrate_offline as render_offline
 from .ai.ollama import PROVIDER_ERRORS
-from .ai.registry import narration_gateway_for
+from .ai.registry import narration_gateway_for, paid_narration_gateway_for
 from .ai.stream_frames import StreamReplaceFrame
 from .engine.models import SAFE_RESPAWN_LOCATION
 from .narration_language import LANGUAGE_NAMES, language_output_instruction, normalize_narration_language
@@ -97,7 +97,11 @@ class Narrator:
     ) -> tuple[str, str]:
         """Return (prose, status) so callers can tell narration from fallback."""
         settings = get_settings()
-        gateway = narration_gateway_for(settings)
+        gateway = (
+            paid_narration_gateway_for(settings)
+            if billing_tier == "normal"
+            else narration_gateway_for(settings)
+        )
         request = self._request(context)
         if billing_tier == "lite":
             return await OfflineProvider().complete(request), "offline"
@@ -115,15 +119,20 @@ class Narrator:
     ) -> AsyncIterator[str | StreamReplaceFrame]:
         """Yield narration chunks after mechanics have already been committed."""
         settings = get_settings()
-        gateway = narration_gateway_for(settings)
+        gateway = (
+            paid_narration_gateway_for(settings)
+            if billing_tier == "normal"
+            else narration_gateway_for(settings)
+        )
         request = self._request(context)
         if billing_tier == "lite":
             async for chunk in OfflineProvider().stream(request):
                 yield chunk
             return
         if not gateway.has_online_providers:
-            async for chunk in OfflineProvider().stream(request):
-                yield chunk
+            offline = (await OfflineProvider().complete(request)).strip()
+            if offline:
+                yield StreamReplaceFrame(offline)
             return
         async with _provider_gate(settings.llm_max_concurrency):
             async for chunk in gateway.stream(request):

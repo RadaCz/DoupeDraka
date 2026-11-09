@@ -362,17 +362,26 @@ def test_concurrent_same_idempotency_key_one_turn(auth):
 
 def test_concurrent_turns_on_two_characters_debit_energy_once_each(auth, monkeypatch):
     """Parallel turns on two heroes sharing one account must not drop a debit."""
-    class _Gateway:
+    from app.ai.base import NarrationRequest
+    from app.ai.gateway import NamedProvider, NarrationGateway
+
+    class _PaidProvider:
+        async def complete(self, request: NarrationRequest) -> str:
+            return "The path unfolds."
+
+        async def stream(self, request: NarrationRequest):
+            yield "The path unfolds."
+
+    paid_gateway = NarrationGateway([NamedProvider("MockPaid", _PaidProvider())])
+
+    class _RegistryGateway:
         providers = ("mock",)
         has_online_providers = True
 
-    async def narrated(_self, _context, **_kwargs):
-        return "The path unfolds.", "narrated"
-
+    monkeypatch.setattr("app.narrator.paid_narration_gateway_for", lambda _settings: paid_gateway)
     for target in ("app.api.narration_gateway_for", "app.ai.registry.narration_gateway_for"):
-        monkeypatch.setattr(target, lambda _settings: _Gateway())
+        monkeypatch.setattr(target, lambda _settings: _RegistryGateway())
     monkeypatch.setattr("app.ai.registry.has_external_paid_narration_provider", lambda _settings: True)
-    monkeypatch.setattr("app.narrator.Narrator.narrate_detailed", narrated)
 
     assert client.post("/economy/tier", json={"tier": "normal"}, headers=auth).status_code == 200
     first = _character(auth)
@@ -404,6 +413,10 @@ def test_concurrent_turns_on_two_characters_debit_energy_once_each(auth, monkeyp
         responses = [future.result() for future in futures]
 
     assert all(response.status_code == 200 for response in responses)
+    for response in responses:
+        body = response.json()
+        assert body["narration_status"] == "narrated", body
+        assert body["tier"] == "normal"
 
     async def ledger_state():
         async with Session() as session:
@@ -414,11 +427,14 @@ def test_concurrent_turns_on_two_characters_debit_energy_once_each(auth, monkeyp
                 )
             ).all()
             debits = [tx for tx in txs if tx.reason == "turn"]
-            return user.energy_tenths, sum(-tx.amount_tenths for tx in debits)
+            refunds = [tx for tx in txs if tx.reason == "refund"]
+            return user.energy_tenths, debits, refunds
 
-    balance, debited = asyncio.run(ledger_state())
+    balance, debits, refunds = asyncio.run(ledger_state())
+    assert refunds == [], "fallback narration must not refund when paid provider succeeds"
+    assert len(debits) == 2
     assert balance == 0
-    assert debited == cost * 2
+    assert sum(-tx.amount_tenths for tx in debits) == cost * 2
 
 
 def test_idempotent_replay_emits_single_turn_billing(auth, monkeypatch):

@@ -65,6 +65,13 @@ def test_v005_upgrade_backfills_nulls_preserves_rows_and_passes_check():
             )
             row = conn.execute(text("SELECT id, username FROM users WHERE username = 'legacy-null'")).one()
             legacy_id = row.id
+            conn.execute(
+                text(
+                    "INSERT INTO api_keys (user_id, token_hash, created_at) "
+                    "VALUES (:uid, 'legacy-key-hash', NULL)"
+                ),
+                {"uid": legacy_id},
+            )
 
         _run_alembic(test_url, "upgrade", "head")
         _run_alembic(test_url, "check")
@@ -81,6 +88,10 @@ def test_v005_upgrade_backfills_nulls_preserves_rows_and_passes_check():
                 )
             ).scalar_one()
             assert nulls == 0
+            api_key_created = conn.execute(
+                text("SELECT created_at FROM api_keys WHERE token_hash = 'legacy-key-hash'")
+            ).one()
+            assert api_key_created.created_at is not None
 
         inspector = inspect(engine)
         for table, column in (

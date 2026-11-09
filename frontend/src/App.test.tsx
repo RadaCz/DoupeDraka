@@ -442,6 +442,16 @@ describe('Telegram Mini App', () => {
     expect(requests.some(item => item.url.endsWith('/actions/stream') && item.method === 'POST')).toBe(true);
   });
 
+  it('does not PATCH narration language when UI locale differs from the saved character', async () => {
+    const csHero = { ...mockCharacter, id: 'cs-hero', name: 'Mila', narration_language: 'cs' };
+    const requests = setupApp([csHero]);
+    render(<App />);
+    await screen.findByRole('heading', { name: /welcome back, mila/i });
+    fireEvent.click(screen.getByRole('button', { name: /continue adventure/i }));
+    await screen.findByRole('heading', { name: 'The Whispering Cellar' });
+    expect(requests.filter(item => item.url.endsWith('/settings') && item.body?.language)).toHaveLength(0);
+  });
+
   it('changes narrator tier but makes no false promise of payments', async () => {
     const requests = setupApp([mockCharacter]);
     render(<App />);

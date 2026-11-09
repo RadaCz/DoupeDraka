@@ -87,7 +87,7 @@ PostgreSQL migration job and Playwright E2E.
 GitHub Actions on `main`, `master`, and `clean-main` runs:
 
 - backend: `python -m pytest -q`
-- backend-postgres: `alembic upgrade head`, then `tests/test_concurrency.py`
+- backend-postgres: `alembic upgrade head`, then `tests/test_concurrency.py` and `tests/test_alembic_v005.py`
 - frontend: Vitest and `npm run build`
 - e2e: `npm run test:e2e` (API on 8001, Vite on 5174)
 

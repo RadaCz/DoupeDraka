@@ -95,6 +95,7 @@ class NarrationGateway:
                 logger.warning("%s failed (%s); falling back to %s", entry.name, exc, fallback)
                 self._telemetry_fallback(entry.name, fallback)
                 record_gateway_fallback(entry.name, fallback)
-        async for chunk in self.offline.stream(request):
-            yield chunk
+        offline_text = (await self.offline.complete(request)).strip()
         record_provider_success("offline")
+        if offline_text:
+            yield StreamReplaceFrame(offline_text)

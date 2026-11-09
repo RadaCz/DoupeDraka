@@ -1,5 +1,6 @@
 import asyncio
 
+import httpx
 import pytest
 
 from app.ai.base import NarrationContext, NarrationRequest
@@ -101,5 +102,18 @@ def test_gateway_mid_stream_abort_yields_replace_not_duplicate_chunks():
                 buffered += frame
         final = buffered
         assert token.strip() not in final
+
+    asyncio.run(run())
+
+
+def test_gateway_stream_yields_replace_when_all_providers_fail_before_first_token():
+    async def run():
+        failing = FlakyProvider(httpx.ConnectError("connection refused"), "")
+        gateway = NarrationGateway([NamedProvider("NVIDIA NIM", failing)])
+        frames = [frame async for frame in gateway.stream(_request())]
+        assert failing.calls == 1
+        assert len(frames) == 1
+        assert isinstance(frames[0], StreamReplaceFrame)
+        assert frames[0].narration.strip()
 
     asyncio.run(run())

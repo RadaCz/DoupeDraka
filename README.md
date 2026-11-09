@@ -19,7 +19,7 @@ journal text may still appear in English.
 
 ## Hotovo
 
-- 12 tříd s jednou subclassou ze SRD 5.1 pro každou a 9 ras;
+- katalog SRD 5.1: 12 tříd s jednou subclassou a 9 ras (ve hře je zatím **4 ras + 4 třídy** a čtveřice preset hrdinů);
 - postava s HP, manou, inventářem a postupem (XP → level-up);
 - hody, útoky, zranění, iniciativa a odpověď nepřítele;
 - obtížnost (easy/normal/hard) škáluje HP, AC, útok, zranění i odměnu XP;
@@ -110,10 +110,12 @@ setkání.
 AI je **vypravěč**: převádí pevně vyhodnocené výsledky enginu na prózu. Nerozhoduje o
 hodech, poškození ani pravidlech. Změna kvality vypravěče mění modelový tier, ne pravidla.
 Ve výchozí konfiguraci (`LLM_PROVIDER=fallback`) neběží jazykový model; hru rámuje
-vestavěný offline vypravěč. AI próza je dostupná po nastavení `LLM_PROVIDER=ollama` a
-spuštění Ollama. Tah se uloží před začátkem streamování prózy; Mini App ji postupně
-zobrazuje a při chybě modelu použije offline fallback. Lite stojí 0,0 ⚡, Normal 1,0 ⚡
-za zpoplatněný změněný tah; tier Pro je v této verzi vypnutý (až do OpenRouter adapteru).
+vestavěný offline vypravěč. Lokální Ollama umí generovat prózu v **Lite** režimu zdarma;
+**Normal** (placený tier) vyžaduje nakonfigurovaného **externího** poskytovatele (např. NVIDIA NIM
+nebo Groq), jinak se účtuje a chová se jako Lite. Tah se uloží před začátkem streamování prózy;
+Mini App ji postupně zobrazuje a při chybě placeného modelu vrátí kredit a použije offline fallback.
+Lite stojí 0,0 ⚡, Normal 1,0 ⚡ za zpoplatněný změněný tah s doručenou placenou narací; tier Pro je
+v této verzi vypnutý (až do OpenRouter adapteru).
 Nové účty začínají se 100,0 ⚡; stávající
 zůstatky se automaticky nemění. Tahy bez změny stavu a dlouhý odpočinek jsou zdarma.
 Placené dobíjení přes Telegram Stars nebo jinou platební bránu není zapojené; mana na

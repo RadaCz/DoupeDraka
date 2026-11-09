@@ -108,6 +108,18 @@ def narration_gateway_for(settings: Settings) -> NarrationGateway:
     return NarrationGateway(providers)
 
 
+def paid_narration_gateway_for(settings: Settings) -> NarrationGateway:
+    """Provider chain for Normal billing — external APIs only, never local Ollama."""
+    providers: list[NamedProvider] = []
+    for name in get_chain_names(settings):
+        if name == "ollama":
+            continue
+        provider = _provider_for_name(name, settings)
+        if provider is not None:
+            providers.append(provider)
+    return NarrationGateway(providers)
+
+
 def provider_for(settings: Settings):
     """Legacy hook: first online provider, if any."""
     gateway = narration_gateway_for(settings)

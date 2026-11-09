@@ -129,3 +129,58 @@ def test_stream_cancelled_error_idempotent_replay_skips_second_billing(auth, mon
     assert replay.status_code == 200
     assert "event: complete" in replay.text
     assert len(billing_events) == 1
+
+
+def test_stream_all_providers_fail_before_first_token_refunds_once(auth, monkeypatch):
+    import httpx
+    from app.ai.gateway import NamedProvider, NarrationGateway
+
+    class _FailingProvider:
+        async def complete(self, request):
+            raise httpx.ConnectError("refused")
+
+        async def stream(self, request):
+            raise httpx.ConnectError("refused")
+            yield ""  # pragma: no cover
+
+    gateway = NarrationGateway([NamedProvider("Mock", _FailingProvider())])
+    for target in (
+        "app.narrator.narration_gateway_for",
+        "app.ai.registry.narration_gateway_for",
+        "app.api.narration_gateway_for",
+    ):
+        monkeypatch.setattr(target, lambda _s: gateway)
+    monkeypatch.setattr("app.ai.registry.has_external_paid_narration_provider", lambda _s: True)
+
+    assert client.post("/economy/tier", json={"tier": "normal"}, headers=auth).status_code == 200
+    character = _character(auth)
+    response = client.post(
+        f"/characters/{character['id']}/actions/stream",
+        json={"action": "look around"},
+        headers={**auth, "Idempotency-Key": uuid.uuid4().hex},
+    )
+    assert response.status_code == 200
+    assert "event: replace" in response.text
+    assert "event: complete" in response.text
+    complete = re.search(r"event: complete\ndata: ({.*?})\n", response.text, re.DOTALL)
+    assert complete is not None
+    payload = json.loads(complete.group(1))
+    assert payload["narration_status"] == "fallback"
+
+    async def balances():
+        async with Session() as session:
+            user = await session.scalar(select(User).where(User.username == "atomic"))
+            refunds = (
+                await session.scalars(
+                    select(EnergyTransaction).where(
+                        EnergyTransaction.user_id == user.id,
+                        EnergyTransaction.reason == "refund",
+                    )
+                )
+            ).all()
+            return user.energy_tenths, refunds
+
+    balance, refunds = asyncio.run(balances())
+    assert len(refunds) == 1
+    assert refunds[0].amount_tenths == economy.turn_cost("normal")
+    assert balance == 1000

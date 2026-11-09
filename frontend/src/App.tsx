@@ -597,13 +597,6 @@ function AppContent() {
     }
   }, [setLocale]);
 
-  useEffect(() => {
-    if (!character) return;
-    const target = locale === 'cs' ? 'cs' : 'en';
-    if ((character.narration_language ?? 'en') === target) return;
-    void syncNarrationLanguage(target);
-  }, [character?.id, character?.narration_language, locale, syncNarrationLanguage]);
-
   const calculateEncounter = async (level: number, monsters: string[]) => {
     setCalculating(true);
     setCalculation(null);

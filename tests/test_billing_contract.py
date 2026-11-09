@@ -59,7 +59,7 @@ async def test_normal_calls_configured_provider(monkeypatch):
     gateway = NarrationGateway([NamedProvider("Paid", counter)])
     gateway.complete = AsyncMock(wraps=gateway.complete)
 
-    monkeypatch.setattr("app.narrator.narration_gateway_for", lambda _settings: gateway)
+    monkeypatch.setattr("app.narrator.paid_narration_gateway_for", lambda _settings: gateway)
 
     narration, status = await Narrator().narrate_detailed(_context(), billing_tier="normal")
     assert status == "narrated"

@@ -292,6 +292,16 @@ def test_paid_narration_fallback_refunds_commit_hold(auth, monkeypatch):
     assert data["energy_tenths"] == 1000
 
 
+def test_lite_action_reports_offline_narration_status(auth):
+    character = client.post("/characters/presets/tank", headers=auth).json()
+    response = client.post(
+        f"/characters/{character['id']}/actions", json={"action": "look around"}, headers=auth
+    )
+    assert response.status_code == 200
+    assert response.json()["narration_status"] == "offline"
+    assert response.json()["energy_tenths"] == 1000
+
+
 def test_pro_tier_is_rejected(auth):
     response = client.post("/economy/tier", json={"tier": "pro"}, headers=auth)
     assert response.status_code == 422

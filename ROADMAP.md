@@ -2,7 +2,7 @@
 
 Updated 2026-11-08. Chapter one is a gated six-location slice on `clean-main`. ActionIntent routes player commands; Pro narration tier is disabled until OpenRouter exists.
 
-## GDS01 — Dice, Resources & Economy (design complete, implementation pending)
+## GDS01 — Dice, Resources & Economy (E1–E2b on `clean-main`; product sign-off pending)
 
 - [x] [`design/DICE_AND_ECONOMY_V1.md`](design/DICE_AND_ECONOMY_V1.md) — kostky, zdroje, billing contract, D6 doporučení
 - [x] [`design/ECONOMY_MODEL_V1.md`](design/ECONOMY_MODEL_V1.md) — session model, náklady (známé/hypotézy)
@@ -12,9 +12,9 @@ Updated 2026-11-08. Chapter one is a gated six-location slice on `clean-main`. A
 
 | # | Epic | Obsah |
 |---|------|--------|
-| 1 | **E1** | UI copy: Kredity vypravěče; legacy mana |
-| 2 | **E2** | Default Lite + tier gating dle providera |
-| 3 | **E2b** | Billing: no charge / refund při fallback |
+| 1 | **E1** | UI copy: Kredity vypravěče; legacy mana — **implemented on `clean-main`** |
+| 2 | **E2** | Default Lite + tier gating dle providera — **implemented on `clean-main`** |
+| 3 | **E2b** | Billing: no charge / refund při fallback — **implemented on `clean-main`** |
 | 4 | **Min. telemetrie** | `state_changed`, narration outcome, turn/session (E5 minimální rozsah) |
 | 5 | **Playtest** | `CHAPTER_ONE_PLAYTEST_V1` — 10–15 hráčů, kvalitativní go/no-go |
 | 6 | **E3** *(pozastaveno)* | Dice v1.1 (DC, D6 varianta A); `explore_track` není v enginu |
