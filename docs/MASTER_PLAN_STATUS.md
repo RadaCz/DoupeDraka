@@ -1,7 +1,8 @@
 # Master plan — stav (sync s DOUPEDRAKA_MASTER_PLAN.md v1.0)
 
 Poslední revize: **2026-11-09 (P3 journal/offline)**. Etapy 7–9 záměrně otevřené až po uzavření sólo smyčky.  
-**Ověřený CI commit:** `ec646fc` · GitHub Actions `42679663584` — 4/4 SUCCESS (lokální P3 změny zatím necommitnuté).
+**CI baseline:** `ec646fc` · run `42679663584` — 4/4 SUCCESS.  
+**P3 commit:** `b7f1315` — push na `origin/clean-main`; výsledek Actions ověřte na GitHubu po dokončení běhu.
 
 | Etapa | Název | Stav | Poznámka |
 |------:|-------|------|----------|

@@ -1,8 +1,8 @@
 # Narrator V2 (P2) — kvalita vypravěče a paměť
 
 **Baseline commit (P2):** `adceca6` · **P2.1:** memory hardening (`journal_prose`)  
-**P3 (working tree na `ec646fc`):** offline `scene_kind` fallbacky, journal stream order, CZ mechaniky v UI  
-**CI baseline:** `ec646fc` — Actions run `42679663584` (backend, backend-postgres, frontend, e2e) SUCCESS  
+**P3 commit:** `b7f1315` — offline `scene_kind`, journal UX, SSE refresh dedupe  
+**CI baseline:** `ec646fc` / run `42679663584` — 4/4 SUCCESS před P3; P3 CI = poslední run na `b7f1315`  
 **Branch:** `clean-main`
 
 ## Co bylo špatně / matoucí (P1)
