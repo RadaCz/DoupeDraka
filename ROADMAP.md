@@ -65,6 +65,7 @@ Platby a produkční top-up zůstávají v **Deferred product decisions** (Prior
 - [x] Czech UI diacritics + presentation-layer names (V3); CS SSE buffered/coerced (`f8ce5b1`).
 - [ ] Physical Telegram QA on device — **NOT TESTED** (`docs/TELEGRAM_MOBILE_QA_V1.md`, `docs/PHYSICAL_TELEGRAM_QA_V2.md`).
 - [ ] Closed beta 10–15 hráčů — protokol připraven (`docs/CLOSED_BETA_ONBOARDING_V1.md`); **čeká na fyzické QA**.
+- [ ] Sprint 7–8 mobile UX (lokální) — Overview/journal prezentace, play layout, Settings IA; **necommitnuto**.
 
 ## Deferred product decisions
 - Payments (Telegram Stars/YooKassa), referrals, Redis, campaigns/payments tables, multiplayer, and higher-level spell progression remain out of scope until separately prioritized.

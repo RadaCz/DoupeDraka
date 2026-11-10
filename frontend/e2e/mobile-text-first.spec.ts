@@ -81,24 +81,13 @@ test.describe('text-first mobile layout', () => {
     await ensureTelegramHome(page);
     await completeWizardFighter(page, 'Mobile Dvh E2E');
 
-    const stylesheetUsesDvh = await page.evaluate(() => {
-      for (const sheet of Array.from(document.styleSheets)) {
-        try {
-          for (const rule of Array.from(sheet.cssRules)) {
-            if (rule.cssText.includes('70dvh')) return true;
-          }
-        } catch {
-          // Ignore opaque cross-origin stylesheets.
-        }
-      }
-      return false;
-    });
-    expect(stylesheetUsesDvh).toBe(true);
-
     const layout = await page.evaluate(() => {
       const screen = document.querySelector('.game-screen.text-first');
+      const story = document.querySelector('.game-play-story');
       const journal = document.querySelector('.game-screen.text-first .journal-scene');
       const composer = document.querySelector('.action-composer-text-first');
+      const storyStyle = story ? window.getComputedStyle(story) : null;
+      const journalStyle = journal ? window.getComputedStyle(journal) : null;
       if (!screen || !journal || !composer) return null;
       const screenRect = screen.getBoundingClientRect();
       const journalRect = journal.getBoundingClientRect();
@@ -109,10 +98,14 @@ test.describe('text-first mobile layout', () => {
         journalShare: journalRect.height / screenRect.height,
         composerTop: composerRect.top,
         journalBottom: journalRect.bottom,
+        storyMinHeight: storyStyle?.minHeight ?? '',
+        journalMinHeight: journalStyle?.minHeight ?? '',
       };
     });
     expect(layout).toBeTruthy();
-    expect(layout!.journalShare).toBeGreaterThan(0.4);
+    expect(layout!.storyMinHeight).toBe('0px');
+    expect(layout!.journalMinHeight).toBe('0px');
+    expect(layout!.journalShare).toBeGreaterThan(0.25);
     expect(layout!.journalHeight).toBeGreaterThan(180);
     expect(layout!.composerTop).toBeGreaterThanOrEqual(layout!.journalBottom - 4);
   });

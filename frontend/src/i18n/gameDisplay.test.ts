@@ -4,6 +4,7 @@ import {
   displayInventoryLabel,
   displayLocation,
   localizeMechanicsLine,
+  presentEngineEventLine,
 } from './gameDisplay';
 
 describe('gameDisplay', () => {
@@ -48,5 +49,19 @@ describe('gameDisplay', () => {
 
   it('localizes expanded bestiary names', () => {
     expect(displayCreature('Kobold skirmisher', 'cs')).toBe('Koboldí záškodník');
+  });
+
+  it('localizes exploration outcomes and discovery facts for CS journal', () => {
+    expect(localizeMechanicsLine('Exploration roll: 6 on a six-sided die.', 'cs')).toMatch(/Průzkum: 6/);
+    expect(presentEngineEventLine('You explore the area but find no immediate threat.', 'cs')).toMatch(/hrozbu/i);
+    expect(presentEngineEventLine('You take a moment to catch your breath. No new threat appears.', 'cs')).toMatch(
+      /oddychneš/i,
+    );
+    const discovery = presentEngineEventLine(
+      'New discovery: Fresh tracks cross the dust and lead toward the sunken corridor.',
+      'cs',
+    );
+    expect(discovery).toMatch(/^Nový nález:/);
+    expect(discovery).toMatch(/stopy/i);
   });
 });

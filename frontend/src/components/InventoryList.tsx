@@ -46,7 +46,7 @@ export function InventoryList({ character, busy = false, onInventoryAction }: In
     : undefined;
   const category = selected ? inventoryItemCategory(selected) : null;
   const canUsePotion = category === 'consumable' && character.hp < character.max_hp;
-  const canEquip = category === 'weapon';
+  const canEquip = category === 'weapon' && selected && !equippedForLabel(instances, selected);
 
   const renderSection = (title: string, sectionItems: string[]) => {
     if (!sectionItems.length) return null;

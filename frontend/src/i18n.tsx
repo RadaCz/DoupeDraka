@@ -71,7 +71,7 @@ const cs: Record<string, string> = {
   'This class does not cast spells in the current chapter. Fighters and Rogues use weapons and skills instead.':
     'Tato třída v aktuální kapitole nečaruje. Bojovníci a zloději bojují zbraněmi a dovednostmi.',
   'Your hero has no prepared spells yet. Level up or learn spells through play when the engine grants them.':
-    'Hrdina zatím nemá připravená kouzla. Ziskas je postupem ve hre, az je engine prideli.',
+    'Hrdina zatím nemá naučená kouzla. Získáš je postupem ve hře, až je engine přidělí při level-upu.',
   'Join me in Doupě Draka — a solo fantasy adventure in Telegram. Tap the link to start your own hero.':
     'Pridej se ke mne v Doupet Draka — solo fantasy v Telegramu. Odkaz otevre tvou vlastni hru.',
   'Share Doupě Draka with friends. Referral rewards are not implemented yet — this link simply opens the Mini App.':
@@ -352,7 +352,20 @@ const cs: Record<string, string> = {
   'Adventure journal': 'Dobrodruzny deník',
   'The cellar waits in silence. Describe what you try — explore, talk, attack, flee or rest.': 'Sklep mlcky ceka. Napis, co zkusis — pruzkum, rozhovor, utok, utek nebo odpocinek.',
   'This place waits in silence. Describe what you try — explore, talk, attack, flee or rest.': 'Toto misto ceka v tichu. Napis, co zkusis — pruzkum, rozhovor, utok, utek nebo odpocinek.',
-  'The built-in offline storyteller is narrating this turn (Lite tier or fallback).': 'Tento tah vypravuje vestavěný příběh (úroveň Lite nebo záloha).',
+  'The built-in offline storyteller is narrating this turn (Lite tier or fallback).':
+    'Tento tah popisuje vestavěný vypravěč (Lite, zdarma).',
+  'Open full journal': 'Otevřít celý deník',
+  'This turn used the backup storyteller. No credits were charged.':
+    'Tento tah popsal záložní vypravěč. Žádné kredity se neodečetly.',
+  'Adventure style moved': 'Styl dobrodružství přesunut',
+  'Difficulty, tone, and humor now live under Settings → Campaign mood and tone.':
+    'Obtížnost, tón a humor teď najdeš v Nastavení → Styl dobrodružství.',
+  'ADVENTURE STYLE': 'STYL DOBRODRAŽSTVÍ',
+  'Difficulty, tone, and humor apply to this character only.':
+    'Nastavení platí jen pro tuto postavu.',
+  'Normal paid narration needs an external provider on the server. This build uses Lite (free offline storyteller) only.':
+    'Placená úroveň Normal vyžaduje na serveru externího providera. Tato verze používá jen Lite (zdarma, vestavěný vypravěč).',
+  'Pro tier is disabled in this beta.': 'Úroveň Pro je v této betě vypnutá.',
   'The narrator is shaping the moment…': 'Vypravěč právě popisuje, co se děje…',
   'Look around': 'Rozhlednout se',
   'Rest': 'Odpocinout si',

@@ -12,6 +12,8 @@ describe('narration presentation path', () => {
     expect(viaStream.startsWith(proseOnly)).toBe(true);
     expect(viaStream).toContain('Potopená chodba');
     expect(viaStream).not.toMatch(/catch your breath/i);
+    expect(viaStream).toMatch(/hrozbu|Průzkum/i);
+    expect(viaStream).not.toMatch(/no immediate threat/i);
   });
 
   it('EN path leaves narration unchanged', () => {

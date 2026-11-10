@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased (2026-11-10) — Staging & device validation prep (Sprint 9 docs)
+
+- `docs/STAGING_DEVICE_VALIDATION_V1.md` — env, Lite/Normal, fyzické QA, facilitator.
+- E2E: `mobile-text-first` aligned with flex layout (no `70dvh` assertion).
+
+## Unreleased (2026-11-10) — Mobile UX & IA (Sprint 7–8, local)
+
+- Sprint 7: CS journal/overview presentation (`presentEngineEventLine`, stream facts localization).
+- Sprint 8: Overview last beat, play flex layout, tier/fallback UI, campaign style in Settings, quick actions cap.
+
 ## Unreleased (2026-11-10) — Beta readiness (Sprint 6 docs, no code)
 
 - Doc sync: README test counts, rest/explore gold, MASTER_PLAN HEAD `0112747`, DEPLOYMENT CI cache.

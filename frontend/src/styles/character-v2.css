@@ -121,6 +121,21 @@
   gap: 10px;
 }
 
+.char-v2-abilities-fold {
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.char-v2-abilities-fold > summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.char-v2-abilities-fold > summary::-webkit-details-marker {
+  display: none;
+}
+
 .char-v2-section-title {
   margin: 0;
   font-size: 1.05rem;

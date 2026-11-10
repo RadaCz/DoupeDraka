@@ -95,24 +95,6 @@ export function CharacterScreen({
         <p className="char-v2-busy" role="status">{t('Sending your action…')}</p>
       )}
 
-      <section className="char-v2-section" aria-labelledby="char-abilities-heading">
-        <h2 id="char-abilities-heading" className="char-v2-section-title">{t('Ability scores')}</h2>
-        <p className="char-v2-section-lead">{t('Core attributes from your hero sheet. Modifiers apply to rolls in play.')}</p>
-        <div className="char-v2-ability-grid">
-          {ABILITY_KEYS.map(key => {
-            const score = character.abilities?.[key] ?? 10;
-            return (
-              <article key={key} className="char-v2-ability-card">
-                <small>{t(ABILITY_LABEL_KEYS[key])}</small>
-                <strong className="tabular-nums">{score}</strong>
-                <span className="char-v2-mod tabular-nums">{formatModifier(score)}</span>
-                <p className="char-v2-ability-hint">{t(ABILITY_HINT_KEYS[key])}</p>
-              </article>
-            );
-          })}
-        </div>
-      </section>
-
       <section className="char-v2-section" aria-labelledby="char-equipment-heading">
         <h2 id="char-equipment-heading" className="char-v2-section-title">{t('Equipped gear')}</h2>
         <p className="char-v2-section-lead">{t('Only weapons can be wielded in the current chapter. Equipping another blade swaps your active weapon.')}</p>
@@ -139,6 +121,40 @@ export function CharacterScreen({
           onInventoryAction={onInventoryAction}
         />
       </section>
+
+      <section className="char-v2-section" aria-labelledby="char-progress-heading">
+        <h2 id="char-progress-heading" className="char-v2-section-title">{t('Progress')}</h2>
+        <article className="char-v2-progress-card">
+          <div className="char-v2-progress-row">
+            <span><small>{t('Level')}</small><strong>{character.level}</strong></span>
+            <span><small>{t('EXPERIENCE')}</small><strong className="tabular-nums">{character.xp} XP</strong></span>
+          </div>
+          <div className="char-v2-xp-track" role="progressbar" aria-valuenow={xp.current} aria-valuemin={0} aria-valuemax={xp.threshold} aria-label={t('Experience toward next level')}>
+            <span style={{ width: `${Math.min(100, (xp.current / xp.threshold) * 100)}%` }} />
+          </div>
+          <p className="char-v2-xp-caption tabular-nums">
+            {t('Experience toward next level')}: {xp.current} / {xp.threshold} XP
+          </p>
+        </article>
+      </section>
+
+      <details className="char-v2-section char-v2-abilities-fold">
+        <summary className="char-v2-section-title">{t('Ability scores')}</summary>
+        <p className="char-v2-section-lead">{t('Core attributes from your hero sheet. Modifiers apply to rolls in play.')}</p>
+        <div className="char-v2-ability-grid">
+          {ABILITY_KEYS.map(key => {
+            const score = character.abilities?.[key] ?? 10;
+            return (
+              <article key={key} className="char-v2-ability-card">
+                <small>{t(ABILITY_LABEL_KEYS[key])}</small>
+                <strong className="tabular-nums">{score}</strong>
+                <span className="char-v2-mod tabular-nums">{formatModifier(score)}</span>
+                <p className="char-v2-ability-hint">{t(ABILITY_HINT_KEYS[key])}</p>
+              </article>
+            );
+          })}
+        </div>
+      </details>
 
       <section className="char-v2-section" aria-labelledby="char-spells-heading">
         <h2 id="char-spells-heading" className="char-v2-section-title">{t('Spells & abilities')}</h2>
@@ -171,22 +187,6 @@ export function CharacterScreen({
             ))}
           </ul>
         )}
-      </section>
-
-      <section className="char-v2-section" aria-labelledby="char-progress-heading">
-        <h2 id="char-progress-heading" className="char-v2-section-title">{t('Progress')}</h2>
-        <article className="char-v2-progress-card">
-          <div className="char-v2-progress-row">
-            <span><small>{t('Level')}</small><strong>{character.level}</strong></span>
-            <span><small>{t('EXPERIENCE')}</small><strong className="tabular-nums">{character.xp} XP</strong></span>
-          </div>
-          <div className="char-v2-xp-track" role="progressbar" aria-valuenow={xp.current} aria-valuemin={0} aria-valuemax={xp.threshold} aria-label={t('Experience toward next level')}>
-            <span style={{ width: `${Math.min(100, (xp.current / xp.threshold) * 100)}%` }} />
-          </div>
-          <p className="char-v2-xp-caption tabular-nums">
-            {t('Experience toward next level')}: {xp.current} / {xp.threshold} XP
-          </p>
-        </article>
       </section>
 
       {characters.length > 1 && (

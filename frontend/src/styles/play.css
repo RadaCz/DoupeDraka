@@ -670,9 +670,41 @@
 .combat-v2-story {
   flex: 1 1 auto;
   min-height: 0;
-  max-height: min(38vh, 320px);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+}
+
+.combat-screen.combat-v2 {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.storyteller-status-fallback {
+  font-size: 0.72rem;
+  opacity: 0.85;
+}
+
+.hub-open-journal {
+  margin-top: 6px;
+}
+
+.campaign-location-compact {
+  margin-bottom: 12px;
+}
+
+.settings-tier-hint {
+  margin: 8px 0 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.settings-tier-hint.muted {
+  opacity: 0.8;
+}
+
+.play-immersive-bar {
+  padding-top: calc(6px + var(--app-safe-top, env(safe-area-inset-top, 0px)));
 }
 
 .combat-moment {

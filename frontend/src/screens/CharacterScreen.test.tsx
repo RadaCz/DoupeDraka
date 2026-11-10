@@ -44,7 +44,7 @@ describe('CharacterScreen V2', () => {
     );
     expect(screen.getByRole('heading', { name: 'Grath' })).toBeInTheDocument();
     expect(screen.getByText(/The Underground River/)).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /ability scores/i })).toBeInTheDocument();
+    expect(screen.getByText(/ability scores/i)).toBeInTheDocument();
     expect(screen.getAllByText('Mace').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(/40 \/ 100 XP/)).toBeInTheDocument();
   });

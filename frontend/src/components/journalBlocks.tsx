@@ -1,5 +1,5 @@
 import { useI18n } from '../i18n';
-import { localizeMechanicsLine } from '../i18n/gameDisplay';
+import { localizeMechanicsLine, presentEngineEventLine } from '../i18n/gameDisplay';
 import { presentNarrationProse } from '../i18n/narrationPresent';
 
 const MECHANIC_LINE = /^(Attack roll:|Attack with\b|.*\bdamage\b|Saving throw:|Exploration roll:|Intelligence check:|Wisdom check:|Strength check:|Dexterity check:|Constitution check:|Charisma check:|.* vs (DC|AC) \d+)/i;
@@ -60,7 +60,7 @@ export function splitJournalResult(result: string, locale: 'en' | 'cs') {
         flushProse();
         blocks.push({ kind: 'state', text: trimmed });
       } else if (trimmed) {
-        prose.push(line);
+        prose.push(locale === 'cs' ? presentEngineEventLine(trimmed, locale) : line);
       }
     }
     flushProse();

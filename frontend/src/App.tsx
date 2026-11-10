@@ -677,6 +677,7 @@ function AppContent() {
             onPreset={createPreset}
             onOpenMap={() => navigate('map')}
             onOpenQuests={() => navigate('quests')}
+            onOpenJournal={() => navigate('journal')}
           />
         )}
         {screen === 'create' && <CharacterWizard catalog={catalog} presets={presets} busy={busy} error={error} onCreate={createCharacter} onPreset={createPreset} onCancel={() => navigate('home')} />}
@@ -760,7 +761,9 @@ function AppContent() {
             }}
           />
         )}
-        {screen === 'campaign' && <CampaignScreen character={character} events={events} busy={busy} onUpdate={updateCampaign} />}
+        {screen === 'campaign' && (
+          <CampaignScreen onOpenSettings={() => navigate('settings')} />
+        )}
         {screen === 'tools' && (
           <ToolsScreen
             character={character}
@@ -779,12 +782,13 @@ function AppContent() {
         )}
         {screen === 'settings' && (
           <SettingsScreen
+            character={character}
             economy={economy}
             busy={busy}
             error={error}
             onChangeTier={changeTier}
             onLanguageChange={syncNarrationLanguage}
-            onOpenCampaign={() => navigate('campaign')}
+            onUpdateCampaign={updateCampaign}
             onOpenTools={() => navigate('tools')}
           />
         )}

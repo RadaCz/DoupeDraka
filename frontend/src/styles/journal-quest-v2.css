@@ -143,7 +143,7 @@
 
 .game-screen.text-first .game-play-story .game-play-journal {
   flex: 1 1 auto;
-  min-height: min(70dvh, 70%);
+  min-height: 0;
   display: flex;
   flex-direction: column;
 }
@@ -154,8 +154,7 @@
 
 .game-screen.text-first .game-play-journal .journal-scene {
   flex: 1 1 auto;
-  min-height: min(70dvh, 70%);
-  height: min(70dvh, 70%);
+  min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }

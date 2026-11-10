@@ -15,7 +15,7 @@ import { useI18n } from './i18n';
 import { displayLocation } from './i18n/gameDisplay';
 import { questStepsFromCatalog, visibleQuestTimeline } from './questProgress';
 import { questStakesMessage } from './quests/questStory';
-import { latestSceneNarration } from './game/gameActions';
+import { latestStoryBeatForOverview } from './journal/journalPresentation';
 import { type JournalFilter } from './journalCategories';
 import { InviteShareCard } from './components/InviteShareCard';
 import { JournalChronicle } from './journal/JournalChronicle';
@@ -48,6 +48,7 @@ export function HomeScreen({
   onPreset,
   onOpenMap,
   onOpenQuests,
+  onOpenJournal,
 }: {
   character: Character | null;
   characters: Character[];
@@ -60,6 +61,7 @@ export function HomeScreen({
   onPreset: (key: string) => void;
   onOpenMap?: () => void;
   onOpenQuests?: () => void;
+  onOpenJournal?: () => void;
 }) {
   const { t, locale } = useI18n();
   const flags = character?.quest_flags ?? {};
@@ -67,7 +69,7 @@ export function HomeScreen({
     ? visibleQuestTimeline(flags, questStepsFromCatalog(questCatalog))
   : null;
   const questStakes = character ? questStakesMessage(flags) : '';
-  const lastBeat = character ? latestSceneNarration(events) : '';
+  const lastBeat = character ? latestStoryBeatForOverview(events, locale) : '';
   return (
     <section className="screen home-screen">
       <div className="welcome-banner">
@@ -124,6 +126,11 @@ export function HomeScreen({
                 <blockquote className="hub-last-beat">
                   <p className="eyebrow">{t('LAST STORY BEAT')}</p>
                   <p>{lastBeat}</p>
+                  {onOpenJournal && (
+                    <button type="button" className="text-button hub-open-journal" onClick={onOpenJournal}>
+                      {t('Open full journal')} →
+                    </button>
+                  )}
                 </blockquote>
               )}
             </div>
@@ -193,35 +200,52 @@ export function GameScreen(props: {
 
 export { CharacterScreen } from './screens/CharacterScreen';
 
-export function CampaignScreen({
+const CAMPAIGN_STYLE_GROUPS = [
+  { key: 'difficulty' as const, label: 'Combat challenge', choices: [['easy', 'Gentle'], ['normal', 'Balanced'], ['hard', 'Dangerous']] as const },
+  { key: 'tone' as const, label: 'Narrative tone', choices: [['light', 'Hopeful'], ['balanced', 'Balanced'], ['dark', 'Dark'], ['grimdark', 'Grim']] as const },
+  { key: 'humor' as const, label: 'Humor', choices: [['serious', 'Serious'], ['rare', 'Dry wit'], ['frequent', 'Playful'], ['comedy', 'Comedic']] as const },
+];
+
+export function CampaignStylePanel({
   character,
-  events,
   busy,
   onUpdate,
 }: {
-  character: Character | null;
-  events: JournalEvent[];
+  character: Character;
   busy: boolean;
   onUpdate: (settings: Record<string, string | boolean>) => void;
 }) {
   const { t, locale } = useI18n();
-  if (!character) return <section className="screen empty-screen"><p className="eyebrow">{t('CAMPAIGN')}</p><h1>{t('Your world awaits')}</h1><p>{t('Create a character to begin a campaign.')}</p></section>;
-  const settings = [
-    { key: 'difficulty', label: 'Combat challenge', choices: [['easy', 'Gentle'], ['normal', 'Balanced'], ['hard', 'Dangerous']] },
-    { key: 'tone', label: 'Narrative tone', choices: [['light', 'Hopeful'], ['balanced', 'Balanced'], ['dark', 'Dark'], ['grimdark', 'Grim']] },
-    { key: 'humor', label: 'Humor', choices: [['serious', 'Serious'], ['rare', 'Dry wit'], ['frequent', 'Playful'], ['comedy', 'Comedic']] },
-  ] as const;
   return (
-    <section className="screen">
-      <div className="page-title"><p className="eyebrow">{t('THE WHISPERING CELLAR')}</p><h1>{t('Your campaign')}</h1><p>{t('A persistent story shaped by your choices. Settings apply to this character.')}</p></div>
-      <article className="campaign-location"><span aria-hidden="true">⌖</span><div><small>{t('CURRENT LOCATION')}</small><strong>{displayLocation(character.location, locale)}</strong><p>{t(character.in_combat ? 'You are in the middle of a fight.' : 'The path is open. Decide where the story goes next.')}</p></div></article>
-      {settings.map(group => (
+    <section className="section-block campaign-style-panel" aria-labelledby="campaign-style-heading">
+      <div className="section-heading">
+        <div>
+          <p className="eyebrow">{t('ADVENTURE STYLE')}</p>
+          <h2 id="campaign-style-heading">{t('Campaign mood and tone')}</h2>
+        </div>
+      </div>
+      <p className="section-lead">{t('Difficulty, tone, and humor apply to this character only.')}</p>
+      <article className="campaign-location campaign-location-compact">
+        <span aria-hidden="true">⌖</span>
+        <div>
+          <small>{t('CURRENT LOCATION')}</small>
+          <strong>{displayLocation(character.location, locale)}</strong>
+        </div>
+      </article>
+      {CAMPAIGN_STYLE_GROUPS.map(group => (
         <fieldset className="settings-card" key={group.key} disabled={busy}>
           <legend>{t(group.label)}</legend>
           <div className="option-row">
             {group.choices.map(([value, label]) => (
-              <button type="button" key={value} className={`option-card ${character[group.key] === value ? 'selected' : ''}`} aria-pressed={character[group.key] === value} onClick={() => onUpdate({ [group.key]: value })}>
-                <strong>{t(label)}</strong><small>{t(value)}</small>
+              <button
+                type="button"
+                key={value}
+                className={`option-card ${character[group.key] === value ? 'selected' : ''}`}
+                aria-pressed={character[group.key] === value}
+                onClick={() => onUpdate({ [group.key]: value })}
+              >
+                <strong>{t(label)}</strong>
+                <small>{t(value)}</small>
               </button>
             ))}
           </div>
@@ -232,20 +256,31 @@ export function CampaignScreen({
         <p>{t('Choose how much descriptive prose you want between the game facts.')}</p>
         <div className="option-row">
           {[{ value: true, label: 'Immersive', detail: '3–5 sentences' }, { value: false, label: 'Concise', detail: '1–2 sentences' }].map(option => (
-            <button type="button" key={String(option.value)} className={`option-card ${character.verbose === option.value ? 'selected' : ''}`} aria-pressed={character.verbose === option.value} onClick={() => onUpdate({ verbose: option.value })}><strong>{t(option.label)}</strong><small>{t(option.detail)}</small></button>
+            <button
+              type="button"
+              key={String(option.value)}
+              className={`option-card ${character.verbose === option.value ? 'selected' : ''}`}
+              aria-pressed={character.verbose === option.value}
+              onClick={() => onUpdate({ verbose: option.value })}
+            >
+              <strong>{t(option.label)}</strong>
+              <small>{t(option.detail)}</small>
+            </button>
           ))}
         </div>
       </fieldset>
-      <section className="section-block campaign-journal">
-        <div className="section-heading"><div><p className="eyebrow">{t('YOUR CHOICES')}</p><h2>{t('Recent journal')}</h2></div><span className="event-count">{events.length} {t(events.length === 1 ? 'entry' : 'entries')}</span></div>
-        {events.length ? (
-          <div className="timeline">
-            {[...events].reverse().slice(0, 12).map(event => (
-              <article className="timeline-entry" key={event.id}><span className="timeline-dot" /><time>{new Date(event.created_at).toLocaleString()}</time><strong>{event.action}</strong><p>{event.result}</p></article>
-            ))}
-          </div>
-        ) : <p className="empty-note">{t('Your first journal entry will appear when you take an action in the adventure.')}</p>}
-      </section>
+    </section>
+  );
+}
+
+export function CampaignScreen({ onOpenSettings }: { onOpenSettings: () => void }) {
+  const { t } = useI18n();
+  return (
+    <section className="screen empty-screen">
+      <p className="eyebrow">{t('CAMPAIGN')}</p>
+      <h1>{t('Adventure style moved')}</h1>
+      <p>{t('Difficulty, tone, and humor now live under Settings → Campaign mood and tone.')}</p>
+      <button type="button" className="primary" onClick={onOpenSettings}>{t('Open settings')}</button>
     </section>
   );
 }
@@ -332,20 +367,22 @@ export function JournalScreen({
 }
 
 export function SettingsScreen({
+  character,
   economy,
   busy,
   error,
   onChangeTier,
   onLanguageChange,
-  onOpenCampaign,
+  onUpdateCampaign,
   onOpenTools,
 }: {
+  character: Character | null;
   economy: Economy | null;
   busy: boolean;
   error: string | null;
   onChangeTier: (tier: string) => void;
   onLanguageChange?: (language: 'en' | 'cs') => void;
-  onOpenCampaign?: () => void;
+  onUpdateCampaign?: (settings: Record<string, string | boolean>) => void;
   onOpenTools?: () => void;
 }) {
   const { t, locale, setLocale } = useI18n();
@@ -366,14 +403,14 @@ export function SettingsScreen({
           <option value="cs">{t('Czech')}</option>
         </select>
       </section>
-      <div className="settings-shortcuts">
-        {onOpenCampaign && (
-          <button type="button" className="text-button" onClick={onOpenCampaign}>{t('Campaign mood and tone')}</button>
-        )}
-        {onOpenTools && (
+      {onOpenTools && (
+        <div className="settings-shortcuts">
           <button type="button" className="text-button" onClick={onOpenTools}>{t('Rules and spell reference')}</button>
-        )}
-      </div>
+        </div>
+      )}
+      {character && onUpdateCampaign && (
+        <CampaignStylePanel character={character} busy={busy} onUpdate={onUpdateCampaign} />
+      )}
       <article className="balance-card">
         <div className="balance-icon" aria-hidden="true">⚡</div>
         <div className="balance-copy"><small>{t('AVAILABLE NARRATOR CREDITS')}</small><strong>{economy ? economy.balance.toFixed(1) : '—'} <i>⚡</i></strong><p>{t('Separate from spell slots; spellcaster classes spend slots to cast spells.')}</p></div><ManaHelp />
@@ -382,11 +419,33 @@ export function SettingsScreen({
         <div className="section-heading"><div><p className="eyebrow"><span aria-hidden="true">🎭</span> {t('THE STORYTELLER')}</p><h2>{t('Choose narration quality')}</h2></div></div>
         <div className="tier-list">
           {economy?.tiers.map(tier => (
-            <button type="button" className={`tier-card ${economy.tier === tier.key ? 'selected' : ''}`} key={tier.key} disabled={busy || economy.tier === tier.key} onClick={() => onChangeTier(tier.key)}>
-              <span className={`tier-dot ${tier.key}`} /><span className="tier-copy"><strong>{t(tier.label)}</strong><small>{t(tier.description)}</small></span><span className="tier-cost">{tier.cost.toFixed(1)} <i>⚡</i><small>{t('/ changed turn')}</small></span>
+            <button
+              type="button"
+              className={`tier-card ${economy.tier === tier.key ? 'selected' : ''}`}
+              key={tier.key}
+              disabled={busy || economy.tier === tier.key}
+              onClick={() => onChangeTier(tier.key)}
+            >
+              <span className={`tier-dot ${tier.key}`} />
+              <span className="tier-copy">
+                <strong>{t(tier.label)}</strong>
+                <small>{t(tier.description)}</small>
+              </span>
+              <span className="tier-cost">
+                {tier.cost.toFixed(1)} <i>⚡</i>
+                <small>{t('/ changed turn')}</small>
+              </span>
             </button>
           ))}
         </div>
+        {economy && economy.tiers.length === 1 && economy.tiers[0]?.key === 'lite' && (
+          <p className="settings-tier-hint" role="note">
+            {t('Normal paid narration needs an external provider on the server. This build uses Lite (free offline storyteller) only.')}
+          </p>
+        )}
+        {!economy?.tiers.some(tier => tier.key === 'pro') && (
+          <p className="settings-tier-hint muted" role="note">{t('Pro tier is disabled in this beta.')}</p>
+        )}
         {error && <p className="error" role="alert">{error}</p>}
       </section>
       <article className="notice-card"><span aria-hidden="true">ⓘ</span><div><strong>{t('Top-ups are not available yet')}</strong><p>{t('This build does not process payments. No real-money purchase can be made from the Mini App.')}</p></div></article>
@@ -432,7 +491,6 @@ export function MoreScreen({
     { key: 'journal', label: t('Journal'), description: t('Story and action history'), glyph: '📜' },
     { key: 'settings', label: t('Settings'), description: t('Language, narrator and game'), glyph: '⚙' },
     { key: 'tools', label: t('Rules & spells'), description: t('SRD reference and encounter tools'), glyph: '⬡' },
-    { key: 'campaign', label: t('Campaign mood'), description: t('Difficulty, tone and humor'), glyph: '◇' },
   ];
   return (
     <section className="screen more-screen">

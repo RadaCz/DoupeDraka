@@ -1606,16 +1606,16 @@ summary:focus-visible {
 }
 
 .game-screen.text-first .game-play-story {
-  flex: 1 1 70%;
+  flex: 1 1 auto;
   min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .game-screen.text-first .game-play-story .journal-scene {
   flex: 1 1 auto;
-  min-height: min(70dvh, 70%);
-  height: min(70dvh, 70%);
+  min-height: 0;
 }
 
 .game-screen.text-first .action-composer-wrap {

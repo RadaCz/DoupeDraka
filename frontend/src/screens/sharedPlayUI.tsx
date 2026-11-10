@@ -122,13 +122,14 @@ export function CompactHud({ character, onOpenSheet }: { character: Character; o
 
 export function PlayJournal({
   character,
+  economy,
   events,
   busy,
   turnPhase,
   narrationStatus,
   onResumePending,
   onCancelTurn,
-}: Pick<PlayScreenProps, 'character' | 'events' | 'busy' | 'turnPhase' | 'narrationStatus' | 'onResumePending' | 'onCancelTurn'>) {
+}: Pick<PlayScreenProps, 'character' | 'economy' | 'events' | 'busy' | 'turnPhase' | 'narrationStatus' | 'onResumePending' | 'onCancelTurn'>) {
   const { t } = useI18n();
   const [thinkingSeconds, setThinkingSeconds] = useState(0);
   useEffect(() => {
@@ -140,9 +141,9 @@ export function PlayJournal({
   }, [busy]);
   return (
     <div className="game-play-journal">
-      {narrationStatus === 'fallback' && (
-        <p className="storyteller-status" role="status">
-          {t('The built-in offline storyteller is narrating this turn (Lite tier or fallback).')}
+      {narrationStatus === 'fallback' && economy?.tier !== 'lite' && (
+        <p className="storyteller-status storyteller-status-fallback" role="status">
+          {t('This turn used the backup storyteller. No credits were charged.')}
         </p>
       )}
       {events.length === 0 ? (

@@ -1,7 +1,7 @@
 # Master plan — stav (sync s DOUPEDRAKA_MASTER_PLAN.md v1.0)
 
-Poslední revize: **2026-11-10 (Sprint 6 beta readiness audit)**. Etapy 7–9 záměrně otevřené až po uzavření sólo smyčky.  
-**Kódový HEAD (audit):** `0112747` na `clean-main` (= `origin/clean-main` po Sprintu 5).  
+Poslední revize: **2026-11-10 (Sprint 7–8 mobile UX, lokálně necommitnuto)**. Etapy 7–9 záměrně otevřené až po uzavření sólo smyčky.  
+**Kódový HEAD (audit):** `485e483` na `origin/clean-main`; lokálně Sprint 7–8 UX diff.  
 **CI (ověřeno uživatelem):** GitHub Actions run `42806386764` na `0112747` — backend, backend-postgres, frontend, e2e **SUCCESS**.  
 **Playwright cache:** pip + npm + `~/.cache/ms-playwright` v CI od `0112747`; cache hit na druhém běhu — **NOT VERIFIED** bez logu.  
 **Fyzický Telegram:** **NOT TESTED** (`docs/TELEGRAM_MOBILE_QA_V1.md`).

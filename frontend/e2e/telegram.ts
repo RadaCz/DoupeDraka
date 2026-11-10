@@ -42,8 +42,8 @@ export async function mockTelegramWebApp(page: Page, initData: string) {
       initData: ${JSON.stringify(initData)},
       ready() {},
       expand() {},
-      contentSafeAreaInset: { top: 0, bottom: 20 },
-      safeAreaInset: { top: 0, bottom: 0 },
+      contentSafeAreaInset: { top: 44, bottom: 20 },
+      safeAreaInset: { top: 47, bottom: 0 },
       themeParams: { bg_color: '#0d120e', text_color: '#edf1e5' },
       BackButton: {
         show() {},

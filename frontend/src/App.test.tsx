@@ -338,7 +338,7 @@ describe('Telegram Mini App', () => {
     ensureBottomNav();
     fireEvent.click(screen.getByRole('button', { name: /^(Character|Postava)$/ }));
     expect(await screen.findByRole('heading', { name: /^Rada$/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /ability scores/i })).toBeInTheDocument();
+    expect(screen.getByText(/ability scores/i)).toBeInTheDocument();
     expect(screen.getByText('Longbow')).toBeInTheDocument();
     expect(screen.queryByText('LEGACY CHARACTER MANA')).not.toBeInTheDocument();
     expect(screen.queryByText('Mana (historical)')).not.toBeInTheDocument();
@@ -422,8 +422,8 @@ describe('Telegram Mini App', () => {
     render(<App />);
     await screen.findByRole('heading', { name: /welcome back, rada/i });
     ensureBottomNav();
-    openMoreSubscreen('Campaign mood');
-    expect(await screen.findByRole('heading', { name: /your campaign/i })).toBeInTheDocument();
+    openMoreSubscreen('Settings');
+    expect(await screen.findByRole('heading', { name: /campaign mood and tone/i })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /dangerous hard/i }));
     await waitFor(() => expect(requests.some(item => item.url === `/api/characters/${mockCharacter.id}/settings` && item.body?.difficulty === 'hard')).toBe(true));
     fireEvent.click(screen.getByRole('button', { name: 'Adventure' }));
@@ -434,7 +434,7 @@ describe('Telegram Mini App', () => {
     await waitFor(() => expect(journal.querySelector('.journal-narration')).toHaveTextContent('Steel rings.'));
     expect(await screen.findByText(/Attack roll: hit\./)).toBeInTheDocument();
     expect(within(journal).getByText('attack goblin')).toBeInTheDocument();
-    expect(await screen.findByText(/built-in offline storyteller is narrating/i)).toBeInTheDocument();
+    expect(screen.queryByText(/built-in offline storyteller is narrating/i)).not.toBeInTheDocument();
     expect(requests.some(item => item.url.endsWith('/actions/stream') && item.method === 'POST')).toBe(true);
   });
 

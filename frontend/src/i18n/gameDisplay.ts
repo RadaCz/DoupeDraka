@@ -85,6 +85,51 @@ function combatResultCs(result: string): string {
   return result;
 }
 
+/** Exact engine discovery lines → Czech (presentation only; DB stays EN). */
+const DISCOVERY_BODY_CS: Record<string, string> = {
+  'Fresh tracks cross the dust and lead toward the sunken corridor.':
+    'Čerstvé stopy kříží prach a vedou k potopené chodbě.',
+  'Wet footprints lead toward a pale light beneath the shrine doors.':
+    'Mokré otisky míří k bledému světlu pod dveřmi svatyně.',
+  'Boot prints cross the shrine dust and continue toward a crowded bazaar.':
+    'Otisky bot procházejí prachem svatyně a míří k rušnému tržišti.',
+  "A trail of copper scales vanishes behind the market's shuttered stalls.":
+    'Stopy měděných šupin mizí za zataženými stánky trhu.',
+  'Bell scratches mark a spiral path deeper into the vault.':
+    'Škrábance od zvonů vyznačují spirálovitou cestu hlouběji do komnaty.',
+  'The pit floor is scorched in a ring around a shattered brazier.':
+    'Dno jámy je vypálené kruhem kolem rozbitého ohniště.',
+  'Bone dust swirls in a draft from deeper niches.':
+    'Kostní prach se víří v průvanu z hlubších výklenků.',
+  'Cookfire smoke stains the tree line above hidden tents.':
+    'Kouř z ohniště kazí obzor nad skrytými stany.',
+  'Cold water trails toward a tunnel mouth slick with moss.':
+    'Studená voda stéká k ústí chodby pokryté mechem.',
+  "Scratches around a stone panel mark the cellar's hidden passage.":
+    'Škrábance kolem kamenného panelu označují skrytý průchod sklepa.',
+  'A brass token stamped with a broken moon lies in the silt.':
+    'V bahně leží mosazná žetona s otiskem rozbitého měsíce.',
+  'An offering bowl hides a map fragment marked with a green hand.':
+    'Obětní mísa skrývá fragment mapy označený zelenou rukou.',
+  'Nib, a goblin trader, claims the stolen shrine bell changed hands at this market.':
+    'Gobliní kupec Nib tvrdí, že ukradený chrámový zvon se na tomto trhu prodal dál.',
+  "A rusted key ring holds a shrine tag that reads 'return what was stolen'.":
+    'Rezavý svazek klíčů nese štítek chrámu: „Vrať, co bylo ukradeno.“',
+  "Carved into the wall: 'The Warden keeps tolls even in death.'":
+    'Vyryto ve zdi: „Strážce vybírá mýto i po smrti.“',
+  'A nameless sarcophagus lid bears claw marks from the inside.':
+    'Víko bezejmenného sarkofágu nese stopy drápů zevnitř.',
+  'A bounty notice lists stolen shrine goods headed for the market.':
+    'Odměna na plakátu uvádí ukradené chrámové věci mířící na trh.',
+  'A ferry chain hangs broken; something dragged it into the dark.':
+    'Zdvižný řetěz je přetržený; něco ho táhlo do tmy.',
+  'Danger follows the waterway.': 'Nebezpečí sleduje tok vody.',
+  'Something heavy sloshes against the stones downstream.':
+    'Něco těžkého šplouchá o kameny po proudu.',
+  "Nib's stall smells of tarnished brass — gossip says a shrine bell changed hands here.":
+    'Nibův stánek páchl po matné mosazi — povídá se, že tu změnil majitele chrámový zvon.',
+};
+
 const MECHANIC_PATTERNS_CS: Array<[RegExp, string | ((...args: string[]) => string)]> = [
   [
     /^Attack with (.+?): (\d+) \(d20\s*\+(\d+)\) vs AC (\d+) — (critical miss|miss|hit|critical hit)\.?$/i,
@@ -103,6 +148,23 @@ const MECHANIC_PATTERNS_CS: Array<[RegExp, string | ((...args: string[]) => stri
     },
   ],
   [/Exploration roll: (\d+) on a six-sided die\.(.*)/i, 'Průzkum: $1 na šestistranné kostce.$2'],
+  [
+    /^You explore the area but find no immediate threat\.?$/i,
+    'Prohledáváš okolí, ale nezahlédneš bezprostřední hrozbu.',
+  ],
+  [/^You find nothing new here\.?$/i, 'Nenacházíš nic nového.'],
+  [
+    /^You already logged these tracks here; nothing new stands out\.?$/i,
+    'Tyto stopy už znáš — nic nového tě neupoutá.',
+  ],
+  [
+    /^You already logged these clue here; nothing new stands out\.?$/i,
+    'Tuto stopu už máš zapsanou — nic nového tě neupoutá.',
+  ],
+  [
+    /^You already logged these clues here; nothing new stands out\.?$/i,
+    'Tyto stopy už znáš — nic nového tě neupoutá.',
+  ],
   [
     /^You find (\d+) gold pieces tucked beneath loose stones \(a one-time find here\)\.?$/i,
     'Najdeš $1 zlatých pod volnými kameny (v této lokaci jen jednou).',
@@ -167,6 +229,24 @@ const MECHANIC_PATTERNS_CS: Array<[RegExp, string | ((...args: string[]) => stri
   [/^An enemy appears: (.+?)\.?$/i, 'Objevuje se nepřítel: $1.'],
   [/^Initiative: (.*)$/i, 'Iniciativa: $1'],
 ];
+
+function localizeDiscoveryLine(line: string): string {
+  const trimmed = line.trim();
+  const match = /^New discovery:\s*(.+)$/i.exec(trimmed);
+  if (!match) return trimmed;
+  const body = match[1].trim();
+  const cs = DISCOVERY_BODY_CS[body] ?? body;
+  return `Nový nález: ${cs}`;
+}
+
+/**
+ * Localize a single engine event line for journal/combat UI (facts unchanged in DB).
+ */
+export function presentEngineEventLine(line: string, locale: Locale): string {
+  if (locale !== 'cs' || !line.trim()) return line;
+  if (/^New discovery:/i.test(line.trim())) return localizeDiscoveryLine(line);
+  return localizeMechanicsLine(line, locale);
+}
 
 /**
  * Localize a single engine mechanic line for journal/combat UI (facts unchanged in DB).

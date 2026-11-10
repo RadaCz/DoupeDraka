@@ -13,6 +13,12 @@ describe('formatJournalStreamResult', () => {
     expect(blob).toContain('Attack roll');
   });
 
+  it('localizes streamed facts for CS locale', () => {
+    const blob = formatJournalStreamResult('Tiše čekáš.', ['Exploration roll: 4 on a six-sided die.'], 'cs');
+    expect(blob).toMatch(/Průzkum: 4/);
+    expect(blob).not.toMatch(/Exploration roll/i);
+  });
+
   it('dedupes identical server beats after reconnect refresh', () => {
     const beat: JournalEvent = {
       id: 1,

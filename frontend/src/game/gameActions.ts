@@ -1,3 +1,5 @@
+import type { Locale } from '../i18n';
+import { latestStoryBeatForOverview } from '../journal/journalPresentation';
 import type { Character, JournalEvent, LocationReference } from '../types';
 import { routeOpen } from '../chapterOneMap';
 
@@ -200,7 +202,7 @@ export function playActionChips(
     for (const quick of buildQuickActions(character, events, locations, t, hasSpells, hasPotion)) {
       if (quick.action) push(quick.id, quick.label, quick.action);
     }
-    return out.slice(0, 10);
+    return out.slice(0, 4);
   }
 
   const npcTalk = resolveNpcTalkAction(character, t);
@@ -222,12 +224,11 @@ export function playActionChips(
   } else if (talk && !npcTalk) {
     push('talk', talk.label, undefined, 'focus');
   }
+  push('travel', t('Travel'), undefined, 'map');
   if (character.hp < character.max_hp && !character.in_combat) {
     push('rest', t('Rest'), 'rest');
   }
-  push('travel', t('Travel'), undefined, 'map');
-  push('custom', t('Custom action'), undefined, 'focus');
-  return out.slice(0, 8);
+  return out.slice(0, 4);
 }
 
 /** First chip that best matches the current scene (for visual emphasis, not a different rules path). */
@@ -284,16 +285,9 @@ export function scenePrompt(character: Character, events: JournalEvent[], t: (va
     : t('This place is quiet for now. Search, listen, or travel onward.');
 }
 
-const SCENE_FACT_LINE = /^(Attack roll:|Saving throw:|LEVEL UP|\d+ damage)/i;
-
-export function latestSceneNarration(events: JournalEvent[]) {
-  const last = events[events.length - 1];
-  if (!last) return '';
-  const parts = last.result.split('\n\n').map(part => part.trim()).filter(Boolean);
-  for (let index = parts.length - 1; index >= 0; index -= 1) {
-    if (!SCENE_FACT_LINE.test(parts[index])) return parts[index];
-  }
-  return '';
+/** @deprecated Use latestStoryBeatForOverview with locale — kept for legacy callers. */
+export function latestSceneNarration(events: JournalEvent[], locale: Locale = 'en') {
+  return latestStoryBeatForOverview(events, locale);
 }
 
 export function isFallenError(message: string | null) {

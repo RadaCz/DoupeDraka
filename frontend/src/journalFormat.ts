@@ -1,4 +1,5 @@
 import type { Locale } from './i18n';
+import { presentEngineEventLine } from './i18n/gameDisplay';
 import { presentNarrationProse } from './i18n/narrationPresent';
 import type { JournalEvent } from './types';
 
@@ -12,7 +13,7 @@ export function formatJournalStreamResult(
   if (!prose) {
     return '';
   }
-  const mechanics = facts.join('\n').trim();
+  const mechanics = facts.map(fact => presentEngineEventLine(fact.trim(), locale)).join('\n').trim();
   return mechanics ? `${prose}\n\n${mechanics}` : prose;
 }
 

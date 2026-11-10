@@ -30,6 +30,18 @@ describe('journalBlocks', () => {
     expect(mechanic?.text).toMatch(/zásah/i);
   });
 
+  it('localizes exploration prose lines in CS facts', () => {
+    const blocks = splitJournalResult(
+      'Narrace.\n\nYou explore the area but find no immediate threat.\n\nExploration roll: 5 on a six-sided die.',
+      'cs',
+    );
+    const explorationProse = blocks.find(
+      block => block.kind === 'prose' && block.text.includes('hrozbu'),
+    );
+    expect(explorationProse).toBeTruthy();
+    expect(blocks.some(block => block.kind === 'mechanic' && block.text.startsWith('Průzkum:'))).toBe(true);
+  });
+
   it('labels quest and mechanic lines in the facts block', () => {
     const blocks = splitJournalResult(
       'Caldus nods grimly.\n\nYou accept the quest to recover the shrine bell.\n\nAttack roll: 12 vs AC 10 — hit.',

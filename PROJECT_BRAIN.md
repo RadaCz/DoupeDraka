@@ -7,7 +7,7 @@
 - **Last updated:** 2026-11-10 (Localization Integrity V3 / V3.1 — `f8ce5b1` na `clean-main`)
 - **CI lifecycle baseline:** `ec646fc` · Actions `42679663584` (4/4 SUCCESS).
 - **Narrator V2 P3:** commit `b7f1315` na `clean-main` (push proveden).
-- **HEAD (2026-11-10):** `0112747` — Sprinty 3–5 v kódu; CI run `42806386764` zelené. **Telefonní playtest** stále **NOT TESTED** (viz `docs/TELEGRAM_MOBILE_QA_V1.md`, `docs/CLOSED_BETA_ONBOARDING_V1.md`).
+- **HEAD (2026-11-10):** `485e483` na origin; lokálně Sprint 7–8 UX diff (necommitnuto). CI run `42806386764` platí pro `0112747`. **Telefonní playtest** stále **NOT TESTED** (viz `docs/TELEGRAM_MOBILE_QA_V1.md`, `docs/CLOSED_BETA_ONBOARDING_V1.md`).
 - **External verification:** real Telegram visual QA and Docker/Postgres in production-like deploy remain **UNVERIFIED** by the maintainer.
 
 ## 1. Directives

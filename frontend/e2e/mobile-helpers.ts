@@ -65,6 +65,23 @@ export async function assertBottomNavVisible(page: Page) {
   expect(bottomGap, `bottom nav should stick to viewport bottom (gap=${bottomGap})`).toBeLessThanOrEqual(4);
 }
 
+export async function assertPlayStoryFillsMiddle(page: Page) {
+  await expect.poll(async () => page.evaluate(() => {
+    const story = document.querySelector('.game-play-story');
+    const bar = document.querySelector('.play-immersive-bar');
+    const composer = document.querySelector('.action-composer-wrap');
+    const nav = document.querySelector('.bottom-nav');
+    if (!story || !bar || !composer || !nav) return false;
+    const barBox = bar.getBoundingClientRect();
+    const storyBox = story.getBoundingClientRect();
+    const composerBox = composer.getBoundingClientRect();
+    const navBox = nav.getBoundingClientRect();
+    const gapAbove = storyBox.top - barBox.bottom;
+    const gapBelow = composerBox.top - storyBox.bottom;
+    return storyBox.height >= 80 && gapAbove >= -2 && gapBelow >= -4 && storyBox.bottom <= composerBox.top + 2;
+  })).toBe(true);
+}
+
 export async function assertJournalScrolledToLatest(page: Page) {
   await expect.poll(async () => page.evaluate(() => {
     const journal = document.querySelector('.journal-scene');
