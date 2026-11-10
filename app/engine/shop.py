@@ -3,6 +3,8 @@
 from dataclasses import dataclass
 import re
 
+from .economy_balance import HEALING_POTION_PRICE_GP, SHORTSWORD_PLUS_ONE_PRICE_GP
+
 
 @dataclass(frozen=True)
 class ShopListing:
@@ -19,14 +21,14 @@ SHOP_LISTINGS: tuple[ShopListing, ...] = (
     ShopListing(
         key="healing_potion",
         aliases=("healing potion", "potion", "lektvar"),
-        price_gp=50,
+        price_gp=HEALING_POTION_PRICE_GP,
         inventory_label="healing potion",
         shelf_name="Healing Potion (2d4+2 HP)",
     ),
     ShopListing(
         key="shortsword_plus_1",
         aliases=("shortsword +1", "shortsword+1", "short sword +1", "+1 shortsword"),
-        price_gp=100,
+        price_gp=SHORTSWORD_PLUS_ONE_PRICE_GP,
         inventory_label="shortsword +1",
         shelf_name="Shortsword +1",
     ),

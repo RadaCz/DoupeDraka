@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable
 
+from .economy_balance import CRYPT_RELIC_GOLD_GP, QUEST_BELL_RETURN_GOLD_GP
 from .models import CharacterState, TurnResult
 from .ruleset_v1 import MAX_MVP_LEVEL
 
@@ -131,8 +132,10 @@ def resolve_main_quest_step(
         flags["bell_quest_complete"] = True
         flags["bell_acquired"] = True
         character.inventory = [item for item in character.inventory if item.casefold() != "shrine bell"]
-        character.gold += 5
-        events = ["You return the shrine bell to Caldus and receive 5 gold pieces and 30 XP."]
+        character.gold += QUEST_BELL_RETURN_GOLD_GP
+        events = [
+            f"You return the shrine bell to Caldus and receive {QUEST_BELL_RETURN_GOLD_GP} gold pieces and 30 XP.",
+        ]
         if character.level < MAX_MVP_LEVEL:
             character.xp += 30
             level_events, level_up_facts = level_up(character)
@@ -194,7 +197,7 @@ def try_side_quest_explore(character: CharacterState, action: str) -> TurnResult
             costs_adventure_mana=False,
         )
     flags["crypt_relic_claimed"] = True
-    character.gold += 15
+    character.gold += CRYPT_RELIC_GOLD_GP
     if character.level < MAX_MVP_LEVEL:
         character.xp += 10
     if "Echo shard" not in character.inventory:
@@ -202,7 +205,7 @@ def try_side_quest_explore(character: CharacterState, action: str) -> TurnResult
     return TurnResult(
         action,
         [
-            "Behind a cracked sarcophagus you find an echo shard and 15 gold from a forgotten burial.",
+            f"Behind a cracked sarcophagus you find an echo shard and {CRYPT_RELIC_GOLD_GP} gold from a forgotten burial.",
             "You gain 10 XP for uncovering the relic.",
         ],
         True,

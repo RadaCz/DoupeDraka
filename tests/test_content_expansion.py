@@ -2,6 +2,7 @@ import random
 
 import pytest
 
+from app.engine.economy_balance import HEALING_POTION_PRICE_GP, SHORTSWORD_PLUS_ONE_PRICE_GP
 from app.engine.encounters import build_monster, filter_encounter_pool
 from app.engine.equipment import default_item_instances, item_attack_bonus
 from app.engine.locations import LOCATIONS, travel_destination
@@ -56,7 +57,7 @@ def test_shop_rejects_insufficient_gold():
     hero.gold = 10
     result, _ = game.resolve_action(hero, "buy healing potion", None)
     assert not result.state_changed
-    assert "50 gp" in result.events[0]
+    assert f"{HEALING_POTION_PRICE_GP} gp" in result.events[0]
     assert hero.gold == 10
 
 
@@ -67,7 +68,7 @@ def test_shop_purchase_updates_gold_and_inventory():
     hero.gold = 60
     result, _ = game.resolve_action(hero, "buy a healing potion", None)
     assert result.state_changed
-    assert hero.gold == 10
+    assert hero.gold == 60 - HEALING_POTION_PRICE_GP
     assert "healing potion" in hero.inventory
 
 
@@ -80,7 +81,7 @@ def test_shop_shortsword_plus_one_grants_attack_bonus():
     hero.gold = 150
     result, _ = game.resolve_action(hero, "buy shortsword +1", None)
     assert result.state_changed
-    assert hero.gold == 50
+    assert hero.gold == 150 - SHORTSWORD_PLUS_ONE_PRICE_GP
     assert item_attack_bonus(hero) == 1
 
 

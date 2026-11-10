@@ -2,6 +2,7 @@ import copy
 
 import pytest
 
+from app.engine.economy_balance import HEALING_POTION_PRICE_GP
 from app.engine.intent import AMBIGUOUS, QUEST, REJECTED, SHOP, USE_ITEM, parse_action_intent
 from app.engine.models import CharacterState
 from app.engine.service import GameEngine
@@ -114,7 +115,7 @@ def test_valid_buy_and_use_change_state_when_appropriate():
     hero = _hero()
     buy, _ = game.resolve_action(hero, "buy a healing potion", None)
     assert buy.state_changed
-    assert hero.gold == 10
+    assert hero.gold == 60 - HEALING_POTION_PRICE_GP
     hero.hp = hero.max_hp - 4
     use, _ = game.resolve_action(hero, "use potion", None)
     assert use.state_changed

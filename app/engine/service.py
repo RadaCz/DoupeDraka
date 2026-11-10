@@ -231,6 +231,8 @@ class GameEngine:
 
     @staticmethod
     def _chapter_one_boss_rewards(character: CharacterState, monster_key: str) -> list[str]:
+        from .economy_balance import CHAPTER_BOSS_GOLD_GP
+
         if monster_key != "bell_warden":
             return []
         if not monster_allowed_for_character(character, "bell_warden"):
@@ -238,10 +240,10 @@ class GameEngine:
         if character.quest_flags.get("chapter_one_complete"):
             return []
         character.quest_flags["chapter_one_complete"] = True
-        character.gold += 25
+        character.gold += CHAPTER_BOSS_GOLD_GP
         return [
-            "Chapter complete: the shrine's bells fall silent. You claim 25 gold "
-            "from the vault and earn a clear route back to the surface.",
+            "Chapter complete: the shrine's bells fall silent. "
+            f"You claim {CHAPTER_BOSS_GOLD_GP} gold from the vault and earn a clear route back to the surface.",
         ]
 
     @staticmethod
@@ -799,9 +801,10 @@ class GameEngine:
 
         state_changed = True
         if encounter_roll.total == 3:
+            from .economy_balance import roll_exploration_gold
+
             gold = self.roll("1d4").total
-            character.gold += gold
-            discovery = f"You find {gold} gold pieces tucked beneath loose stones (a random 1 to 4)."
+            discovery, state_changed = roll_exploration_gold(character, gold)
         elif encounter_roll.total == 2:
             from .discoveries import exploration_discovery_message
 
@@ -1009,21 +1012,53 @@ class GameEngine:
             return TurnResult(action, events, True), monster if character.in_combat else None
 
         if intent.kind == REST:
+            from .economy_balance import (
+                clear_short_rest_gate,
+                long_rest_allowed,
+                mark_short_rest,
+                short_rest_allowed,
+            )
+
             if any(phrase in text for phrase in SHORT_REST_VERBS):
                 if monster is not None or character.in_combat:
                     return TurnResult(action, ["You cannot take a short rest while a fight is raging."], False), monster
+                if not short_rest_allowed(character):
+                    return TurnResult(
+                        action,
+                        ["You already caught your breath recently. Take a long rest in a safe camp to recover fully."],
+                        False,
+                        costs_adventure_mana=False,
+                    ), monster
                 healing = self.roll("1d6", self.modifier(character.abilities.get("constitution", 10)))
                 restored = min(character.max_hp - character.hp, max(0, healing.total))
+                if restored <= 0:
+                    return TurnResult(
+                        action,
+                        ["You are already at full health — a short rest changes nothing."],
+                        False,
+                        costs_adventure_mana=False,
+                    ), monster
                 character.hp += restored
+                mark_short_rest(character)
                 return TurnResult(
                     action,
                     [f"You take a short rest and recover {restored} HP. Your HP: {character.hp}/{character.max_hp}."],
-                    restored > 0,
+                    True,
                     costs_adventure_mana=False,
                     rest_facts={"kind": "short", "hp_restored": restored},
                 ), monster
             if monster is not None or character.in_combat:
                 return TurnResult(action, ["You cannot rest while a fight is still raging."], False), monster
+            if not long_rest_allowed(character):
+                return TurnResult(
+                    action,
+                    [
+                        "You cannot take a long rest here — the ruins are too exposed. "
+                        "Retreat to the Whispering Cellar, the shrine, or Nib's market.",
+                    ],
+                    False,
+                    costs_adventure_mana=False,
+                ), monster
             character.spell_slots = {int(level): int(count) for level, count in character.spell_slots.items()}
             character.max_spell_slots = {int(level): int(count) for level, count in character.max_spell_slots.items()}
             hp_restored = character.max_hp - character.hp
@@ -1043,6 +1078,7 @@ class GameEngine:
             character.spell_slots = {
                 int(level): count for level, count in character.max_spell_slots.items() if count > 0
             }
+            clear_short_rest_gate(character)
             slot_total = sum(slots_restored.values())
             events = [
                 f"You take a long rest and recover {hp_restored} HP; all spell slots are restored."
