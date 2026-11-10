@@ -8,9 +8,11 @@ Damage is kept as structured parts (`damage_dice`, `damage_bonus`) and only
 rendered into the legacy "1d6+2" string for `MonsterState`, which keeps stored
 `character.combatant` payloads backward compatible.
 """
+import re
 from dataclasses import dataclass, replace
 
-from .models import DIFFICULTIES, MonsterState
+from .locations import LOCATIONS
+from .models import DIFFICULTIES, CharacterState, MonsterState
 
 
 @dataclass(frozen=True)
@@ -111,7 +113,61 @@ def tier_allowed_for_level(template: MonsterTemplate, level: int) -> bool:
 
 def filter_encounter_pool(pool: tuple[str, ...] | list[str], level: int) -> list[str]:
     keys = [key for key in pool if key in MONSTERS and tier_allowed_for_level(MONSTERS[key], level)]
-    return keys or [key for key in pool if key in MONSTERS]
+    if keys:
+        return keys
+    in_pool = [key for key in pool if key in MONSTERS]
+    if not in_pool:
+        return [DEFAULT_MONSTER]
+    for key in sorted(in_pool, key=lambda item: (MONSTERS[item].tier, item)):
+        if tier_allowed_for_level(MONSTERS[key], level):
+            return [key]
+    safe = sorted(
+        (monster_key for monster_key in MONSTERS if tier_allowed_for_level(MONSTERS[monster_key], level)),
+        key=lambda item: (MONSTERS[item].tier, item),
+    )
+    return [safe[0]] if safe else [DEFAULT_MONSTER]
+
+
+def monster_key_from_phrase(phrase: str) -> str | None:
+    """Resolve a player phrase to a monster catalog key, or None if nothing matches."""
+    text = re.sub(r"\s+", " ", phrase.strip()).casefold()
+    if not text:
+        return None
+    for key, template in MONSTERS.items():
+        if key == text:
+            return key
+    for key, template in MONSTERS.items():
+        name = template.name.casefold()
+        first = name.split(" ", 1)[0]
+        if key in text or first in text or name in text:
+            return key
+    return None
+
+
+def monster_template_key(monster: MonsterState) -> str:
+    for key, template in MONSTERS.items():
+        if template.name == monster.name:
+            return key
+    matched = monster_key_from_phrase(monster.name)
+    return matched if matched else DEFAULT_MONSTER
+
+
+def monster_allowed_for_character(character: CharacterState, key: str) -> bool:
+    """Whether this monster may appear in combat for the hero's current chapter state."""
+    if key not in MONSTERS:
+        return False
+    if not tier_allowed_for_level(MONSTERS[key], character.level):
+        return False
+    location = LOCATIONS.get(character.location)
+    pool = location.encounter_pool if location else ()
+    if key not in pool:
+        return False
+    if key == "bell_warden":
+        return (
+            character.location == "The Bell Warden's Pit"
+            and bool(character.quest_flags.get("vault_unlocked"))
+        )
+    return True
 
 
 def resolve_template(target: str | None) -> MonsterTemplate:

@@ -8,6 +8,13 @@ from .reference import CLASS_SPECS
 MARTIAL_WEAPON_KEYS = frozenset({"shortsword", "longsword", "rapier"})
 SIMPLE_WEAPON_KEYS = frozenset({"mace", "dagger", "unarmed"})
 
+STARTING_INVENTORY_BY_CLASS: dict[str, list[str]] = {
+    "fighter": ["traveler's clothes", "shortsword"],
+    "rogue": ["traveler's clothes", "shortsword", "dagger"],
+    "cleric": ["traveler's clothes", "mace"],
+    "wizard": ["traveler's clothes", "dagger"],
+}
+
 
 @dataclass(frozen=True)
 class WeaponDefinition:
@@ -80,6 +87,11 @@ def weapon_proficiency(character: CharacterState, weapon_key: str) -> bool:
     proficiencies = {entry.casefold() for entry in spec.weapons}
     if weapon_key in proficiencies:
         return True
+    if f"{weapon_key}s" in proficiencies:
+        return True
+    singular = weapon_key.rstrip("s") if weapon_key.endswith("s") else ""
+    if singular and singular in proficiencies:
+        return True
     if "simple" in proficiencies and weapon_key in SIMPLE_WEAPON_KEYS:
         return True
     if "martial" in proficiencies and weapon_key in MARTIAL_WEAPON_KEYS:
@@ -145,7 +157,7 @@ def set_equipped_weapon(character: CharacterState, query: str) -> tuple[bool, st
     key = label.casefold().strip()
     gear = INVENTORY_GEAR.get(key)
     attack_bonus = gear[1] if gear else 0
-    instances = default_item_instances(character.inventory)
+    instances = default_item_instances(character.inventory, character)
     for entry in instances:
         entry_weapon = weapon_for_inventory_label(entry.get("name", ""))
         if entry.get("name", "").casefold().strip() == key:
@@ -159,7 +171,12 @@ def set_equipped_weapon(character: CharacterState, query: str) -> tuple[bool, st
     return True, f"You ready your {weapon.name}{bonus_text}."
 
 
-def default_item_instances(inventory: list[str]) -> list[dict]:
+def default_item_instances(
+    inventory: list[str],
+    character: CharacterState | None = None,
+    *,
+    preserve_equipped: dict[str, int] | None = None,
+) -> list[dict]:
     instances: list[dict] = []
     equipped_weapon_set = False
     for index, label in enumerate(inventory):
@@ -167,7 +184,14 @@ def default_item_instances(inventory: list[str]) -> list[dict]:
         gear = INVENTORY_GEAR.get(key)
         definition = WEAPONS.get(gear[0]) if gear and gear[0] else WEAPONS.get(key)
         attack_bonus = gear[1] if gear else 0
-        equipped = bool(definition and not equipped_weapon_set)
+        equipped = False
+        if preserve_equipped is not None and key in preserve_equipped and definition:
+            if character is None or weapon_proficiency(character, definition.key):
+                equipped = True
+                attack_bonus = preserve_equipped[key]
+        elif preserve_equipped is None and definition and not equipped_weapon_set:
+            if character is None or weapon_proficiency(character, definition.key):
+                equipped = True
         if equipped:
             equipped_weapon_set = True
         instances.append({
@@ -178,3 +202,18 @@ def default_item_instances(inventory: list[str]) -> list[dict]:
             "attack_bonus": attack_bonus if equipped else 0,
         })
     return instances
+
+
+def sync_item_instances(character: CharacterState) -> None:
+    """Rebuild item_instances from inventory without resetting equipped weapons."""
+    preserve: dict[str, int] = {}
+    for entry in character.item_instances:
+        if entry.get("equipped"):
+            name = entry.get("name", "").casefold().strip()
+            if name:
+                preserve[name] = int(entry.get("attack_bonus", 0))
+    character.item_instances = default_item_instances(
+        character.inventory,
+        character,
+        preserve_equipped=preserve if preserve else None,
+    )

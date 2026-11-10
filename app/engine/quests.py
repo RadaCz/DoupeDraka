@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Callable
 
 from .models import CharacterState, TurnResult
+from .ruleset_v1 import MAX_MVP_LEVEL
 
 LevelUpFn = Callable[[CharacterState], tuple[list[str], dict]]
 
@@ -131,9 +132,12 @@ def resolve_main_quest_step(
         flags["bell_acquired"] = True
         character.inventory = [item for item in character.inventory if item.casefold() != "shrine bell"]
         character.gold += 5
-        character.xp += 30
         events = ["You return the shrine bell to Caldus and receive 5 gold pieces and 30 XP."]
-        level_events, level_up_facts = level_up(character)
+        if character.level < MAX_MVP_LEVEL:
+            character.xp += 30
+            level_events, level_up_facts = level_up(character)
+        else:
+            level_events, level_up_facts = [], {}
         events.extend(level_events)
         return TurnResult(action, events, True, level_up_facts=level_up_facts)
 
@@ -191,7 +195,8 @@ def try_side_quest_explore(character: CharacterState, action: str) -> TurnResult
         )
     flags["crypt_relic_claimed"] = True
     character.gold += 15
-    character.xp += 10
+    if character.level < MAX_MVP_LEVEL:
+        character.xp += 10
     if "Echo shard" not in character.inventory:
         character.inventory.append("Echo shard")
     return TurnResult(

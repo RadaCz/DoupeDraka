@@ -1,15 +1,25 @@
 import random, re, uuid
 from . import catalog
 from .catalog import ABILITY_ORDER, CLASSES, RACES, standard_abilities
-from .encounters import MONSTERS, build_monster, filter_encounter_pool
+from .encounters import (
+    MONSTERS,
+    build_monster,
+    filter_encounter_pool,
+    monster_allowed_for_character,
+    monster_key_from_phrase,
+    monster_template_key,
+)
 from .equipment import (
+    STARTING_INVENTORY_BY_CLASS,
     attack_modifier,
     damage_modifier,
     default_item_instances,
     equipped_weapon,
     item_attack_bonus,
     set_equipped_weapon,
+    sync_item_instances,
 )
+from .ruleset_v1 import MAX_MVP_LEVEL
 from .intent import (
     AMBIGUOUS,
     ATTACK,
@@ -56,6 +66,10 @@ MANA_REGEN = 1  # mana restored after any costly turn
 # Verbs the engine understands. Free text is mapped onto this closed set so a
 # model can suggest an intent but can never invent a new mechanic.
 ATTACK_VERBS = ("attack", "strike", "hit", "útok", "zaútoč")
+ATTACK_TARGET_PATTERN = re.compile(
+    r"\b(?:attack|strike|hit|útok|zaútoč\w*)\b\s*(?:the\s+)?(.+)$",
+    re.IGNORECASE,
+)
 CAST_VERBS = ("cast", "kouzl")
 REST_VERBS = ("rest", "sleep", "odpočiň", "odpočívat")
 SHORT_REST_VERBS = ("short rest", "take a breather", "brief rest", "kratky odpocinek", "kratky oddech")
@@ -105,13 +119,14 @@ class GameEngine:
         mana = spec.mana + max(0, self.modifier(scores[spec.primary])) if spec.mana else 0
         dexterity = self.modifier(scores["dexterity"])
         armor_class = spec.armor[0] + (dexterity if spec.armor[1] is None else min(dexterity, spec.armor[1]))
+        inventory = list(STARTING_INVENTORY_BY_CLASS.get(character_class, ["traveler's clothes"]))
         character = CharacterState(
             str(uuid.uuid4()), owner_id, name.strip()[:48], race, character_class,
             abilities=scores, max_hp=hp, hp=hp, armor_class=armor_class,
-            mana=mana, max_mana=mana,
+            mana=mana, max_mana=mana, inventory=inventory,
         )
         character.visited_locations = [character.location]
-        character.item_instances = default_item_instances(character.inventory)
+        character.item_instances = default_item_instances(character.inventory, character)
         initialize_spellcasting(character)
         return character
 
@@ -124,7 +139,9 @@ class GameEngine:
         return RollResult(dice, values, modifier, sum(values) + modifier, critical)
 
     def _level_up(self, character: CharacterState) -> tuple[list[str], dict]:
-        if character.xp < XP_THRESHOLD:
+        if character.level >= MAX_MVP_LEVEL or character.xp < XP_THRESHOLD:
+            if character.level >= MAX_MVP_LEVEL:
+                character.xp = min(character.xp, XP_THRESHOLD - 1)
             return [], {}
         ensure_spellcasting(character)
         character.xp -= XP_THRESHOLD
@@ -153,6 +170,15 @@ class GameEngine:
         if new_spells:
             events.append(f"New spells learned or prepared: {', '.join(new_spells)}.")
         return events, facts
+
+    def _grant_xp(self, character: CharacterState, amount: int) -> tuple[list[str], dict]:
+        if amount <= 0:
+            return [], {}
+        if character.level >= MAX_MVP_LEVEL:
+            character.xp = min(character.xp, XP_THRESHOLD - 1)
+            return [], {}
+        character.xp += amount
+        return self._level_up(character)
 
     @staticmethod
     def _spellcasting_modifier(character: CharacterState) -> int:
@@ -188,11 +214,35 @@ class GameEngine:
         return target_key in {enemy_name, enemy_name.split(" ", 1)[0]}
 
     def _named_spell_target(self, character: CharacterState, target: str) -> MonsterState | None:
-        target_key = re.sub(r"\s+", " ", target.strip()).casefold()
-        for key, template in MONSTERS.items():
-            if target_key in {key.casefold(), template.name.casefold(), template.name.split(" ", 1)[0].casefold()}:
-                return build_monster(character.difficulty, key)
+        key = monster_key_from_phrase(target)
+        if key and monster_allowed_for_character(character, key):
+            return build_monster(character.difficulty, key)
         return None
+
+    @staticmethod
+    def _attack_target_phrase(action: str) -> str | None:
+        match = ATTACK_TARGET_PATTERN.search(action.strip())
+        if not match:
+            return None
+        phrase = match.group(1).strip().rstrip(".!?")
+        if not phrase:
+            return None
+        return phrase
+
+    @staticmethod
+    def _chapter_one_boss_rewards(character: CharacterState, monster_key: str) -> list[str]:
+        if monster_key != "bell_warden":
+            return []
+        if not monster_allowed_for_character(character, "bell_warden"):
+            return []
+        if character.quest_flags.get("chapter_one_complete"):
+            return []
+        character.quest_flags["chapter_one_complete"] = True
+        character.gold += 25
+        return [
+            "Chapter complete: the shrine's bells fall silent. You claim 25 gold "
+            "from the vault and earn a clear route back to the surface.",
+        ]
 
     @staticmethod
     def _roll_facts(result: RollResult) -> dict:
@@ -238,23 +288,28 @@ class GameEngine:
     def _enemy_turn(self, character: CharacterState, monster: MonsterState, disadvantage: bool = False) -> list[str]:
         if character.hp <= 0:
             return []
-        enemy = self.roll("2d20", monster.attack_bonus) if disadvantage else self.roll("1d20", monster.attack_bonus)
-        attack_total = min(enemy.values[:2]) + enemy.modifier if disadvantage else enemy.total
-        if enemy.values[0] != 1 and (enemy.values[0] == 20 or attack_total >= character.armor_class):
-            if disadvantage and attack_total < character.armor_class:
+        if disadvantage:
+            enemy = self.roll("2d20", monster.attack_bonus)
+            chosen = min(enemy.values[0], enemy.values[1])
+            attack_total = chosen + enemy.modifier
+            natural = chosen
+        else:
+            enemy = self.roll("1d20", monster.attack_bonus)
+            attack_total = enemy.total
+            natural = enemy.values[0]
+        if natural == 1 or attack_total < character.armor_class:
+            events = [f"{monster.name}'s attack misses."]
+            if disadvantage and natural != 1:
                 events = [f"{monster.name}'s disadvantaged attack misses. You keep your guard."]
-                self._finish_player_combat_round(character)
-                return events
-            dice, _, bonus = monster.damage.partition("+")
-            damage = self.roll(dice, int(bonus) if bonus else 0)
-            character.hp = max(0, character.hp - damage.total)
-            events = [f"{monster.name} hits you for {damage.total}. Your HP: {character.hp}/{character.max_hp}."]
-            if character.hp == 0:
-                events.extend(self._recover_from_combat_defeat(character))
-                return events
             self._finish_player_combat_round(character)
             return events
-        events = [f"{monster.name}'s attack misses."]
+        dice, _, bonus = monster.damage.partition("+")
+        damage = self.roll(dice, int(bonus) if bonus else 0, natural == 20)
+        character.hp = max(0, character.hp - damage.total)
+        events = [f"{monster.name} hits you for {damage.total}. Your HP: {character.hp}/{character.max_hp}."]
+        if character.hp == 0:
+            events.extend(self._recover_from_combat_defeat(character))
+            return events
         self._finish_player_combat_round(character)
         return events
 
@@ -272,7 +327,7 @@ class GameEngine:
         amount = min(character.max_hp - character.hp, max(1, healing.total))
         character.hp += amount
         character.inventory.remove(potion)
-        character.item_instances = default_item_instances(character.inventory)
+        sync_item_instances(character)
         events = [f"You drink a healing potion and recover {amount} HP. Your HP: {character.hp}/{character.max_hp}."]
         if monster and character.in_combat:
             events.extend(self._enemy_turn(character, monster))
@@ -310,7 +365,7 @@ class GameEngine:
             )
         character.gold -= listing.price_gp
         character.inventory.append(listing.inventory_label)
-        character.item_instances = default_item_instances(character.inventory)
+        sync_item_instances(character)
         return TurnResult(
             action,
             [f"You buy {listing.shelf_name} from Nib for {listing.price_gp} gp."],
@@ -636,10 +691,11 @@ class GameEngine:
         if monster and monster.hp == 0:
             character.in_combat = False
             character.exploration_cooldown = 1
-            character.xp += monster.reward_xp
+            defeated_key = monster_template_key(monster)
+            level_events, level_up_facts = self._grant_xp(character, monster.reward_xp)
             events.append(f"{monster.name} is defeated. You gain {monster.reward_xp} XP.")
-            level_events, level_up_facts = self._level_up(character)
             events.extend(level_events)
+            events.extend(self._chapter_one_boss_rewards(character, defeated_key))
             combat_over = True
             monster = None
         elif monster:
@@ -674,8 +730,6 @@ class GameEngine:
         location = LOCATIONS.get(character.location)
         pool = list(location.encounter_pool) if location else ["kobold", "goblin", "wolf", "bandit"]
         eligible = filter_encounter_pool(pool, character.level)
-        if character.level >= 5 and "ogre" not in eligible:
-            eligible.append("ogre")
         return build_monster(character.difficulty, self.rng.choice(eligible))
 
     def _travel(self, character: CharacterState, action: str) -> TurnResult:
@@ -837,8 +891,34 @@ class GameEngine:
     ) -> tuple[TurnResult, MonsterState | None]:
         character.invisible = False
         fresh_combat = monster is None and not character.in_combat
-        monster = monster or build_monster(character.difficulty, action)
         events: list[str] = []
+        if fresh_combat:
+            phrase = self._attack_target_phrase(action)
+            target_key = monster_key_from_phrase(phrase) if phrase else None
+            if target_key is None:
+                return (
+                    TurnResult(
+                        action,
+                        ["No enemy is in front of you. Explore the area or wait for a threat to appear."],
+                        False,
+                    ),
+                    None,
+                )
+            if not monster_allowed_for_character(character, target_key):
+                return (
+                    TurnResult(
+                        action,
+                        [f"No {MONSTERS[target_key].name.lower()} is here for you to fight."],
+                        False,
+                    ),
+                    None,
+                )
+            monster = build_monster(character.difficulty, target_key)
+        elif monster is None:
+            return (
+                TurnResult(action, ["No enemy is in front of you."], False),
+                None,
+            )
         if fresh_combat:
             character.in_combat = True
             events.extend(self._roll_initiative(character, monster))
@@ -860,17 +940,11 @@ class GameEngine:
         if monster.hp == 0:
             character.in_combat = False
             reward = monster.reward_xp
-            character.xp += reward
+            defeated_key = monster_template_key(monster)
             character.exploration_cooldown = 1
+            level_events, level_up_facts = self._grant_xp(character, reward)
             events.append(f"{monster.name} is defeated. You gain {reward} XP.")
-            if "bell warden" in monster.name.casefold():
-                character.quest_flags["chapter_one_complete"] = True
-                character.gold += 25
-                events.append(
-                    "Chapter complete: the shrine's bells fall silent. You claim 25 gold "
-                    "from the vault and earn a clear route back to the surface."
-                )
-            level_events, level_up_facts = self._level_up(character)
+            events.extend(self._chapter_one_boss_rewards(character, defeated_key))
             events.extend(level_events)
             return TurnResult(action, events, True, True, level_up_facts=level_up_facts), None
         events.extend(self._enemy_turn(character, monster))

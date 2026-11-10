@@ -374,7 +374,7 @@ def test_failed_charge_does_not_mutate_the_character(auth, monkeypatch):
 
     asyncio.run(drain())
     blocked = client.post(
-        f"/characters/{character['id']}/actions", json={"action": "attack"}, headers=auth
+        f"/characters/{character['id']}/actions", json={"action": "look around"}, headers=auth
     )
     assert blocked.status_code == 402
     fetched = client.get(f"/characters/{character['id']}", headers=auth).json()

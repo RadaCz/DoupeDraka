@@ -160,13 +160,14 @@ def test_high_level_exploration_can_select_harder_monsters():
     game = GameEngine(random.Random(42))
     hero = game.create_character(1, "Arin", "human", "fighter")
     hero.level = 5
+    hero.location = "The Bandit Camp"
     game.roll = lambda dice, modifier=0, critical=False: RollResult(dice, (1,), modifier, 1 + modifier)
-    game.rng.choice = lambda options: options[-1]
+    game.rng.choice = lambda options: "bandit_captain"
 
     result, monster = game.resolve_action(hero, "travel deeper", None)
 
     assert monster is not None
-    assert monster.name == "Cellar ogre"
+    assert monster.name == "Bandit captain"
 
 
 def test_exploration_finds_gold_and_records_it():
