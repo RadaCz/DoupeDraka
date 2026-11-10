@@ -276,7 +276,9 @@ function AppContent() {
     setError(null);
   }, [screen]);
 
-  useEffect(() => syncTelegramBackButton(screen, telegramBack), [screen, telegramBack]);
+  useEffect(() => {
+    return syncTelegramBackButton(screen, telegramBack);
+  }, [screen, telegramBack]);
 
   useEffect(() => {
     busyRef.current = busy;
@@ -311,7 +313,10 @@ function AppContent() {
     if (!initData) {
       setError('Open this app from Telegram to sign in.');
       setLoading(false);
-      return;
+      return () => {
+        unbindChrome();
+        teardownTelegramMainButton();
+      };
     }
 
     void (async () => {

@@ -262,7 +262,7 @@ Odhady délky a ekonomiky: **`design/ECONOMY_MODEL_V1.md`** (30 min / 2 h scén�
 
 ### D.3 Designové mantinely
 
-- Po ~2 h nesmí hráč být **bezmocný v obchodě** (Shortsword 100 gp vs příjem z questů + explore).
+- Po ~2 h nesmí hráč být **bezmocný v obchodě** (Shortsword **95 gp** vs příjem z questů + explore 1× per lokaci).
 - Po ~2 h nesmí být **přebytek zlata bez výdaje** (jen 2 položky v shopu dnes — riziko hromadění; sledovat v playtestu).
 
 ---
@@ -276,7 +276,7 @@ Odhady délky a ekonomiky: **`design/ECONOMY_MODEL_V1.md`** (30 min / 2 h scén�
 | 3 | Travel → Shrine | travel intent, location | arrival_beat | quest dostupný |
 | 4 | Talk Caldus, accept quest | `bell_quest_accepted` | dialog prose | quest flag |
 | 5 | Market, ask Nib | `bell_acquired`, item bell | prose | inventář |
-| 6 | Return bell (Caldus) | `bell_quest_complete` | prose | **30 XP + 5 gp** (`return_bell`) |
+| 6 | Return bell (Caldus) | `bell_quest_complete` | prose | **30 XP + 10 gp** (`return_bell`) |
 | 7 | Talk Caldus znovu (po vrácení) | `vault_hint_given`, `vault_unlocked` | prose | cesta do Vault (druhý dialog — **ne** ve stejném tahu jako vrácení) |
 | 8 | Vault, Bell Warden, victory | combat, `chapter_one_complete` | prose | 180 XP (boss) + **25 gp** chapter reward |
 

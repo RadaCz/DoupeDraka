@@ -42,6 +42,29 @@ export async function assertComposerAboveBottomNav(page: Page) {
   })).toBe(true);
 }
 
+export async function assertNoHorizontalOverflow(page: Page) {
+  const overflow = await page.evaluate(() => {
+    const root = document.documentElement;
+    return root.scrollWidth > root.clientWidth + 2;
+  });
+  expect(overflow).toBe(false);
+}
+
+export async function assertBottomNavVisible(page: Page) {
+  const nav = page.getByRole('navigation', { name: 'Main navigation' });
+  await expect(nav).toBeVisible();
+  const box = await nav.boundingBox();
+  const viewport = page.viewportSize();
+  expect(box).toBeTruthy();
+  expect(viewport).toBeTruthy();
+  expect(box!.height).toBeGreaterThanOrEqual(44);
+  expect(box!.width).toBeLessThanOrEqual(viewport!.width + 2);
+  expect(box!.x).toBeGreaterThanOrEqual(-1);
+  // Fixed bottom nav: lower edge should align with the viewport, not the document scroll height.
+  const bottomGap = viewport!.height - (box!.y + box!.height);
+  expect(bottomGap, `bottom nav should stick to viewport bottom (gap=${bottomGap})`).toBeLessThanOrEqual(4);
+}
+
 export async function assertJournalScrolledToLatest(page: Page) {
   await expect.poll(async () => page.evaluate(() => {
     const journal = document.querySelector('.journal-scene');

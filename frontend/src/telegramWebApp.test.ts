@@ -5,6 +5,7 @@ import {
   applyTelegramViewport,
   bindTelegramChrome,
   syncTelegramMainButton,
+  syncTelegramBackButton,
   teardownTelegramMainButton,
 } from './telegramWebApp';
 
@@ -154,6 +155,29 @@ describe('telegramWebApp', () => {
     };
     applyTelegramViewport();
     expect(document.documentElement.style.getPropertyValue('--app-safe-top')).toBe('44px');
+  });
+
+  it('registers a single BackButton handler across sync calls', () => {
+    const calls: string[] = [];
+    const handlers: Array<() => void> = [];
+    const btn = {
+      show: vi.fn(),
+      hide: vi.fn(),
+      onClick: vi.fn((handler: () => void) => handlers.push(handler)),
+      offClick: vi.fn(),
+    };
+    window.Telegram = { WebApp: { BackButton: btn } };
+
+    const cleanup = syncTelegramBackButton('map', () => calls.push('back'));
+    syncTelegramBackButton('map', () => calls.push('back'));
+    syncTelegramBackButton('map', () => calls.push('back'));
+
+    expect(btn.onClick).toHaveBeenCalledTimes(1);
+    handlers[0]?.();
+    expect(calls).toEqual(['back']);
+    cleanup();
+    expect(btn.offClick).toHaveBeenCalledWith(handlers[0]);
+    expect(btn.hide).toHaveBeenCalled();
   });
 
   it('locks dark surfaces when Telegram sends light theme params', () => {

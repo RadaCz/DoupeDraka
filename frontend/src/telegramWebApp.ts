@@ -43,6 +43,44 @@ const mainButtonState = {
 let mainButtonHandler: (() => void) | null = null;
 let mainButtonRegistered = false;
 
+const backButtonState = {
+  onBack: () => {},
+};
+
+type BackButtonApi = {
+  show?: () => void;
+  hide?: () => void;
+  onClick?: (handler: () => void) => void;
+  offClick?: (handler: () => void) => void;
+};
+
+let backButtonHandler: (() => void) | null = null;
+let backButtonRegistered = false;
+
+function backButtonApi(): BackButtonApi | undefined {
+  return window.Telegram?.WebApp?.BackButton as BackButtonApi | undefined;
+}
+
+function ensureBackButtonHandler(back: BackButtonApi) {
+  if (backButtonRegistered && backButtonHandler) return;
+  backButtonHandler = () => {
+    haptic('light');
+    backButtonState.onBack();
+  };
+  back.onClick?.(backButtonHandler);
+  backButtonRegistered = true;
+}
+
+export function teardownTelegramBackButton() {
+  const back = backButtonApi();
+  if (back && backButtonHandler) {
+    back.offClick?.(backButtonHandler);
+  }
+  backButtonHandler = null;
+  backButtonRegistered = false;
+  back?.hide?.();
+}
+
 function telegramChrome(): TelegramChrome | undefined {
   return window.Telegram?.WebApp as TelegramChrome | undefined;
 }
@@ -237,23 +275,17 @@ export function haptic(type: 'light' | 'medium' | 'heavy' | 'success' | 'warning
 }
 
 export function syncTelegramBackButton(screen: AppScreen, onBack: () => void) {
-  const back = window.Telegram?.WebApp?.BackButton;
+  backButtonState.onBack = onBack;
+  const back = backButtonApi();
   if (!back) return () => {};
   const hubChild = MORE_HUB_SCREENS.includes(screen) && screen !== 'more';
   const show = hubChild || (!PRIMARY_TABS.includes(screen) && screen !== 'home' && screen !== 'create');
   if (show) {
     back.show?.();
-    const handler = () => {
-      haptic('light');
-      onBack();
-    };
-    back.onClick?.(handler);
-    return () => {
-      back.offClick?.(handler);
-      back.hide?.();
-    };
+    ensureBackButtonHandler(back);
+    return () => teardownTelegramBackButton();
   }
-  back.hide?.();
+  teardownTelegramBackButton();
   return () => {};
 }
 
@@ -263,4 +295,5 @@ export function __resetTelegramChromeForTests() {
   themeChangedHandler = null;
   viewportChangedHandler = null;
   teardownTelegramMainButton();
+  teardownTelegramBackButton();
 }

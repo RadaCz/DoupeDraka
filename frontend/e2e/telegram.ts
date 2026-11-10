@@ -38,7 +38,28 @@ export async function forceCharacterFallen(request: APIRequestContext, token: st
 export async function mockTelegramWebApp(page: Page, initData: string) {
   await page.route('https://telegram.org/js/telegram-web-app.js', route => route.fulfill({
     contentType: 'application/javascript',
-    body: `window.Telegram = { WebApp: { initData: ${JSON.stringify(initData)}, ready() {}, expand() {} } };`,
+    body: `window.Telegram = { WebApp: {
+      initData: ${JSON.stringify(initData)},
+      ready() {},
+      expand() {},
+      contentSafeAreaInset: { top: 0, bottom: 20 },
+      safeAreaInset: { top: 0, bottom: 0 },
+      themeParams: { bg_color: '#0d120e', text_color: '#edf1e5' },
+      BackButton: {
+        show() {},
+        hide() {},
+        onClick() {},
+        offClick() {},
+      },
+      MainButton: {
+        setText() {},
+        show() {},
+        hide() {},
+        enable() {},
+        onClick() {},
+        offClick() {},
+      },
+    } };`,
   }));
 }
 

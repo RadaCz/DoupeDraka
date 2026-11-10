@@ -59,7 +59,7 @@ Playtest protokol primárně hodnotí **první session**; dokončení celé kapi
 | 3 | `travel to The Shrine of the Forgotten` | Změna lokace | — | Mapa volitelně |
 | 4 | Talk Caldus / accept quest | `bell_quest_accepted` | — | NPC engine |
 | 5 | Travel Market, ask Nib | `bell_acquired`, bell v inventáři | — | |
-| 6 | Return bell (`return_bell`) | `bell_quest_complete` | 30 XP, 5 gp | **Jen** vrácení zvonu |
+| 6 | Return bell (`return_bell`) | `bell_quest_complete` | 30 XP, **10 gp** | **Jen** vrácení zvonu |
 | 7 | Talk Caldus znovu ve Shrine (`accept_caldus`) | `vault_hint_given`, `vault_unlocked` | — | Vault route — **samostatný** krok po §6; UI hint vede k Caldusovi, ne do Sunken Corridor |
 | 8 | Vault → Pit → Bell Warden | Combat, `chapter_one_complete` | boss XP + 25 gp | Boss; často až mimo první 45–90 min |
 
