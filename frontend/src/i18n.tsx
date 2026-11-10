@@ -30,7 +30,7 @@ const cs: Record<string, string> = {
   Overview: 'Přehled',
   Adventure: 'Hra',
   Character: 'Postava',
-  SUGGESTED: 'DOPORUCENO',
+  SUGGESTED: 'DOPORUČENO',
   'Suggested actions': 'Doporučené akce',
   'GROW THE PARTY': 'ROZŠIŘ DRUŽINU',
   'Invite friends': 'Pozvi přátele',
@@ -44,7 +44,7 @@ const cs: Record<string, string> = {
   'Pick a ready-made hero or build your own — your adventure starts on the Play tab.': 'Vyber hotového hrdinu nebo si postav vlastního — hra začíná na záložce Hra.',
   'LAST STORY BEAT': 'POSLEDNÍ PŘÍBĚH',
   'Quest log': 'Deník úkolů',
-  'All beats': 'Vse',
+  'All beats': 'Vše',
   'Story': 'Příběh',
   Combat: 'Boj',
   'Combat actions': 'Bojové akce',
@@ -669,7 +669,7 @@ const cs: Record<string, string> = {
   'Revival costs 10% of carried gold (minimum 1 gp) when you have gold.': 'Obnova stoji 10 % zlata, ktere mas u sebe (minimalne 1 gp), pokud nejakou mas.',
   'Could not revive the hero.': 'Hrdinu se nepodařilo obnovit.',
   'The lost shrine bell': 'Ztracený chrámový zvon',
-  'Return Caldus’s stolen bell and quiet the Vault of Echoes.': 'Vrat Caldusovi ukradeny zvon a utis Odchod Hluku.',
+  'Return Caldus’s stolen bell and quiet the Vault of Echoes.': 'Vrať Caldusovi ukradený zvon a utiš Komnatu ozvěn.',
   'MAIN QUEST': 'HLAVNÍ ÚKOL',
   'COMBAT': 'BOJ',
   'Combat in progress': 'Probihá boj',
@@ -756,6 +756,25 @@ const cs: Record<string, string> = {
     'Data o lokacích zatím nejsou k dispozici. Pokračuj v dobrodružství a zkus to znovu.',
   'You cannot reach this place from here — travel from a connected location first.':
     'Odtud na toto místo nedorazíš — nejdřív se dostaň na propojenou lokaci.',
+  'Not enough narrator credits for this turn. Top up to continue.':
+    'Na tento tah nemáš dost kreditů vypravěče. Dobij je a pokračuj.',
+  'Character has fallen and can no longer act': 'Hrdina padl a už nemůže jednat.',
+  'Action cannot be empty': 'Akce nesmí být prázdná.',
+  'Character not found': 'Postava nenalezena.',
+  'Character state changed during the turn; retry': 'Stav postavy se během tahu změnil — zkus to znovu.',
+  'Character changed while saving settings; retry': 'Postava se změnila při ukládání nastavení — zkus to znovu.',
+  'Character changed while updating; retry': 'Postava se změnila při aktualizaci — zkus to znovu.',
+  'Character changed while reviving; retry': 'Postava se změnila při oživení — zkus to znovu.',
+  'Concurrent idempotency conflict; retry': 'Konflikt souběžných požadavků — zkus to znovu.',
+  'Idempotency key belongs to another account': 'Klíč idempotence patří jinému účtu.',
+  'Pro tier is not available in this build.': 'Úroveň Pro v této verzi není dostupná.',
+  'Paid narration tiers require a configured external provider; use lite.':
+    'Placené úrovně vypravěče vyžadují externího poskytovatele — použij Lite.',
+  'Database unavailable': 'Databáze není dostupná.',
+  'Invalid credentials': 'Neplatné přihlašovací údaje.',
+  'User not found': 'Uživatel nenalezen.',
+  'Invalid Telegram credentials:': 'Neplatné Telegram přihlášení:',
+  'Unknown narrator tier.': 'Neznámá úroveň vypravěče.',
 };
 
 interface I18nValue {

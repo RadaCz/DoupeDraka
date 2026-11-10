@@ -39,6 +39,7 @@ import {
 } from './telegramWebApp';
 import { loginWithTelegramInitData } from './telegramAuth';
 import { LocaleProvider, useI18n } from './i18n';
+import { presentPlayerFacingError } from './i18n/playerFacingErrors';
 import {
   clearPendingAction,
   idempotencyKeyForTurn,
@@ -204,6 +205,10 @@ function App() {
 
 function AppContent() {
   const { t, locale, setLocale } = useI18n();
+  const presentError = useCallback(
+    (message: string) => presentPlayerFacingError(message, locale, t),
+    [locale, t],
+  );
 
   useLayoutEffect(() => {
     window.Telegram?.WebApp?.ready?.();
@@ -246,7 +251,7 @@ function AppContent() {
     try {
       await refreshEvents(selected.id);
     } catch (reason) {
-      setError(reason instanceof Error ? `${t('Could not load the saved journal:')} ${reason.message}` : t('Could not load the saved journal.'));
+      setError(reason instanceof Error ? `${t('Could not load the saved journal:')} ${presentError(reason.message)}` : t('Could not load the saved journal.'));
     }
   }, [refreshEvents]);
 
@@ -334,7 +339,7 @@ function AppContent() {
           setEvents(await request<JournalEvent[]>(`/characters/${active.id}/events`));
         }
       } catch (reason) {
-        setError(reason instanceof Error ? reason.message : t('Could not sign in or load your adventure.'));
+        setError(reason instanceof Error ? presentError(reason.message) : t('Could not sign in or load your adventure.'));
       } finally {
         setLoading(false);
       }
@@ -369,7 +374,7 @@ function AppContent() {
       await refreshEvents(character.id);
       haptic('success');
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : t('Could not revive the hero.'));
+      setError(reason instanceof Error ? presentError(reason.message) : t('Could not revive the hero.'));
     } finally {
       setBusy(false);
     }
@@ -393,7 +398,7 @@ function AppContent() {
       setEvents([]);
       setScreen('game');
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : t('Could not create the character.'));
+      setError(reason instanceof Error ? presentError(reason.message) : t('Could not create the character.'));
     } finally {
       setBusy(false);
     }
@@ -414,7 +419,7 @@ function AppContent() {
       setEvents([]);
       setScreen('game');
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : t('Could not create the ready-made hero.'));
+      setError(reason instanceof Error ? presentError(reason.message) : t('Could not create the ready-made hero.'));
     } finally {
       setBusy(false);
     }
@@ -515,7 +520,7 @@ function AppContent() {
           clearPendingAction();
           setTurnPhase('idle');
         } catch (refreshError) {
-          setError(refreshError instanceof Error ? refreshError.message : t('Could not load the saved journal.'));
+          setError(refreshError instanceof Error ? presentError(refreshError.message) : t('Could not load the saved journal.'));
         }
       } else {
         setTurnPhase(readPendingAction() ? 'recovering' : 'idle');
@@ -530,7 +535,7 @@ function AppContent() {
             updateCharacter({ ...character, hp: 0, in_combat: false, combatant: null });
           }
         } else {
-          setError(message);
+          setError(presentError(message));
           setLastRetryableAction(action);
         }
       }
@@ -557,7 +562,7 @@ function AppContent() {
       });
       updateCharacter(updated);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : t('Could not update campaign settings.'));
+      setError(reason instanceof Error ? presentError(reason.message) : t('Could not update campaign settings.'));
     } finally {
       setBusy(false);
     }
@@ -574,7 +579,7 @@ function AppContent() {
       });
       setEconomy(previous => previous ? { ...previous, tier } : previous);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : t('Could not change the narrator tier.'));
+      setError(reason instanceof Error ? presentError(reason.message) : t('Could not change the narrator tier.'));
     } finally {
       setBusy(false);
     }
@@ -613,7 +618,7 @@ function AppContent() {
       });
       setCalculation(result);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : t('Could not rate the encounter.'));
+      setError(reason instanceof Error ? presentError(reason.message) : t('Could not rate the encounter.'));
     } finally {
       setCalculating(false);
     }

@@ -12,8 +12,15 @@
   "creatures": {
     "Goblin scout": "Gobliní zvěd",
     "Goblin Scout": "Gobliní zvěd",
-    "Bell Warden": "Strážce zvonu",
-    "goblin scout": "Gobliní zvěd"
+    "goblin scout": "Gobliní zvěd",
+    "Kobold skirmisher": "Koboldí záškodník",
+    "Starving wolf": "Hladový vlk",
+    "Rattling skeleton": "Chřestící kostlivec",
+    "Road bandit": "Loupežník na cestě",
+    "Hobgoblin soldier": "Hobgobliní voják",
+    "Cellar ghoul": "Ghúl ze sklepa",
+    "Orc marauder": "Orčí nájezdník",
+    "Bell Warden": "Strážce zvonu"
   },
   "items": {
     "shortsword": "krátký meč",

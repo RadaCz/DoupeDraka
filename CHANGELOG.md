@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased (2026-11-10) — Localization Integrity V4 (local, not pushed)
+
+- Display catalog: rozšířené názvy bestiáře v `chapter_one_display.json` + `gameDisplay.ts` (Kobold, vlk, kostlivec, …).
+- Journal mechaniky: CS lokalizace zlata z průzkumu, opakovaného lovu mincí, short/long rest (`gameDisplay.ts`).
+- Offline Lite CS: próza pro „no loose coin“ po jednorázovém lovu zlata (`offline_cs.py`).
+- API chyby: `playerFacingErrors.ts` + mapování v `App.tsx`; cs katalog pro běžné `detail` zprávy.
+- Testy: `test_localization_integrity_v4.py`, `playerFacingErrors.test.ts`, `apiErrorCatalog.test.ts`, rozšířený `gameDisplay.test.ts`.
+- Docs: `DICE_AND_ECONOMY_V1.md`, `ECONOMY_MODEL_V1.md` — ceny a průzkum po Sprintu 3.
+- CI předchozí baseline: GitHub Actions run [#42802197204](https://github.com/RadaCz/DoupeDraka/actions/runs/42802197204) na `d019768` (zelené).
+
 ## Unreleased (2026-11-10) — Localization Integrity V3 / V3.1
 
 ### V3 (`f8ce5b1`)

@@ -65,6 +65,12 @@ def narrate_offline_cs(context: NarrationContext) -> str:
             f"Náhle se vynoří {enemy}. Stvoření čeká na tvůj první tah.",
             f"Hledání odhalí nebezpečí: {enemy} stojí v cestě, ale zatím neútočí.",
         ))
+    if "no loose coin left to find" in facts or "pick over stones and debris" in facts:
+        return choose((
+            "Prohledáš sutiny, ale volné mince tu už nejsou.",
+            "Kamení i prach jsi už důkladně pročesal — další zlato tu neleží.",
+            "Tahle místa už nic nedají; mince sis sebral dřív.",
+        ))
     if "gold pieces tucked beneath loose stones" in facts:
         amount = next(
             (event.split("find ", 1)[1].split(" gold", 1)[0]

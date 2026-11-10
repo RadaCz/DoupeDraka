@@ -33,17 +33,17 @@ Podpůrný dokument k [`DICE_AND_ECONOMY_V1.md`](./DICE_AND_ECONOMY_V1.md). **Ne
 | Kobold | 35 | — | |
 | Skeleton | 50 | — | |
 | Bell Warden | 180 | — | Chapter boss |
-| Caldus bell return | 30 | 5 | |
+| Caldus bell return | 30 | **10** | `economy_balance` |
 | Forgotten Crypt (1×) | 10 | 15 | + Echo shard |
-| Chapter complete | — | 25 | Po bossovi |
-| Explore D6=3 | — | 1–4 | 1d4 |
+| Chapter complete | — | **25** | Po Bell Warden |
+| Explore D6=3 | — | 1–4 | **1× per lokace** (`gold_scavenge_*`) |
 
 ### 2.3 Obchod (Goblin Market)
 
 | Položka | Cena (gp) |
 |---------|-----------|
-| Healing Potion | 50 |
-| Shortsword +1 | 100 |
+| Healing Potion | **45** |
+| Shortsword +1 | **95** |
 
 ### 2.4 Kredity vypravěče (účet)
 

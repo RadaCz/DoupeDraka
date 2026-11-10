@@ -1,6 +1,6 @@
 # DICE_AND_ECONOMY_V1 — Kostky, zdroje a ekonomika
 
-**Game Design Sprint 01 (GDS01)** · Stav: návrh k schválení · Zdroj pravdy enginu: `clean-main` (bez změn kódu v tomto sprintu)
+**Game Design Sprint 01 (GDS01)** · Stav: synchronizováno s enginem Sprint 3+4 (`d019768`+) · Zdroj pravdy: `app/engine/economy_balance.py`, `service.py`
 
 **Produktová kotva:** Doupě Draka prodává **dobrodružství a kvalitu vypravěče**, ne energii potřebnou k hraní. Kostky a pravidla RPG zůstávají férové; placený obsah **nesmí** ovlivnit hod, DC, šanci na vítězství ani sílu postavy.
 
@@ -37,7 +37,7 @@ Audit kódu — implementace **nesmí** v GDS01 měnit, ale spec z něj vycház�
 |----|----------|
 | 1 | Náhodné setkání → combat (po cooldownu 1) |
 | 2 | Stopa v lokaci (`track_discovery`) |
-| 3 | 1–4 gp (`1d4`) |
+| 3 | 1–4 gp (`1d4`), **max. jednou per lokace** (`gold_scavenge_*`) |
 | 4 | Indicie (`clue_discovery`) |
 | 5–6 | „No immediate threat“ (žádná změna kromě logu) |
 
@@ -56,12 +56,14 @@ Audit kódu — implementace **nesmí** v GDS01 měnit, ale spec z něj vycház�
 | Kobold | 35 XP | `encounters.py` |
 | Skeleton | 50 XP | `encounters.py` |
 | Bell Warden | 180 XP | `encounters.py` |
-| Vrácení zvonu Caldusovi | 30 XP + 5 gp | `quests.py` |
+| Vrácení zvonu Caldusovi | 30 XP + **10 gp** | `economy_balance.QUEST_BELL_RETURN_GOLD_GP` |
 | Crypt side quest | 10 XP + 15 gp + Echo shard | `quests.py` |
-| Dokončení kapitoly 1 | 25 gp | `service.py` (po Bell Warden) |
-| Průzkum – zlato | 1–4 gp | `service._explore` |
-| Healing Potion | 50 gp | `shop.py` |
-| Shortsword +1 | 100 gp | `shop.py` |
+| Dokončení kapitoly 1 | **25 gp** | `economy_balance.CHAPTER_BOSS_GOLD_GP` |
+| Průzkum – zlato | 1–4 gp, 1× per lokace | `economy_balance.roll_exploration_gold` |
+| Healing Potion | **45 gp** | `economy_balance.HEALING_POTION_PRICE_GP` |
+| Shortsword +1 | **95 gp** | `economy_balance.SHORTSWORD_PLUS_ONE_PRICE_GP` |
+
+**Odpočinek (Sprint 3):** dlouhý odpočinek jen v *The Whispering Cellar*, *The Shrine of the Forgotten*, *The Goblin Market*; krátký odpočinek jednou do dalšího dlouhého (`short_rest_since_shelter`).
 
 **Obtížnost Hard:** násobí XP z nepřátel ×1,35 (`encounters.py`). Level-up max **1 úroveň / resolved turn** (DECISIONS D25).
 

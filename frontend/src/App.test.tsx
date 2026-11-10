@@ -503,6 +503,6 @@ describe('Telegram Mini App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Přehled' }));
     fireEvent.click(screen.getByRole('button', { name: 'Více' }));
     fireEvent.click(await screen.findByRole('button', { name: /dalsiho dobrodruha|dalšího dobrodruha/i }));
-    expect(await screen.findByRole('heading', { id: 'wizard-title' })).toHaveTextContent(/begin|zacit/i);
+    expect(await screen.findByRole('heading', { id: 'wizard-title' })).toHaveTextContent(/begin|zacit|začít/i);
   });
 });

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  displayCreature,
   displayInventoryLabel,
   displayLocation,
   localizeMechanicsLine,
@@ -30,5 +31,22 @@ describe('gameDisplay', () => {
     const cs = localizeMechanicsLine('Dexterity check: 14 vs DC 12 — success.', 'cs');
     expect(cs).toContain('obratnosti');
     expect(cs).toContain('úspěch');
+  });
+
+  it('localizes exploration gold and rest facts', () => {
+    expect(localizeMechanicsLine('You find 3 gold pieces tucked beneath loose stones (a one-time find here).', 'cs')).toMatch(
+      /3 zlatých/,
+    );
+    expect(localizeMechanicsLine('You pick over stones and debris, but this area has no loose coin left to find.', 'cs')).toMatch(
+      /mince/,
+    );
+    expect(localizeMechanicsLine('You take a short rest and recover 4 HP. Your HP: 10/14.', 'cs')).toContain('4');
+    expect(localizeMechanicsLine('You cannot take a long rest here — the ruins are too exposed. Retreat to the Whispering Cellar, the shrine, or Nib\'s market.', 'cs')).toMatch(
+      /Šeptajícího sklepa/,
+    );
+  });
+
+  it('localizes expanded bestiary names', () => {
+    expect(displayCreature('Kobold skirmisher', 'cs')).toBe('Koboldí záškodník');
   });
 });

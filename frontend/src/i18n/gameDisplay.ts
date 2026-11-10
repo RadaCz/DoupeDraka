@@ -15,6 +15,13 @@ export const LOCATION_CS: Record<string, string> = {
 export const CREATURE_CS: Record<string, string> = {
   'Goblin scout': 'Gobliní zvěd',
   'Goblin Scout': 'Gobliní zvěd',
+  'Kobold skirmisher': 'Koboldí záškodník',
+  'Starving wolf': 'Hladový vlk',
+  'Rattling skeleton': 'Chřestící kostlivec',
+  'Road bandit': 'Loupežník na cestě',
+  'Hobgoblin soldier': 'Hobgobliní voják',
+  'Cellar ghoul': 'Ghúl ze sklepa',
+  'Orc marauder': 'Orčí nájezdník',
   'Bell Warden': 'Strážce zvonu',
 };
 
@@ -96,6 +103,58 @@ const MECHANIC_PATTERNS_CS: Array<[RegExp, string | ((...args: string[]) => stri
     },
   ],
   [/Exploration roll: (\d+) on a six-sided die\.(.*)/i, 'Průzkum: $1 na šestistranné kostce.$2'],
+  [
+    /^You find (\d+) gold pieces tucked beneath loose stones \(a one-time find here\)\.?$/i,
+    'Najdeš $1 zlatých pod volnými kameny (v této lokaci jen jednou).',
+  ],
+  [
+    /^You pick over stones and debris, but this area has no loose coin left to find\.?$/i,
+    'Prohledáváš kamení a sutiny, ale v této oblasti už nenajdeš volné mince.',
+  ],
+  [
+    /^You take a moment to catch your breath\. No new threat appears\.?$/i,
+    'Na chvíli zastavíš a oddychneš. Žádná nová hrozba se neobjeví.',
+  ],
+  [
+    /^The creature has not attacked yet\. Choose your next action\.?$/i,
+    'Tvor zatím neútočil. Zvol další akci.',
+  ],
+  [
+    /^You cannot take a short rest while a fight is raging\.?$/i,
+    'Během boje nelze krátký odpočinek.',
+  ],
+  [
+    /^You already caught your breath recently\. Take a long rest in a safe camp to recover fully\.?$/i,
+    'Nedávno jsi už oddychoval. Pro plné obnovení si dopřej dlouhý odpočinek v bezpečném táboře.',
+  ],
+  [
+    /^You are already at full health — a short rest changes nothing\.?$/i,
+    'Máš plné zdraví — krátký odpočinek nic nezmění.',
+  ],
+  [
+    /^You take a short rest and recover (\d+) HP\. Your HP: (\d+)\/(\d+)\.?$/i,
+    'Krátký odpočinek: obnovíš $1 životů. Životy: $2/$3.',
+  ],
+  [
+    /^You cannot rest while a fight is still raging\.?$/i,
+    'Dokud zuří boj, nemůžeš odpočívat.',
+  ],
+  [
+    /^You cannot take a long rest here — the ruins are too exposed\. Retreat to the Whispering Cellar, the shrine, or Nib's market\.?$/i,
+    'Tady nelze dlouhý odpočinek — ruiny jsou příliš vystavené. Vrať se do Šeptajícího sklepa, ke svatyni nebo na Gobliní trh.',
+  ],
+  [
+    /^You are already at full health and all spell slots are restored\.?$/i,
+    'Máš plné zdraví a všechny kouzelné sloty jsou obnovené.',
+  ],
+  [
+    /^You take a long rest and recover (\d+) HP; all spell slots are restored\.?$/i,
+    'Dlouhý odpočinek: obnovíš $1 životů; všechny kouzelné sloty jsou doplněné.',
+  ],
+  [
+    /^You take a long rest and recover (\d+) HP\.?$/i,
+    'Dlouhý odpočinek: obnovíš $1 životů.',
+  ],
   [/Intelligence check: (\d+) vs DC (\d+) [-—] (success|failure)\.?/i, 'Test inteligence: $1 proti ST $2 — $3.'],
   [/Wisdom check: (\d+) vs DC (\d+) [-—] (success|failure)\.?/i, 'Test moudrosti: $1 proti ST $2 — $3.'],
   [/Charisma check: (\d+) vs DC (\d+) [-—] (success|failure)\.?/i, 'Test charismy: $1 proti ST $2 — $3.'],
