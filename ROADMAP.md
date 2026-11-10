@@ -1,10 +1,10 @@
 # Roadmap
 
-Updated 2026-11-10 (`885ea4e`). Chapter one is a gated six-location slice on `clean-main`. ActionIntent routes player commands; Pro narration tier is disabled until OpenRouter exists.
+Updated 2026-11-10 (`339271d`). Chapter one is a gated six-location slice on `clean-main`. ActionIntent routes player commands; **Pro NOT AVAILABLE** until OpenRouter exists.
 
-## Priority 0c — Product UX Redesign V1 (audit done; partial implementation)
-- [x] [`docs/PRODUCT_UX_AUDIT_V1.md`](docs/PRODUCT_UX_AUDIT_V1.md) — P0–P3 inventář problémů
-- [x] [`docs/PRODUCT_UX_REDESIGN_V1.md`](docs/PRODUCT_UX_REDESIGN_V1.md) — IA, report, verdikt
+## Priority 0c — Product UX Redesign V1 (historical audit 2026-11-09; partial implementation since)
+- [x] [`docs/PRODUCT_UX_AUDIT_V1.md`](docs/PRODUCT_UX_AUDIT_V1.md) — **historický** P0–P3 inventář (2026-11-09), ne aktuální backlog
+- [x] [`docs/PRODUCT_UX_REDESIGN_V1.md`](docs/PRODUCT_UX_REDESIGN_V1.md) — **historický** IA report (2026-11-09)
 - [x] Hub dedup (roster/invite), campaign pulse, More menu, journal filters, contextual play chips
 - [x] Combat layout V2 (bez nových mechanik) — `combat/CombatUI.tsx`, phone QA pending
 - [ ] Tools: Moje / Dostupná / Pravidla tabs
@@ -67,7 +67,8 @@ Platby a produkční top-up zůstávají v **Deferred product decisions** (Prior
 - [ ] Closed beta 10–15 hráčů — protokol připraven (`docs/CLOSED_BETA_ONBOARDING_V1.md`); **čeká na fyzické QA**.
 - [x] Sprint 7–8 mobile UX — Overview/journal prezentace, play layout, Settings IA — **`885ea4e`**; CI run `42822949152` (4/4 SUCCESS).
 - [x] Sprint 9 staging checklist — `docs/STAGING_DEVICE_VALIDATION_V1.md` (v `885ea4e`).
-- [ ] HTTPS staging deploy — **NOT DEPLOYED** (preflight Sprint 10.1).
+- [x] Sprint 10.3 — `docker-compose.staging.yml` + hardened `staging_preflight` (lokálně, pending commit).
+- [ ] HTTPS staging deploy — **NOT DEPLOYED**.
 
 ## Deferred product decisions
 - Payments (Telegram Stars/YooKassa), referrals, Redis, campaigns/payments tables, multiplayer, and higher-level spell progression remain out of scope until separately prioritized.

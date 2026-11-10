@@ -1,20 +1,25 @@
 # Changelog
 
-## Unreleased (2026-11-10) — Staging deployment prep (Sprint 10.2)
+## Unreleased (2026-11-10) — Staging security hardening (Sprint 10.3)
 
-- `docs/STAGING_RUNBOOK_V1.md` — Lite-first VPS runbook (HTTPS, migrations, backup/rollback).
-- `scripts/staging_preflight.py` + `tests/test_staging_preflight.py` — env policy checks bez secretů.
-- `DEPLOYMENT.md` — odkaz na runbook, postgres port varování.
+- `docker-compose.staging.yml` — loopback frontend, no public Postgres/API ports (`!reset` merge).
+- `scripts/staging_preflight.py` — fail-closed env + Compose exposure; static merge when Docker absent.
+- Doc truth sync: bell return **10 gp**, Nib shop gold spend; HEAD `339271d`, CI `42824720654`.
 
-## Unreleased (2026-11-10) — Repository truth sync (Sprint 10.1 docs)
+## Released on `clean-main` — Sprint 10.2.1 (`339271d`)
 
-- Doc sync: HEAD `885ea4e`, CI run `42822949152` (4/4 SUCCESS); staging **NOT DEPLOYED**; fyzické QA **NOT TESTED**; Normal debit/refund **NOT TESTED**.
+- CI: `test_staging_preflight` BOT_TOKEN fixture bez false positive v `secret_scan.py`.
+- CI run `42824720654` (4/4 SUCCESS).
+
+## Released on `clean-main` — Sprints 10.1–10.2 (`609274b`)
+
+- Doc truth sync; `STAGING_RUNBOOK_V1.md`; `staging_preflight.py` + tests.
+- CI run `42823959914` na `609274b` (po 10.2; secret-scan fix v `339271d`).
 
 ## Released on `clean-main` — Sprints 7–9 (`885ea4e`)
 
-- Sprint 7: CS journal/overview presentation (`presentEngineEventLine`, stream facts localization).
-- Sprint 8: Overview last beat, play flex layout, tier/fallback UI, campaign style in Settings, quick actions cap.
-- Sprint 9: `docs/STAGING_DEVICE_VALIDATION_V1.md`; E2E `mobile-text-first` aligned with flex layout.
+- Sprint 7–8: CS journal/overview, mobile play UX.
+- Sprint 9: `STAGING_DEVICE_VALIDATION_V1.md`; E2E layout.
 - CI: GitHub Actions run `42822949152` (4/4 SUCCESS).
 
 ## Unreleased (2026-11-10) — Beta readiness (Sprint 6 docs, no code)

@@ -1,6 +1,6 @@
 # Closed beta onboarding — 10–15 hráčů (V1)
 
-**Baseline kódu:** `885ea4e` na `clean-main` (ověř `git rev-parse HEAD` před startem; CI run `42822949152` 4/4 SUCCESS).  
+**Baseline kódu:** `339271d` na `clean-main` (ověř `git rev-parse HEAD` před startem; CI run `42824720654` 4/4 SUCCESS).  
 **Technický checklist (telefon):** [`TELEGRAM_MOBILE_QA_V1.md`](TELEGRAM_MOBILE_QA_V1.md) · [`PHYSICAL_TELEGRAM_QA_V2.md`](PHYSICAL_TELEGRAM_QA_V2.md)  
 **Herní protokol:** [`design/CHAPTER_ONE_PLAYTEST_V1.md`](../design/CHAPTER_ONE_PLAYTEST_V1.md)
 

@@ -34,7 +34,7 @@ do not repeat their first-visit beat.
 
 At the Shrine of the Forgotten, Caldus offers a quest to recover the stolen bell. At
 the Goblin Market, Nib returns it only after the player accepts the request. Returning
-the bell grants 30 XP and 5 gold exactly once. Flags: `bell_quest_accepted`,
+the bell grants 30 XP and 10 gold exactly once (`QUEST_BELL_RETURN_GOLD_GP`). Flags: `bell_quest_accepted`,
 `bell_found`, `bell_acquired`, `bell_quest_complete`. The bell stays marked as obtained after delivery.
 
 Travel to **The Vault of Echoes** and **The Bell Warden's Pit** is blocked until the player

@@ -1,8 +1,8 @@
 # Master plan — stav (sync s DOUPEDRAKA_MASTER_PLAN.md v1.0)
 
-Poslední revize: **2026-11-10 (Sprint 10.1 — repository truth sync)**. Etapy 7–9 záměrně otevřené až po uzavření sólo smyčky.  
-**Kódový HEAD:** `885ea4e` na `origin/clean-main` (Sprint 7–8 + staging checklist doc v jednom commitu).  
-**CI:** GitHub Actions run `42822949152` na `885ea4e` — backend, backend-postgres, frontend, e2e **4/4 SUCCESS**.  
+Poslední revize: **2026-11-10 (Sprint 10.3 — staging security hardening, lokálně)**. Etapy 7–9 záměrně otevřené až po uzavření sólo smyčky.  
+**Kódový HEAD (remote):** `339271d` na `origin/clean-main`.  
+**CI:** GitHub Actions run `42824720654` na `339271d` — **4/4 SUCCESS**.  
 **Staging HTTPS:** **NOT DEPLOYED** — viz `docs/STAGING_DEVICE_VALIDATION_V1.md`.  
 **Fyzický Telegram:** Android / iOS **NOT TESTED** (`docs/TELEGRAM_MOBILE_QA_V1.md`).  
 **Normal debit/refund na stagingu:** **NOT TESTED**.

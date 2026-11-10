@@ -1,0 +1,19 @@
+# Public Lite-first staging — merge with base compose:
+#   docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.staging.yml up -d
+#
+# Requires Compose v2.24+ for `!reset` on ports (clears dev bindings from docker-compose.yml).
+# Internet-facing TLS terminates at Caddy/nginx on the host → 127.0.0.1:5173 only.
+
+services:
+  postgres:
+    ports: !reset []
+
+  api:
+    ports: !reset []
+
+  frontend:
+    ports: !reset
+      - "127.0.0.1:5173:80"
+
+  bot:
+    ports: !reset []

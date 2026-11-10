@@ -22,7 +22,7 @@ Playtest protokol primárně hodnotí **první session**; dokončení celé kapi
 ### 1.1 Build a prostředí
 
 - Větev `clean-main` (nebo release candidate po merge).
-- **Baseline kódu (audit listopad 2026):** `885ea4e` na `clean-main` (Sprinty 7–8 UX + staging checklist; CI run `42822949152`).
+- **Baseline kódu (audit listopad 2026):** `339271d` na `clean-main` (Sprinty 7–10.2.1; CI run `42824720654`).
 - Telegram Mini App na reálném telefonu (**Android a iOS zvlášť** — viz [`docs/TELEGRAM_MOBILE_QA_V1.md`](../docs/TELEGRAM_MOBILE_QA_V1.md), [`docs/TELEGRAM_PHONE_QA.md`](../docs/TELEGRAM_PHONE_QA.md)).
 - **Telefonní QA zatím neprovedeno** — automatické testy a kontrola kódu nejsou náhrada za zařízení.
 - Instrukce v **češtině** (UI locale `cs`).

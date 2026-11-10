@@ -1,7 +1,8 @@
 # Staging & real device validation — Sprint 9
 
-**Baseline kódu (remote):** `885ea4e` na `origin/clean-main`.  
-**CI:** GitHub Actions run `42822949152` — 4/4 SUCCESS na tomto commitu.  
+**Baseline kódu (remote):** `339271d` na `origin/clean-main` (Sprint 10.2.1).  
+**CI:** GitHub Actions run `42824720654` — 4/4 SUCCESS.  
+**Compose (veřejný staging):** `docker-compose.staging.yml` + `python scripts/staging_preflight.py .env.docker --mode staging`.
 **HTTPS staging:** **NOT DEPLOYED** (tento dokument = preflight před prvním deployem).  
 **Fyzické QA:** Android **NOT TESTED** · iOS **NOT TESTED** (až po staging URL v Telegramu).  
 **Normal (debit/refund):** **NOT TESTED** bez nakonfigurovaného placeného providera.
@@ -115,4 +116,4 @@ Viz [`CLOSED_BETA_ONBOARDING_V1.md`](CLOSED_BETA_ONBOARDING_V1.md) + [`design/CH
 | 7 | Mapa / travel (pokud odemčeno) |
 | 8 | Dotazník + bug šablona z onboarding doc |
 
-**GO beta:** Lite PASS na Android **a** iOS + stabilní HTTPS staging + CI zelené na HEAD (`885ea4e` splněno v CI; staging a fyzické QA dosud ne).
+**GO beta:** Lite PASS na Android **a** iOS + stabilní HTTPS staging + CI zelené na HEAD (`339271d` splněno v CI; staging HTTPS a fyzické QA dosud ne).

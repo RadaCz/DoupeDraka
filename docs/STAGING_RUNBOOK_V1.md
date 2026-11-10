@@ -1,6 +1,6 @@
 # Staging deployment runbook V1 — Lite-first
 
-**Baseline kódu:** `885ea4e` na `clean-main` · CI run `42822949152` (4/4 SUCCESS).  
+**Baseline kódu:** `339271d` na `clean-main` · CI run `42824720654` (4/4 SUCCESS).  
 **Stav nasazení:** HTTPS staging **NOT DEPLOYED** (tento runbook připravuje první deploy).  
 **Související:** [`DEPLOYMENT.md`](DEPLOYMENT.md), [`STAGING_DEVICE_VALIDATION_V1.md`](STAGING_DEVICE_VALIDATION_V1.md), [`TELEGRAM_MOBILE_QA_V1.md`](TELEGRAM_MOBILE_QA_V1.md).
 
@@ -38,7 +38,7 @@ PostgreSQL (volume pgdata) ◄── API (žádný veřejný port)
 | **Telegram** | BotFather: domain + menu button Web App URL = **`MINI_APP_URL`** |
 | **Egress** | Bot musí dosáhnout `api.telegram.org`; hráči dosáhnout staging HTTPS |
 
-**Nepublikovat:** PostgreSQL port na internet. V repozitáři je v `docker-compose.yml` mapování `5432:5432` pro **lokální vývoj** — na veřejném stagingu port **odstraňte** nebo použijte `docker-compose.override.yml` bez `ports` u služby `postgres`.
+**Nepublikovat:** PostgreSQL ani API na internet. Lokální `docker-compose.yml` mapuje `5432` a `8000` pro dev. Veřejný staging používejte **`docker-compose.staging.yml`** (merge + `ports: !reset`) a host proxy jen na **`127.0.0.1:5173`**.
 
 ---
 
@@ -86,7 +86,7 @@ cd D:\DoupeDraka
 Copy-Item .env.docker.example .env.docker
 # Upravte .env.docker na serveru nebo zkopírujte na VPS — necommitovat.
 
-python scripts/staging_preflight.py .env.docker
+python scripts/staging_preflight.py .env.docker --mode staging
 python scripts/secret_scan.py
 ```
 
@@ -100,21 +100,21 @@ python scripts/secret_scan.py
 
 ```bash
 cd /opt/doupedraka
-docker compose --env-file .env.docker build
-docker compose --env-file .env.docker up -d postgres
+docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.staging.yml build
+docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.staging.yml up -d postgres
 # Počkej na healthy postgres (healthcheck v compose).
 
-docker compose --env-file .env.docker run --rm api alembic upgrade head
-docker compose --env-file .env.docker up -d api frontend bot
+docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.staging.yml run --rm api alembic upgrade head
+docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.staging.yml up -d api frontend bot
 ```
 
 **Lokální ekvivalent (PowerShell na stroji s Dockerem):**
 
 ```powershell
 cd D:\DoupeDraka
-docker compose --env-file .env.docker up -d postgres
-docker compose --env-file .env.docker run --rm api alembic upgrade head
-docker compose --env-file .env.docker up -d api frontend bot
+docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.staging.yml up -d postgres
+docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.staging.yml run --rm api alembic upgrade head
+docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.staging.yml up -d api frontend bot
 ```
 
 ### HTTPS reverse proxy (příklad — Caddy)
@@ -151,7 +151,7 @@ Očekávání: HTTP 200, `ready` obsahuje `"status":"ready"`.
 **Persistence po restartu:**
 
 ```bash
-docker compose --env-file .env.docker restart api frontend
+docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.staging.yml restart api frontend
 ```
 
 Znovu otevřít Mini App — stejná postava a journal.
@@ -178,7 +178,7 @@ Load test (`LOAD_TEST_ENABLED`) **nepoužívat** na sdíleném stagingu bez izol
 ### Záloha (server)
 
 ```bash
-docker compose --env-file .env.docker exec -T postgres \
+docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.staging.yml exec -T postgres \
   pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc > "backup-$(date +%Y%m%d-%H%M).dump"
 ```
 
@@ -187,8 +187,8 @@ Uložte dump mimo volume (S3, offline disk). **Necommitovat.**
 ### Obnova (nový volume nebo po katastrofě)
 
 ```bash
-docker compose --env-file .env.docker up -d postgres
-docker compose --env-file .env.docker exec -T postgres \
+docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.staging.yml up -d postgres
+docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.staging.yml exec -T postgres \
   pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean --if-exists < backup.dump
 ```
 
@@ -201,17 +201,17 @@ Migrace po restore: pokud dump je z aktuální head, `alembic upgrade head` by m
 ### Bezpečná aktualizace
 
 ```bash
-git fetch && git checkout 885ea4e   # nebo novější tag po CI green
-docker compose --env-file .env.docker build
-docker compose --env-file .env.docker run --rm api alembic upgrade head
-docker compose --env-file .env.docker up -d
+git fetch && git checkout 339271d   # nebo novější tag po CI green
+docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.staging.yml build
+docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.staging.yml run --rm api alembic upgrade head
+docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.staging.yml up -d
 ```
 
 ### Rollback aplikace (zachovat `pgdata`)
 
 ```bash
 # Nasadit předchozí image / checkout předchozího commitu
-docker compose --env-file .env.docker up -d --force-recreate api frontend bot
+docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.staging.yml up -d --force-recreate api frontend bot
 ```
 
 **Nespouštět** `docker volume rm pgdata` při rollbacku. Schéma vracet jen pokud migrace selhala a máte DB backup.

@@ -37,7 +37,7 @@ remain enforced for both standard and streamed actions.
 - Spell slots are class/level-based game resources.
 - `CharacterState.mana` is a legacy character resource and does not power spells.
 - `users.energy_tenths` is the Adventure Mana ledger, represented as integer tenths.
-- Gold is in-world treasure and currently has no spending mechanic.
+- Gold is in-world currency; chapter-one **Nib shop** spends gold on engine-priced items (no payment gateway).
 
 See [ENGINE.md](./ENGINE.md), [DEPLOYMENT.md](./DEPLOYMENT.md), and
 [DECISIONS.md](../DECISIONS.md) for detailed contracts.

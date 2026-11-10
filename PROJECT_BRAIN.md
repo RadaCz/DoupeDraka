@@ -4,9 +4,9 @@
 
 - **Repository:** `D:\DoupeDraka`
 - **Development branch:** `clean-main` (merge to `main` after green CI only)
-- **Last updated:** 2026-11-10 (Sprint 10.1 truth sync — staging preflight docs)
-- **HEAD (origin `clean-main`):** `885ea4e` — Sprint 7–8 (CS journal/overview, mobile play UX) + Sprint 9 staging checklist doc.
-- **CI (2026-11-10):** GitHub Actions run `42822949152` na `885ea4e` — backend, backend-postgres, frontend, e2e **4/4 SUCCESS**.
+- **Last updated:** 2026-11-10 (Sprint 10.3 staging security hardening docs)
+- **HEAD (origin `clean-main`):** `339271d` — Sprints 7–9 shipped v `885ea4e`; 10.1–10.2.1 staging docs + CI secret-scan fix.
+- **CI (2026-11-10):** GitHub Actions run `42824720654` na `339271d` — **4/4 SUCCESS**.
 - **Staging:** HTTPS deploy **NOT DEPLOYED**; checklist `docs/STAGING_DEVICE_VALIDATION_V1.md`.
 - **Fyzické QA:** Android / iOS Telegram **NOT TESTED** (`docs/TELEGRAM_MOBILE_QA_V1.md`).
 - **Normal paid narration (debit/refund):** **NOT TESTED** bez provozního providera na stagingu.
@@ -30,7 +30,7 @@ Do not conflate resources:
 - `spell_slots`: class-based casting capacity;
 - `CharacterState.mana`: legacy character field, not used to cast;
 - `users.energy_tenths`: narrator credits (⚡), integer tenths — optional narration quality, not spell slots or pay-to-win;
-- `gold`: in-world currency without a spending mechanic.
+- `gold`: in-world currency; **Nib shop** (healing potion, shortsword +1) spends gold via engine shop intents — no real-money payments.
 
 ## 3. Current implementation
 
@@ -48,10 +48,11 @@ Do not conflate resources:
 1. **Staging deploy** (Postgres, Alembic head, HTTPS `MINI_APP_URL`, CORS) — viz `docs/STAGING_DEVICE_VALIDATION_V1.md`.
 2. **Fyzické QA** Android + iOS proti staging URL (`docs/TELEGRAM_MOBILE_QA_V1.md`).
 3. Closed beta playtest (10–15 players, Czech UI, Lite default) po staging + fyzickém PASS.
-4. Merge `clean-main` → `main` when ready (CI green on `885ea4e`).
-5. Campaign depth after chapter one: general NPC dialogue, longer routes, balance (30+ minutes).
-6. OpenRouter provider and re-enable Pro tier only with a real adapter.
-7. Payments, multiplayer, and Redis remain deferred.
+4. Veřejný staging deploy s `docker-compose.staging.yml` (loopback frontend) — **NOT DEPLOYED**.
+5. Merge `clean-main` → `main` when ready (CI green on `339271d`).
+6. Campaign depth after chapter one: general NPC dialogue, longer routes, balance (30+ minutes).
+7. OpenRouter provider and re-enable Pro tier only with a real adapter (**Pro NOT AVAILABLE** in API/UI today).
+8. Real-money payments **NOT ENABLED**; multiplayer and Redis remain deferred.
 
 See [ROADMAP.md](./ROADMAP.md) for statuses, [docs/MASTER_PLAN_STATUS.md](./docs/MASTER_PLAN_STATUS.md) for master-plan etapy, and [CHANGELOG.md](./CHANGELOG.md) for session history.
 
