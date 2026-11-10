@@ -230,6 +230,32 @@ export function playActionChips(
   return out.slice(0, 8);
 }
 
+/** First chip that best matches the current scene (for visual emphasis, not a different rules path). */
+export function primaryPlayChipKey(
+  character: Character,
+  events: JournalEvent[],
+  locations: LocationReference[],
+  t: (value: string) => string,
+  hasSpells: boolean,
+  hasPotion: boolean,
+): string | null {
+  const chips = playActionChips(character, events, locations, t, hasSpells, hasPotion);
+  if (!chips.length) return null;
+  if (character.in_combat) return chips.find(c => c.action?.startsWith('attack '))?.key ?? chips[0].key;
+  const npcTalk = resolveNpcTalkAction(character, t);
+  if (npcTalk) return chips.find(c => c.action === npcTalk.action)?.key ?? chips[0].key;
+  if (character.hp < character.max_hp) {
+    const rest = chips.find(c => c.action === 'rest');
+    if (rest) return rest.key;
+  }
+  const latest = events[events.length - 1]?.result.toLowerCase() ?? '';
+  if (latest.includes('tracks')) return chips.find(c => c.key === 'tracks')?.key ?? chips[0].key;
+  if (latest.includes('panel') || latest.includes('scratches')) {
+    return chips.find(c => c.key === 'panel')?.key ?? chips[0].key;
+  }
+  return chips.find(c => c.key === 'explore')?.key ?? chips[0].key;
+}
+
 export function scenePrompt(character: Character, events: JournalEvent[], t: (value: string) => string) {
   if (character.hp <= 0) return t('You have fallen. The cellar falls quiet around you.');
   if (character.in_combat) return t('A hostile creature is in front of you. Fight or make a run for it.');

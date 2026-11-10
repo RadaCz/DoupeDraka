@@ -12,7 +12,7 @@ export function AdventureScreen(props: PlayScreenProps) {
 
   return (
     <section className="screen game-screen adventure-screen text-first">
-      <PlaySceneChrome character={character} economy={props.economy} />
+      <PlaySceneChrome character={character} economy={props.economy} events={events} />
       <TurnDeltaStrip message={turnDelta} />
       <div className="game-play-story">
         <PlayJournal {...props} />

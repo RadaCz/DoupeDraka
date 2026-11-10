@@ -1,0 +1,169 @@
+.map-screen-v2 {
+  padding-bottom: calc(16px + var(--tg-safe-bottom, var(--safe-bottom, 0px)));
+  overflow-x: hidden;
+}
+
+.map-current-card {
+  margin-bottom: 14px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--accent-verb) 35%, var(--border-subtle));
+  background: var(--surface-deep);
+}
+
+.map-current-card h2 {
+  margin: 6px 0 8px;
+  font-size: 1.05rem;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.map-quest-context {
+  margin-top: 10px;
+  font-size: 0.88rem;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.map-quick-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+  align-items: center;
+}
+
+.map-known-list {
+  margin-top: 18px;
+}
+
+.map-known-list h2 {
+  font-size: 0.95rem;
+  margin-bottom: 8px;
+}
+
+.map-known-list ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.map-known-row {
+  width: 100%;
+  text-align: left;
+  display: flex;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border-subtle);
+  background: var(--surface);
+  color: var(--text);
+  min-height: 44px;
+}
+
+.map-known-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.map-known-copy strong {
+  word-break: break-word;
+}
+
+.map-known-copy small {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.map-known-beat {
+  font-size: 0.82rem;
+  color: color-mix(in srgb, var(--text) 85%, var(--muted));
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.map-quest-tag {
+  margin-left: 6px;
+  font-size: 0.72rem;
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.map-graph-node.quest-destination .map-node-label {
+  outline: 1px solid color-mix(in srgb, var(--gold) 55%, transparent);
+  border-radius: 6px;
+  padding: 2px 4px;
+}
+
+.legend-dot.quest {
+  background: var(--gold);
+}
+
+.map-sheet-quest {
+  margin: 8px 0 12px;
+  padding: 8px 10px;
+  border-left: 3px solid var(--gold);
+  font-size: 0.9rem;
+}
+
+.map-empty-state {
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+.map-screen-v2 .map-location-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 12px;
+  background: color-mix(in srgb, #000 45%, transparent);
+}
+
+.map-screen-v2 .map-location-sheet-card {
+  width: min(100%, 480px);
+  max-height: min(78vh, calc(100dvh - 80px));
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.map-graph-wrap {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.map-graph-node .map-node-label {
+  max-width: 22vw;
+  word-break: break-word;
+}
+
+.map-screen-v2 .map-graph-node.current {
+  border-color: color-mix(in srgb, var(--accent-verb) 65%, var(--gold));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-verb) 28%, transparent);
+}
+
+.map-screen-v2 .map-graph-node.adjacent {
+  border-color: color-mix(in srgb, var(--accent-verb) 40%, var(--border-subtle));
+}
+
+.map-screen-v2 .map-graph-node.locked {
+  opacity: 0.78;
+  border-style: dashed;
+  color: var(--muted);
+}
+
+.map-screen-v2 .map-graph-node.visited {
+  border-color: var(--border);
+}

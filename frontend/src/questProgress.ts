@@ -1,3 +1,5 @@
+import type { QuestCatalog } from './types';
+
 export type QuestStepId =
   | 'bell_quest_accepted'
   | 'bell_acquired'
@@ -10,6 +12,17 @@ export interface QuestStep {
   label: string;
   hint: string;
   location?: string;
+}
+
+export function questStepsFromCatalog(questCatalog?: QuestCatalog): QuestStep[] | undefined {
+  const campaign = questCatalog?.campaigns?.[0];
+  if (!campaign?.steps?.length) return undefined;
+  return campaign.steps.map(step => ({
+    id: step.id,
+    label: step.label,
+    hint: step.hint,
+    location: step.location ?? undefined,
+  }));
 }
 
 const CHAPTER_ONE_STEPS: QuestStep[] = [

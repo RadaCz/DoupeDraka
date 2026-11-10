@@ -171,4 +171,4 @@ export type AppScreen =
   | 'more';
 
 export const MORE_HUB_SCREENS: AppScreen[] = ['more', 'journal', 'settings', 'tools', 'campaign', 'map'];
-export const CHARACTER_HUB_SCREENS: AppScreen[] = ['character', 'quests'];
+export const CHARACTER_HUB_SCREENS: AppScreen[] = ['character'];

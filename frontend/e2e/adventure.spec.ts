@@ -50,15 +50,14 @@ test('creates a hero, completes a real game turn, and restores its journal after
 
   const nav = page.getByRole('navigation', { name: 'Main navigation' });
   await expect(nav.getByRole('button')).toHaveCount(4);
-  await expect(nav.getByRole('button', { name: /^Hub$/i })).toBeVisible();
-  await expect(nav.getByRole('button', { name: /^Play$/i })).toBeVisible();
+  await expect(nav.getByRole('button', { name: /^Overview$/i })).toBeVisible();
+  await expect(nav.getByRole('button', { name: /^Adventure$/i })).toBeVisible();
   await expect(nav.getByRole('button', { name: /^Character$/i })).toBeVisible();
   await expect(nav.getByRole('button', { name: /^More$/i })).toBeVisible();
   await expect(page.locator('.quick-action-grid')).toHaveCount(0);
   await nav.getByRole('button', { name: /^More$/i }).click();
   await expect(page.getByRole('heading', { name: /^More$/i })).toBeVisible();
   await expect(page.getByRole('button', { name: /Map/i })).toBeVisible();
-  await nav.getByRole('button', { name: /^Character$/i }).click();
-  await page.getByRole('tab', { name: /Quests/i }).click();
-  await expect(page.getByRole('heading', { name: /^Quests$/i })).toBeVisible();
+  await page.getByRole('button', { name: /Quests/i }).click();
+  await expect(page.getByRole('heading', { name: /Recover the stolen shrine bell|Quests/i })).toBeVisible();
 });

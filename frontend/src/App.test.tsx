@@ -69,7 +69,7 @@ const economyData = {
 };
 
 const spellList = [
-  { name: 'Light', level: 0, school: 'evocation', range: 'Touch', text: 'An object shines.', effect_modeled: true },
+  { name: 'Light', level: 0, school: 'evocation', range: 'Touch', text: 'An object shines.', effect_modeled: false },
   { name: 'Fire Bolt', level: 0, school: 'evocation', range: '120 feet', text: 'A mote of fire.', effect_modeled: true },
   { name: 'Cure Wounds', level: 1, school: 'evocation', range: 'Touch', text: 'Restore hit points.', effect_modeled: true },
   { name: 'Magic Missile', level: 1, school: 'evocation', range: '120 feet', text: 'Darts of force.', effect_modeled: true },
@@ -253,12 +253,12 @@ describe('Telegram Mini App', () => {
     await screen.findByRole('heading', { name: /welcome back, rada/i });
     fireEvent.click(screen.getByRole('button', { name: /continue adventure/i }));
 
-    expect(await screen.findByText('Goblin scout')).toBeInTheDocument();
-    expect(screen.getByText('4/7')).toBeInTheDocument();
-    const suggestions = screen.getByLabelText('Suggested actions');
-    expect(within(suggestions).getByRole('button', { name: /^Attack\b/ })).toBeInTheDocument();
-    expect(within(suggestions).getByRole('button', { name: /^(Flee|Try to escape)\b/ })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Recover your strength' })).not.toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Goblin scout' })).toBeInTheDocument();
+    expect(screen.getByText(/HP.*4\/7/)).toBeInTheDocument();
+    const combatActions = screen.getByRole('group', { name: 'Combat actions' });
+    expect(within(combatActions).getByRole('button', { name: /^Attack\b/ })).toBeInTheDocument();
+    expect(within(combatActions).getByRole('button', { name: /^Flee\b/ })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Suggested actions')).not.toBeInTheDocument();
   });
 
   it('shows known spells, slot counts, and blocks an unmodeled spell before submit', async () => {
@@ -277,16 +277,14 @@ describe('Telegram Mini App', () => {
     await screen.findByRole('heading', { name: /welcome back, rada/i });
     fireEvent.click(screen.getByRole('button', { name: /continue adventure/i }));
 
-    expect(await screen.findByText('L1: 2/2')).toBeInTheDocument();
+    expect(await screen.getByText('L1: 2/2')).toBeInTheDocument();
+    const combatActions = screen.getByRole('group', { name: 'Combat actions' });
+    expect(within(combatActions).getByRole('button', { name: /^Cast spell\b/ })).toBeInTheDocument();
     const picker = screen.getByRole('combobox', { name: 'Your spells' });
-    expect(within(picker).getByRole('option', { name: 'Choose a spell to cast' })).toBeInTheDocument();
     expect(within(picker).getByRole('option', { name: 'Fire Bolt' })).toBeInTheDocument();
     expect(within(picker).getByRole('option', { name: 'Magic Missile' })).toBeInTheDocument();
     expect(within(picker).queryByRole('option', { name: 'Cure Wounds' })).not.toBeInTheDocument();
-
-    fireEvent.change(picker, { target: { value: 'Shield' } });
-    expect(screen.getByText(/no modeled effect yet/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Send action' })).toBeDisabled();
+    expect(within(picker).queryByRole('option', { name: 'Shield' })).not.toBeInTheDocument();
     expect(requests.some(item => item.url.endsWith('/actions'))).toBe(false);
   });
 
@@ -339,18 +337,16 @@ describe('Telegram Mini App', () => {
     await screen.findByRole('heading', { name: /welcome back, rada/i });
     ensureBottomNav();
     fireEvent.click(screen.getByRole('button', { name: /^(Character|Postava)$/ }));
-    expect(await screen.findByRole('heading', { name: /character sheet/i })).toBeInTheDocument();
-    expect(screen.getByText('Ability scores')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /^Rada$/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /ability scores/i })).toBeInTheDocument();
     expect(screen.getByText('Longbow')).toBeInTheDocument();
     expect(screen.queryByText('LEGACY CHARACTER MANA')).not.toBeInTheDocument();
     expect(screen.queryByText('Mana (historical)')).not.toBeInTheDocument();
     openMoreSubscreen('Settings');
     fireEvent.click(screen.getByRole('button', { name: /rules and spell reference/i }));
     expect(await screen.findByRole('heading', { name: /adventurer's tools/i })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('tab', { name: /spell library/i }));
-    expect(screen.getByText(/does not currently have spell levels/i)).toBeInTheDocument();
-    expect(screen.queryByText('Cure Wounds')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Full SRD reference' }));
+    fireEvent.click(screen.getByRole('tab', { name: /SRD reference/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Full SRD reference/i }));
     expect(screen.getByText('Cure Wounds')).toBeInTheDocument();
     fireEvent.change(screen.getByRole('textbox', { name: /search spell library/i }), { target: { value: 'light' } });
     expect(screen.getByText('Light')).toBeInTheDocument();
@@ -364,10 +360,10 @@ describe('Telegram Mini App', () => {
     await screen.findByRole('heading', { name: /welcome back, rada/i });
     openMoreSubscreen('Settings');
     fireEvent.click(screen.getByRole('button', { name: /rules and spell reference/i }));
-    fireEvent.click(await screen.findByRole('tab', { name: /spell library/i }));
+    fireEvent.click(await screen.findByRole('tab', { name: /SRD reference/i }));
     expect(screen.getByText('Cure Wounds')).toBeInTheDocument();
     expect(screen.queryByText('Fireball')).not.toBeInTheDocument();
-    expect(screen.getByText(/class spell lists and known spells are not enforced yet/i)).toBeInTheDocument();
+    expect(screen.getByText(/through level/i)).toBeInTheDocument();
   });
 
   it('runs the encounter calculator against the game API', async () => {
@@ -430,7 +426,7 @@ describe('Telegram Mini App', () => {
     expect(await screen.findByRole('heading', { name: /your campaign/i })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /dangerous hard/i }));
     await waitFor(() => expect(requests.some(item => item.url === `/api/characters/${mockCharacter.id}/settings` && item.body?.difficulty === 'hard')).toBe(true));
-    fireEvent.click(screen.getByRole('button', { name: 'Play' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Adventure' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Your action' }), { target: { value: 'attack goblin' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send action' }));
     await waitFor(() => expect(requests.some(item => item.url.endsWith('/actions/stream'))).toBe(true));
@@ -503,10 +499,10 @@ describe('Telegram Mini App', () => {
     expect(localStorage.getItem('app_locale')).toBe('cs');
     expect(document.documentElement.lang).toBe('cs');
     fireEvent.click(screen.getByRole('button', { name: 'Hra' }));
-    expect(await screen.findByRole('heading', { name: 'The Whispering Cellar' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Šeptající sklep' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Přehled' }));
-    fireEvent.click(screen.getByRole('button', { name: /Nový dobrodruh/i }));
-    fireEvent.click(await screen.findByRole('button', { name: /Průvodce krok za krokem/i }));
-    expect(await screen.findByRole('heading', { name: /Vyber rasu/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Více' }));
+    fireEvent.click(await screen.findByRole('button', { name: /dalsiho dobrodruha|dalšího dobrodruha/i }));
+    expect(await screen.findByRole('heading', { id: 'wizard-title' })).toHaveTextContent(/begin|zacit/i);
   });
 });

@@ -19,7 +19,7 @@
 .screen .quest-main-card,
 .screen .quest-next-card,
 .screen .section-block.locale-setting {
-  background: var(--tg-surface, var(--surface));
+  background: var(--surface-card, var(--surface));
   border: 1px solid var(--tg-border, var(--border-subtle));
 }
 

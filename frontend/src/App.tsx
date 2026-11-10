@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { CharacterWizard, type CharacterDraft } from './CharacterWizard';
 import {
   BottomNav,
@@ -30,6 +30,7 @@ import { DefeatOverlay, LevelUpModal, type LevelUpNotice } from './components/Tu
 import { isCombatDefeatRespawn, noticeFromLevelUp } from './game/turnMoments';
 import { FallenScreen } from './screens/FallenScreen';
 import {
+  applyTelegramViewport,
   bindTelegramChrome,
   haptic,
   syncTelegramBackButton,
@@ -203,6 +204,12 @@ function App() {
 
 function AppContent() {
   const { t, locale, setLocale } = useI18n();
+
+  useLayoutEffect(() => {
+    window.Telegram?.WebApp?.ready?.();
+    applyTelegramViewport();
+  }, []);
+
   const [characters, setCharacters] = useState<Character[]>([]);
   const [character, setCharacter] = useState<Character | null>(null);
   const [presets, setPresets] = useState<HeroPreset[]>([]);
@@ -653,10 +660,11 @@ function AppContent() {
             characters={characters}
             presets={presets}
             economy={economy}
+            events={events}
+            questCatalog={catalog?.quests}
             onContinue={() => navigate('game')}
             onCreate={() => navigate('create')}
             onPreset={createPreset}
-            onSelect={selectCharacter}
             onOpenMap={() => navigate('map')}
             onOpenQuests={() => navigate('quests')}
           />
@@ -694,28 +702,71 @@ function AppContent() {
             }
           />
         )}
-        {screen === 'more' && <MoreScreen onNavigate={navigate} />}
-        {screen === 'map' && <MapScreen character={character} locations={catalog?.locations ?? []} onTravel={action => { navigate('game'); void takeAction(action); }} />}
-        {screen === 'quests' && <QuestScreen character={character} questCatalog={catalog?.quests} />}
+        {screen === 'more' && (
+          <MoreScreen
+            onNavigate={navigate}
+            hasHero={Boolean(character)}
+            onCreateHero={() => navigate('create')}
+          />
+        )}
+        {screen === 'map' && (
+          <MapScreen
+            character={character}
+            locations={catalog?.locations ?? []}
+            busy={busy}
+            onTravel={action => {
+              navigate('game');
+              void takeAction(action);
+            }}
+            onOpenQuests={() => navigate('quests')}
+            onOpenJournal={() => navigate('journal')}
+            onContinueAdventure={() => navigate('game')}
+            questCatalog={catalog?.quests}
+          />
+        )}
+        {screen === 'quests' && (
+          <QuestScreen
+            character={character}
+            questCatalog={catalog?.quests}
+            journalEvents={events}
+            onOpenJournal={() => navigate('journal')}
+            onOpenMap={() => navigate('map')}
+            onContinueAdventure={() => navigate('game')}
+          />
+        )}
         {screen === 'journal' && <JournalScreen events={events} character={character} />}
         {screen === 'character' && (
           <CharacterScreen
             character={character}
             characters={characters}
             spells={spells}
-            questCatalog={catalog?.quests}
             onSelect={selectCharacter}
             onCreate={() => navigate('create')}
-            onOpenMap={() => navigate('map')}
+            onOpenTools={() => navigate('tools')}
             busy={busy}
+            error={screen === 'character' && error && !busy ? error : undefined}
             onInventoryAction={action => {
-              navigate('game');
               void takeAction(action);
             }}
           />
         )}
         {screen === 'campaign' && <CampaignScreen character={character} events={events} busy={busy} onUpdate={updateCampaign} />}
-        {screen === 'tools' && <ToolsScreen character={character} catalog={catalog} spells={spells} calculating={calculating} calculation={calculation} error={error} onCalculate={calculateEncounter} />}
+        {screen === 'tools' && (
+          <ToolsScreen
+            character={character}
+            catalog={catalog!}
+            spells={spells}
+            calculating={calculating}
+            calculation={calculation}
+            error={calculating ? null : error}
+            busy={busy}
+            actionError={screen === 'tools' && error && !busy ? error : undefined}
+            onCalculate={calculateEncounter}
+            onCastAction={action => {
+              void takeAction(action);
+            }}
+          />
+        )}
         {screen === 'settings' && (
           <SettingsScreen
             economy={economy}

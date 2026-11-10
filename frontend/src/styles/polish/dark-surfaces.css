@@ -1,0 +1,46 @@
+/* Unified dark surfaces — journal chronicle, hub cards, Telegram light-theme lock */
+
+:root {
+  --surface-card: color-mix(in srgb, var(--surface-deep) 88%, var(--surface-raised) 12%);
+  --text-on-surface: var(--text-soft, var(--text));
+}
+
+.telegram-themed {
+  /* Surfaces stay game-dark even when Telegram chrome is light */
+  --surface-card: color-mix(in srgb, var(--surface-deep) 90%, #000);
+}
+
+.main-content {
+  background: transparent;
+  color: var(--text);
+}
+
+.journal-screen-v2 .journal-chronicle-page .journal-beat {
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-card);
+}
+
+.journal-screen-v2 .journal-beat .journal-narration {
+  color: var(--text-on-surface);
+}
+
+.journal-screen-v2 .journal-action {
+  background: color-mix(in srgb, var(--surface-raised) 55%, transparent);
+  color: var(--muted);
+}
+
+.map-current-card,
+.map-routes-card,
+.map-location-sheet-card {
+  background: var(--surface-card);
+  border-color: var(--border-subtle);
+}
+
+.char-v2-equipped-card,
+.char-v2-ability-card,
+.inventory-item-card {
+  background: var(--surface-card);
+}

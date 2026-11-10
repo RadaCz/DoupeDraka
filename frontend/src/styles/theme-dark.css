@@ -13,13 +13,21 @@
   --tg-hint: #aebaa8;
   --tg-button: #4a8f5c;
   --tg-border: color-mix(in srgb, var(--tg-hint, #aebaa8) 22%, var(--tg-bg, #0d120e));
-  --tg-safe-top: env(safe-area-inset-top, 0px);
-  --tg-safe-bottom: env(safe-area-inset-bottom, 0px);
+  /* Telegram content inset (px via JS); browser uses env() until Mini App applies overrides. */
+  --tg-content-safe-top: 0px;
+  --tg-content-safe-bottom: 0px;
+  /* Browser fallback; Telegram Mini App overrides via telegramWebApp.ts */
+  --app-safe-top: env(safe-area-inset-top, 0px);
+  --app-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --tg-safe-top: var(--app-safe-top);
+  --tg-safe-bottom: var(--app-safe-bottom);
+  --keyboard-offset: 0px;
 
   /* Semantic aliases — use these in components and new CSS */
   --surface: var(--tg-surface, #182019);
   --surface-raised: #202a1f;
   --surface-deep: #121812;
+  --surface-card: color-mix(in srgb, var(--surface-deep) 88%, var(--surface-raised) 12%);
   --text: var(--tg-text, #edf1e5);
   --text-soft: #d8e6d8;
   --muted: var(--tg-hint, #aebaa8);

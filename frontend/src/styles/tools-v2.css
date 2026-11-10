@@ -1,0 +1,163 @@
+.tools-screen.tools-v2 .tools-v2-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+@media (min-width: 400px) {
+  .tools-screen.tools-v2 .tools-v2-tabs {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.spellbook-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.spellbook-slots-card {
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-deep);
+}
+
+.spellbook-slots-label {
+  margin: 0 0 4px;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.spellbook-slots-note {
+  margin: 8px 0 0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--text-soft);
+}
+
+.spellbook-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.spellbook-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-deep);
+  text-align: left;
+  color: inherit;
+}
+
+.spellbook-row.ready {
+  border-color: color-mix(in srgb, var(--accent-verb) 40%, var(--border-subtle));
+}
+
+.spellbook-row.catalog-only {
+  opacity: 0.9;
+}
+
+.spellbook-level {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  background: color-mix(in srgb, var(--text) 10%, transparent);
+}
+
+.spellbook-row-copy strong {
+  display: block;
+  font-size: 0.95rem;
+}
+
+.spellbook-row-copy small {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.spellbook-badges {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.spellbook-group-title {
+  margin: 0 0 8px;
+  font-size: 0.92rem;
+}
+
+.spellbook-empty {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px dashed var(--border-subtle);
+}
+
+.spellbook-empty-hint {
+  margin-top: 8px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.spell-detail-card dl {
+  margin: 12px 0 0;
+}
+
+.spell-detail-meta div {
+  margin-bottom: 10px;
+}
+
+.spell-detail-meta dt {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.spell-detail-meta dd {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.spellbook-block-reason {
+  margin: 10px 0 0;
+  font-size: 0.82rem;
+  color: #e8b0b0;
+}
+
+.rules-glossary-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rules-glossary-list p {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: var(--text-soft);
+}
+
+.rules-glossary-term {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+}

@@ -1,0 +1,161 @@
+.journal-screen-v2 {
+  padding-bottom: 24px;
+}
+
+.journal-screen-v2 .journal-chronicle-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-bottom: 12px;
+}
+
+.journal-chronicle-page .journal-beat {
+  border-left: 3px solid color-mix(in srgb, var(--accent-verb) 35%, transparent);
+  padding-left: 12px;
+}
+
+.journal-beat-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.journal-beat-category {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.journal-beat-category-label {
+  font-size: 0.72rem;
+}
+
+.journal-mechanics-fold {
+  margin-top: 8px;
+  font-size: 0.86rem;
+  color: var(--muted);
+}
+
+.journal-mechanics-fold summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.journal-chronicle-empty {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.hub-quest-stakes {
+  margin-top: 8px;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.play-quest-strip {
+  margin: 8px 0 0;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.play-quest-strip .eyebrow {
+  font-size: 0.68rem;
+}
+
+.quest-v2-main .quest-stakes {
+  margin-top: 10px;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.quest-why {
+  margin-top: 8px;
+  font-size: 0.9rem;
+  color: color-mix(in srgb, var(--text) 88%, var(--muted));
+}
+
+.quest-v2-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.quest-learned-block {
+  margin-top: 18px;
+}
+
+.quest-learned-list {
+  margin: 8px 0 0;
+  padding-left: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.92rem;
+}
+
+.quest-journal-block {
+  margin-top: 20px;
+}
+
+.quest-journal-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.quest-journal-snippets {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.quest-journal-snippets li {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface-deep) 88%, transparent);
+  border: 1px solid var(--border-subtle);
+}
+
+.quest-journal-action {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.journal-filter-row {
+  flex-wrap: wrap;
+}
+
+.game-screen.text-first .game-play-story .game-play-journal {
+  flex: 1 1 auto;
+  min-height: min(70dvh, 70%);
+  display: flex;
+  flex-direction: column;
+}
+
+.game-screen.text-first .game-play-journal .scene-empty {
+  flex-shrink: 0;
+}
+
+.game-screen.text-first .game-play-journal .journal-scene {
+  flex: 1 1 auto;
+  min-height: min(70dvh, 70%);
+  height: min(70dvh, 70%);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}

@@ -52,6 +52,108 @@
   background: var(--surface);
 }
 
+.hub-campaign-pulse {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.hub-quest-teaser,
+.hub-last-beat {
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: color-mix(in srgb, var(--surface-deep) 85%, #000);
+}
+
+.hub-last-beat p:last-child {
+  margin: 6px 0 0;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  color: var(--text-soft);
+}
+
+.journal-screen {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+
+.journal-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.journal-filter {
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  background: var(--surface-deep);
+  color: var(--muted);
+}
+
+.journal-filter.active {
+  border-color: color-mix(in srgb, var(--accent-verb) 45%, var(--border-subtle));
+  color: var(--text);
+}
+
+.journal-scene-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: min(62vh, calc(100dvh - 220px));
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.journal-screen-v2 {
+  overflow: visible;
+}
+
+.journal-screen-v2 .journal-scene-scroll {
+  max-height: none;
+  overflow: visible;
+}
+
+.invite-share-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.invite-share-hint {
+  margin: 8px 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.more-create-hero {
+  margin: 0 0 12px;
+}
+
+.spell-empty-state {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.92rem;
+  color: var(--text-soft);
+}
+
+.character-hub-links {
+  margin: -8px 0 12px;
+}
+
+.suggested-actions-row button.suggested-chip-primary {
+  border-color: color-mix(in srgb, var(--accent-verb) 55%, var(--border-subtle));
+  background: color-mix(in srgb, var(--accent-verb) 18%, var(--surface-deep));
+  font-weight: 650;
+}
+
 .empty-adventure-card .primary {
   width: 100%;
   min-height: 48px;
@@ -64,18 +166,33 @@
 }
 
 .bottom-nav button {
+  background: transparent;
   color: var(--muted);
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: color 0.15s ease;
 }
 
 .bottom-nav button.active {
-  background: color-mix(in srgb, var(--accent-verb) 22%, var(--surface-deep));
+  background: transparent;
   color: color-mix(in srgb, var(--accent-verb) 70%, var(--text));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-verb) 35%, transparent);
+  box-shadow: none;
+}
+
+.bottom-nav button.active::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  width: 22px;
+  height: 3px;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: var(--accent-verb);
+  pointer-events: none;
 }
 
 .bottom-nav button.active > small {
   color: inherit;
+  font-weight: 700;
 }
 
 .more-screen .more-link-card {

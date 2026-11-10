@@ -2,11 +2,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { TurnPhase } from '../pendingTurn';
 import type { Character, Economy, JournalEvent, LocationReference, Spell } from '../types';
 import { useI18n } from '../i18n';
-import { isFallenError, playActionChips } from '../game/gameActions';
-import { JournalResultBody } from '../components/journalBlocks';
+import { displayCreature, displayLocation } from '../i18n/gameDisplay';
+import { isFallenError, playActionChips, primaryPlayChipKey } from '../game/gameActions';
 import { SpellSlots } from '../components/characterVitals';
-import { ShareButton } from '../components/ShareButton';
-import { buildJournalShareMessage, journalExcerpt } from '../share/adventureShare';
+import { JournalChronicle } from '../journal/JournalChronicle';
+import { visibleQuestTimeline } from '../questProgress';
+import { DAMAGE_TARGET_SPELLS } from '../spells/spellbook';
 
 export interface PlayScreenProps {
   character: Character;
@@ -36,6 +37,7 @@ export function TurnDeltaStrip({ message }: { message: string | null | undefined
 export function PlaySceneChrome({
   character,
   economy,
+  events,
   combat,
 }: {
   character: Character;
@@ -44,16 +46,20 @@ export function PlaySceneChrome({
   onOpenSheet?: () => void;
   combat?: boolean;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const enemy = character.combatant;
   const hpRatio = character.max_hp > 0
     ? Math.max(0, Math.min(100, (character.hp / character.max_hp) * 100))
     : 0;
+  const canonicalPlace = character.location || 'The Whispering Cellar';
   const placeLine = combat
-    ? (enemy?.name ?? t('Combat in progress'))
-    : (character.location || t('The Whispering Cellar'));
+    ? (enemy?.name ? displayCreature(enemy.name, locale) : t('Combat in progress'))
+    : displayLocation(canonicalPlace, locale);
   const playerTurn = !combat || (character as Character & { combat_turn?: string }).combat_turn !== 'enemy';
   const manaLabel = economy ? economy.balance.toFixed(1) : '—';
+  const questObjective = !combat && (events?.length ?? 0) > 0
+    ? visibleQuestTimeline(character.quest_flags ?? {}, undefined).active
+    : null;
 
   return (
     <header className="play-immersive-bar" role="banner">
@@ -98,6 +104,12 @@ export function PlaySceneChrome({
             {playerTurn ? t('Your turn — choose an action.') : t('Enemy turn — wait for the outcome.')}
           </p>
         )}
+        {questObjective && (
+          <p className="play-quest-strip" role="status">
+            <span className="eyebrow">{t('CURRENT OBJECTIVE')}</span>
+            <span>{t(questObjective.label)}</span>
+          </p>
+        )}
       </div>
     </header>
   );
@@ -118,22 +130,7 @@ export function PlayJournal({
   onCancelTurn,
 }: Pick<PlayScreenProps, 'character' | 'events' | 'busy' | 'turnPhase' | 'narrationStatus' | 'onResumePending' | 'onCancelTurn'>) {
   const { t } = useI18n();
-  const journalRef = useRef<HTMLDivElement>(null);
   const [thinkingSeconds, setThinkingSeconds] = useState(0);
-  const scrollJournalToLatest = useCallback((behavior: ScrollBehavior = 'smooth') => {
-    const node = journalRef.current;
-    if (!node) return;
-    const top = node.scrollHeight;
-    if (typeof node.scrollTo === 'function') {
-      try {
-        node.scrollTo({ top, behavior });
-        return;
-      } catch {
-        // JSDOM and some embedded WebViews only support scrollTop.
-      }
-    }
-    node.scrollTop = top;
-  }, []);
   useEffect(() => {
     if (!busy) { setThinkingSeconds(0); return; }
     setThinkingSeconds(0);
@@ -141,43 +138,31 @@ export function PlayJournal({
     const timer = window.setInterval(() => setThinkingSeconds(Math.floor((Date.now() - started) / 1000)), 1000);
     return () => window.clearInterval(timer);
   }, [busy]);
-  useEffect(() => {
-    scrollJournalToLatest(events.length > 1 ? 'smooth' : 'auto');
-  }, [events, scrollJournalToLatest]);
-  useEffect(() => {
-    if (!busy) scrollJournalToLatest('smooth');
-  }, [busy, scrollJournalToLatest]);
   return (
-    <div className="journal-scene journal-presentation-text-first" ref={journalRef} role="log" aria-label={t('Adventure journal')} aria-live="polite">
-      {events.length === 0 && (
-        <div className="scene-empty">
-          <span aria-hidden="true">✦</span>
-          <p>{t(character.location === 'The Whispering Cellar'
-            ? 'The cellar waits in silence. Describe what you try — explore, talk, attack, flee or rest.'
-            : 'This place waits in silence. Describe what you try — explore, talk, attack, flee or rest.')}</p>
-        </div>
-      )}
+    <div className="game-play-journal">
       {narrationStatus === 'fallback' && (
         <p className="storyteller-status" role="status">
           {t('The built-in offline storyteller is narrating this turn (Lite tier or fallback).')}
         </p>
       )}
-      {events.map(event => (
-        <article className={`journal-beat ${event.result.includes('LEVEL UP!') ? 'level-up-entry' : ''}`} key={event.id}>
-          <div className="journal-beat-head">
-            <time>{new Date(event.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</time>
-            <ShareButton
-              message={buildJournalShareMessage(character, journalExcerpt(event.result), event.action)}
-            />
+      {events.length === 0 ? (
+        <div className="journal-scene journal-presentation-text-first" role="log" aria-label={t('Adventure journal')}>
+          <div className="scene-empty">
+            <span aria-hidden="true">✦</span>
+            <p>{t(character.location === 'The Whispering Cellar'
+              ? 'The cellar waits in silence. Describe what you try — explore, talk, attack, flee or rest.'
+              : 'This place waits in silence. Describe what you try — explore, talk, attack, flee or rest.')}</p>
           </div>
-          <p className="journal-action"><span aria-hidden="true">›</span> {event.action}</p>
-          {event.result.includes('LEVEL UP!') && <strong className="level-up-banner">{t('LEVEL UP')}</strong>}
-          {event.action.toLowerCase().includes('rest') && event.result.toLowerCase().includes('cannot rest') && (
-            <strong className="spell-warning" role="status">{t('Rest unavailable during combat')}</strong>
-          )}
-          <div className="journal-narration"><JournalResultBody result={event.result} /></div>
-        </article>
-      ))}
+        </div>
+      ) : (
+        <JournalChronicle
+          events={events}
+          character={character}
+          mode="play"
+          scrollOnChange
+          scrollKey={`${events.length}-${busy ? 'busy' : 'idle'}`}
+        />
+      )}
       {turnPhase === 'recovering' && !busy && onResumePending && (
         <p className="storyteller-status" role="status">
           {t('A turn may have been interrupted. Retry with the same idempotency key.')}
@@ -269,6 +254,14 @@ export function ActionComposer(props: PlayScreenProps) {
     .sort((left, right) => left.level - right.level || left.name.localeCompare(right.name));
   const hasPotion = character.inventory.some(item => item.toLowerCase().includes('potion'));
   const chips = playActionChips(character, events, locations, t, characterSpells.length > 0, hasPotion);
+  const primaryChip = primaryPlayChipKey(
+    character,
+    events,
+    locations,
+    t,
+    characterSpells.length > 0,
+    hasPotion,
+  );
 
   const actionSpellName = action.match(/^(?:cast|kouzli(?:t)?)\s+(.+?)(?:\s+at\s+.+)?$/i)?.[1]?.trim().replace(/\s+/g, ' ').toLowerCase();
   const actionSpell = characterSpells.find(spell => spell.name.toLowerCase() === actionSpellName);
@@ -320,7 +313,15 @@ export function ActionComposer(props: PlayScreenProps) {
         <div className="suggested-actions-scroll">
           <div className="suggested-actions suggested-actions-row" aria-label={t('Suggested actions')}>
             {chips.map(chip => (
-              <button type="button" key={chip.key} disabled={busy} onClick={() => handleChip(chip)}>{t(chip.label)}</button>
+              <button
+                type="button"
+                key={chip.key}
+                className={chip.key === primaryChip ? 'suggested-chip-primary' : undefined}
+                disabled={busy}
+                onClick={() => handleChip(chip)}
+              >
+                {t(chip.label)}
+              </button>
             ))}
           </div>
         </div>
@@ -426,8 +427,7 @@ export function ActionComposer(props: PlayScreenProps) {
                 return;
               }
               const spell = characterSpells.find(item => item.name === name);
-              const target = spell && enemy && spell.effect_modeled &&
-                ['Burning Hands', 'Eldritch Blast', 'Fire Bolt', 'Magic Missile', 'Sacred Flame', 'Scorching Ray', 'Vicious Mockery'].includes(name)
+              const target = spell && enemy && spell.effect_modeled && DAMAGE_TARGET_SPELLS.has(name)
                 ? ` at ${enemy.name}`
                 : '';
               setAction(`cast ${name}${target}`);
