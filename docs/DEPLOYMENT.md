@@ -89,7 +89,14 @@ GitHub Actions on `main`, `master`, and `clean-main` runs:
 - backend: `python -m pytest -q`
 - backend-postgres: `alembic upgrade head`, then `tests/test_concurrency.py` and `tests/test_alembic_v005.py`
 - frontend: Vitest and `npm run build`
-- e2e: `npm run test:e2e` (API on 8001, Vite on 5174)
+- e2e: `npm run test:e2e` (API on 8001, Vite on 5174); Chromium only
+
+**Dependency caching (od `0112747`):**
+
+- `setup-python` with `cache: pip` keyed on `requirements-dev.txt` (all Python jobs).
+- `setup-node` with `cache: npm` on `frontend/package-lock.json` (frontend + e2e).
+- `actions/cache` on `~/.cache/ms-playwright` keyed on `hashFiles('frontend/package-lock.json')`.
+  Install step still runs `npx playwright install --with-deps chromium`; on cache hit downloads are skipped.
 
 `docker compose up --build` is configured for the API, bot, and frontend. Before the
 first run (and before upgrades), apply migrations inside the API image:

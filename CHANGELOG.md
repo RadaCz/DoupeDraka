@@ -1,6 +1,16 @@
 # Changelog
 
-## Unreleased (2026-11-10) — Localization Integrity V4 (local, not pushed)
+## Unreleased (2026-11-10) — Beta readiness (Sprint 6 docs, no code)
+
+- Doc sync: README test counts, rest/explore gold, MASTER_PLAN HEAD `0112747`, DEPLOYMENT CI cache.
+- `docs/CLOSED_BETA_ONBOARDING_V1.md` — facilitator, tester, dotazník, go/no-go.
+
+## Released on `clean-main` — Sprint 5 (`0112747`)
+
+- Telegram BackButton singleton + effect cleanup; mobile viewport + hub E2E; `TELEGRAM_MOBILE_QA_V1.md`.
+- GHA: pip cache, Playwright `~/.cache/ms-playwright` cache. CI run `42806386764` (uživatelem ověřeno zelené).
+
+## Released on `clean-main` — Localization V4 (`e695cd4`)
 
 - Display catalog: rozšířené názvy bestiáře v `chapter_one_display.json` + `gameDisplay.ts` (Kobold, vlk, kostlivec, …).
 - Journal mechaniky: CS lokalizace zlata z průzkumu, opakovaného lovu mincí, short/long rest (`gameDisplay.ts`).

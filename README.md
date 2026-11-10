@@ -52,8 +52,7 @@ paktové magie; paladin a hraničář získají první sloty na 2. úrovni. Leve
 podle třídní kostky životů a opravy Odolnosti, nové sloty a naučená/připravená kouzla;
 za jeden tah se postava posune nejvýše o jednu úroveň. Vyšší úrovně kouzel se
 zpřístupní až při odpovídající úrovni sesílání (plní sesilatelé od 3. úrovně postavy).
-Odpočinek mimo boj obnoví HP na maximum a všechny spell sloty zdarma; v boji je
-odmítnut a odpočinek při plných zdrojích je bezplatný no-op. Herní obrazovka ukazuje
+**Dlouhý odpočinek** jen v bezpečných tábořištích (Whispering Cellar, Shrine, Goblin Market); **krátký odpočinek** jednou do dalšího dlouhého. V boji je odpočinek odmítnut; při plných HP/slotech je no-op. Herní obrazovka ukazuje
 dostupná kouzla aktivní postavy a aktuální/maximální sloty. Sloty se nespotřebovávají za
 Adventure Mana ani za herní manu.
 
@@ -86,7 +85,7 @@ zůstávají nedokončené. Úplný SRD katalog zůstává samostatnou referenc�
 
 Průzkum (`explore`, `search`, `look around`, `travel` a české varianty) provádí
 samostatný náhodný hod šestistěnnou kostkou: při výsledku 1 se objeví nepřítel odpovídající úrovni
-postavy a nastavené obtížnosti; další výsledky mohou odhalit stopy nebo náhodně 1 až 4 zlaťáky.
+postavy a nastavené obtížnosti; další výsledky mohou odhalit stopy; při výsledku 3 na D6 získáš **1–4 gp jednou per lokaci** (opakování stejné lokace zlato negeneruje).
 Po boji nebo útěku je následující průzkum zaručeně bezpečný. Při průzkumu během boje
 nelze přeskočit protivníka.
 V boji se objevený nepřítel zatím nevrhne na postavu okamžitě — hráč dostane možnost
@@ -194,10 +193,9 @@ cd D:\DoupeDraka
 python -m pytest -q
 ```
 
-Aktuální baseline: **310+** pytest (včetně postgres migrace v005 v GA), frontend **38** Vitest,
-funkční Playwright E2E **7** speců (+ volitelný visual). CI na větvi `clean-main` spouští
-`requirements-dev.txt`, Alembic `v005` + `alembic check` na PostgreSQL,
-navíc Postgres migrace a Playwright (viz [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)).
+Baseline na `0112747` (lokálně ověř): **457** pytest (2 skipped), frontend **137** Vitest,
+Playwright E2E **14** testů (+ volitelný visual). CI na `clean-main`: pip cache, npm cache,
+Playwright browser cache — viz [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md).
 
 ### Volitelný LLM chain (vývoj / budoucí DM)
 
