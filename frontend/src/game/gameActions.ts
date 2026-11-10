@@ -2,6 +2,7 @@ import type { Locale } from '../i18n';
 import { latestStoryBeatForOverview } from '../journal/journalPresentation';
 import type { Character, JournalEvent, LocationReference } from '../types';
 import { routeOpen } from '../chapterOneMap';
+import { visibleQuestTimeline } from '../questProgress';
 
 export interface SuggestedAction {
   label: string;
@@ -45,6 +46,69 @@ export function resolveNpcTalkAction(
     && !quests.bell_quest_complete
   ) {
     return { label: t('Ask Nib about the shrine bell'), action: 'ask Nib about the shrine bell' };
+  }
+  if (
+    character.location === 'The Shrine of the Forgotten'
+    && quests.bell_quest_complete
+    && !quests.vault_hint_given
+    && !quests.vault_unlocked
+  ) {
+    return {
+      label: t('Ask Caldus about the Vault'),
+      action: 'talk to Caldus about the vault of echoes',
+    };
+  }
+  return null;
+}
+
+/** Boss confrontation chip when chapter rules allow a named attack at the pit. */
+export function resolveQuestBossAction(
+  character: Character,
+  t: (value: string) => string,
+): SuggestedAction | null {
+  const quests = character.quest_flags ?? {};
+  if (quests.chapter_one_complete || !quests.vault_unlocked) return null;
+  if (character.location !== "The Bell Warden's Pit" || character.in_combat) return null;
+  return {
+    label: t('Face the Bell Warden'),
+    action: 'attack the Bell Warden',
+  };
+}
+
+/** One-tap travel toward the active quest step when reachable from here. */
+export function resolveQuestTravelAction(
+  character: Character,
+  locations: LocationReference[],
+  t: (value: string) => string,
+): SuggestedAction | null {
+  const quests = character.quest_flags ?? {};
+  const { active } = visibleQuestTimeline(quests);
+  let destination = active?.location;
+  if (!destination) {
+    if (!quests.bell_quest_accepted && character.location === 'The Whispering Cellar') {
+      destination = 'The Sunken Corridor';
+    } else {
+      return null;
+    }
+  }
+  if (destination === character.location) return null;
+  const node = locations.find(item => item.name === character.location);
+  if (!node) return null;
+  if (node.connections.includes(destination) && routeOpen(destination, quests)) {
+    return {
+      label: t(`Travel to ${destination}`),
+      action: `travel to ${destination}`,
+    };
+  }
+  for (const route of node.connections) {
+    if (!routeOpen(route, quests)) continue;
+    const hop = locations.find(item => item.name === route);
+    if (hop?.connections.includes(destination) && routeOpen(destination, quests)) {
+      return {
+        label: t(`Travel to ${route}`),
+        action: `travel to ${route}`,
+      };
+    }
   }
   return null;
 }
@@ -208,6 +272,14 @@ export function playActionChips(
   const npcTalk = resolveNpcTalkAction(character, t);
   if (npcTalk) push(npcTalk.action, npcTalk.label, npcTalk.action);
 
+  const questBoss = resolveQuestBossAction(character, t);
+  if (questBoss) push(questBoss.action, questBoss.label, questBoss.action);
+
+  const questTravel = resolveQuestTravelAction(character, locations, t);
+  if (questTravel && questTravel.action !== npcTalk?.action) {
+    push(`quest-travel-${questTravel.action}`, questTravel.label, questTravel.action);
+  }
+
   const latest = events[events.length - 1]?.result.toLowerCase() ?? '';
   if (latest.includes('tracks')) {
     push('tracks', t('Study the fresh tracks'), 'inspect the fresh tracks');
@@ -245,6 +317,8 @@ export function primaryPlayChipKey(
   if (character.in_combat) return chips.find(c => c.action?.startsWith('attack '))?.key ?? chips[0].key;
   const npcTalk = resolveNpcTalkAction(character, t);
   if (npcTalk) return chips.find(c => c.action === npcTalk.action)?.key ?? chips[0].key;
+  const questBoss = resolveQuestBossAction(character, t);
+  if (questBoss) return chips.find(c => c.action === questBoss.action)?.key ?? chips[0].key;
   if (character.hp < character.max_hp) {
     const rest = chips.find(c => c.action === 'rest');
     if (rest) return rest.key;
@@ -260,6 +334,10 @@ export function primaryPlayChipKey(
 export function scenePrompt(character: Character, events: JournalEvent[], t: (value: string) => string) {
   if (character.hp <= 0) return t('You have fallen. The cellar falls quiet around you.');
   if (character.in_combat) return t('A hostile creature is in front of you. Fight or make a run for it.');
+  const { active } = visibleQuestTimeline(character.quest_flags ?? {});
+  if (active && !character.quest_flags?.bell_quest_accepted && character.location === 'The Whispering Cellar') {
+    return t('A stolen shrine bell is missing somewhere below. Use Travel or the current objective to head toward the shrine.');
+  }
   if (character.hp < character.max_hp) return t('The immediate danger has passed. Catch your breath or press on.');
 
   const latest = events[events.length - 1]?.result.toLowerCase() ?? '';

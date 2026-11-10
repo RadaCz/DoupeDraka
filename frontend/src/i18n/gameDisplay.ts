@@ -130,7 +130,24 @@ const DISCOVERY_BODY_CS: Record<string, string> = {
     'Nibův stánek páchl po matné mosazi — povídá se, že tu změnil majitele chrámový zvon.',
 };
 
+const BELL_WARDEN_LEVEL_BLOCK =
+  /^(.+) is beyond your current experience \(you are level (\d+); reach at least level (\d+) by winning fights and exploring before you attack\)\.?$/i;
+
 const MECHANIC_PATTERNS_CS: Array<[RegExp, string | ((...args: string[]) => string)]> = [
+  [
+    BELL_WARDEN_LEVEL_BLOCK,
+    (_name, current, needed) =>
+      `${displayCreature('Bell Warden', 'cs')} je na tvoji současnou zkušenost příliš nebezpečný (jsi úroveň ${current}; dosáhni alespoň úrovně ${needed} vítěznými souboji a průzkumem, než zaútočíš).`,
+  ],
+  [
+    /^The Bell Warden waits in the Bell Warden's Pit\. Travel to the pit before you challenge it\.$/,
+    () =>
+      `${displayCreature('Bell Warden', 'cs')} čeká v Jámě strážce zvonu. Nejdřív tam dojdi přes mapu, až ho budeš chtít vyzvat.`,
+  ],
+  [
+    /^The Bell Warden's Pit is sealed until you unlock the Vault route with Caldus\.$/,
+    () => 'Jáma strážce zvonu je zamčená, dokud u Calduse neodemkneš cestu do Komnaty ozvěn.',
+  ],
   [
     /^Attack with (.+?): (\d+) \(d20\s*\+(\d+)\) vs AC (\d+) — (critical miss|miss|hit|critical hit)\.?$/i,
     (weapon, total, mod, ac, result) => {

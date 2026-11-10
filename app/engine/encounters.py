@@ -111,6 +111,58 @@ def tier_allowed_for_level(template: MonsterTemplate, level: int) -> bool:
     return level >= 4
 
 
+def minimum_level_for_tier(tier: int) -> int:
+    if tier <= 1:
+        return 1
+    if tier == 2:
+        return 2
+    if tier == 3:
+        return 3
+    return 4
+
+
+def attack_block_message(character: CharacterState, key: str) -> str:
+    """Why a named attack cannot start — distinct from 'monster not present' when level is the blocker."""
+    if key not in MONSTERS:
+        return "No enemy is in front of you. Explore the area or wait for a threat to appear."
+    template = MONSTERS[key]
+    min_level = minimum_level_for_tier(template.tier)
+
+    if key == "bell_warden":
+        if character.location != "The Bell Warden's Pit":
+            return (
+                "The Bell Warden waits in the Bell Warden's Pit. "
+                "Travel to the pit before you challenge it."
+            )
+        if not character.quest_flags.get("vault_unlocked"):
+            return (
+                "The Bell Warden's Pit is sealed until you unlock the Vault route with Caldus."
+            )
+
+    if not tier_allowed_for_level(template, character.level):
+        return (
+            f"{template.name} is beyond your current experience (you are level {character.level}; "
+            f"reach at least level {min_level} by winning fights and exploring before you attack)."
+        )
+
+    location = LOCATIONS.get(character.location)
+    pool = location.encounter_pool if location else ()
+    if key not in pool:
+        if key == "bell_warden":
+            return (
+                "The Bell Warden waits in the Bell Warden's Pit. "
+                "Travel to the pit before you challenge it."
+            )
+        return f"No {template.name.lower()} is here for you to fight."
+
+    if key == "bell_warden" and not character.quest_flags.get("vault_unlocked"):
+        return (
+            "The Bell Warden's Pit is sealed until you unlock the Vault route with Caldus."
+        )
+
+    return f"No {template.name.lower()} is here for you to fight."
+
+
 def filter_encounter_pool(pool: tuple[str, ...] | list[str], level: int) -> list[str]:
     keys = [key for key in pool if key in MONSTERS and tier_allowed_for_level(MONSTERS[key], level)]
     if keys:

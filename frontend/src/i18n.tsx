@@ -379,8 +379,26 @@ const cs: Record<string, string> = {
   'Travel to The Shrine of the Forgotten': 'Cesta ke Svatyni zapomenutych',
   'Travel to The Goblin Market': 'Cesta na Goblini trh',
   'Talk to Caldus': 'Promluvit s Caldusem',
+  'Ask Caldus about the Vault': 'Zeptej se Calduse na Kryptu ozvěn',
+  'A stolen shrine bell is missing somewhere below. Use Travel or the current objective to head toward the shrine.':
+    'Někde pod zemí zmizel chrámový zvon. Vydej se ke svatyni přes Cesta nebo aktuální úkol.',
   'Ask Nib about the shrine bell': 'Zeptat se Niba na chrámový zvon',
+  'Face the Bell Warden': 'Postav se Strážci zvonu',
   'Return the shrine bell': 'Vratit chrámový zvon',
+  'At the Shrine of the Forgotten, talk to Caldus about the bell.':
+    'Ve Svatyni zapomenutých promluv s Caldusem o zvonu.',
+  'Travel to the Goblin Market and ask Nib about the shrine bell.':
+    'Dojdi na Gobliní trh a zeptej se Niba na chrámový zvon.',
+  'Return to the shrine and give the bell back to Caldus.':
+    'Vrať se do svatyně a odevzdej zvon Caldovi.',
+  'Return to the Shrine of the Forgotten and speak with Caldus again. After the bell is returned, he reveals the path to the Vault of Echoes.':
+    'Vrať se do Svatyně zapomenutých a znovu promluv s Caldusem — po vrácení zvonu ti prozradí cestu do Komnaty ozvěn.',
+  'Enter the Vault of Echoes and face the Bell Warden in the pit.':
+    'Vstoup do Komnaty ozvěn a v jámě se postav Strážci zvonu.',
+  'Explore the cellar and follow clues deeper underground.':
+    'Prozkoumej sklep a sleduj stopy hlouběji pod zem.',
+  'Travel to The Vault of Echoes': 'Cesta do Komnaty ozvěn',
+  "Travel to The Bell Warden's Pit": 'Cesta do Jámy strážce zvonu',
   'Search the cellar': 'Prohledat sklep',
   'Listen for movement': 'Naslouchat pohybu',
   Planned: 'Pripravovano',
@@ -700,7 +718,6 @@ const cs: Record<string, string> = {
   'World map and travel': 'Mapa světa a cestování',
   'CURRENT OBJECTIVE': 'AKTUÁLNÍ CÍL',
   'Find out what happened to the shrine bell': 'Zjisti, co se stalo se chrámovým zvonem',
-  'Explore the cellar and follow clues deeper underground.': 'Prozkoumej sklep a sleduj stopy hlouběji pod zemí.',
   'Further objectives unlock as you meet people along the way.': 'Další cíle se odemknou, až potkáš lidi na cestě.',
   'Locked — complete the shrine bell quest first.': 'Zamčeno — nejdřív dokonči úkol se zvonem u svatyně.',
   'Return to the Shrine of the Forgotten and speak with Caldus again to learn the way to the Vault of Echoes.':

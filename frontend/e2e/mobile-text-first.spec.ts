@@ -14,7 +14,7 @@ test.describe('text-first mobile layout', () => {
     const telegramId = 740_000_000 + testInfo.workerIndex;
     await mockTelegramWebApp(page, signedTelegramInitData(telegramId));
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: /adventure awaits/i })).toBeVisible({ timeout: 20_000 });
+    await ensureTelegramHome(page);
     await completeWizardFighter(page, 'Mobile Layout E2E');
 
     const input = page.getByRole('textbox', { name: 'Your action' });

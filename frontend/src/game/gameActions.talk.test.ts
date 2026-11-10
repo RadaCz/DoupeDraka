@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { Character } from '../types';
-import { buildQuickActions, playActionChips, resolveNpcTalkAction } from './gameActions';
+import {
+  buildQuickActions,
+  playActionChips,
+  resolveNpcTalkAction,
+  resolveQuestBossAction,
+  resolveQuestTravelAction,
+} from './gameActions';
 
 const t = (value: string) => value;
 
@@ -54,5 +60,83 @@ describe('Talk quick action', () => {
 
     const quick = buildQuickActions(shrine, [], [], t, false, false);
     expect(quick.find(item => item.id === 'talk')?.action).toBe('talk to Caldus about the shrine bell');
+  });
+
+  it('offers vault follow-up at the shrine after the bell is returned', () => {
+    const shrine: Character = {
+      ...base,
+      location: 'The Shrine of the Forgotten',
+      quest_flags: { bell_quest_complete: true },
+    };
+    const npc = resolveNpcTalkAction(shrine, t);
+    expect(npc?.action).toBe('talk to Caldus about the vault of echoes');
+  });
+
+  it('suggests quest travel from cellar toward corridor before the bell quest is accepted', () => {
+    const hero: Character = { ...base, quest_flags: {} };
+    const locations = [
+      {
+        name: 'The Whispering Cellar',
+        connections: ['The Sunken Corridor'],
+        arrival_beat: '',
+        encounter_pool: [],
+      },
+      {
+        name: 'The Sunken Corridor',
+        connections: ['The Shrine of the Forgotten', 'The Whispering Cellar'],
+        arrival_beat: '',
+        encounter_pool: [],
+      },
+      {
+        name: 'The Shrine of the Forgotten',
+        connections: ['The Goblin Market', 'The Sunken Corridor'],
+        arrival_beat: '',
+        encounter_pool: [],
+      },
+    ];
+    const travel = resolveQuestTravelAction(hero, locations, t);
+    expect(travel?.action).toBe('travel to The Sunken Corridor');
+    const chips = playActionChips(hero, [], locations, t, false, false);
+    expect(chips.some(c => c.action === 'travel to The Sunken Corridor')).toBe(true);
+  });
+
+  it('suggests one-hop travel toward Goblin Market after the bell quest is accepted', () => {
+    const hero: Character = {
+      ...base,
+      quest_flags: { bell_quest_accepted: true },
+    };
+    const locations = [
+      {
+        name: 'The Whispering Cellar',
+        connections: ['The Sunken Corridor'],
+        arrival_beat: '',
+        encounter_pool: [],
+      },
+      {
+        name: 'The Sunken Corridor',
+        connections: ['The Shrine of the Forgotten', 'The Whispering Cellar', 'The Goblin Market'],
+        arrival_beat: '',
+        encounter_pool: [],
+      },
+      {
+        name: 'The Goblin Market',
+        connections: ['The Sunken Corridor'],
+        arrival_beat: '',
+        encounter_pool: [],
+      },
+    ];
+    expect(resolveQuestTravelAction(hero, locations, t)?.action).toBe('travel to The Sunken Corridor');
+  });
+
+  it('offers Bell Warden attack chip in the pit when the vault is unlocked', () => {
+    const pit: Character = {
+      ...base,
+      location: "The Bell Warden's Pit",
+      quest_flags: { vault_unlocked: true },
+    };
+    const boss = resolveQuestBossAction(pit, t);
+    expect(boss?.action).toBe('attack the Bell Warden');
+    const chips = playActionChips(pit, [], [], t, false, false);
+    expect(chips.some(c => c.action === 'attack the Bell Warden')).toBe(true);
   });
 });

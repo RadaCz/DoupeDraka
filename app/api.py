@@ -1,4 +1,6 @@
 import asyncio
+import os
+import random as _random_module
 from dataclasses import asdict
 from datetime import datetime, timedelta
 import json
@@ -76,7 +78,13 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PATCH", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "Idempotency-Key"],
 )
-game = GameEngine(); narrator = Narrator()
+_e2e_rng_seed = os.environ.get("E2E_RNG_SEED")
+game = (
+    GameEngine(_random_module.Random(int(_e2e_rng_seed)))
+    if _e2e_rng_seed is not None and str(_e2e_rng_seed).isdigit()
+    else GameEngine()
+)
+narrator = Narrator()
 security = HTTPBearer()
 
 def hash_password(password: str) -> str:

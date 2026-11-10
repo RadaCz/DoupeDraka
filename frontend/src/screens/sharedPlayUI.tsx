@@ -57,7 +57,7 @@ export function PlaySceneChrome({
     : displayLocation(canonicalPlace, locale);
   const playerTurn = !combat || (character as Character & { combat_turn?: string }).combat_turn !== 'enemy';
   const manaLabel = economy ? economy.balance.toFixed(1) : '—';
-  const questObjective = !combat && (events?.length ?? 0) > 0
+  const questObjective = !combat
     ? visibleQuestTimeline(character.quest_flags ?? {}, undefined).active
     : null;
 

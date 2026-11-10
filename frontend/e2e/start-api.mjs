@@ -25,6 +25,7 @@ const child = spawn(
       LLM_PROVIDER: 'fallback',
       AUTH_RATE_LIMIT: '240/minute',
       ACTION_RATE_LIMIT: '240/minute',
+      E2E_RNG_SEED: '42',
     },
     stdio: 'inherit',
   },

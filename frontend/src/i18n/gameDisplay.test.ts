@@ -51,6 +51,22 @@ describe('gameDisplay', () => {
     expect(displayCreature('Kobold skirmisher', 'cs')).toBe('Koboldí záškodník');
   });
 
+  it('localizes Bell Warden level gate and pit travel messages', () => {
+    const levelBlock =
+      'Bell Warden is beyond your current experience (you are level 2; reach at least level 3 by winning fights and exploring before you attack).';
+    const csLevel = presentEngineEventLine(levelBlock, 'cs');
+    expect(csLevel).toMatch(/úroveň 2/);
+    expect(csLevel).toMatch(/úrovně 3/);
+    expect(csLevel).not.toMatch(/is here for you/i);
+
+    const pit =
+      "The Bell Warden waits in the Bell Warden's Pit. Travel to the pit before you challenge it.";
+    expect(presentEngineEventLine(pit, 'cs')).toMatch(/Jámě strážce zvonu/i);
+
+    const sealed = "The Bell Warden's Pit is sealed until you unlock the Vault route with Caldus.";
+    expect(presentEngineEventLine(sealed, 'cs')).toMatch(/Calduse/i);
+  });
+
   it('localizes exploration outcomes and discovery facts for CS journal', () => {
     expect(localizeMechanicsLine('Exploration roll: 6 on a six-sided die.', 'cs')).toMatch(/Průzkum: 6/);
     expect(presentEngineEventLine('You explore the area but find no immediate threat.', 'cs')).toMatch(/hrozbu/i);

@@ -915,10 +915,12 @@ class GameEngine:
                     None,
                 )
             if not monster_allowed_for_character(character, target_key):
+                from .encounters import attack_block_message
+
                 return (
                     TurnResult(
                         action,
-                        [f"No {MONSTERS[target_key].name.lower()} is here for you to fight."],
+                        [attack_block_message(character, target_key)],
                         False,
                     ),
                     None,

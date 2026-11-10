@@ -53,6 +53,34 @@ def test_bell_warden_blocked_below_tier_level():
     result, monster = game.resolve_action(hero, "attack the Bell Warden", None)
     assert not result.state_changed
     assert monster is None
+    assert any("level 2" in event for event in result.events)
+    assert any("at least level 3" in event for event in result.events)
+    assert not any("is here for you to fight" in event for event in result.events)
+
+
+def test_bell_warden_attack_allowed_at_required_level():
+    game, hero = _fighter()
+    hero.level = 3
+    hero.quest_flags = {"vault_unlocked": True}
+    hero.location = "The Bell Warden's Pit"
+    assert monster_allowed_for_character(hero, "bell_warden")
+    result, monster = game.resolve_action(hero, "attack the Bell Warden", None)
+    assert result.state_changed
+    assert any("Initiative" in event and "Bell Warden" in event for event in result.events)
+    assert not any("beyond your current experience" in event for event in result.events)
+    assert not any("is here for you to fight" in event for event in result.events)
+
+
+def test_bell_warden_wrong_location_explains_pit_not_missing():
+    game, hero = _fighter()
+    hero.level = 5
+    hero.quest_flags = {"vault_unlocked": True}
+    hero.location = "The Whispering Cellar"
+    result, monster = game.resolve_action(hero, "attack the Bell Warden", None)
+    assert not result.state_changed
+    assert monster is None
+    assert any("Bell Warden's Pit" in event for event in result.events)
+    assert not any("is here for you to fight" in event for event in result.events)
 
 
 def test_encounter_pool_fallback_never_bypasses_level():
