@@ -2,6 +2,20 @@
 
 ## Unreleased (2026-11-09)
 
+### Telegram UX (local, not pushed)
+- Safe area: `--app-safe-top` = max(contentSafeAreaInset, device safe area); dřívější `useLayoutEffect` + viewport listener.
+- Bottom nav: aktivní stav jen pilulka (`polish/layout.css`), bez zeleného pozadí tlačítka (`styles.css`).
+- Play journal: skrytí redundantního search nadpisu, pokud akce opakuje lokaci; offline explore próza bez opakování action stringu.
+- Composer: `--keyboard-offset` z `visualViewport` (fyzicky NOT TESTED).
+
+### Gameplay immersion & combat UX (local, not pushed)
+- Offline narrator: odstraněna meta próza (engine/journal/log) z `offline_variety` fallbacků; `offline_prose.py` pro breath/search/combat.
+- Combat hit/miss próza bez výpisu hodů; kouzla a Caldus bez odkazů na zápis/deník.
+- Paid narrator `FACT_RULE` + combat direktiva — žádná debug próza.
+- Mobile: safe-area padding play header + app header; bottom-nav active pill místo zeleného sloupce; menší kostka, výraznější send.
+- Návrh: [`design/COMBAT_TACTICS_PROPOSAL_V1.md`](design/COMBAT_TACTICS_PROPOSAL_V1.md) (Heavy/Aim/Defend — neimplementováno).
+- Tests: `tests/test_immersion_narration.py`.
+
 ### Narrator V2 P3 (journal + offline)
 - Offline narrator: `scene_kind` fallback prose (EN/CS), return-visit leads, `variety_seed` anti-repeat (`offline_variety.py`).
 - Journal UX: stream story-before-mechanics; hub + play share `journal-presentation-text-first`; CZ mechanic labels.

@@ -1,6 +1,21 @@
 # Roadmap
 
-Updated 2026-11-08. Chapter one is a gated six-location slice on `clean-main`. ActionIntent routes player commands; Pro narration tier is disabled until OpenRouter exists.
+Updated 2026-11-09. Chapter one is a gated six-location slice on `clean-main`. ActionIntent routes player commands; Pro narration tier is disabled until OpenRouter exists.
+
+## Priority 0c — Product UX Redesign V1 (audit done; partial implementation)
+- [x] [`docs/PRODUCT_UX_AUDIT_V1.md`](docs/PRODUCT_UX_AUDIT_V1.md) — P0–P3 inventář problémů
+- [x] [`docs/PRODUCT_UX_REDESIGN_V1.md`](docs/PRODUCT_UX_REDESIGN_V1.md) — IA, report, verdikt
+- [x] Hub dedup (roster/invite), campaign pulse, More menu, journal filters, contextual play chips
+- [x] Combat layout V2 (bez nových mechanik) — `combat/CombatUI.tsx`, phone QA pending
+- [ ] Tools: Moje / Dostupná / Pravidla tabs
+- [ ] Backend gaps: [`design/BACKEND_UX_GAPS_V1.md`](design/BACKEND_UX_GAPS_V1.md)
+- [ ] Telefonní QA redesign checklist (§9 redesign report)
+
+## Priority 0b — Immersion & combat UX (in progress locally)
+- [x] Offline narrator meta-language removed; breath/search/combat variety (`offline_prose.py`).
+- [x] Mobile polish: Telegram safe-area header, bottom-nav active indicator, composer sizing.
+- [x] Combat tactics proposal (Heavy/Aim/Defend) — design only: `design/COMBAT_TACTICS_PROPOSAL_V1.md`.
+- [ ] Real-phone verification of header, nav, and keyboard overlap.
 
 ## GDS01 — Dice, Resources & Economy (E1–E2b on `clean-main`; product sign-off pending)
 

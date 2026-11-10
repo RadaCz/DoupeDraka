@@ -4,7 +4,7 @@
 
 - **Repository:** `D:\DoupeDraka`
 - **Development branch:** `clean-main` (merge to `main` after green CI only)
-- **Last updated:** 2026-11-09 (Narrator V2 P3 working tree)
+- **Last updated:** 2026-11-09 (immersion sprint — local)
 - **CI lifecycle baseline:** `ec646fc` · Actions `42679663584` (4/4 SUCCESS).
 - **Narrator V2 P3:** commit `b7f1315` na `clean-main` (push proveden).
 - **Local (P3 pre-commit, 2026-11-09):** backend **386 passed**, **2 skipped**; strict `-W error` thread warnings **386 passed**; frontend **53** Vitest; **8** E2E; secret scan OK; Alembic **v005**. **Telefonní playtest** stále **NEOVĚŘEN**.
@@ -43,7 +43,8 @@ Do not conflate resources:
 
 ## 4. Current priorities
 
-1. Closed beta playtest (10–15 players, Czech UI, Lite default) after audit commit + green CI.
+1. **Immersion sprint (local):** fourth-wall free offline/paid prompts; combat prose; mobile safe-area/nav/composer tweaks — phone QA still pending.
+2. Closed beta playtest (10–15 players, Czech UI, Lite default) after audit commit + green CI.
 2. Green CI on `clean-main` (including Postgres **v005**), then merge to `main` when ready.
 3. Real Telegram visual QA on a phone; Docker compose smoke with `alembic upgrade head`.
 3. Campaign depth after chapter one: general NPC dialogue, longer routes, balance (30+ minutes).
