@@ -6,7 +6,7 @@ from scripts.staging_preflight import check_docker_compose_policy, check_lite_st
 def _valid_lite_env() -> dict[str, str]:
     return {
         "DATABASE_URL": "postgresql+asyncpg://doupe:secret@postgres:5432/doupedraka",
-        "BOT_TOKEN": "100000000:ZZZZZZZZZZZZZZZZZZZZZZZZZZ",
+        "BOT_TOKEN": "staging-test-bot-token-not-a-telegram-secret",
         "BOT_API_TOKEN": "internal-shared-token",
         "MINI_APP_URL": "https://play.staging.example",
         "CORS_ORIGINS": "https://play.staging.example",
