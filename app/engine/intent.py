@@ -56,12 +56,17 @@ _QUEST_ADDRESS_VERB = (
 )
 QUEST_CALDUS_PATTERN = re.compile(
     rf"\b{_QUEST_ADDRESS_VERB}\s+(?:to\s+|with\s+|s\s+)?caldus\b"
-    rf"(?:\s+.+?\b(?:about\s+)?(?:the\s+)?(?:shrine\s+bell|stolen\s+bell|zvon)\b)?",
+    rf".+?\b(?:about\s+)?(?:the\s+)?(?:shrine\s+bell|stolen\s+bell|zvon)\b",
     re.IGNORECASE,
 )
 QUEST_NIB_PATTERN = re.compile(
     rf"\b{_QUEST_ADDRESS_VERB}\s+(?:to\s+|with\s+)?nib\b"
-    rf"(?:\s+.+?\b(?:about\s+)?(?:the\s+)?(?:shrine\s+bell|bell|zvon)\b)?",
+    rf".+?\b(?:about\s+)?(?:the\s+)?(?:shrine\s+bell|bell|zvon)\b",
+    re.IGNORECASE,
+)
+QUEST_CALDUS_VAULT_PATTERN = re.compile(
+    rf"\b{_QUEST_ADDRESS_VERB}\s+(?:to\s+|with\s+|s\s+)?caldus\b"
+    rf".+\b(?:vault of echoes|vault|treasury|temple crypt)\b",
     re.IGNORECASE,
 )
 
@@ -156,6 +161,10 @@ def _detect_quest_step(text: str, folded: str) -> tuple[str | None, bool]:
         if _negated(folded, _QUEST_NEGATION["return_bell"]):
             return None, True
         return "return_bell", False
+    if QUEST_CALDUS_VAULT_PATTERN.search(text):
+        if _negated(folded, _QUEST_NEGATION["accept_caldus"]):
+            return None, True
+        return "accept_caldus", False
     if QUEST_NIB_PATTERN.search(text):
         if _negated(folded, _QUEST_NEGATION["ask_nib"]):
             return None, True

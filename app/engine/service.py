@@ -797,20 +797,27 @@ class GameEngine:
                 True,
             ), monster
 
+        state_changed = True
         if encounter_roll.total == 3:
             gold = self.roll("1d4").total
             character.gold += gold
             discovery = f"You find {gold} gold pieces tucked beneath loose stones (a random 1 to 4)."
         elif encounter_roll.total == 2:
-            discovery = LOCATIONS.get(character.location, LOCATIONS["The Whispering Cellar"]).track_discovery
+            from .discoveries import exploration_discovery_message
+
+            discovery, is_new = exploration_discovery_message(character, kind="track")
+            state_changed = is_new
         elif encounter_roll.total == 4:
-            discovery = LOCATIONS.get(character.location, LOCATIONS["The Whispering Cellar"]).clue_discovery
+            from .discoveries import exploration_discovery_message
+
+            discovery, is_new = exploration_discovery_message(character, kind="clue")
+            state_changed = is_new
         else:
             discovery = "You explore the area but find no immediate threat."
         return TurnResult(
             action,
             [f"Exploration roll: {encounter_roll.total} on a six-sided die.", discovery],
-            True,
+            state_changed,
         ), None
 
     def apply_settings(
@@ -1097,6 +1104,11 @@ class GameEngine:
             return self._explore(character, action)
 
         if intent.kind == TALK:
+            from .npc_interactions import npc_id_from_action, resolve_npc_talk
+
+            npc_id = npc_id_from_action(action)
+            if npc_id:
+                return resolve_npc_talk(character, action, npc_id), monster
             check, success = self.ability_check(character, "charisma", 12)
             self._regenerate_mana(character)
             return TurnResult(
@@ -1104,6 +1116,12 @@ class GameEngine:
                 [f"Charisma check: {check.total} vs DC 12 — {'success' if success else 'failure'}."],
                 True,
             ), monster
+
+        from .discoveries import try_focused_inspect
+
+        focused = try_focused_inspect(character, action)
+        if focused is not None:
+            return focused, monster
 
         ability = self._ability_for_action(text)
         check, success = self.ability_check(character, ability, 12)
