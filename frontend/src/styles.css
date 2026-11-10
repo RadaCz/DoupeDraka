@@ -3,6 +3,10 @@
 /* Parchment tokens (design/direction.md) — deferred: ./styles/tokens.css */
 @import url("./styles/polish.css");
 @import url("./styles/play.css");
+@import url("./styles/character-v2.css");
+@import url("./styles/tools-v2.css");
+@import url("./styles/journal-quest-v2.css");
+@import url("./styles/map-v2.css");
 
 * {
   box-sizing: border-box;
@@ -516,11 +520,13 @@ summary:focus-visible {
 }
 
 .app-shell {
+  box-sizing: border-box;
   height: 100dvh;
   min-height: 0;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto auto;
   overflow: hidden;
+  padding-top: var(--app-safe-top);
   background:
     radial-gradient(ellipse at 50% -25%, #23442e 0, transparent 50%),
     #0d120e;
@@ -540,7 +546,8 @@ summary:focus-visible {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: max(4px, env(safe-area-inset-top)) max(18px, calc((100vw - 760px) / 2));
+  /* Safe area is on `.app-shell` only — avoid double top inset here */
+  padding: 10px max(18px, calc((100vw - 760px) / 2)) 8px;
   border-bottom: 1px solid #ffffff0b;
   background: #101611;
 }
@@ -1123,13 +1130,16 @@ summary:focus-visible {
 }
 
 .bottom-nav button {
+  position: relative;
   min-width: 0;
   min-height: 48px;
-  display: grid;
-  align-content: center;
-  justify-items: center;
+  max-height: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 2px;
-  padding: 4px 2px;
+  padding: 4px 2px 8px;
   border: 0;
   border-radius: 12px;
   background: transparent;
@@ -1151,12 +1161,7 @@ summary:focus-visible {
 }
 
 .bottom-nav button.active {
-  background: #1b2b20;
   color: #70ce91;
-}
-
-.bottom-nav button.active > small {
-  font-weight: 700;
 }
 
 .wizard-page {
@@ -1610,6 +1615,7 @@ summary:focus-visible {
 .game-screen.text-first .game-play-story .journal-scene {
   flex: 1 1 auto;
   min-height: min(70dvh, 70%);
+  height: min(70dvh, 70%);
 }
 
 .game-screen.text-first .action-composer-wrap {
@@ -1628,9 +1634,10 @@ summary:focus-visible {
 }
 
 .app-shell.play-active .app-header {
-  min-height: 40px;
-  padding-top: max(2px, env(safe-area-inset-top));
-  padding-bottom: 2px;
+  min-height: 0;
+  padding: 0;
+  margin: 0;
+  border: 0;
 }
 
 .app-shell.play-active .brand-mark {

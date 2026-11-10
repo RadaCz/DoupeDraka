@@ -1,5 +1,6 @@
 import asyncio
 
+from app.ai.offline_prose import narration_contains_meta_terms
 from app.narrator import NarrationContext, Narrator
 
 
@@ -73,10 +74,11 @@ def test_fallback_does_not_repeat_previous_narration():
 
     narration = Narrator.narrate_offline(context)
 
-    assert "cast" in narration
+    assert "Whispering Cellar" in narration
     assert "you act" not in narration.lower()
     assert "flee" not in narration
     assert "run" not in narration
+    assert "cast" not in narration.lower()
 
 
 def test_fallback_describes_exploration_discoveries():
@@ -146,8 +148,10 @@ def test_fallback_describes_resolved_shrine_bell_quest_facts():
 
     narration = Narrator.narrate_offline(context)
 
-    assert "Caldus welcomes the shrine bell back" in narration
-    assert "5 gold" in narration or "reward recorded" in narration
+    assert "Caldus" in narration
+    assert "shrine bell" in narration.lower() or "bell" in narration.lower()
+    assert "5 gold" in narration.lower()
+    assert not narration_contains_meta_terms(narration)
 
 
 def test_offline_narrates_checks_in_czech_when_configured():

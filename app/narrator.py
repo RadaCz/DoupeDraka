@@ -45,7 +45,9 @@ FACT_RULE = (
     "Narrate ONLY the supplied facts and the read-only scene dossier. "
     "Never invent or alter dice, hit points, damage, rewards, rule outcomes, inventory, "
     "quests, or locations. You may describe what the facts imply, never what they contradict. "
-    "Do not mention being an AI or game rules unless the player asked."
+    "Do not mention being an AI, game rules, journals, logs, or internal systems unless the player asked. "
+    "Never comment on the player's choice as meta (e.g. 'your choice moves the moment'); never say "
+    "'the scene responds' or similar stage-direction about the narrative itself."
 )
 
 VARIETY_RULE = (
@@ -55,7 +57,7 @@ VARIETY_RULE = (
 
 SCENE_KIND_DIRECTIVES = {
     "talk": "This is a social scene: give NPCs distinct voices from the dossier; let dialogue carry the beat.",
-    "combat": "This is combat: keep tension high, brief sentences, clear who acted and what happened mechanically.",
+    "combat": "This is combat: keep tension high; describe who moved and what happened in story terms, never like a debug log.",
     "explore": "This is exploration: foreground atmosphere and discoveries implied by the facts.",
     "travel": "This is travel: convey motion and arrival without inventing new locations.",
     "rest": "This is a quiet moment: slower pacing, recovery and stillness.",

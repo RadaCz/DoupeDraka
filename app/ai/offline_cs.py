@@ -1,6 +1,14 @@
 """Czech prose for the offline narrator (engine facts stay English)."""
 
 from .base import NarrationContext
+from .offline_prose import (
+    breath_pause_prose,
+    combat_opening_prose,
+    combat_prose_from_events,
+    empty_search_prose,
+    rest_recovery_prose,
+    shrine_bell_return_prose,
+)
 from .offline_variety import generic_scene_prose, variety_seed
 
 
@@ -18,9 +26,17 @@ def narrate_offline_cs(context: NarrationContext) -> str:
         if effect.get("type") == "not_modeled":
             return f"{spell_name} se rozzáří, ale jeho účinek zatím není modelovaný; žádný slot se neodečte."
         if effect.get("type") == "heal":
-            return f"{spell_name} ti přináší úlevu; přesné uzdravení je v zápisu tahu."
+            return choose((
+                f"{spell_name} tě obklopí teplem a ztiší bolest.",
+                f"Síla {spell_name} splývá s tvým dechem a uzdravuje zranění.",
+                f"{spell_name} vzplane v dlaních a vrací tělu sílu.",
+            ))
         if effect.get("type") in {"spell_attack", "auto_damage", "save_damage"}:
-            return f"{spell_name} zasáhne; hod a zbývající HP nepřítele najdeš v zápisu tahu."
+            return choose((
+                f"{spell_name} vystřelí z tvých rukou a praští do protivníka.",
+                f"Vrháš {spell_name}; vzduch praská a zásah dozní.",
+                f"{spell_name} se rozlomí — nepřítel září bolestí.",
+            ))
         if effect.get("type") == "unavailable":
             return next(
                 (event for event in context.events if "no spell slot was spent" in event.lower()),
@@ -33,7 +49,7 @@ def narrate_offline_cs(context: NarrationContext) -> str:
     if "hands you the shrine bell" in facts:
         return "Nib přiznává krádež a vkládá ti do rukou ukradený chrámový zvon."
     if "return the shrine bell to caldus" in facts:
-        return "Caldus vítá návrat zvonu a odměna zůstává zapsaná v deníku."
+        return shrine_bell_return_prose(context, language="cs")
     if "an enemy appears:" in facts:
         enemy = next(
             (event.split("An enemy appears:", 1)[1].split("(", 1)[0].strip()
@@ -68,42 +84,18 @@ def narrate_offline_cs(context: NarrationContext) -> str:
             "Kolem panelu jsou stopy — možná skrývá průchod.",
             "Kamenná deska nese čerstvé rýhy. Něco za ní ještě nedávno někdo hledal.",
         ))
-    if "no immediate threat" in facts:
-        return choose((
-            "Nic se nehýbe. Pro teď je tady klid.",
-            "V okolí nečíhá žádné nebezpečí — jen ticho.",
-            "Pečlivě skenuješ stíny, ale nic bezprostředně nehrozí.",
-        ))
+    if "no immediate threat" in facts or "find no immediate threat" in facts:
+        return empty_search_prose(context, language="cs")
     if "catch your breath" in facts:
-        return "Na chvíli se zastavíš a dech se ti uklidní. Sklep zůstává tichý."
-    if "attack roll" in facts:
-        if "critical miss" in facts:
-            return "Tvůj úder se pokaždě — protivník zůstává nezraněný."
-        if "attack roll" in facts and "damage " in facts:
-            if "is defeated" in facts:
-                return choose((
-                    "Tvůj zásah najde cíl a nepřítel padá.",
-                    "Boj končí tvým úderem. Hrozba je poražena.",
-                    "Rozhodující ránou přemůžeš soupeře.",
-                ))
-            return choose((
-                "Úder sedí; nepřítel zakolísá, ale stále bojuje.",
-                "Ocel zasáhne a protivníka žene do defenzivy.",
-                "Zatlačíš na soupeře — rány jsou vidět.",
-            ))
-        if "hits you for" in facts:
-            return "Tvůj útok nezastaví protivníkův protiúder."
-        return choose((
-            "Útok mine — nepřítel stále stojí v cestě.",
-            "Čepel prosviští prázdnem.",
-            "Soupeř se vykroutí; boj pokračuje.",
-        ))
+        return breath_pause_prose(context, language="cs")
+    opening = combat_opening_prose(context, language="cs")
+    if opening:
+        return opening
+    combat = combat_prose_from_events(context, language="cs")
+    if combat:
+        return combat
     if "you rest and recover" in facts:
-        return choose((
-            "Krátký odpočinek zmírní bolest zranění.",
-            "Na chvíli vydechneš a cítíš se jistější.",
-            "Sbalíš síly a tělo ti odpoví úlevou.",
-        ))
+        return rest_recovery_prose(context, language="cs")
     if "break away and escape" in facts:
         return "Najdeš skulinku a utečeš dřív, než tě nepřítel zastaví."
     if "fail to break away" in facts:

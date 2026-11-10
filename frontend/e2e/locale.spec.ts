@@ -26,5 +26,5 @@ test('switches to Czech UI and patches narration language', async ({ page }, tes
   const nav = page.getByRole('navigation', { name: /Hlavní navigace|Main navigation/i });
   await expect(nav.getByRole('button', { name: /Přehled|Hub/i })).toBeVisible();
   await nav.getByRole('button', { name: /Hra|Play/i }).click();
-  await expect(page.getByRole('heading', { name: 'The Whispering Cellar' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Šeptající sklep|The Whispering Cellar/i })).toBeVisible();
 });

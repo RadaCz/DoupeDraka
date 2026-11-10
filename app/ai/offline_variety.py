@@ -27,104 +27,141 @@ def familiarity_lead(context: NarrationContext, *, language: str) -> str:
     if language == "cs":
         return choose(
             (
-                f"V {place} už znáš cestu — nic nepůsobí jako první návštěva. ",
-                f"Opět stojíš v {place}; prostor ti je povědomý. ",
-                f"Návrat do {place} přináší jinou náladu než poprvé. ",
+                f"Na tomto místě v {place} už víš, kam šlápneš. ",
+                f"Známé stěny {place} tě vítají jinak než poprvé. ",
+                f"Vraceš se do {place} a prostor ti odpovídá tíhou vzpomínek. ",
             ),
             seed,
         )
     return choose(
         (
-            f"You know {place} now — it no longer feels like a first visit. ",
-            f"Back in {place}, the layout is familiar under your feet. ",
-            f"Returning to {place} carries a different weight than your arrival. ",
+            f"You already know the footing in {place}. ",
+            f"The familiar walls of {place} greet you differently now. ",
+            f"Back in {place}, the air weighs on you with old memory. ",
         ),
         seed,
     )
 
 
+def _place_name(context: NarrationContext) -> str:
+    dossier = context.scene_dossier or {}
+    loc = dossier.get("location") or {}
+    return (loc.get("name") or context.location or "the room").strip()
+
+
+def _action_echoes_place(context: NarrationContext) -> bool:
+    """True when explore/search action text mostly repeats the current location name."""
+    action = context.action.strip().lower()
+    place = _place_name(context).lower()
+    if not place or place == "the room":
+        return False
+    bare = place.removeprefix("the ").strip()
+    if not any(action.startswith(word) for word in ("search", "explore", "investigate", "prohledat", "prozkoumat", "hledat")):
+        return False
+    return bare in action or place in action
+
+
 def generic_scene_prose(context: NarrationContext, *, language: str) -> str:
-    """Fallback when no fact-specific offline branch matched."""
-    action = context.action.strip().rstrip(".!?")
+    """Fallback when no fact-specific offline branch matched — sensory, no meta-game voice."""
     seed = variety_seed(context)
     lead = familiarity_lead(context, language=language)
     kind = context.scene_kind or "general"
+    place = _place_name(context)
+    echo_place = _action_echoes_place(context)
 
     if language == "cs":
+        explore_cs = (
+            (
+                f"{lead}Přejdeš místem v {place}; kameny, stíny a vzduch vyprávějí vlastní příběh.",
+                f"{lead}V {place} pozoruješ detaily — vlhkost, šelest a stopy minulých kroků.",
+                f"{lead}Okolí {place} zkoumáš očima i sluchem; nic nespěchá do očí.",
+            )
+            if echo_place
+            else (
+                f"{lead}Přejdeš blíž ke stěnám v {place} a hledáš, co by prozradily stopy na zemi.",
+                f"{lead}Pozornost klouže po chladném kameni a vlhkém vzduchu {place}.",
+                f"{lead}Uši a zrak nasávají zvuky a stíny v {place}.",
+            )
+        )
         by_kind: dict[str, tuple[str, ...]] = {
             "talk": (
-                f"{lead}Slova k {action.lower()} visí ve vzduchu — odpověď přijde z toho, co engine potvrdil.",
-                f"{lead}Zkoušíš {action.lower()}; rozhovor se odvíjí jen z potvrzených faktů.",
-                f"{lead}Tvůj pokus ({action.lower()}) patří do dialogu, který shrnují zápis tahu.",
+                f"{lead}Slova se rozplete mezi vámi v {place}; tón hlasů nese váhu okamžiku.",
+                f"{lead}Rozhovor v {place} je křehký — každé přerušení zní hlasitěji v tichu.",
+                f"{lead}Hlas se nese kamsi dál; {place} ti vrací jen ozvěnu a pohled druhých.",
             ),
             "combat": (
-                f"{lead}Bojová výměna kolem „{action}“ je krátká a věcná.",
-                f"{lead}V souboji rozhoduje „{action}“ — detaily hodů jsou v zápisu.",
-                f"{lead}Úder nebo obrana: {action}. Mechanika je v deníku.",
+                f"{lead}Ocel zazvoní v {place} a ruch boje utlučí vše ostatní.",
+                f"{lead}Úder nebo krok přehluší ticho — dech soupeře je vidět v záblesku světla.",
+                f"{lead}Boj v {place} je krátký a ostrý; tělo pamatuje každý nádech.",
             ),
-            "explore": (
-                f"{lead}Prozkoumáváš okolí — {action.lower()} odhalí jen to, co engine zaznamenal.",
-                f"{lead}Pozornost k {action.lower()} přináší odpověď ze sklepa, ne z fantazie.",
-                f"{lead}Hledání ({action.lower()}) zůstává v mezích potvrzených stop.",
-            ),
+            "explore": explore_cs,
             "travel": (
-                f"{lead}Putuješ dál: {action.lower()} mění místo jen podle enginu.",
-                f"{lead}Cesta ({action.lower()}) končí tam, kam tě engine dovedl.",
-                f"{lead}Krok za krokem — {action.lower()} bez vymyšlených zastávek.",
+                f"{lead}Kroky odnesou dál od {place}; cesta voní prachem a chladným vzduchem.",
+                f"{lead}Batoh šustí a ulice podzemí mizí za zády.",
+                f"{lead}Překročíš práh — {place} zůstává v paměti, dokud se nevrátíš.",
             ),
             "rest": (
-                f"{lead}Na chvíli zpomaluješ — {action.lower()} je tichý moment.",
-                f"{lead}Odpočinek ({action.lower()}) nechá tělo i deník mluvit číselně.",
-                f"{lead}V klidu zkusíš {action.lower()}; úleva je v zápisu tahu.",
+                f"{lead}Sedneš si; chlad kamene a vzdálené kapání ti dovolí vydechnout v {place}.",
+                f"{lead}Ramenům dovolíš klesnout — únava jako olovo, zatímco {place} dřímá.",
+                f"{lead}Oči se na chvíli zavřou; vzduch v {place} je těžký, ale klidný.",
             ),
             "story_moment": (
-                f"{lead}Zásadní okamžik: {action}. Následky už jsou v faktech.",
-                f"{lead}{action} — příběh se zlomí jen tam, kde engine povolil.",
-                f"{lead}Váha rozhodnutí ({action.lower()}) bez nových odměn navíc.",
+                f"{lead}Okamžik v {place} se zastaví — i kapky vody znějí hlasitěji.",
+                f"{lead}Něco ve zdejším tichu se posune; {place} to ponese v sobě.",
+                f"{lead}Srdce tlukou do vzduchu v {place}; rozhodnutí visí mezi údery.",
             ),
             "general": (
-                f"{lead}Rozhodneš se pro {action.lower()} — scéna reaguje podle zápisu.",
-                f"{lead}Tvá volba „{action}“ posune okamžik dál.",
-                f"{lead}Zavážeš se k {action.lower()}; zbytek patří deníku.",
+                f"{lead}Uděláš, co je třeba, a {place} to přijme bez zbytečných slov.",
+                f"{lead}Ruce i pohled patří okamžiku v {place} — bez zbytečného hluku.",
+                f"{lead}Čin dozní v {place}; kameny a vzduch ho nesou dál.",
             ),
         }
         return choose(by_kind.get(kind, by_kind["general"]), seed)
 
+    explore_en = (
+        (
+            f"{lead}You move through {place}, reading stone, shadow, and the pull of the air.",
+            f"{lead}In {place}, small details catch your eye — moisture, scent, and old scratches.",
+            f"{lead}You study the space around you in {place}; nothing announces itself loudly.",
+        )
+        if echo_place
+        else (
+            f"{lead}You draw nearer to the walls of {place}, hunting for marks on stone and floor.",
+            f"{lead}Your attention slides over cold rock and damp air in {place}.",
+            f"{lead}Ear and eye drink in the sounds and shadows of {place}.",
+        )
+    )
     by_kind = {
         "talk": (
-            f"{lead}You steer the conversation toward {action.lower()}; only confirmed facts shape the reply.",
-            f"{lead}Your attempt to {action.lower()} hinges on what the engine recorded.",
-            f"{lead}Words hang in the air as you {action.lower()} — outcomes stay in the journal.",
+            f"{lead}Words unfold between you in {place}; voices carry more weight in the hush.",
+            f"{lead}Conversation in {place} feels brittle — every pause rings louder.",
+            f"{lead}Your voice carries; {place} answers with echo and another's gaze.",
         ),
         "combat": (
-            f"{lead}Combat stays terse around “{action}”; rolls and HP live in the log.",
-            f"{lead}The fight turns on {action.lower()} — mechanics below, not invented blows.",
-            f"{lead}Steel and reflex: {action}. The engine already resolved the exchange.",
+            f"{lead}Steel rings in {place}; the fight drowns everything else.",
+            f"{lead}A blow or step shatters the quiet — breath shows in a shard of light.",
+            f"{lead}Combat in {place} is short and sharp; muscles remember every inhale.",
         ),
-        "explore": (
-            f"{lead}You probe the area with “{action}”; discoveries match the recorded facts only.",
-            f"{lead}Searching ({action.lower()}) reveals what the cellar already committed.",
-            f"{lead}Your exploration—“{action}”—stays within the engine’s findings.",
-        ),
+        "explore": explore_en,
         "travel": (
-            f"{lead}You move on: {action.lower()} ends where the engine placed you.",
-            f"{lead}Travel via {action.lower()} without invented stops along the way.",
-            f"{lead}The route for “{action}” is already decided in the log.",
+            f"{lead}Footsteps lead away from {place}; the path smells of dust and cold air.",
+            f"{lead}Your pack whispers as the underways fall behind.",
+            f"{lead}You cross the threshold — {place} lingers in memory until you return.",
         ),
         "rest": (
-            f"{lead}A quiet beat: you {action.lower()} and let recovery show in the numbers.",
-            f"{lead}You try to {action.lower()}; breath and HP changes stay factual.",
-            f"{lead}Rest ({action.lower()}) slows the scene without new rewards.",
+            f"{lead}You sit; cold stone and distant dripping let you breathe in {place}.",
+            f"{lead}Shoulders drop — weariness like lead while {place} dozes.",
+            f"{lead}Eyes close briefly; the air in {place} is heavy but still.",
         ),
         "story_moment": (
-            f"{lead}A pivotal beat—{action}—lands with weight already fixed in the facts.",
-            f"{lead}{action} shifts the moment; nothing extra appears beyond the log.",
-            f"{lead}The story turns on {action.lower()} without invented treasure.",
+            f"{lead}A beat hangs in {place} — even dripping water sounds louder.",
+            f"{lead}Something in the hush shifts; {place} will hold it a while.",
+            f"{lead}Heartbeats meet the air of {place}; the weight of choice stays between breaths.",
         ),
         "general": (
-            f"{lead}You choose to {action.lower()}; the scene answers from the journal.",
-            f"{lead}Your decision—“{action}”—moves the beat forward.",
-            f"{lead}You commit to {action.lower()}; details remain in the engine lines.",
+            f"{lead}You do what must be done, and {place} takes it without wasted words.",
+            f"{lead}Hands and gaze belong to the moment in {place} — no extra noise.",
+            f"{lead}The deed settles in {place}; stone and air carry it onward.",
         ),
     }
     return choose(by_kind.get(kind, by_kind["general"]), seed)

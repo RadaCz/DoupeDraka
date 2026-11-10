@@ -49,6 +49,8 @@ def test_czech_combat_miss():
 
 
 def test_czech_quest_bell_return():
+    from app.ai.offline_prose import narration_contains_meta_terms
+
     context = _cs(
         action="vrátit zvon",
         location="The Shrine of the Forgotten",
@@ -56,7 +58,10 @@ def test_czech_quest_bell_return():
     )
     text = Narrator.narrate_offline(context)
     assert "return the shrine" not in text.lower()
-    assert "caldus" in text.lower() or "zvon" in text.lower()
+    assert "caldus" in text.lower()
+    assert "zvon" in text.lower()
+    assert "5" in text and "zlat" in text.lower()
+    assert not narration_contains_meta_terms(text)
 
 
 def test_czech_check_failure():

@@ -1,5 +1,15 @@
 import type { AppScreen } from './types';
 import { MORE_HUB_SCREENS } from './types';
+import { isLightUiColor } from './telegram/colorUtils';
+
+/** Fixed dark-fantasy palette when Telegram theme is light (white cards bug). */
+const GAME_DARK = {
+  bg: '#0d120e',
+  surface: '#182019',
+  text: '#edf1e5',
+  hint: '#aebaa8',
+  button: '#4a8f5c',
+} as const;
 
 const PRIMARY_TABS: AppScreen[] = ['home', 'game', 'character', 'more'];
 
@@ -93,14 +103,59 @@ export function teardownTelegramMainButton() {
 
 export function applyTelegramViewport() {
   const tg = telegramChrome();
-  if (!tg) return;
-  tg.expand?.();
   const root = document.documentElement;
-  const inset = tg.contentSafeAreaInset ?? tg.safeAreaInset;
-  if (inset) {
-    root.style.setProperty('--tg-safe-top', `${inset.top ?? 0}px`);
-    root.style.setProperty('--tg-safe-bottom', `${inset.bottom ?? 0}px`);
+  if (!tg) {
+    root.style.removeProperty('--app-safe-top');
+    root.style.removeProperty('--app-safe-bottom');
+    root.style.removeProperty('--tg-content-safe-top');
+    root.style.removeProperty('--tg-content-safe-bottom');
+    return;
   }
+  tg.expand?.();
+  const content = tg.contentSafeAreaInset;
+  const device = tg.safeAreaInset;
+  const contentTop = content?.top ?? 0;
+  const contentBottom = content?.bottom ?? 0;
+  const deviceTop = device?.top ?? 0;
+  const deviceBottom = device?.bottom ?? 0;
+  const appTop = Math.max(contentTop, deviceTop);
+  const appBottom = Math.max(contentBottom, deviceBottom);
+  root.style.setProperty('--tg-content-safe-top', `${contentTop}px`);
+  root.style.setProperty('--tg-content-safe-bottom', `${contentBottom}px`);
+  if (appTop > 0) {
+    root.style.setProperty('--app-safe-top', `${appTop}px`);
+  } else {
+    root.style.removeProperty('--app-safe-top');
+  }
+  if (appBottom > 0) {
+    root.style.setProperty('--app-safe-bottom', `${appBottom}px`);
+  } else {
+    root.style.removeProperty('--app-safe-bottom');
+  }
+}
+
+function updateKeyboardOffset() {
+  const viewport = window.visualViewport;
+  if (!viewport) {
+    document.documentElement.style.setProperty('--keyboard-offset', '0px');
+    return;
+  }
+  const gap = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
+  document.documentElement.style.setProperty('--keyboard-offset', `${Math.round(gap)}px`);
+}
+
+export function bindVisualViewportKeyboard(): () => void {
+  const viewport = window.visualViewport;
+  if (!viewport) return () => {};
+  const onChange = () => updateKeyboardOffset();
+  viewport.addEventListener('resize', onChange);
+  viewport.addEventListener('scroll', onChange);
+  updateKeyboardOffset();
+  return () => {
+    viewport.removeEventListener('resize', onChange);
+    viewport.removeEventListener('scroll', onChange);
+    document.documentElement.style.setProperty('--keyboard-offset', '0px');
+  };
 }
 
 export function applyTelegramTheme() {
@@ -108,18 +163,27 @@ export function applyTelegramTheme() {
   if (!tg) return;
   const params = tg.themeParams;
   const root = document.documentElement;
-  const fallbackBg = '#101611';
-  const bg = params?.bg_color ?? fallbackBg;
-  const secondary = params?.secondary_bg_color ?? '#161d18';
-  const text = params?.text_color ?? '#d8e6d8';
-  const hint = params?.hint_color ?? '#8fa893';
-  const button = params?.button_color ?? '#2d6b3a';
+  const tgBg = params?.bg_color;
+  const tgSecondary = params?.secondary_bg_color;
+  const telegramLooksLight = isLightUiColor(tgBg) || isLightUiColor(tgSecondary);
+  const bg = telegramLooksLight ? GAME_DARK.bg : (tgBg ?? GAME_DARK.bg);
+  const secondary = telegramLooksLight ? GAME_DARK.surface : (tgSecondary ?? GAME_DARK.surface);
+  const text = telegramLooksLight
+    ? GAME_DARK.text
+    : (params?.text_color ?? GAME_DARK.text);
+  const hint = telegramLooksLight
+    ? GAME_DARK.hint
+    : (params?.hint_color ?? GAME_DARK.hint);
+  const button = params?.button_color && !isLightUiColor(params.button_color)
+    ? params.button_color
+    : GAME_DARK.button;
   root.style.setProperty('--tg-bg', bg);
   root.style.setProperty('--tg-surface', secondary);
   root.style.setProperty('--tg-text', text);
   root.style.setProperty('--tg-hint', hint);
   root.style.setProperty('--tg-button', button);
   root.classList.add('telegram-themed');
+  root.dataset.telegramUiTone = telegramLooksLight ? 'locked-dark' : 'native';
   tg.setHeaderColor?.(bg);
   tg.setBackgroundColor?.(bg);
 }
@@ -131,26 +195,32 @@ let chromeListenersBound = false;
 /** Subscribe to Telegram theme and viewport changes; safe in browser (no-op without WebApp). */
 export function bindTelegramChrome(): () => void {
   const tg = telegramChrome();
+  const unbindKeyboard = bindVisualViewportKeyboard();
   if (!tg?.onEvent) {
     applyTelegramTheme();
     applyTelegramViewport();
-    return () => {};
+    return unbindKeyboard;
   }
   if (!chromeListenersBound) {
     themeChangedHandler = () => applyTelegramTheme();
     viewportChangedHandler = () => applyTelegramViewport();
     tg.onEvent('themeChanged', themeChangedHandler);
     tg.onEvent('viewportChanged', viewportChangedHandler);
+    tg.onEvent('safeAreaChanged', viewportChangedHandler);
     chromeListenersBound = true;
   }
   applyTelegramTheme();
   applyTelegramViewport();
   return () => {
     if (themeChangedHandler) tg.offEvent?.('themeChanged', themeChangedHandler);
-    if (viewportChangedHandler) tg.offEvent?.('viewportChanged', viewportChangedHandler);
+    if (viewportChangedHandler) {
+      tg.offEvent?.('viewportChanged', viewportChangedHandler);
+      tg.offEvent?.('safeAreaChanged', viewportChangedHandler);
+    }
     themeChangedHandler = null;
     viewportChangedHandler = null;
     chromeListenersBound = false;
+    unbindKeyboard();
   };
 }
 

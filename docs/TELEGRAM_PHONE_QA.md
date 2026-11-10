@@ -2,8 +2,12 @@
 
 Otestuj na **Android** a **iOS** v oficiálním Telegramu (ne jen prohlížeč).
 
-**Kódová baseline (audit):** `17ae9d2` (`clean-main`), obsah P3 narrátora `b7f1315`, CI lifecycle `ec646fc`.  
+**Kódová baseline (audit):** `cebbe66` (`clean-main`) + lokální necommitnuté sprinty (viz `git status`).  
+**Checklist V1 (obrazovky 1–11):** [`docs/PHYSICAL_TELEGRAM_QA_V1.md`](PHYSICAL_TELEGRAM_QA_V1.md).  
+**Checklist V2 (UX POLISH V1 + 15–20 min scénář):** [`docs/PHYSICAL_TELEGRAM_QA_V2.md`](PHYSICAL_TELEGRAM_QA_V2.md).  
 **Stav tohoto dokumentu:** šablona pro reálný playtest — sloupce níže jsou **prázdné**, dokud tester nevyplní výsledek na zařízení.
+
+**Lokální UX sprint (necommitnutý):** `--app-safe-top` = max(device, content safe area); bottom-nav aktivní stav = pilulka (`::after` jen v `polish/layout.css`); redundantní search nadpis v Play deníku skrytý, pokud akce opakuje lokaci.
 
 ## Před testem
 

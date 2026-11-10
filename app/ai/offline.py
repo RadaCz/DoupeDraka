@@ -2,6 +2,14 @@ from collections.abc import AsyncIterator
 
 from ..narration_language import normalize_narration_language
 from .base import NarrationContext, NarrationRequest
+from .offline_prose import (
+    breath_pause_prose,
+    combat_opening_prose,
+    combat_prose_from_events,
+    empty_search_prose,
+    rest_recovery_prose,
+    shrine_bell_return_prose,
+)
 from .offline_variety import generic_scene_prose, variety_seed
 
 
@@ -43,10 +51,17 @@ def narrate_offline(context: NarrationContext) -> str:
         if effect.get("type") == "not_modeled":
             return f"{spell_name} resolves, but its effect is not modeled yet; no spell slot is spent."
         if effect.get("type") == "heal":
-            return f"{spell_name} closes some of your wounds; the engine's healing result is recorded below."
+            return choose((
+                f"{spell_name} washes over you; warmth seeps into aching flesh.",
+                f"The weave of {spell_name} knits skin and breath back together.",
+                f"{spell_name} blooms in your hands and mends what the fight tore open.",
+            ))
         if effect.get("type") in {"spell_attack", "auto_damage", "save_damage"}:
-            damage = effect.get("damage", 0)
-            return f"{spell_name} takes effect for {damage} damage; the engine's rolls and target's remaining HP are recorded below."
+            return choose((
+                f"{spell_name} leaps from your grasp and slams into your foe.",
+                f"You shape {spell_name}; power crackles and strikes home.",
+                f"{spell_name} erupts — the air shivers as it hits.",
+            ))
         if effect.get("type") == "unavailable":
             return next(
                 (event for event in context.events if "no spell slot was spent" in event.lower()),
@@ -59,7 +74,7 @@ def narrate_offline(context: NarrationContext) -> str:
     if "hands you the shrine bell" in facts:
         return "Nib admits the theft and places the recovered shrine bell in your hands."
     if "return the shrine bell to caldus" in facts:
-        return "Caldus welcomes the shrine bell back and honors the reward recorded in the journal."
+        return shrine_bell_return_prose(context, language="en")
     if "an enemy appears:" in facts:
         enemy = next(
             (event.split("An enemy appears:", 1)[1].split("(", 1)[0].strip()
@@ -94,42 +109,18 @@ def narrate_offline(context: NarrationContext) -> str:
             "You find marks around a stone panel, evidence that it may conceal a passage.",
             "Scratches mar the stonework. Whatever lies behind that panel has not stayed untouched.",
         ))
-    if "no immediate threat" in facts:
-        return choose((
-            "Nothing moves in the cellar. For now, the way ahead is quiet.",
-            "Your search turns up no danger nearby; only the stillness answers.",
-            "You scan the shadows carefully, but find no immediate threat.",
-        ))
+    if "no immediate threat" in facts or "find no immediate threat" in facts:
+        return empty_search_prose(context, language="en")
     if "catch your breath" in facts:
-        return "You take a moment to steady yourself. The cellar remains quiet."
-    if "attack roll" in facts:
-        if "critical miss" in facts:
-            return "Your strike goes badly awry, leaving your opponent unharmed."
-        if "attack roll" in facts and "damage " in facts:
-            if "is defeated" in facts:
-                return choose((
-                    "Your blow finds its mark, and the enemy finally falls.",
-                    "The fight ends with your strike. The threat is defeated.",
-                    "You land the decisive hit; the enemy can fight no longer.",
-                ))
-            return choose((
-                "Your attack connects. The enemy staggers but keeps fighting.",
-                "Steel meets its target, forcing your foe onto the defensive.",
-                "You press the attack and leave your opponent visibly wounded.",
-            ))
-        if "hits you for" in facts:
-            return "Your attack fails to stop the counterblow, and the enemy hits back."
-        return choose((
-            "Your attack misses, and the enemy remains in your way.",
-            "The strike cuts through empty air; your foe is still standing.",
-            "Your opponent slips clear of the blow. The fight continues.",
-        ))
+        return breath_pause_prose(context, language="en")
+    opening = combat_opening_prose(context, language="en")
+    if opening:
+        return opening
+    combat = combat_prose_from_events(context, language="en")
+    if combat:
+        return combat
     if "you rest and recover" in facts:
-        return choose((
-            "You pause to recover, and the ache in your wounds begins to ease.",
-            "A brief rest gives you time to tend your injuries.",
-            "You catch your breath and feel steadier than before.",
-        ))
+        return rest_recovery_prose(context, language="en")
     if "break away and escape" in facts:
         return "You find an opening and escape the fight before the enemy can stop you."
     if "fail to break away" in facts:

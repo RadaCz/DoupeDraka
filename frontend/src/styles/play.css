@@ -4,8 +4,12 @@
   display: none;
 }
 
+.app-shell.play-active {
+  padding-top: 0;
+}
+
 .app-shell.play-active .main-content {
-  padding-top: max(4px, env(safe-area-inset-top, 0px));
+  padding-top: 0;
 }
 
 .game-screen.text-first {
@@ -20,7 +24,7 @@
   top: 0;
   z-index: 6;
   margin: 0 -18px;
-  padding: max(8px, env(safe-area-inset-top, 0px)) 18px 8px;
+  padding: calc(8px + var(--app-safe-top, env(safe-area-inset-top, 0px))) 18px 8px;
   border-bottom: 1px solid color-mix(in srgb, var(--border-subtle, #2a382d) 55%, transparent);
   background: color-mix(in srgb, var(--tg-bg, #0d120e) 88%, transparent);
   backdrop-filter: blur(10px);
@@ -69,7 +73,8 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-start;
-  gap: 12px 16px;
+  gap: 8px 14px;
+  row-gap: 6px;
 }
 
 .play-immersive-stat {
@@ -310,8 +315,9 @@
 }
 
 .action-composer-immersive {
-  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-  padding-bottom: calc(12px + var(--tg-safe-bottom, var(--safe-bottom, 0px)));
+  padding-bottom: calc(
+    12px + var(--app-safe-bottom, var(--tg-safe-bottom, 0px)) + var(--keyboard-offset, 0px)
+  );
 }
 
 .composer-field-immersive {
@@ -330,13 +336,13 @@
 
 .composer-menu-toggle {
   flex-shrink: 0;
-  width: 44px;
-  min-height: 44px;
-  margin: 4px 0;
+  width: 40px;
+  min-height: 40px;
+  margin: 6px 0;
   border: 0;
   border-radius: 12px;
   background: transparent;
-  font-size: 20px;
+  font-size: 17px;
   line-height: 1;
   cursor: pointer;
 }
@@ -347,16 +353,16 @@
 
 .composer-send-immersive {
   flex-shrink: 0;
-  width: 44px;
-  height: 44px;
-  margin: 4px 2px 4px 0;
+  width: 46px;
+  height: 46px;
+  margin: 3px 2px 3px 0;
   padding: 0;
   border: 0;
   border-left: none !important;
   border-radius: 50%;
   background: var(--accent-verb, #5ecf73);
   color: var(--accent-ink, #0d120e);
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
   line-height: 1;
   box-shadow:
@@ -470,4 +476,337 @@
 
 .tabular-nums {
   font-variant-numeric: tabular-nums;
+}
+
+/* —— Combat V2 —— */
+.combat-screen.combat-v2 {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+
+.combat-screen.combat-v2 .combat-arena {
+  margin: 0 -18px;
+  padding: 12px 18px 10px;
+  border-bottom: 1px solid color-mix(in srgb, #8b3030 35%, var(--border-subtle));
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, #3d1515 55%, var(--tg-bg, #0d120e)) 0%,
+    color-mix(in srgb, var(--tg-bg, #0d120e) 92%, #000) 100%
+  );
+}
+
+.combat-arena-eyebrow {
+  margin: 0 0 6px;
+  font: 700 0.65rem var(--font-mono, monospace);
+  letter-spacing: 0.14em;
+  color: color-mix(in srgb, #e8a0a0 70%, var(--gold));
+}
+
+.combat-enemy-card {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.combat-enemy-glyph {
+  font-size: 2rem;
+  line-height: 1;
+  filter: drop-shadow(0 0 8px color-mix(in srgb, #e25555 40%, transparent));
+}
+
+.combat-enemy-copy h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  line-height: 1.2;
+  color: var(--text);
+}
+
+.combat-enemy-stats {
+  display: flex;
+  gap: 12px;
+  margin: 4px 0 6px;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.combat-enemy-hp-track,
+.combat-hero-hp-track {
+  display: block;
+  height: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text) 12%, transparent);
+  overflow: hidden;
+}
+
+.combat-enemy-hp-track {
+  width: 100%;
+  max-width: 160px;
+}
+
+.combat-enemy-hp-track > span,
+.combat-hero-hp-track > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #9a3d3d, #d96a6a);
+}
+
+.combat-enemy-hp-track > span.critical,
+.combat-hero-hp-track > span.critical {
+  background: linear-gradient(90deg, #6a2020, #c04040);
+}
+
+.combat-turn-pill {
+  margin: 8px 0 0;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: 0.03em;
+}
+
+.combat-turn-pill.player {
+  background: color-mix(in srgb, var(--accent-verb) 22%, transparent);
+  color: color-mix(in srgb, var(--accent-verb) 85%, var(--text));
+  border: 1px solid color-mix(in srgb, var(--accent-verb) 35%, transparent);
+}
+
+.combat-turn-pill.enemy {
+  background: color-mix(in srgb, #8b3030 20%, transparent);
+  color: #e8b0b0;
+  border: 1px solid color-mix(in srgb, #8b3030 35%, transparent);
+}
+
+.combat-atmosphere {
+  margin: 8px 0 0;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: var(--text-soft);
+}
+
+.combat-hero-strip {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border-subtle);
+  background: color-mix(in srgb, var(--surface-deep) 90%, #000);
+}
+
+.combat-hero-identity {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  min-width: 0;
+  width: 100%;
+}
+
+.combat-hero-name-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.combat-hero-name {
+  display: block;
+  font-size: 0.92rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.combat-hero-location {
+  display: block;
+  font-size: 0.68rem;
+  line-height: 1.35;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+  letter-spacing: 0.01em;
+}
+
+.combat-hero-portrait {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  background: color-mix(in srgb, var(--accent-verb) 25%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent-verb) 40%, transparent);
+}
+
+.combat-hero-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  width: 100%;
+  min-width: 0;
+}
+
+.combat-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: 0.72rem;
+}
+
+.combat-stat small {
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.62rem;
+}
+
+.combat-hero-hp-track {
+  width: 56px;
+  margin-top: 2px;
+}
+
+.combat-v2-story {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: min(38vh, 320px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.combat-moment {
+  padding: 4px 2px 12px;
+}
+
+.combat-story-prose {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.combat-story-muted {
+  color: var(--text-soft);
+  font-size: 0.92rem;
+}
+
+.combat-mechanics-fold {
+  margin-top: 10px;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.combat-mechanics-fold summary {
+  cursor: pointer;
+  color: var(--text-soft);
+}
+
+.combat-resolving {
+  margin: 0;
+  padding: 12px 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.combat-action-deck {
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.combat-action-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.combat-action-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 56px;
+  padding: 8px 6px;
+  border-radius: 12px;
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-deep);
+  color: var(--text);
+  font-size: 0.72rem;
+  font-weight: 650;
+}
+
+.combat-action-card.combat-action-primary {
+  border-color: color-mix(in srgb, var(--accent-verb) 45%, var(--border-subtle));
+  background: color-mix(in srgb, var(--accent-verb) 14%, var(--surface-deep));
+}
+
+.combat-action-card:disabled {
+  opacity: 0.42;
+}
+
+.combat-action-card:active:not(:disabled) {
+  transform: scale(0.97);
+  transition: transform 0.08s ease;
+}
+
+.combat-action-card.combat-action-pending {
+  pointer-events: none;
+  border-color: color-mix(in srgb, var(--accent-verb) 55%, var(--border-subtle));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-verb) 25%, transparent);
+  opacity: 0.88;
+}
+
+.combat-action-card.combat-action-pending .combat-action-label::after {
+  content: '…';
+  margin-left: 2px;
+}
+
+.combat-action-glyph {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.combat-action-hints {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.combat-action-hints em {
+  font-style: normal;
+  opacity: 0.85;
+}
+
+.combat-spell-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.combat-spell-row select {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-deep);
+  color: var(--text);
+}
+
+.combat-spell-cast {
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--accent-verb) 50%, transparent);
+  background: color-mix(in srgb, var(--accent-verb) 22%, var(--surface));
+  font-weight: 700;
+  color: var(--text);
+}
+
+.combat-spell-cast:disabled {
+  opacity: 0.45;
 }

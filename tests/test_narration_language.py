@@ -80,6 +80,22 @@ def test_offline_rest_no_threat_uses_czech_templates():
     assert any(word in narration.lower() for word in ("dech", "klid", "zastav"))
 
 
+def test_coerce_replaces_english_llm_prose_with_offline_cs():
+    from app.narration_prose_guard import coerce_narration_prose
+
+    context = NarrationContext(
+        action="odpocinout",
+        events=("You take a moment to catch your breath. No new threat appears.",),
+        location="The Whispering Cellar",
+        memories=(),
+        language="cs",
+    )
+    english = "You take a long rest and recover your strength while the cellar stays quiet."
+    coerced = coerce_narration_prose(context, english)
+    assert "You take a long rest" not in coerced
+    assert any(word in coerced.lower() for word in ("dech", "klid", "zastav", "odpočin"))
+
+
 def test_offline_shrine_quest_in_czech():
     context = NarrationContext(
         action="vrátit zvon",

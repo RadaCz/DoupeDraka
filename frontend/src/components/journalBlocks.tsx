@@ -1,6 +1,8 @@
 import { useI18n } from '../i18n';
+import { localizeMechanicsLine } from '../i18n/gameDisplay';
+import { presentNarrationProse } from '../i18n/narrationPresent';
 
-const MECHANIC_LINE = /^(Attack roll:|.*\bdamage\b|Saving throw:|Exploration roll:|Intelligence check:|Wisdom check:|Strength check:|Dexterity check:|Constitution check:|Charisma check:|.* vs DC \d+)/i;
+const MECHANIC_LINE = /^(Attack roll:|Attack with\b|.*\bdamage\b|Saving throw:|Exploration roll:|Intelligence check:|Wisdom check:|Strength check:|Dexterity check:|Constitution check:|Charisma check:|.* vs (DC|AC) \d+)/i;
 const QUEST_LINE = /\b(quest|shrine bell|return the bell|caldus|nib|vault of echoes|bell warden|echo shard|úkol|zvon|chrámový zvon|nibovo|krypta|strážce zvonu)\b/i;
 const STATE_LINE = /\b(your hp:|hp:|gold|inventory|level up!|xp|recover \d+ hp|ready your|you ready your|spell slot)\b/i;
 
@@ -20,28 +22,8 @@ export function splitNarrationAndFacts(result: string): { narration: string; fac
   };
 }
 
-const MECHANIC_CS: Array<[RegExp, string]> = [
-  [/Exploration roll: (\d+) on a six-sided die\.(.*)/i, 'Průzkum: $1 na šestistranné kostce.$2'],
-  [/Intelligence check: (\d+) vs DC (\d+) [-—] (success|failure)\.?/i, 'Test inteligence: $1 proti ST $2 — $3.'],
-  [/Wisdom check: (\d+) vs DC (\d+) [-—] (success|failure)\.?/i, 'Test moudrosti: $1 proti ST $2 — $3.'],
-  [/Attack roll: (.*)/i, 'Útočný hod: $1'],
-  [/Charisma check: (\d+) vs DC (\d+) [-—] (success|failure)\.?/i, 'Test charismy: $1 proti ST $2 — $3.'],
-  [/Strength check: (\d+) vs DC (\d+) [-—] (success|failure)\.?/i, 'Test síly: $1 proti ST $2 — $3.'],
-  [/Dexterity check: (\d+) vs DC (\d+) [-—] (success|failure)\.?/i, 'Test obratnosti: $1 proti ST $2 — $3.'],
-  [/Constitution check: (\d+) vs DC (\d+) [-—] (success|failure)\.?/i, 'Test výdrže: $1 proti ST $2 — $3.'],
-  [/ — success\.?$/i, ' — úspěch.'],
-  [/ — failure\.?$/i, ' — neúspěch.'],
-];
-
 function localizeMechanic(line: string, locale: 'en' | 'cs') {
-  if (locale !== 'cs') return line;
-  let output = line;
-  for (const [pattern, replacement] of MECHANIC_CS) {
-    output = output.replace(pattern, replacement);
-  }
-  return output
-    .replace(/\bsuccess\b/gi, 'úspěch')
-    .replace(/\bfailure\b/gi, 'neúspěch');
+  return localizeMechanicsLine(line, locale);
 }
 
 function mechanicTone(line: string): 'success' | 'failure' | 'neutral' {
@@ -93,24 +75,75 @@ function blockClass(kind: JournalBlockKind, tone?: 'success' | 'failure' | 'neut
   return 'journal-prose';
 }
 
-export function JournalResultBody({ result }: { result: string }) {
-  const { locale, t } = useI18n();
-  const { narration, facts } = splitNarrationAndFacts(result);
-  const factBlocks = facts ? splitJournalResult(facts, locale) : [];
+function FactBlocks({
+  blocks,
+  collapseMechanics,
+  t,
+}: {
+  blocks: ReturnType<typeof splitJournalResult>;
+  collapseMechanics: boolean;
+  t: (value: string) => string;
+}) {
+  const proseBlocks = blocks.filter(block => block.kind === 'prose');
+  const secondary = blocks.filter(block => block.kind !== 'prose');
+  const mechanicBlocks = secondary.filter(block => block.kind === 'mechanic');
+  const visibleSecondary = collapseMechanics
+    ? secondary.filter(block => block.kind !== 'mechanic')
+    : secondary;
   return (
     <>
-      {narration && (
-        <p className="journal-narration-prose" aria-label={t('Narration')}>{narration}</p>
-      )}
-      {factBlocks.map((block, index) => (
+      {proseBlocks.map((block, index) => (
+        <p key={`prose-${index}`} className={blockClass('prose')}>
+          {block.text}
+        </p>
+      ))}
+      {visibleSecondary.map((block, index) => (
         <p
-          key={index}
+          key={`sec-${index}`}
           className={blockClass(block.kind, block.tone)}
           role={block.kind === 'prose' ? undefined : 'status'}
         >
           {block.text}
         </p>
       ))}
+      {collapseMechanics && mechanicBlocks.length > 0 && (
+        <details className="journal-mechanics-fold">
+          <summary>{t('Rolls and outcomes')}</summary>
+          {mechanicBlocks.map((block, index) => (
+            <p
+              key={`mech-${index}`}
+              className={blockClass(block.kind, block.tone)}
+              role="status"
+            >
+              {block.text}
+            </p>
+          ))}
+        </details>
+      )}
+    </>
+  );
+}
+
+export function JournalResultBody({
+  result,
+  collapseMechanics = false,
+}: {
+  result: string;
+  collapseMechanics?: boolean;
+}) {
+  const { locale, t } = useI18n();
+  const { narration, facts } = splitNarrationAndFacts(result);
+  const factBlocks = facts ? splitJournalResult(facts, locale) : [];
+  return (
+    <>
+      {narration && (
+        <p className="journal-narration-prose" aria-label={t('Narration')}>
+          {presentNarrationProse(narration, locale)}
+        </p>
+      )}
+      {factBlocks.length > 0 && (
+        <FactBlocks blocks={factBlocks} collapseMechanics={collapseMechanics} t={t} />
+      )}
     </>
   );
 }

@@ -54,13 +54,15 @@ Engine authority, commit → narrate → billing, Lite/Normal/Strict, žádné n
 ### Offline narrator
 
 - `app/ai/offline_variety.py` — `scene_kind` fallback šablony (talk/combat/explore/travel/rest/story_moment/general), EN + CS.
+- `app/ai/offline_prose.py` — breath cooldown, empty search, combat prose, `narration_contains_meta_terms` (žádná čtvrtá stěna).
 - `variety_seed` míchá fakta, paměť a `scene_kind` (anti-repeat vůči předchozím beatům).
 - `familiarity_lead` z dossier `location.first_visit_here` — návrat do lokace nepůsobí jako první návštěva.
 - Specifické větve (quest bell, combat roll, …) zůstávají fact-driven; generika jde přes `scene_kind`.
+- System prompt: zákaz odkazů na journal/log/engine ve hráčské próze (paid narrator).
 
 ### Testy P3
 
-- Backend: `tests/test_offline_scene_kind.py`
+- Backend: `tests/test_offline_scene_kind.py`, `tests/test_immersion_narration.py`
 - Frontend: `journalBlocks.test.ts`, `journalFormat.test.ts`
 
 ## Otevřené (P4+)

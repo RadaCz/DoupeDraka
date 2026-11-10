@@ -25,6 +25,27 @@ def prose_looks_english(text: str) -> bool:
     return (hits / len(words)) >= 0.14
 
 
+def coerce_narration_prose(context, prose: str) -> str:
+    """When Czech was requested, replace English-looking LLM prose with offline CS fallback."""
+    from .ai.base import NarrationContext
+
+    if not isinstance(context, NarrationContext):
+        return prose
+    expected = normalize_narration_language(context.language)
+    trimmed = prose.strip()
+    if not trimmed or expected != "cs":
+        return prose
+    if not prose_looks_english(trimmed):
+        return prose
+    from .narrator import Narrator
+
+    fallback = Narrator.narrate_offline(context).strip()
+    if fallback:
+        maybe_record_prose_language_mismatch(context.language, trimmed, None)
+        return fallback
+    return prose
+
+
 def maybe_record_prose_language_mismatch(
     language_code: str | None,
     prose: str,

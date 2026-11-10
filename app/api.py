@@ -722,6 +722,9 @@ async def narrate_committed(
         return fallback, "fallback", provider, model
     from .narration_prose_guard import maybe_record_prose_language_mismatch
 
+    from .narration_prose_guard import coerce_narration_prose
+
+    narration = coerce_narration_prose(context, narration)
     maybe_record_prose_language_mismatch(context.language, narration, character_id)
     async with Session() as session:
         row = await session.get(EventRecord, event_id)
@@ -881,6 +884,9 @@ async def action_stream(
             if billing_settled:
                 return
             billing_settled = True
+            from .narration_prose_guard import coerce_narration_prose
+
+            narration = coerce_narration_prose(context, narration)
             response.narration = narration
             response.narration_status = status
             async with Session() as session:

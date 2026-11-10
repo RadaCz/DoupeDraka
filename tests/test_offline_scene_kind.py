@@ -24,7 +24,10 @@ def test_offline_scene_kind_talk_differs_from_combat_en():
     combat_text = narrate_offline(combat).lower()
     assert talk_text != combat_text
     assert "conversation" in talk_text or "talk" in talk_text or "words" in talk_text
-    assert "combat" in combat_text or "fight" in combat_text
+    assert any(
+        word in combat_text
+        for word in ("steel", "blow", "fight", "combat", "sharp", "inhale", "quiet")
+    )
 
 
 def test_offline_scene_kind_explore_cs():
@@ -36,7 +39,11 @@ def test_offline_scene_kind_explore_cs():
             language="cs",
         )
     )
-    assert "prozkoum" in text.lower() or "hled" in text.lower() or "okol" in text.lower()
+    lower = text.lower()
+    assert any(
+        stem in lower
+        for stem in ("prozkoum", "hled", "okol", "uši", "zrak", "stín", "zvuk", "pozor")
+    )
 
 
 def test_offline_return_visit_mentions_familiarity():

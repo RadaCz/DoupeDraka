@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   __resetTelegramChromeForTests,
   applyTelegramTheme,
+  applyTelegramViewport,
   bindTelegramChrome,
   syncTelegramMainButton,
   teardownTelegramMainButton,
@@ -65,6 +66,44 @@ describe('telegramWebApp', () => {
     expect(btn.hide).toHaveBeenCalled();
   });
 
+  it('applyTelegramViewport uses max of content and device insets and clears when absent', () => {
+    window.Telegram = {
+      WebApp: {
+        expand: vi.fn(),
+        contentSafeAreaInset: { top: 44, bottom: 20 },
+        safeAreaInset: { top: 12, bottom: 8 },
+      },
+    };
+    applyTelegramViewport();
+    expect(document.documentElement.style.getPropertyValue('--tg-content-safe-top')).toBe('44px');
+    expect(document.documentElement.style.getPropertyValue('--app-safe-top')).toBe('44px');
+    expect(document.documentElement.style.getPropertyValue('--app-safe-bottom')).toBe('20px');
+
+    window.Telegram!.WebApp!.contentSafeAreaInset = { top: 0, bottom: 0 };
+    window.Telegram!.WebApp!.safeAreaInset = { top: 0, bottom: 0 };
+    applyTelegramViewport();
+    expect(document.documentElement.style.getPropertyValue('--app-safe-top')).toBe('');
+    expect(document.documentElement.style.getPropertyValue('--app-safe-bottom')).toBe('');
+  });
+
+  it('applyTelegramViewport clears Telegram overrides outside WebApp', () => {
+    window.Telegram = {
+      WebApp: {
+        expand: vi.fn(),
+        contentSafeAreaInset: { top: 30, bottom: 10 },
+        safeAreaInset: { top: 20, bottom: 5 },
+      },
+    };
+    applyTelegramViewport();
+    expect(document.documentElement.style.getPropertyValue('--app-safe-top')).toBe('30px');
+
+    // @ts-expect-error test hook
+    delete window.Telegram;
+    applyTelegramViewport();
+    expect(document.documentElement.style.getPropertyValue('--app-safe-top')).toBe('');
+    expect(document.documentElement.style.getPropertyValue('--tg-content-safe-top')).toBe('');
+  });
+
   it('applies theme and viewport when Telegram fires change events', () => {
     const listeners = new Map<string, () => void>();
     window.Telegram = {
@@ -88,10 +127,46 @@ describe('telegramWebApp', () => {
     expect(document.documentElement.style.getPropertyValue('--tg-bg')).toBe('#010101');
 
     window.Telegram!.WebApp!.safeAreaInset = { top: 20, bottom: 16 };
+    window.Telegram!.WebApp!.contentSafeAreaInset = { top: 44, bottom: 20 };
     listeners.get('viewportChanged')?.();
-    expect(document.documentElement.style.getPropertyValue('--tg-safe-top')).toBe('20px');
+    expect(document.documentElement.style.getPropertyValue('--tg-content-safe-top')).toBe('44px');
+    expect(document.documentElement.style.getPropertyValue('--app-safe-top')).toBe('44px');
+
+    listeners.get('safeAreaChanged')?.();
+    expect(document.documentElement.style.getPropertyValue('--app-safe-top')).toBe('44px');
 
     unbind();
     expect(listeners.size).toBe(0);
+  });
+
+  it('uses single safe-top on app-shell without duplicating on header rule', () => {
+    window.Telegram = {
+      WebApp: {
+        expand: vi.fn(),
+        contentSafeAreaInset: { top: 44, bottom: 20 },
+        safeAreaInset: { top: 12, bottom: 8 },
+      },
+    };
+    applyTelegramViewport();
+    expect(document.documentElement.style.getPropertyValue('--app-safe-top')).toBe('44px');
+  });
+
+  it('locks dark surfaces when Telegram sends light theme params', () => {
+    window.Telegram = {
+      WebApp: {
+        themeParams: {
+          bg_color: '#ffffff',
+          secondary_bg_color: '#f5f5f5',
+          text_color: '#000000',
+        },
+        setHeaderColor: vi.fn(),
+        setBackgroundColor: vi.fn(),
+        expand: vi.fn(),
+      },
+    };
+    applyTelegramTheme();
+    expect(document.documentElement.style.getPropertyValue('--tg-bg')).toBe('#0d120e');
+    expect(document.documentElement.style.getPropertyValue('--tg-surface')).toBe('#182019');
+    expect(document.documentElement.dataset.telegramUiTone).toBe('locked-dark');
   });
 });
