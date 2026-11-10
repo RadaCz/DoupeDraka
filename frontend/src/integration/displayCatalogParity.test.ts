@@ -9,12 +9,14 @@ describe('display catalog parity', () => {
       path.join(import.meta.dirname, '..', '..', '..', 'localization', 'chapter_one_display.json'),
       'utf8',
     );
+    type LocationEntry = string | { nom: string };
     const catalog = JSON.parse(raw) as {
-      locations: Record<string, string>;
+      locations: Record<string, LocationEntry>;
       creatures: Record<string, string>;
     };
-    for (const [en, cs] of Object.entries(catalog.locations)) {
-      expect(LOCATION_CS[en], `location ${en}`).toBe(cs);
+    for (const [en, entry] of Object.entries(catalog.locations)) {
+      const expectedNom = typeof entry === 'string' ? entry : entry.nom;
+      expect(LOCATION_CS[en], `location ${en} nom parity`).toBe(expectedNom);
     }
     for (const [en, cs] of Object.entries(catalog.creatures)) {
       if (en === en.toLowerCase()) continue;

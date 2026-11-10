@@ -178,14 +178,7 @@ class GameEngine:
             character.xp = min(character.xp, XP_THRESHOLD - 1)
             return [], {}
         character.xp += amount
-        events: list[str] = []
-        facts: dict = {}
-        while character.level < MAX_MVP_LEVEL and character.xp >= XP_THRESHOLD:
-            level_events, level_facts = self._level_up(character)
-            events.extend(level_events)
-            if level_facts:
-                facts = level_facts
-        return events, facts
+        return self._level_up(character)
 
     @staticmethod
     def _spellcasting_modifier(character: CharacterState) -> int:
