@@ -1,0 +1,55 @@
+{
+  "locations": {
+    "The Whispering Cellar": "Šeptající sklep",
+    "The Sunken Corridor": "Potopená chodba",
+    "The Shrine of the Forgotten": "Svatyně zapomenutých",
+    "The Goblin Market": "Gobliní trh",
+    "The Vault of Echoes": "Komnata ozvěn",
+    "The Bell Warden's Pit": "Jáma strážce zvonu",
+    "The Forgotten Crypt": "Zapomenutá krypta",
+    "The Underground River": "Podzemní řeka"
+  },
+  "creatures": {
+    "Goblin scout": "Gobliní zvěd",
+    "Goblin Scout": "Gobliní zvěd",
+    "Bell Warden": "Strážce zvonu",
+    "goblin scout": "Gobliní zvěd"
+  },
+  "items": {
+    "shortsword": "krátký meč",
+    "shortsword +1": "krátký meč +1",
+    "longsword": "dlouhý meč",
+    "longbow": "dlouhý luk",
+    "dagger": "dýka",
+    "mace": "palcát",
+    "rapier": "rapír",
+    "healing potion": "léčivý lektvar",
+    "traveler's clothes": "cestovní oblečení",
+    "leather armor": "kožená zbroj",
+    "shrine bell": "chrámový zvon",
+    "shield": "štít"
+  },
+  "spells": {
+    "Burning Hands": "Hořící dlaně",
+    "Cure Wounds": "Léčení ran",
+    "Eldritch Blast": "Podivný výboj",
+    "Fire Bolt": "Ohnivý paprsek",
+    "Healing Word": "Léčivé slovo",
+    "Magic Missile": "Kouzelná střela",
+    "Misty Step": "Mlhový krok",
+    "Invisibility": "Neviditelnost",
+    "Scorching Ray": "Spalující paprsek",
+    "Sacred Flame": "Posvátný plamen",
+    "Vicious Mockery": "Kruté posměšky",
+    "Mage Hand": "Mágova ruka",
+    "Light": "Světlo",
+    "Shield": "Štít",
+    "Detect Magic": "Odhalení magie",
+    "Mage Armor": "Mágovo brnění",
+    "Sleep": "Spánek"
+  },
+  "npcs": {
+    "Caldus": "Caldus",
+    "Nib": "Nib"
+  }
+}

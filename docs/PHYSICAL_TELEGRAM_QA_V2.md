@@ -22,7 +22,7 @@
 | Jazyk UI testu | `EN` / `CS` / oba (dva běhy) |
 | Narrator tier | `lite` / `normal` |
 | Postava (jméno, třída, ID pokud viditelné) | |
-| **Git HEAD** (`git rev-parse --short HEAD`) | očekáváno: `cebbe66` + lokální diff |
+| **Git HEAD** (`git rev-parse --short HEAD`) | ověř v repu (např. `6736cd7`+ po push; po V3: lokální diff) |
 | **App build** (URL Mini App, staging/prod) | |
 | WebView konzole (pokud dostupná) | chyby ano/ne + popis |
 | Délka session (cíl ≥ 15 min) | |
@@ -345,17 +345,19 @@ Git HEAD:
 
 - Dokument vytvořen; **žádný PASS** na fyzickém QA.
 - V1 beze změny obsahu; V2 rozšiřuje o UX POLISH V1 a scénář 15–20 min.
-- HEAD: `cebbe66`, branch `clean-main`, working tree s necommitnutými změnami zachován.
+- Branch: `clean-main`; fyzické výsledky v §N beze změny (historické FAIL/PASS).
 
-### Automatická verifikace po Localization & Narrator V2 (2026-11-10)
+### Automatická verifikace — Localization Integrity V3 (kód, ne telefon)
 
-| Kontrola | Výsledek |
-|----------|----------|
-| `python -m pytest -q` | **399 passed**, 2 skipped |
-| `npm run test -- --run` (Vitest) | **124 passed** (včetně `csCatalog`, `narrationPresent`, `gameDisplay`) |
-| `npm run build` | OK |
-| `npm run test:e2e` | **8/8 passed** |
+| Kontrola | Stav |
+|----------|------|
+| CS SSE | **Kód:** žádné `delta` pro `language=cs`; EN stream beze změny (`test_stream_cs_language.py`) |
+| Backend CS názvy | `localization/chapter_one_display.json` + `display_localization.py` |
+| CS katalog UI | `i18n.tsx` přepsáno + `csCatalog.test.ts` (ASCII audit) |
+| Jednotná próza | `formatJournalStreamResult` → `presentNarrationProse` |
+| Safe area eventy | `contentSafeAreaChanged` + unit testy |
+| pytest / Vitest / build / E2E | Spusť lokálně; čísla v reportu agenta |
 
-**Fyzický Telegram:** položky §N zůstávají **NOT TESTED** — automatické testy nepotvrzují safe-area ani CS/EN na zařízení.
+**Fyzický Telegram:** všechny položky §N zůstávají **NOT TESTED** po V3 — nutný nový běh na telefonu.
 
-**Poznámka (stream):** při `narration_language=cs` může klient krátce ukázat anglické SSE delty před `finalize`; backend `coerce_narration_prose` chrání uložený / finální text — ověřit na telefonu.
+**Poznámka (stream):** V3 buffruje CS provider text na serveru; klient nedostává nevalidované anglické delty (complete = journal = receipt).

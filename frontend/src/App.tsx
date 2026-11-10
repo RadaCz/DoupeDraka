@@ -438,7 +438,7 @@ function AppContent() {
     setLevelUpNotice(null);
     setShowDefeatOverlay(false);
     const updatePendingNarration = (narration: string, facts: string[]) => {
-      const result = formatJournalStreamResult(narration, facts);
+      const result = formatJournalStreamResult(narration, facts, locale);
       setEvents(previous => previous.map(event => event.id === pendingEventId
         ? { ...event, result }
         : event));

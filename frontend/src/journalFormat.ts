@@ -1,8 +1,14 @@
+import type { Locale } from './i18n';
+import { presentNarrationProse } from './i18n/narrationPresent';
 import type { JournalEvent } from './types';
 
 /** Journal result blob: story first; hide mechanics until narrator prose exists. */
-export function formatJournalStreamResult(narration: string, facts: string[]): string {
-  const prose = narration.trim();
+export function formatJournalStreamResult(
+  narration: string,
+  facts: string[],
+  locale: Locale = 'en',
+): string {
+  const prose = presentNarrationProse(narration.trim(), locale);
   if (!prose) {
     return '';
   }

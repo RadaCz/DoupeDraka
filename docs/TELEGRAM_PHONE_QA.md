@@ -2,7 +2,7 @@
 
 Otestuj na **Android** a **iOS** v oficiálním Telegramu (ne jen prohlížeč).
 
-**Kódová baseline (audit):** `cebbe66` (`clean-main`) + lokální necommitnuté sprinty (viz `git status`).  
+**Kódová baseline (audit):** `git rev-parse --short HEAD` na `clean-main` (po V3: ověř SHA v repu); fyzické položky v [`PHYSICAL_TELEGRAM_QA_V2.md`](PHYSICAL_TELEGRAM_QA_V2.md) §N zůstávají **NOT TESTED** do nového telefonního běhu.  
 **Checklist V1 (obrazovky 1–11):** [`docs/PHYSICAL_TELEGRAM_QA_V1.md`](PHYSICAL_TELEGRAM_QA_V1.md).  
 **Checklist V2 (UX POLISH V1 + 15–20 min scénář):** [`docs/PHYSICAL_TELEGRAM_QA_V2.md`](PHYSICAL_TELEGRAM_QA_V2.md).  
 **Stav tohoto dokumentu:** šablona pro reálný playtest — sloupce níže jsou **prázdné**, dokud tester nevyplní výsledek na zařízení.

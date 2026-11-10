@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 from typing import Iterable
 
+from ..display_localization import display_creature, display_location, embed_catalog_names
 from .base import NarrationContext
 from .offline_variety import choose, familiarity_lead, variety_seed
 
@@ -235,9 +236,11 @@ def combat_opening_prose(context: NarrationContext, *, language: str) -> str | N
             return None
     seed = variety_seed(context)
     lead = familiarity_lead(context, language=language)
-    foe = _enemy_from_appears(context.events) or _enemy_label(context, context.events)
-    place = (context.location or "").strip()
-    foe_low = foe.lower()
+    raw_foe = _enemy_from_appears(context.events) or _enemy_label(context, context.events)
+    raw_place = (context.location or _place_name(context)).strip()
+    foe = display_creature(raw_foe, language) if language == "cs" else raw_foe
+    place = display_location(raw_place, language) if language == "cs" else raw_place
+    foe_low = raw_foe.lower()
 
     if language == "cs":
         if "goblin" in foe_low:
@@ -319,7 +322,8 @@ def combat_prose_from_events(context: NarrationContext, *, language: str) -> str
         return None
     seed = variety_seed(context)
     lead = familiarity_lead(context, language=language)
-    foe = _enemy_label(context, context.events)
+    raw_foe = _enemy_label(context, context.events)
+    foe = display_creature(raw_foe, language) if language == "cs" else raw_foe
     action = context.action.strip().rstrip(".!?")
 
     if "critical miss" in facts:

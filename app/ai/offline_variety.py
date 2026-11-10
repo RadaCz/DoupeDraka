@@ -18,11 +18,14 @@ def choose(options: tuple[str, ...], seed: int) -> str:
 
 
 def familiarity_lead(context: NarrationContext, *, language: str) -> str:
+    from ..display_localization import display_location
+
     dossier = context.scene_dossier or {}
     location = dossier.get("location") or {}
     if location.get("first_visit_here", True):
         return ""
-    place = context.location
+    raw_place = context.location
+    place = display_location(raw_place, language) if language == "cs" else raw_place
     seed = variety_seed(context)
     if language == "cs":
         return choose(

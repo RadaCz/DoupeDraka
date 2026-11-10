@@ -1,5 +1,6 @@
 """Czech prose for the offline narrator (engine facts stay English)."""
 
+from ..display_localization import display_creature, display_spell
 from .base import NarrationContext
 from .offline_prose import (
     breath_pause_prose,
@@ -21,7 +22,8 @@ def narrate_offline_cs(context: NarrationContext) -> str:
         return options[seed % len(options)]
 
     if context.spell_facts:
-        spell_name = context.spell_facts.get("spell_name", "Kouzlo")
+        raw_spell = context.spell_facts.get("spell_name", "Kouzlo")
+        spell_name = display_spell(str(raw_spell), "cs")
         effect = context.spell_facts.get("effect", {})
         if effect.get("type") == "not_modeled":
             return f"{spell_name} se rozzáří, ale jeho účinek zatím není modelovaný; žádný slot se neodečte."
@@ -38,10 +40,11 @@ def narrate_offline_cs(context: NarrationContext) -> str:
                 f"{spell_name} se rozlomí — nepřítel září bolestí.",
             ))
         if effect.get("type") == "unavailable":
-            return next(
-                (event for event in context.events if "no spell slot was spent" in event.lower()),
+            return choose((
                 f"{spell_name} v této situaci nevyjde; slot zůstává nedotčený.",
-            )
+                f"Zatím nemůžeš seslat {spell_name}; žádný slot se neodečte.",
+                f"{spell_name} se tu nerozsvítí — podmínky nejsou splněné.",
+            ))
     if "spell effects are not implemented" in facts:
         return "Slova moci zatím nepůsobí; žádná kouzla se neodečítají."
     if "agree to recover the stolen shrine bell" in facts:
@@ -51,11 +54,12 @@ def narrate_offline_cs(context: NarrationContext) -> str:
     if "return the shrine bell to caldus" in facts:
         return shrine_bell_return_prose(context, language="cs")
     if "an enemy appears:" in facts:
-        enemy = next(
+        raw_enemy = next(
             (event.split("An enemy appears:", 1)[1].split("(", 1)[0].strip()
              for event in context.events if "An enemy appears:" in event),
             "nepřítel",
         )
+        enemy = display_creature(raw_enemy, "cs")
         return choose((
             f"Ticho praská — {enemy} vstoupí do tvé cesty. Ještě neútočil. Co uděláš?",
             f"Náhle se vynoří {enemy}. Stvoření čeká na tvůj první tah.",

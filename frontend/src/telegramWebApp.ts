@@ -207,6 +207,7 @@ export function bindTelegramChrome(): () => void {
     tg.onEvent('themeChanged', themeChangedHandler);
     tg.onEvent('viewportChanged', viewportChangedHandler);
     tg.onEvent('safeAreaChanged', viewportChangedHandler);
+    tg.onEvent('contentSafeAreaChanged', viewportChangedHandler);
     chromeListenersBound = true;
   }
   applyTelegramTheme();
@@ -216,6 +217,7 @@ export function bindTelegramChrome(): () => void {
     if (viewportChangedHandler) {
       tg.offEvent?.('viewportChanged', viewportChangedHandler);
       tg.offEvent?.('safeAreaChanged', viewportChangedHandler);
+      tg.offEvent?.('contentSafeAreaChanged', viewportChangedHandler);
     }
     themeChangedHandler = null;
     viewportChangedHandler = null;

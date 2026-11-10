@@ -163,8 +163,9 @@ def test_combat_opening_prose_uses_location_and_enemy_not_attack_template():
     assert "Goblin scout" in en
     assert "Underground River" in en
     assert "attack roll" not in en.lower()
-    assert "Goblin scout" in cs
-    assert "Underground River" in cs
+    assert "Gobliní zvěd" in cs
+    assert "Goblin scout" not in cs
+    assert "The Underground River" not in cs
     assert not narration_contains_meta_terms(en)
     assert not narration_contains_meta_terms(cs)
 

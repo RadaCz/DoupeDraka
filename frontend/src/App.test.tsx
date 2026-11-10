@@ -461,8 +461,8 @@ describe('Telegram Mini App', () => {
     expect(screen.getByText('Spell slots power casting for spellcaster classes. They are separate from narrator credits, which pay only for story turns.')).toBeInTheDocument();
     expect(screen.queryByText(/spell effects are not implemented yet/i)).not.toBeInTheDocument();
     fireEvent.change(screen.getByRole('combobox', { name: 'Language' }), { target: { value: 'cs' } });
-    expect(screen.getByText(/Kouzlene sloty pohani sesilani u sesilacich povolani/i)).toBeInTheDocument();
-    expect(screen.getByText(/Je oddelena od kouzelnych slotu/i)).toBeInTheDocument();
+    expect(screen.getByText(/Kouzelné sloty pohánějí sesílání u sesílacích povolání/i)).toBeInTheDocument();
+    expect(screen.getByText(/Je oddělena od kouzelných slotů/i)).toBeInTheDocument();
     fireEvent.change(screen.getByRole('combobox', { name: 'Jazyk' }), { target: { value: 'en' } });
     expect(screen.queryByText(/SRD 5\.1 · Creative Commons/i)).not.toBeInTheDocument();
     fireEvent.click(screen.getByText('Show attribution and license'));

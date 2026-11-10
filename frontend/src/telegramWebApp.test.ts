@@ -135,6 +135,11 @@ describe('telegramWebApp', () => {
     listeners.get('safeAreaChanged')?.();
     expect(document.documentElement.style.getPropertyValue('--app-safe-top')).toBe('44px');
 
+    window.Telegram!.WebApp!.contentSafeAreaInset = { top: 52, bottom: 24 };
+    listeners.get('contentSafeAreaChanged')?.();
+    expect(document.documentElement.style.getPropertyValue('--app-safe-top')).toBe('52px');
+    expect(document.documentElement.style.getPropertyValue('--tg-content-safe-top')).toBe('52px');
+
     unbind();
     expect(listeners.size).toBe(0);
   });

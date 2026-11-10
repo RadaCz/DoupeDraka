@@ -866,6 +866,7 @@ async def action_stream(
 
         assert context is not None and event_id is not None
         chunks: list[str] = []
+        stream_live_deltas = normalize_narration_language(context.language) != "cs"
         mock = narration_mock_requested(request)
         from .ai.registry import has_external_paid_narration_provider
 
@@ -930,7 +931,8 @@ async def action_stream(
                         yield sse_message("replace", {"narration": chunk.narration})
                     elif chunk:
                         chunks.append(chunk)
-                        yield sse_message("delta", {"text": chunk})
+                        if stream_live_deltas:
+                            yield sse_message("delta", {"text": chunk})
                 narration = "".join(chunks).strip()
             if not narration:
                 status = "fallback"
