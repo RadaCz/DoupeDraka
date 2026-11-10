@@ -4,10 +4,12 @@
 
 - **Repository:** `D:\DoupeDraka`
 - **Development branch:** `clean-main` (merge to `main` after green CI only)
-- **Last updated:** 2026-11-10 (Localization Integrity V3 / V3.1 — `f8ce5b1` na `clean-main`)
-- **CI lifecycle baseline:** `ec646fc` · Actions `42679663584` (4/4 SUCCESS).
-- **Narrator V2 P3:** commit `b7f1315` na `clean-main` (push proveden).
-- **HEAD (2026-11-10):** `485e483` na origin; lokálně Sprint 7–8 UX diff (necommitnuto). CI run `42806386764` platí pro `0112747`. **Telefonní playtest** stále **NOT TESTED** (viz `docs/TELEGRAM_MOBILE_QA_V1.md`, `docs/CLOSED_BETA_ONBOARDING_V1.md`).
+- **Last updated:** 2026-11-10 (Sprint 10.1 truth sync — staging preflight docs)
+- **HEAD (origin `clean-main`):** `885ea4e` — Sprint 7–8 (CS journal/overview, mobile play UX) + Sprint 9 staging checklist doc.
+- **CI (2026-11-10):** GitHub Actions run `42822949152` na `885ea4e` — backend, backend-postgres, frontend, e2e **4/4 SUCCESS**.
+- **Staging:** HTTPS deploy **NOT DEPLOYED**; checklist `docs/STAGING_DEVICE_VALIDATION_V1.md`.
+- **Fyzické QA:** Android / iOS Telegram **NOT TESTED** (`docs/TELEGRAM_MOBILE_QA_V1.md`).
+- **Normal paid narration (debit/refund):** **NOT TESTED** bez provozního providera na stagingu.
 - **External verification:** real Telegram visual QA and Docker/Postgres in production-like deploy remain **UNVERIFIED** by the maintainer.
 
 ## 1. Directives
@@ -43,13 +45,13 @@ Do not conflate resources:
 
 ## 4. Current priorities
 
-1. **Immersion sprint (local):** fourth-wall free offline/paid prompts; combat prose; mobile safe-area/nav/composer tweaks — phone QA still pending.
-2. Closed beta playtest (10–15 players, Czech UI, Lite default) after audit commit + green CI.
-2. Green CI on `clean-main` (including Postgres **v005**), then merge to `main` when ready.
-3. Real Telegram visual QA on a phone; Docker compose smoke with `alembic upgrade head`.
-3. Campaign depth after chapter one: general NPC dialogue, longer routes, balance (30+ minutes).
-4. OpenRouter provider and re-enable Pro tier only with a real adapter.
-5. Payments, multiplayer, and Redis remain deferred.
+1. **Staging deploy** (Postgres, Alembic head, HTTPS `MINI_APP_URL`, CORS) — viz `docs/STAGING_DEVICE_VALIDATION_V1.md`.
+2. **Fyzické QA** Android + iOS proti staging URL (`docs/TELEGRAM_MOBILE_QA_V1.md`).
+3. Closed beta playtest (10–15 players, Czech UI, Lite default) po staging + fyzickém PASS.
+4. Merge `clean-main` → `main` when ready (CI green on `885ea4e`).
+5. Campaign depth after chapter one: general NPC dialogue, longer routes, balance (30+ minutes).
+6. OpenRouter provider and re-enable Pro tier only with a real adapter.
+7. Payments, multiplayer, and Redis remain deferred.
 
 See [ROADMAP.md](./ROADMAP.md) for statuses, [docs/MASTER_PLAN_STATUS.md](./docs/MASTER_PLAN_STATUS.md) for master-plan etapy, and [CHANGELOG.md](./CHANGELOG.md) for session history.
 

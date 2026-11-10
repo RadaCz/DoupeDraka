@@ -1,9 +1,12 @@
 # Staging & real device validation — Sprint 9
 
-**Baseline kódu (remote):** `485e483` · **lokální working tree:** Sprint 7+8 necommitnuté.  
-**Fyzické QA:** Android **NOT TESTED** · iOS **NOT TESTED** (vyplní tester na staging HTTPS).
+**Baseline kódu (remote):** `885ea4e` na `origin/clean-main`.  
+**CI:** GitHub Actions run `42822949152` — 4/4 SUCCESS na tomto commitu.  
+**HTTPS staging:** **NOT DEPLOYED** (tento dokument = preflight před prvním deployem).  
+**Fyzické QA:** Android **NOT TESTED** · iOS **NOT TESTED** (až po staging URL v Telegramu).  
+**Normal (debit/refund):** **NOT TESTED** bez nakonfigurovaného placeného providera.
 
-Související: [`DEPLOYMENT.md`](DEPLOYMENT.md), [`TELEGRAM_MOBILE_QA_V1.md`](TELEGRAM_MOBILE_QA_V1.md), [`CLOSED_BETA_ONBOARDING_V1.md`](CLOSED_BETA_ONBOARDING_V1.md).
+Související: [`DEPLOYMENT.md`](DEPLOYMENT.md), [`STAGING_RUNBOOK_V1.md`](STAGING_RUNBOOK_V1.md), [`TELEGRAM_MOBILE_QA_V1.md`](TELEGRAM_MOBILE_QA_V1.md), [`CLOSED_BETA_ONBOARDING_V1.md`](CLOSED_BETA_ONBOARDING_V1.md).
 
 ---
 
@@ -16,7 +19,7 @@ Související: [`DEPLOYMENT.md`](DEPLOYMENT.md), [`TELEGRAM_MOBILE_QA_V1.md`](TE
 | `DATABASE_URL` | částečně | `postgresql+asyncpg://…` na staging Postgres |
 | `DB_BOOTSTRAP` | ne | **`none`** — jen Alembic, ne `create_all` |
 | `BOT_TOKEN` | **ano** | Telegram BotFather |
-| `BOT_API_KEY` | **ano** | musí odpovídat konfiguraci API |
+| `BOT_API_TOKEN` | **ano** | sdílený token bot ↔ API (viz `.env.example`) |
 | `MINI_APP_URL` | ne | **HTTPS** URL frontendu (bez trailing slash) |
 | `CORS_ORIGINS` | ne | přesně origin Mini App (např. `https://play.staging.example`) |
 
@@ -45,6 +48,7 @@ Související: [`DEPLOYMENT.md`](DEPLOYMENT.md), [`TELEGRAM_MOBILE_QA_V1.md`](TE
 
 ### Kontrolní kroky před otevřením testerům
 
+0. `python scripts/staging_preflight.py .env.docker` → OK (viz [`STAGING_RUNBOOK_V1.md`](STAGING_RUNBOOK_V1.md)).
 1. `docker compose` / hosting: Postgres běží, volume persistuje data.
 2. `alembic upgrade head` (head **v005**).
 3. `curl -s https://<api>/health` → OK; `curl -s https://<api>/ready` → OK po DB.
@@ -111,4 +115,4 @@ Viz [`CLOSED_BETA_ONBOARDING_V1.md`](CLOSED_BETA_ONBOARDING_V1.md) + [`design/CH
 | 7 | Mapa / travel (pokud odemčeno) |
 | 8 | Dotazník + bug šablona z onboarding doc |
 
-**GO beta:** Lite PASS na Android **a** iOS + CI zelené na HEAD po merge Sprint 7+8.
+**GO beta:** Lite PASS na Android **a** iOS + stabilní HTTPS staging + CI zelené na HEAD (`885ea4e` splněno v CI; staging a fyzické QA dosud ne).

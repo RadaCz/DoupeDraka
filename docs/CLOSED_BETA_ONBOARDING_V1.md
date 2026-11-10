@@ -1,6 +1,6 @@
 # Closed beta onboarding — 10–15 hráčů (V1)
 
-**Baseline kódu:** `0112747` na `clean-main` (ověř `git rev-parse --short HEAD` před startem).  
+**Baseline kódu:** `885ea4e` na `clean-main` (ověř `git rev-parse HEAD` před startem; CI run `42822949152` 4/4 SUCCESS).  
 **Technický checklist (telefon):** [`TELEGRAM_MOBILE_QA_V1.md`](TELEGRAM_MOBILE_QA_V1.md) · [`PHYSICAL_TELEGRAM_QA_V2.md`](PHYSICAL_TELEGRAM_QA_V2.md)  
 **Herní protokol:** [`design/CHAPTER_ONE_PLAYTEST_V1.md`](../design/CHAPTER_ONE_PLAYTEST_V1.md)
 
@@ -15,7 +15,7 @@ Fyzické testy: **Android NOT TESTED** · **iOS NOT TESTED** (vyplní tester po 
 | F1 | Nasazená Mini App na **HTTPS** (`MINI_APP_URL` v botovi odpovídá produkci/staging). |
 | F2 | API `/health` a `/ready` vrací OK; `alembic upgrade head` na produkční DB. |
 | F3 | `LLM_PROVIDER=fallback` nebo jen Lite — **žádný** povinný placený Normal pro betu. |
-| F4 | `BOT_TOKEN` a `BOT_API_KEY` pouze na serveru; **nikdy** v chatu s hráči. |
+| F4 | `BOT_TOKEN` a `BOT_API_TOKEN` pouze na serveru; **nikdy** v chatu s hráči. |
 | F5 | Každému hráči **vlastní** Telegram účet / nová postava (žádné sdílení JWT). |
 | F6 | Volitelný Normal test: facilitator top-up přes `POST /economy/topup` + `X-Admin-Token`, ne veřejný endpoint. |
 | F7 | Výchozí tier u nových uživatelů: ověř **Lite** v Nastavení před prvním tahem. |

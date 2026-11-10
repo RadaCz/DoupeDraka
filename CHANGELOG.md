@@ -1,14 +1,21 @@
 # Changelog
 
-## Unreleased (2026-11-10) — Staging & device validation prep (Sprint 9 docs)
+## Unreleased (2026-11-10) — Staging deployment prep (Sprint 10.2)
 
-- `docs/STAGING_DEVICE_VALIDATION_V1.md` — env, Lite/Normal, fyzické QA, facilitator.
-- E2E: `mobile-text-first` aligned with flex layout (no `70dvh` assertion).
+- `docs/STAGING_RUNBOOK_V1.md` — Lite-first VPS runbook (HTTPS, migrations, backup/rollback).
+- `scripts/staging_preflight.py` + `tests/test_staging_preflight.py` — env policy checks bez secretů.
+- `DEPLOYMENT.md` — odkaz na runbook, postgres port varování.
 
-## Unreleased (2026-11-10) — Mobile UX & IA (Sprint 7–8, local)
+## Unreleased (2026-11-10) — Repository truth sync (Sprint 10.1 docs)
+
+- Doc sync: HEAD `885ea4e`, CI run `42822949152` (4/4 SUCCESS); staging **NOT DEPLOYED**; fyzické QA **NOT TESTED**; Normal debit/refund **NOT TESTED**.
+
+## Released on `clean-main` — Sprints 7–9 (`885ea4e`)
 
 - Sprint 7: CS journal/overview presentation (`presentEngineEventLine`, stream facts localization).
 - Sprint 8: Overview last beat, play flex layout, tier/fallback UI, campaign style in Settings, quick actions cap.
+- Sprint 9: `docs/STAGING_DEVICE_VALIDATION_V1.md`; E2E `mobile-text-first` aligned with flex layout.
+- CI: GitHub Actions run `42822949152` (4/4 SUCCESS).
 
 ## Unreleased (2026-11-10) — Beta readiness (Sprint 6 docs, no code)
 

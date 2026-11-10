@@ -1,6 +1,6 @@
 # Roadmap
 
-Updated 2026-11-10 (`f8ce5b1`+). Chapter one is a gated six-location slice on `clean-main`. ActionIntent routes player commands; Pro narration tier is disabled until OpenRouter exists.
+Updated 2026-11-10 (`885ea4e`). Chapter one is a gated six-location slice on `clean-main`. ActionIntent routes player commands; Pro narration tier is disabled until OpenRouter exists.
 
 ## Priority 0c — Product UX Redesign V1 (audit done; partial implementation)
 - [x] [`docs/PRODUCT_UX_AUDIT_V1.md`](docs/PRODUCT_UX_AUDIT_V1.md) — P0–P3 inventář problémů
@@ -65,7 +65,9 @@ Platby a produkční top-up zůstávají v **Deferred product decisions** (Prior
 - [x] Czech UI diacritics + presentation-layer names (V3); CS SSE buffered/coerced (`f8ce5b1`).
 - [ ] Physical Telegram QA on device — **NOT TESTED** (`docs/TELEGRAM_MOBILE_QA_V1.md`, `docs/PHYSICAL_TELEGRAM_QA_V2.md`).
 - [ ] Closed beta 10–15 hráčů — protokol připraven (`docs/CLOSED_BETA_ONBOARDING_V1.md`); **čeká na fyzické QA**.
-- [ ] Sprint 7–8 mobile UX (lokální) — Overview/journal prezentace, play layout, Settings IA; **necommitnuto**.
+- [x] Sprint 7–8 mobile UX — Overview/journal prezentace, play layout, Settings IA — **`885ea4e`**; CI run `42822949152` (4/4 SUCCESS).
+- [x] Sprint 9 staging checklist — `docs/STAGING_DEVICE_VALIDATION_V1.md` (v `885ea4e`).
+- [ ] HTTPS staging deploy — **NOT DEPLOYED** (preflight Sprint 10.1).
 
 ## Deferred product decisions
 - Payments (Telegram Stars/YooKassa), referrals, Redis, campaigns/payments tables, multiplayer, and higher-level spell progression remain out of scope until separately prioritized.

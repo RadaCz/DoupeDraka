@@ -1,10 +1,11 @@
 # Master plan — stav (sync s DOUPEDRAKA_MASTER_PLAN.md v1.0)
 
-Poslední revize: **2026-11-10 (Sprint 7–8 mobile UX, lokálně necommitnuto)**. Etapy 7–9 záměrně otevřené až po uzavření sólo smyčky.  
-**Kódový HEAD (audit):** `485e483` na `origin/clean-main`; lokálně Sprint 7–8 UX diff.  
-**CI (ověřeno uživatelem):** GitHub Actions run `42806386764` na `0112747` — backend, backend-postgres, frontend, e2e **SUCCESS**.  
-**Playwright cache:** pip + npm + `~/.cache/ms-playwright` v CI od `0112747`; cache hit na druhém běhu — **NOT VERIFIED** bez logu.  
-**Fyzický Telegram:** **NOT TESTED** (`docs/TELEGRAM_MOBILE_QA_V1.md`).
+Poslední revize: **2026-11-10 (Sprint 10.1 — repository truth sync)**. Etapy 7–9 záměrně otevřené až po uzavření sólo smyčky.  
+**Kódový HEAD:** `885ea4e` na `origin/clean-main` (Sprint 7–8 + staging checklist doc v jednom commitu).  
+**CI:** GitHub Actions run `42822949152` na `885ea4e` — backend, backend-postgres, frontend, e2e **4/4 SUCCESS**.  
+**Staging HTTPS:** **NOT DEPLOYED** — viz `docs/STAGING_DEVICE_VALIDATION_V1.md`.  
+**Fyzický Telegram:** Android / iOS **NOT TESTED** (`docs/TELEGRAM_MOBILE_QA_V1.md`).  
+**Normal debit/refund na stagingu:** **NOT TESTED**.
 
 | Etapa | Název | Stav | Poznámka |
 |------:|-------|------|----------|

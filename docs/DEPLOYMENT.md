@@ -82,6 +82,39 @@ Set `PYTEST_DATABASE_URL` to the same URL when running concurrency tests against
 Merge `clean-main` into `main` only after CI is green on `clean-main`, including the
 PostgreSQL migration job and Playwright E2E.
 
+**Current `clean-main` baseline (2026-11-10):** commit `885ea4e` · GitHub Actions run
+`42822949152` — backend, backend-postgres, frontend, e2e all SUCCESS. Staging HTTPS
+deploy is separate and remains **NOT DEPLOYED** until ops follows
+[`STAGING_DEVICE_VALIDATION_V1.md`](STAGING_DEVICE_VALIDATION_V1.md).
+
+## Staging deployment (Lite-first)
+
+Operational runbook: [`STAGING_RUNBOOK_V1.md`](STAGING_RUNBOOK_V1.md) (architecture, env,
+migrations, backup/rollback, smoke tests).
+
+**Existing stack (no duplicate compose file):** root `docker-compose.yml` builds API
+(`Dockerfile`), production frontend (`frontend/Dockerfile` + nginx `/api` proxy), Postgres 16
+with named volume `pgdata`, and Telegram bot (`python -m app.bot`).
+
+Before first staging start:
+
+```powershell
+Copy-Item .env.docker.example .env.docker
+# Edit on the server only — never commit.
+python scripts/staging_preflight.py .env.docker
+```
+
+Lite-first staging requires `DB_BOOTSTRAP=none`, `LLM_PROVIDER=fallback`,
+`postgresql+asyncpg` `DATABASE_URL`, HTTPS `MINI_APP_URL`, and matching `CORS_ORIGINS`.
+Run `alembic upgrade head` in a one-off API container before `up -d` (see runbook).
+
+On a **public** VPS, do not publish PostgreSQL port `5432` to the internet; the committed
+compose file maps it for local dev only — use a server-side override without `ports` on
+`postgres`.
+
+HTTPS terminates at an external reverse proxy (Caddy/nginx) in front of the frontend
+container; do not expose `vite` dev server on staging.
+
 ## Continuous integration
 
 GitHub Actions on `main`, `master`, and `clean-main` runs:
