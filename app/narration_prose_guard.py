@@ -15,14 +15,33 @@ _ENGLISH_STOP_WORDS = frozenset({
     "had", "from", "into", "their", "they", "what", "when", "take", "long", "rest",
 })
 
+_ENGLISH_PROSE_PATTERNS = re.compile(
+    r"(?:"
+    r"\byou\s+(?:probe|commit|take|search|rest|attack|explore)\b"
+    r"|\bsteel\s+flashes\b"
+    r"|\bquieter\s+beat\b"
+    r"|\ba\s+moments?\b"
+    r"|\bsurroundings:\s*search\b"
+    r"|\bcommit\s+to\s+search\b"
+    r")",
+    re.IGNORECASE,
+)
+
 
 def prose_looks_english(text: str) -> bool:
-    """Simple heuristic for small models ignoring Czech instructions."""
-    words = re.findall(r"[a-z']+", text.lower())
+    """Heuristic for LLM or stale English prose when Czech was requested."""
+    trimmed = text.strip()
+    if not trimmed:
+        return False
+    if _ENGLISH_PROSE_PATTERNS.search(trimmed):
+        return True
+    if re.match(r"^You\s+", trimmed):
+        return True
+    words = re.findall(r"[a-z']+", trimmed.lower())
     if len(words) < 5:
         return False
     hits = sum(1 for word in words if word in _ENGLISH_STOP_WORDS)
-    return (hits / len(words)) >= 0.14
+    return (hits / len(words)) >= 0.12
 
 
 def coerce_narration_prose(context, prose: str) -> str:
@@ -39,7 +58,9 @@ def coerce_narration_prose(context, prose: str) -> str:
         return prose
     from .narrator import Narrator
 
-    fallback = Narrator.narrate_offline(context).strip()
+    from .display_localization import embed_catalog_names
+
+    fallback = embed_catalog_names(Narrator.narrate_offline(context).strip(), "cs")
     if fallback:
         maybe_record_prose_language_mismatch(context.language, trimmed, None)
         return fallback

@@ -65,6 +65,11 @@
   -webkit-box-orient: vertical;
 }
 
+.settings-screen .page-title,
+.settings-screen .balance-card {
+  padding-top: calc(10px + var(--app-safe-top, env(safe-area-inset-top, 0px)));
+}
+
 .settings-screen .settings-section-icon {
   margin-right: 6px;
   font-size: 1.05em;

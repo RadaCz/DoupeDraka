@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import type { Character, LocationReference, QuestCatalog } from '../types';
 import { useI18n } from '../i18n';
-import { displayLocation, displayLocationShort } from '../i18n/gameDisplay';
+import { displayArrivalBeat, displayLocation, displayLocationShort } from '../i18n/gameDisplay';
 import {
   CHAPTER_ONE_LAYOUT,
   mapEdges,
@@ -221,7 +221,7 @@ export function MapScreen({
                   <span className="map-known-copy">
                     <strong>{displayLocation(name, locale)}</strong>
                     <small>{t(mapStatusLabelKey(state))}{questMark ? ` · ${t('Quest destination')}` : ''}</small>
-                    {beat && <span className="map-known-beat">{t(beat)}</span>}
+                    {beat && <span className="map-known-beat">{displayArrivalBeat(beat, locale)}</span>}
                   </span>
                 </button>
               </li>
@@ -248,7 +248,7 @@ export function MapScreen({
             )}
             <p>
               {selectedRef.arrival_beat
-                ? t(selectedRef.arrival_beat)
+                ? displayArrivalBeat(selectedRef.arrival_beat, locale)
                 : t('No description yet for this place.')}
             </p>
             {selectedTravel?.canTravel ? (

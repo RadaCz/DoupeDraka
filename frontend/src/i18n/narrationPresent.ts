@@ -5,6 +5,9 @@ import { CREATURE_CS, displayCreature, displayInventoryLabel, LOCATION_CS } from
 const ENGINE_LINES_IN_PROSE =
   /^(You take a moment to catch your breath|You pause to steady your breathing|No new threat appears)/i;
 
+const EN_PROSE_LINE =
+  /^(You\s|A quieter beat|Steel flashes|You probe|You commit to search|You explore the area)/i;
+
 function escapeRegex(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -24,6 +27,7 @@ export function localizeEmbeddedCatalogNames(text: string, locale: Locale): stri
     shortsword: 'krátký meč',
     longsword: 'dlouhý meč',
     "traveler's clothes": 'cestovní oblečení',
+    'echo shard': 'střep ozvěny',
     goblin: 'goblin',
   })) {
     out = out.replace(new RegExp(`\\b${escapeRegex(en)}\\b`, 'gi'), cs);
@@ -43,9 +47,13 @@ export function presentNarrationProse(text: string, locale: Locale): string {
     const trimmed = line.trim();
     if (!trimmed) return true;
     if (ENGINE_LINES_IN_PROSE.test(trimmed)) return false;
+    if (EN_PROSE_LINE.test(trimmed)) return false;
     return true;
   });
   const joined = filtered.join('\n').trim();
+  if (!joined && lines.some(line => EN_PROSE_LINE.test(line.trim()))) {
+    return '';
+  }
   return localizeEmbeddedCatalogNames(joined, locale);
 }
 

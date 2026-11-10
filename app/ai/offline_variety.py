@@ -28,11 +28,15 @@ def familiarity_lead(context: NarrationContext, *, language: str) -> str:
     place = display_location(raw_place, language) if language == "cs" else raw_place
     seed = variety_seed(context)
     if language == "cs":
+        from ..display_localization import display_location
+
+        place_gen = display_location(raw_place, "cs", "gen")
+        place_loc = display_location(raw_place, "cs", "loc")
         return choose(
             (
-                f"Na tomto místě v {place} už víš, kam šlápneš. ",
-                f"Známé stěny {place} tě vítají jinak než poprvé. ",
-                f"Vraceš se do {place} a prostor ti odpovídá tíhou vzpomínek. ",
+                f"Na tomto místě v {place_loc} už víš, kam šlápneš. ",
+                f"Známé stěny {place_gen} tě vítají jinak než poprvé. ",
+                f"Vraceš se do {place_gen} a prostor ti odpovídá tíhou vzpomínek. ",
             ),
             seed,
         )
@@ -73,53 +77,58 @@ def generic_scene_prose(context: NarrationContext, *, language: str) -> str:
     kind = context.scene_kind or "general"
     raw_place = _place_name(context)
     place = display_location(raw_place, language) if language == "cs" else raw_place
+    place_loc = display_location(raw_place, "cs", "loc") if language == "cs" else raw_place
+    place_gen = display_location(raw_place, "cs", "gen") if language == "cs" else raw_place
+    place_nom = place
     echo_place = _action_echoes_place(context)
 
     if language == "cs":
         explore_cs = (
             (
-                f"{lead}Přejdeš místem v {place}; kameny, stíny a vzduch vyprávějí vlastní příběh.",
-                f"{lead}V {place} pozoruješ detaily — vlhkost, šelest a stopy minulých kroků.",
-                f"{lead}Okolí {place} zkoumáš očima i sluchem; nic nespěchá do očí.",
+                f"{lead}Přejdeš místem v {place_loc}; kameny, stíny a vzduch vyprávějí vlastní příběh.",
+                f"{lead}V {place_loc} pozoruješ detaily — vlhkost, šelest a stopy minulých kroků.",
+                f"{lead}Okolí {place_gen} zkoumáš očima i sluchem; nic nespěchá do očí.",
+                f"{lead}Každý krok v {place_loc} odhalí jen další vrstvu prachu a stínů.",
             )
             if echo_place
             else (
-                f"{lead}Přejdeš blíž ke stěnám v {place} a hledáš, co by prozradily stopy na zemi.",
-                f"{lead}Pozornost klouže po chladném kameni a vlhkém vzduchu {place}.",
-                f"{lead}Uši a zrak nasávají zvuky a stíny v {place}.",
+                f"{lead}Přejdeš blíž ke stěnám v {place_loc} a hledáš, co by prozradily stopy na zemi.",
+                f"{lead}Pozornost klouže po chladném kameni a vlhkém vzduchu {place_gen}.",
+                f"{lead}Uši a zrak nasávají zvuky a stíny v {place_loc}.",
+                f"{lead}Okraj světla střídavě odhaluje a skrývá rohy {place_gen}.",
             )
         )
         by_kind: dict[str, tuple[str, ...]] = {
             "talk": (
-                f"{lead}Slova se rozplete mezi vámi v {place}; tón hlasů nese váhu okamžiku.",
-                f"{lead}Rozhovor v {place} je křehký — každé přerušení zní hlasitěji v tichu.",
-                f"{lead}Hlas se nese kamsi dál; {place} ti vrací jen ozvěnu a pohled druhých.",
+                f"{lead}Slova se rozplete mezi vámi v {place_loc}; tón hlasů nese váhu okamžiku.",
+                f"{lead}Rozhovor v {place_loc} je křehký — každé přerušení zní hlasitěji v tichu.",
+                f"{lead}Hlas se nese kamsi dál; {place_nom} ti vrací jen ozvěnu a pohled druhých.",
             ),
             "combat": (
-                f"{lead}Ocel zazvoní v {place} a ruch boje utlučí vše ostatní.",
+                f"{lead}Ocel zazvoní v {place_loc} a ruch boje utlučí vše ostatní.",
                 f"{lead}Úder nebo krok přehluší ticho — dech soupeře je vidět v záblesku světla.",
-                f"{lead}Boj v {place} je krátký a ostrý; tělo pamatuje každý nádech.",
+                f"{lead}Boj v {place_loc} je krátký a ostrý; tělo pamatuje každý nádech.",
             ),
             "explore": explore_cs,
             "travel": (
-                f"{lead}Kroky odnesou dál od {place}; cesta voní prachem a chladným vzduchem.",
+                f"{lead}Kroky odnesou dál od {place_gen}; cesta voní prachem a chladným vzduchem.",
                 f"{lead}Batoh šustí a ulice podzemí mizí za zády.",
-                f"{lead}Překročíš práh — {place} zůstává v paměti, dokud se nevrátíš.",
+                f"{lead}Překročíš práh — {place_nom} zůstává v paměti, dokud se nevrátíš.",
             ),
             "rest": (
-                f"{lead}Sedneš si; chlad kamene a vzdálené kapání ti dovolí vydechnout v {place}.",
-                f"{lead}Ramenům dovolíš klesnout — únava jako olovo, zatímco {place} dřímá.",
-                f"{lead}Oči se na chvíli zavřou; vzduch v {place} je těžký, ale klidný.",
+                f"{lead}Sedneš si; chlad kamene a vzdálené kapání ti dovolí vydechnout v {place_loc}.",
+                f"{lead}Ramenům dovolíš klesnout — únava jako olovo, zatímco {place_nom} dřímá.",
+                f"{lead}Oči se na chvíli zavřou; vzduch v {place_loc} je těžký, ale klidný.",
             ),
             "story_moment": (
-                f"{lead}Okamžik v {place} se zastaví — i kapky vody znějí hlasitěji.",
-                f"{lead}Něco ve zdejším tichu se posune; {place} to ponese v sobě.",
-                f"{lead}Srdce tlukou do vzduchu v {place}; rozhodnutí visí mezi údery.",
+                f"{lead}Okamžik v {place_loc} se zastaví — i kapky vody znějí hlasitěji.",
+                f"{lead}Něco ve zdejším tichu se posune; {place_nom} to ponese v sobě.",
+                f"{lead}Srdce tlukou do vzduchu v {place_loc}; rozhodnutí visí mezi údery.",
             ),
             "general": (
-                f"{lead}Uděláš, co je třeba, a {place} to přijme bez zbytečných slov.",
-                f"{lead}Ruce i pohled patří okamžiku v {place} — bez zbytečného hluku.",
-                f"{lead}Čin dozní v {place}; kameny a vzduch ho nesou dál.",
+                f"{lead}Uděláš, co je třeba, a {place_nom} to přijme bez zbytečných slov.",
+                f"{lead}Ruce i pohled patří okamžiku v {place_loc} — bez zbytečného hluku.",
+                f"{lead}Čin dozní v {place_loc}; kameny a vzduch ho nesou dál.",
             ),
         }
         return choose(by_kind.get(kind, by_kind["general"]), seed)

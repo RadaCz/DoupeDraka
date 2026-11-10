@@ -6,6 +6,13 @@
 **Branch:** `clean-main`  
 **V3 (`f8ce5b1`):** CS SSE — žádné nevalidované `delta`; `coerce_narration_prose` před persistence i před client `replace`/`complete` (V3.1). Katalog: `localization/chapter_one_display.json`.
 
+### Sprint 13 — CS immersion V1 (lokálně nad `b8c2efb`)
+
+- Katalog lokací s pády (`nom`…`ins`) + `arrival_beats_cs` v `localization/chapter_one_display.json`; backend `display_location(name, lang, case)`, `display_arrival_beat`, `embed_catalog_names` po offline CS.
+- `coerce_narration_prose` — širší detekce anglické/hybridní prózy → offline CS fallback (bez změny engine faktů).
+- Frontend: `journalActionPresent.ts`, mapové beaty, `presentNarrationProse` / `gameDisplay` rozšíření; sync `narration_language` s UI locale při načtení postavy.
+- Report: [`SPRINT_13_CZECH_NARRATION_QA.md`](SPRINT_13_CZECH_NARRATION_QA.md).
+
 ## Co bylo špatně / matoucí (P1)
 
 | Oblast | Problém |

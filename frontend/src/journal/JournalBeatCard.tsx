@@ -10,6 +10,7 @@ import {
   journalBeatTimeLabel,
   shouldShowJournalActionLine,
 } from './chronicle';
+import { presentJournalAction } from '../i18n/journalActionPresent';
 
 export function JournalBeatCard({
   event,
@@ -44,7 +45,7 @@ export function JournalBeatCard({
       </div>
       {showAction && (
         <p className="journal-action">
-          <span aria-hidden="true">›</span> {event.action}
+          <span aria-hidden="true">›</span> {presentJournalAction(event.action, locale)}
         </p>
       )}
       {levelUp && <strong className="level-up-banner">{t('LEVEL UP')}</strong>}

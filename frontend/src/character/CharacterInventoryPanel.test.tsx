@@ -45,7 +45,7 @@ describe('CharacterInventoryPanel', () => {
     const onAction = vi.fn();
     wrap(<CharacterInventoryPanel character={base} onInventoryAction={onAction} />);
     fireEvent.click(screen.getByRole('button', { name: /Longsword/i }));
-    fireEvent.click(screen.getByRole('button', { name: /^(Equip|Re-ready weapon)$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^Equip$/i }));
     expect(onAction).toHaveBeenCalledWith('equip Longsword');
   });
 
@@ -60,7 +60,7 @@ describe('CharacterInventoryPanel', () => {
     const onAction = vi.fn();
     const { rerender } = wrap(<CharacterInventoryPanel character={base} busy={false} onInventoryAction={onAction} />);
     fireEvent.click(screen.getByRole('button', { name: /Longsword/i }));
-    fireEvent.click(screen.getByRole('button', { name: /^(Equip|Re-ready weapon)$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^Equip$/i }));
     expect(onAction).toHaveBeenCalledTimes(1);
     rerender(
       <LocaleProvider>

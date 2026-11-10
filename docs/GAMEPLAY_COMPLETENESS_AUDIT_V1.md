@@ -27,6 +27,21 @@ See [`CHAPTER_ONE_ACCEPTANCE_QA_SPRINT_11_3.md`](CHAPTER_ONE_ACCEPTANCE_QA_SPRIN
 
 See [`SPRINT_12_INTERNAL_PLAYTEST_ACCEPTANCE.md`](SPRINT_12_INTERNAL_PLAYTEST_ACCEPTANCE.md) — git/diff audit, regression matrix, ngrok PowerShell playbook, facilitator script. **No deploy; no services started.**
 
+### Sprint 13 — Czech narration & immersion V1 (2026-11-10, local)
+
+Presentation-only sprint: CS catalog cases, narration guard/offline embed, journal action labels, map arrival beats, locale↔`narration_language` sync. **No gameplay balance changes.** Mobile Telegram QA **NOT TESTED** post-sprint on device.
+
+See [`SPRINT_13_CZECH_NARRATION_QA.md`](SPRINT_13_CZECH_NARRATION_QA.md).
+
+| Gap (QA screenshots) | Status | Notes |
+|----------------------|--------|--------|
+| EN/hybrid journal prose in CS UI | **IMPROVED** | Backend guard + FE `presentNarrationProse` |
+| Raw `search The …` action labels | **FIXED** | `journalActionPresent.ts` |
+| EN map arrival beats | **FIXED** | `arrival_beats_cs` + `MapScreen` |
+| Wrong location case in CS prose | **IMPROVED** | Locative/accusative in catalog + offline templates |
+| `narration_language` drift vs UI | **FIXED** | Auto-sync on character load |
+| Play-surface provider meta (Lite) | **UNCHANGED OK** | Hidden on play; economy copy remains in Settings |
+
 ### Sprint 11.4 — Boss readiness & progression UX (2026-11-10, local)
 
 See [`CHAPTER_ONE_PROGRESSION_SPRINT_11_4.md`](CHAPTER_ONE_PROGRESSION_SPRINT_11_4.md) for XP tables, RNG scenarios, and design variants A/B/C.

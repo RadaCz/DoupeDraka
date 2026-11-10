@@ -269,7 +269,7 @@ export function CampaignStylePanel({
           ))}
         </div>
       </fieldset>
-    </section>
+      </section>
   );
 }
 

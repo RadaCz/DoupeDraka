@@ -605,6 +605,14 @@ function AppContent() {
   }, [character]);
 
   useEffect(() => {
+    if (!authenticated || !character) return;
+    const stored = (character.narration_language || 'en').toLowerCase().split('-')[0];
+    if (stored !== locale) {
+      void syncNarrationLanguage(locale);
+    }
+  }, [authenticated, character?.id, character?.narration_language, locale, syncNarrationLanguage]);
+
+  useEffect(() => {
     const tgLang = window.Telegram?.WebApp?.initDataUnsafe?.user?.language_code;
     if (tgLang === 'cs' && localStorage.getItem('app_locale') !== 'en') {
       setLocale('cs');

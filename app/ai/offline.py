@@ -28,7 +28,7 @@ def narrate_offline(context: NarrationContext) -> str:
     if context.defeat_facts or any(event.startswith("Defeated in combat.") for event in context.events):
         raw_location = (context.defeat_facts or {}).get("respawn_location", "The Whispering Cellar")
         if language == "cs":
-            location = display_location(str(raw_location), "cs")
+            location = display_location(str(raw_location), "cs", "loc")
             return (
                 f"Tma tě pohltí. Probudíš se v {location} s jedním životem — boj skončil dřív, než přišel konec."
             )
@@ -38,9 +38,10 @@ def narrate_offline(context: NarrationContext) -> str:
             "the fight ended before you could fall for good."
         )
     if language == "cs":
+        from ..display_localization import embed_catalog_names
         from .offline_cs import narrate_offline_cs
 
-        return narrate_offline_cs(context)
+        return embed_catalog_names(narrate_offline_cs(context), "cs")
     facts = " ".join(context.events).lower()
     action = context.action.strip().rstrip(".!?")
     seed = variety_seed(context)

@@ -1,16 +1,18 @@
 import type { Locale } from '../i18n';
+import chapterCatalog from '../../../localization/chapter_one_display.json';
 
-/** Canonical engine location id → Czech display label (UI only). */
-export const LOCATION_CS: Record<string, string> = {
-  'The Whispering Cellar': 'Šeptající sklep',
-  'The Sunken Corridor': 'Potopená chodba',
-  'The Shrine of the Forgotten': 'Svatyně zapomenutých',
-  'The Goblin Market': 'Gobliní trh',
-  'The Vault of Echoes': 'Komnata ozvěn',
-  "The Bell Warden's Pit": 'Jáma strážce zvonu',
-  'The Forgotten Crypt': 'Zapomenutá krypta',
-  'The Underground River': 'Podzemní řeka',
-};
+type LocationEntry = string | { nom: string; gen?: string; loc?: string; acc?: string; ins?: string; dat?: string };
+
+function locationNom(key: string): string {
+  const entry = (chapterCatalog.locations as Record<string, LocationEntry>)[key];
+  if (!entry) return key;
+  return typeof entry === 'string' ? entry : entry.nom;
+}
+
+/** Canonical engine location id → Czech display label (UI only). Synced with localization/chapter_one_display.json */
+export const LOCATION_CS: Record<string, string> = Object.fromEntries(
+  Object.keys(chapterCatalog.locations).map(key => [key, locationNom(key)]),
+);
 
 export const CREATURE_CS: Record<string, string> = {
   'Goblin scout': 'Gobliní zvěd',
@@ -37,7 +39,9 @@ const ITEM_LABEL_CS: Record<string, string> = {
   "traveler's clothes": 'cestovní oblečení',
   'leather armor': 'kožená zbroj',
   'shrine bell': 'chrámový zvon',
+  'echo shard': 'střep ozvěny',
   shield: 'štít',
+  ...(chapterCatalog.items as Record<string, string>),
 };
 
 const WEAPON_INSTRUMENTAL_CS: Record<string, string> = {
@@ -63,6 +67,12 @@ export function displayLocationShort(canonical: string, locale: Locale): string 
   const full = displayLocation(canonical, locale);
   if (locale !== 'cs') return full.replace(/^The /, '').replace(/'/g, '');
   return full;
+}
+
+export function displayArrivalBeat(beat: string, locale: Locale): string {
+  if (locale !== 'cs' || !beat.trim()) return beat;
+  const mapped = (chapterCatalog as { arrival_beats_cs?: Record<string, string> }).arrival_beats_cs?.[beat.trim()];
+  return mapped ?? beat;
 }
 
 export function displayCreature(name: string, locale: Locale): string {
@@ -128,6 +138,10 @@ const DISCOVERY_BODY_CS: Record<string, string> = {
     'Něco těžkého šplouchá o kameny po proudu.',
   "Nib's stall smells of tarnished brass — gossip says a shrine bell changed hands here.":
     'Nibův stánek páchl po matné mosazi — povídá se, že tu změnil majitele chrámový zvon.',
+  'Behind a cracked sarcophagus you find an echo shard and 15 gold from a forgotten burial.':
+    'Za prasklým sarkofágem najdeš střep ozvěny a 15 zlatých z dávno zapomenutého pohřbu.',
+  'You gain 10 XP for uncovering the relic.':
+    'Získáváš 10 XP za nalezení relikvie.',
 };
 
 const BELL_WARDEN_LEVEL_BLOCK =
@@ -193,6 +207,14 @@ const MECHANIC_PATTERNS_CS: Array<[RegExp, string | ((...args: string[]) => stri
   [
     /^You take a moment to catch your breath\. No new threat appears\.?$/i,
     'Na chvíli zastavíš a oddychneš. Žádná nová hrozba se neobjeví.',
+  ],
+  [
+    /^(.+) hits you for (\d+)\. Your HP: (\d+)\/(\d+)\.?$/i,
+    (name, dmg, hp, max) => `${displayCreature(name, 'cs')} tě zasáhne za ${dmg}. Tvoje HP: ${hp}/${max}.`,
+  ],
+  [
+    /^You take a long rest and recover (\d+) HP\.?$/i,
+    'Dopřeješ si dlouhý odpočinek a obnovíš $1 HP.',
   ],
   [
     /^The creature has not attacked yet\. Choose your next action\.?$/i,

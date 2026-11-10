@@ -55,10 +55,16 @@ export function splitJournalResult(result: string, locale: 'en' | 'cs') {
         blocks.push({ kind: 'mechanic', text, tone: mechanicTone(text) });
       } else if (QUEST_LINE.test(trimmed)) {
         flushProse();
-        blocks.push({ kind: 'quest', text: trimmed });
+        blocks.push({
+          kind: 'quest',
+          text: locale === 'cs' ? presentEngineEventLine(trimmed, locale) : trimmed,
+        });
       } else if (STATE_LINE.test(trimmed)) {
         flushProse();
-        blocks.push({ kind: 'state', text: trimmed });
+        blocks.push({
+          kind: 'state',
+          text: locale === 'cs' ? presentEngineEventLine(trimmed, locale) : trimmed,
+        });
       } else if (trimmed) {
         prose.push(locale === 'cs' ? presentEngineEventLine(trimmed, locale) : line);
       }

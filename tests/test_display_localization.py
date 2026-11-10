@@ -17,7 +17,8 @@ _CATALOG_PATH = Path(__file__).resolve().parent.parent / "localization" / "chapt
 
 def test_catalog_file_loads():
     data = json.loads(_CATALOG_PATH.read_text(encoding="utf-8"))
-    assert data["locations"]["The Sunken Corridor"] == "Potopená chodba"
+    corridor = data["locations"]["The Sunken Corridor"]
+    assert (corridor["nom"] if isinstance(corridor, dict) else corridor) == "Potopená chodba"
     assert catalog_for_tests()["creatures"]["Goblin scout"] == "Gobliní zvěd"
 
 

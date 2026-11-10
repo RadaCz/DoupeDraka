@@ -99,27 +99,17 @@ def shrine_bell_return_prose(context: NarrationContext, *, language: str) -> str
     )
 
 
-_LOCATION_CS = {
-    "The Whispering Cellar": "šeptajícím sklepu",
-    "The Sunken Corridor": "potopené chodbě",
-    "The Shrine of the Forgotten": "svatyni zapomenutých",
-    "The Goblin Market": "gobliním trhu",
-    "The Vault of Echoes": "komnatě ozvěn",
-    "The Bell Warden's Pit": "jámě strážce zvonu",
-    "The Forgotten Crypt": "zapomenuté kryptě",
-    "The Underground River": "podzemní řece",
-}
-
-
 def _place_name(context: NarrationContext) -> str:
     dossier = context.scene_dossier or {}
     loc = dossier.get("location") or {}
     return (loc.get("name") or context.location or "the shadows").strip()
 
 
-def _place_phrase_cs(context: NarrationContext) -> str:
+def _place_phrase_cs(context: NarrationContext, case: str = "loc") -> str:
+    from ..display_localization import display_location
+
     name = _place_name(context)
-    return _LOCATION_CS.get(name, name)
+    return display_location(name, "cs", case)  # type: ignore[arg-type]
 
 
 def _atmosphere_line(context: NarrationContext, *, language: str) -> str:
@@ -150,6 +140,7 @@ def breath_pause_prose(context: NarrationContext, *, language: str) -> str:
                 f"{lead}Zastavíš se na okamžik a necháš tep utichnout. V {place_cs} se nic nového neblíží.",
                 f"{lead}Na chvíli vydechneš a dáváš pozor na zvuky kolem. {atm}",
                 f"{lead}Odpočineš oko i dech — {atm} Žádné nebezpečí se zatím nehlásí.",
+                f"{lead}Na moment se zastavíš a nasloucháš — v {place_cs} je zatím ticho.",
             ),
             seed,
         )
@@ -176,6 +167,7 @@ def rest_recovery_prose(context: NarrationContext, *, language: str) -> str:
                 f"{lead}Opřeš se o vlhkou zeď. Kamenný chlad ti proniká přes zbroj, ale vzdálené kapání vody a ticho ti konečně dovolí na chvíli zavřít oči a nabrat síly.",
                 f"{lead}Kamenná podlaha je chladná, ale únava tě přemůže. {atm} Když otevřeš oči, ticho v {place_cs} je stejně tíživé jako dřív.",
                 f"{lead}Sedneš si a necháš ramena klesnout. Dech se srovná, zatímco {place_cs} dřímá kolem tebe.",
+                f"{lead}Na okamžik zavřeš oči v {place_cs}; tělo si bere zpět dech, i když chlad kamene neustává.",
             ),
             seed,
         )
@@ -201,6 +193,7 @@ def empty_search_prose(context: NarrationContext, *, language: str) -> str:
                 f"{lead}Prohledáváš okolí pečlivě, ale narazíš jen na prach a ticho.",
                 f"{lead}Zrak ti nic cenného neukáže — jen obvyklé stopy po minulých návštěvách.",
                 f"{lead}Hledání nic nového nepřináší. {atm}",
+                f"{lead}Oči marní službu — jen prach a tíha {place}.",
             ),
             seed,
         )
@@ -240,11 +233,12 @@ def combat_opening_prose(context: NarrationContext, *, language: str) -> str | N
     raw_place = (context.location or _place_name(context)).strip()
     foe = display_creature(raw_foe, language) if language == "cs" else raw_foe
     place = display_location(raw_place, language) if language == "cs" else raw_place
+    place_loc = display_location(raw_place, "cs", "loc") if language == "cs" else raw_place
     foe_low = raw_foe.lower()
 
     if language == "cs":
         if "goblin" in foe_low:
-            where = f"V {place} " if place else ""
+            where = f"V {place_loc} " if place_loc else ""
             return choose(
                 (
                     f"{lead}{where}se z temnoty vynoří {foe}. Vychrtlé prsty svírají zbraň "
@@ -256,9 +250,9 @@ def combat_opening_prose(context: NarrationContext, *, language: str) -> str | N
         if place:
             return choose(
                 (
-                    f"{lead}V prostoru {place} se před tebou rýsuje {foe}. "
+                    f"{lead}V prostoru {place_loc} se před tebou rýsuje {foe}. "
                     "Střetnutí přeruší chladné ticho — protivník čeká tvůj první tah.",
-                    f"{lead}{foe.capitalize()} se objeví v {place} a napřímí se proti tobě.",
+                    f"{lead}{foe.capitalize()} se objeví v {place_loc} a napřímí se proti tobě.",
                 ),
                 seed,
             )

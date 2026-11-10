@@ -438,14 +438,30 @@ describe('Telegram Mini App', () => {
     expect(requests.some(item => item.url.endsWith('/actions/stream') && item.method === 'POST')).toBe(true);
   });
 
-  it('does not PATCH narration language when UI locale differs from the saved character', async () => {
+  it('does not PATCH narration language when UI locale already matches the character', async () => {
+    localStorage.setItem('app_locale', 'cs');
     const csHero = { ...mockCharacter, id: 'cs-hero', name: 'Mila', narration_language: 'cs' };
     const requests = setupApp([csHero]);
     render(<App />);
-    await screen.findByRole('heading', { name: /welcome back, mila/i });
-    fireEvent.click(screen.getByRole('button', { name: /continue adventure/i }));
-    await screen.findByRole('heading', { name: 'The Whispering Cellar' });
+    await screen.findByRole('heading', { name: /Vítej zpět, mila/i });
+    fireEvent.click(screen.getByRole('button', { name: /Pokračovat/i }));
+    await screen.findByRole('heading', { name: /šeptající sklep/i });
     expect(requests.filter(item => item.url.endsWith('/settings') && item.body?.language)).toHaveLength(0);
+  });
+
+  it('syncs narration language to UI locale when the saved character differs', async () => {
+    localStorage.setItem('app_locale', 'cs');
+    const enHero = { ...mockCharacter, id: 'en-hero', name: 'Olek', narration_language: 'en' };
+    const requests = setupApp([enHero]);
+    render(<App />);
+    await screen.findByRole('heading', { name: /Vítej zpět, olek/i });
+    fireEvent.click(screen.getByRole('button', { name: /Pokračovat/i }));
+    await screen.findByRole('heading', { name: /šeptající sklep/i });
+    await waitFor(() => {
+      expect(requests.some(
+        item => item.url.endsWith('/settings') && item.body?.language === 'cs',
+      )).toBe(true);
+    });
   });
 
   it('changes narrator tier but makes no false promise of payments', async () => {

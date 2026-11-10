@@ -1,13 +1,88 @@
 {
   "locations": {
-    "The Whispering Cellar": "Šeptající sklep",
-    "The Sunken Corridor": "Potopená chodba",
-    "The Shrine of the Forgotten": "Svatyně zapomenutých",
-    "The Goblin Market": "Gobliní trh",
-    "The Vault of Echoes": "Komnata ozvěn",
-    "The Bell Warden's Pit": "Jáma strážce zvonu",
-    "The Forgotten Crypt": "Zapomenutá krypta",
-    "The Underground River": "Podzemní řeka"
+    "The Whispering Cellar": {
+      "nom": "Šeptající sklep",
+      "gen": "šeptajícího sklepa",
+      "dat": "šeptajícímu sklepu",
+      "acc": "šeptající sklep",
+      "loc": "šeptajícím sklepu",
+      "ins": "šeptajícím sklepem"
+    },
+    "The Sunken Corridor": {
+      "nom": "Potopená chodba",
+      "gen": "potopené chodby",
+      "dat": "potopené chodbě",
+      "acc": "potopenou chodbu",
+      "loc": "potopené chodbě",
+      "ins": "potopenou chodbou"
+    },
+    "The Shrine of the Forgotten": {
+      "nom": "Svatyně zapomenutých",
+      "gen": "svatyně zapomenutých",
+      "dat": "svatyni zapomenutých",
+      "acc": "svatyni zapomenutých",
+      "loc": "svatyni zapomenutých",
+      "ins": "svatyní zapomenutých"
+    },
+    "The Goblin Market": {
+      "nom": "Gobliní trh",
+      "gen": "gobliního trhu",
+      "dat": "goblinímu trhu",
+      "acc": "gobliní trh",
+      "loc": "gobliním trhu",
+      "ins": "gobliním trhem"
+    },
+    "The Vault of Echoes": {
+      "nom": "Komnata ozvěn",
+      "gen": "komnaty ozvěn",
+      "dat": "komnatě ozvěn",
+      "acc": "komnatu ozvěn",
+      "loc": "komnatě ozvěn",
+      "ins": "komnatou ozvěn"
+    },
+    "The Bell Warden's Pit": {
+      "nom": "Jáma strážce zvonu",
+      "gen": "jámy strážce zvonu",
+      "dat": "jámě strážce zvonu",
+      "acc": "jámu strážce zvonu",
+      "loc": "jámě strážce zvonu",
+      "ins": "jámou strážce zvonu"
+    },
+    "The Forgotten Crypt": {
+      "nom": "Zapomenutá krypta",
+      "gen": "zapomenuté krypty",
+      "dat": "zapomenuté kryptě",
+      "acc": "zapomenutou kryptu",
+      "loc": "zapomenuté kryptě",
+      "ins": "zapomenutou kryptou"
+    },
+    "The Underground River": {
+      "nom": "Podzemní řeka",
+      "gen": "podzemní řeky",
+      "dat": "podzemní řece",
+      "acc": "podzemní řeku",
+      "loc": "podzemní řece",
+      "ins": "podzemní řekou"
+    },
+    "The Bandit Camp": {
+      "nom": "Tábor loupežníků",
+      "gen": "tábora loupežníků",
+      "dat": "táboru loupežníků",
+      "acc": "tábor loupežníků",
+      "loc": "táboru loupežníků",
+      "ins": "táborem loupežníků"
+    }
+  },
+  "arrival_beats_cs": {
+    "A cold draft curls around the old stone stairs.": "Studený průvan se vine kolem starých kamenných schodů.",
+    "Mara, a lantern-bearing scavenger, warns that something follows the waterway.": "Mara s lucernou varuje, že po kanálu něco kráčí.",
+    "A quiet caretaker named Caldus asks you to return a stolen shrine bell.": "Tichý správce Caldus tě prosí o návrat ukradeného chrámového zvonu.",
+    "Goblin trader Nib watches from a stall of mismatched charms and stolen bells.": "Gobliní obchodník Nib pozoruje z pultu s nehodnými amulety a ukradenými zvony.",
+    "Damp stone amplifies every footstep; broken bells hang from rusted chains.": "Vlhký kámen zesiluje každý krok; z rezavých řetězů visí rozbité zvony.",
+    "A hulking Bell Warden stirs, shackled bells rattling on its rusted armor.": "Mohutný Strážce zvonu se probouzí, řetězy a zvony cinkají na zrezivělé zbroji.",
+    "Collapsed biers and cracked skulls remember a burial rite gone wrong.": "Zřícené rakve a popraskané lebky připomínají pohřební obřad, který skončil špatně.",
+    "Rough laughter and whetstones — a bandit captain drills recruits by firelight.": "Hrubý smích a brousky — velitel loupežníků cvičí rekruty u ohně.",
+    "Black water whispers past echoing stone; the current tugs at your boots.": "Černá voda šeptá podél ozvěnného kamene; proud ti škábe o boty."
   },
   "creatures": {
     "Goblin scout": "Gobliní zvěd",
@@ -34,6 +109,7 @@
     "traveler's clothes": "cestovní oblečení",
     "leather armor": "kožená zbroj",
     "shrine bell": "chrámový zvon",
+    "echo shard": "střep ozvěny",
     "shield": "štít"
   },
   "spells": {
