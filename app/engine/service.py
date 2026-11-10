@@ -178,7 +178,14 @@ class GameEngine:
             character.xp = min(character.xp, XP_THRESHOLD - 1)
             return [], {}
         character.xp += amount
-        return self._level_up(character)
+        events: list[str] = []
+        facts: dict = {}
+        while character.level < MAX_MVP_LEVEL and character.xp >= XP_THRESHOLD:
+            level_events, level_facts = self._level_up(character)
+            events.extend(level_events)
+            if level_facts:
+                facts = level_facts
+        return events, facts
 
     @staticmethod
     def _spellcasting_modifier(character: CharacterState) -> int:
@@ -696,8 +703,20 @@ class GameEngine:
             defeated_key = monster_template_key(monster)
             level_events, level_up_facts = self._grant_xp(character, monster.reward_xp)
             events.append(f"{monster.name} is defeated. You gain {monster.reward_xp} XP.")
-            events.extend(level_events)
             events.extend(self._chapter_one_boss_rewards(character, defeated_key))
+            from .chapter_one_progression import (
+                award_vault_first_descent_story_xp,
+                on_vault_descent_victory,
+            )
+
+            on_vault_descent_victory(character)
+            story_events, story_facts, _ = award_vault_first_descent_story_xp(
+                character, self._level_up,
+            )
+            events.extend(story_events)
+            if story_facts:
+                level_up_facts = {**level_up_facts, **story_facts}
+            events.extend(level_events)
             combat_over = True
             monster = None
         elif monster:
@@ -734,7 +753,7 @@ class GameEngine:
         eligible = filter_encounter_pool(pool, character.level)
         return build_monster(character.difficulty, self.rng.choice(eligible))
 
-    def _travel(self, character: CharacterState, action: str) -> TurnResult:
+    def _travel(self, character: CharacterState, action: str) -> tuple[TurnResult, MonsterState | None]:
         destination = travel_destination(character.location, action)
         current = LOCATIONS.get(character.location)
         if destination is None:
@@ -743,13 +762,13 @@ class GameEngine:
                 message = "You cannot find a known route from here."
             else:
                 message = f"That route is not open. Nearby destinations: {', '.join(open_routes)}."
-            return TurnResult(action, [message], False)
+            return TurnResult(action, [message], False), None
         if not travel_allowed(destination, character.quest_flags):
             return TurnResult(
                 action,
                 ["That path is still sealed. Caldus must reveal the vault route before you can enter."],
                 False,
-            )
+            ), None
 
         if character.location not in character.visited_locations:
             character.visited_locations.append(character.location)
@@ -761,7 +780,15 @@ class GameEngine:
         events = [f"You travel to {destination}."]
         if first_visit:
             events.append(location.arrival_beat)
-        return TurnResult(action, events, True)
+
+        from .chapter_one_progression import begin_vault_first_descent
+
+        descent_events, descent_monster = begin_vault_first_descent(
+            character, difficulty=character.difficulty,
+        )
+        if descent_events:
+            events.extend(descent_events)
+        return TurnResult(action, events, True), descent_monster
 
     def _resolve_quest_action(self, character: CharacterState, action: str, step: str) -> TurnResult | None:
         from .quests import resolve_main_quest_step
@@ -771,7 +798,7 @@ class GameEngine:
     def _explore(self, character: CharacterState, action: str) -> tuple[TurnResult, MonsterState | None]:
         from .quests import try_side_quest_explore
 
-        side = try_side_quest_explore(character, action)
+        side = try_side_quest_explore(character, action, self._level_up)
         if side is not None:
             return side, None
         if character.exploration_cooldown:
@@ -957,6 +984,18 @@ class GameEngine:
             level_events, level_up_facts = self._grant_xp(character, reward)
             events.append(f"{monster.name} is defeated. You gain {reward} XP.")
             events.extend(self._chapter_one_boss_rewards(character, defeated_key))
+            from .chapter_one_progression import (
+                award_vault_first_descent_story_xp,
+                on_vault_descent_victory,
+            )
+
+            on_vault_descent_victory(character)
+            story_events, story_facts, _ = award_vault_first_descent_story_xp(
+                character, self._level_up,
+            )
+            events.extend(story_events)
+            if story_facts:
+                level_up_facts = {**level_up_facts, **story_facts}
             events.extend(level_events)
             return TurnResult(action, events, True, True, level_up_facts=level_up_facts), None
         events.extend(self._enemy_turn(character, monster))
@@ -1138,7 +1177,8 @@ class GameEngine:
             if monster is not None or character.in_combat:
                 return TurnResult(action, ["You cannot explore safely while a fight is still raging."], False), monster
             if intent.kind == TRAVEL or is_travel_action(action):
-                return self._travel(character, action), monster
+                travel_result, travel_monster = self._travel(character, action)
+                return travel_result, travel_monster if travel_monster is not None else monster
             return self._explore(character, action)
 
         if intent.kind == TALK:

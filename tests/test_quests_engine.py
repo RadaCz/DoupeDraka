@@ -28,14 +28,14 @@ def test_crypt_relic_pays_once():
     hero.location = "The Forgotten Crypt"
     hero.quest_flags = {}
 
-    first = try_side_quest_explore(hero, "search the crypt")
+    first = try_side_quest_explore(hero, "search the crypt", game._level_up)
     assert first is not None
     assert first.state_changed
     assert hero.quest_flags["crypt_relic_claimed"]
     assert hero.gold == 15
     assert hero.xp == 10
 
-    second = try_side_quest_explore(hero, "search the crypt")
+    second = try_side_quest_explore(hero, "search the crypt", game._level_up)
     assert second is not None
     assert not second.state_changed
     assert hero.gold == 15

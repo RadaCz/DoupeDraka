@@ -91,19 +91,19 @@ def test_travel_to_new_locations():
     hero.location = "The Sunken Corridor"
     hero.quest_flags = {}
     assert travel_destination(hero.location, "travel to The Underground River") == "The Underground River"
-    move = game._travel(hero, "travel to The Underground River")
+    move, _ = game._travel(hero, "travel to The Underground River")
     assert move.state_changed
     assert hero.location == "The Underground River"
     assert any("Black water" in event for event in move.events)
 
     hero.location = "The Goblin Market"
-    camp = game._travel(hero, "travel to The Bandit Camp")
+    camp, _ = game._travel(hero, "travel to The Bandit Camp")
     assert camp.state_changed
     assert hero.location == "The Bandit Camp"
 
     hero.location = "The Vault of Echoes"
-    hero.quest_flags = {"vault_unlocked": True}
-    crypt = game._travel(hero, "travel to The Forgotten Crypt")
+    hero.quest_flags = {"vault_unlocked": True, "vault_first_descent_story_awarded": True}
+    crypt, _ = game._travel(hero, "travel to The Forgotten Crypt")
     assert crypt.state_changed
     assert hero.location == "The Forgotten Crypt"
 

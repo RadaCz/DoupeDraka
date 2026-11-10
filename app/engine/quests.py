@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable
 
+from .chapter_one_progression import apply_xp_with_level_ups, award_vault_route_reveal_xp
 from .economy_balance import CRYPT_RELIC_GOLD_GP, QUEST_BELL_RETURN_GOLD_GP
 from .models import CharacterState, TurnResult
 from .ruleset_v1 import MAX_MVP_LEVEL
@@ -63,9 +64,15 @@ CHAPTER_ONE_STEPS: tuple[QuestStepPublic, ...] = (
         "The Shrine of the Forgotten",
     ),
     QuestStepPublic(
+        "vault_first_descent",
+        "Brave the Vault of Echoes",
+        "Travel into the vault — Caldus warned of danger. Survive the first descent and grow strong enough (at least level 3) before the Bell Warden.",
+        "The Vault of Echoes",
+    ),
+    QuestStepPublic(
         "chapter_one_complete",
         "Defeat the Bell Warden",
-        "Enter the Vault of Echoes and face the Bell Warden in the pit.",
+        "Enter the Bell Warden's Pit when you are at least level 3, then face the Warden.",
         "The Bell Warden's Pit",
     ),
 )
@@ -134,14 +141,15 @@ def resolve_main_quest_step(
         character.inventory = [item for item in character.inventory if item.casefold() != "shrine bell"]
         character.gold += QUEST_BELL_RETURN_GOLD_GP
         events = [
-            f"You return the shrine bell to Caldus and receive {QUEST_BELL_RETURN_GOLD_GP} gold pieces and 30 XP.",
+            f"You return the shrine bell to Caldus and receive {QUEST_BELL_RETURN_GOLD_GP} gold pieces.",
         ]
-        if character.level < MAX_MVP_LEVEL:
-            character.xp += 30
-            level_events, level_up_facts = level_up(character)
-        else:
-            level_events, level_up_facts = [], {}
-        events.extend(level_events)
+        xp_events, level_up_facts = apply_xp_with_level_ups(
+            character,
+            30,
+            level_up,
+            reason_line="You gain 30 XP for returning the shrine bell.",
+        )
+        events.extend(xp_events)
         return TurnResult(action, events, True, level_up_facts=level_up_facts)
 
     if step == "accept_caldus" and character.location == "The Shrine of the Forgotten":
@@ -149,14 +157,14 @@ def resolve_main_quest_step(
             if not flags.get("vault_hint_given"):
                 flags["vault_hint_given"] = True
                 flags["vault_unlocked"] = True
-                return TurnResult(
-                    action,
-                    [
-                        "Caldus thanks you and warns that the bell thief fled toward "
-                        "The Vault of Echoes beneath the corridor. The Bell Warden still guards the pit.",
-                    ],
-                    True,
-                )
+                events = [
+                    "Caldus thanks you and warns that the bell thief fled toward "
+                    "The Vault of Echoes beneath the corridor. The Bell Warden still guards the pit.",
+                    "He urges you to brave the vault first — you will need experience before the pit.",
+                ]
+                xp_events, level_up_facts, _ = award_vault_route_reveal_xp(character, level_up)
+                events.extend(xp_events)
+                return TurnResult(action, events, True, level_up_facts=level_up_facts)
             return TurnResult(action, ["Caldus thanks you again for returning the shrine bell."], False, costs_adventure_mana=False)
         if flags.get("bell_quest_accepted"):
             return TurnResult(action, ["Caldus reminds you that Nib at the market saw the stolen bell."], False, costs_adventure_mana=False)
@@ -181,7 +189,11 @@ def resolve_main_quest_step(
     return None
 
 
-def try_side_quest_explore(character: CharacterState, action: str) -> TurnResult | None:
+def try_side_quest_explore(
+    character: CharacterState,
+    action: str,
+    level_up: LevelUpFn,
+) -> TurnResult | None:
     """Deterministic one-time rewards tied to location exploration."""
     folded = action.casefold()
     if "search" not in folded and "inspect" not in folded and "explore" not in folded:
@@ -198,15 +210,19 @@ def try_side_quest_explore(character: CharacterState, action: str) -> TurnResult
         )
     flags["crypt_relic_claimed"] = True
     character.gold += CRYPT_RELIC_GOLD_GP
-    if character.level < MAX_MVP_LEVEL:
-        character.xp += 10
+    xp_events, _ = apply_xp_with_level_ups(
+        character,
+        10,
+        level_up,
+        reason_line="You gain 10 XP for uncovering the relic.",
+    )
     if "Echo shard" not in character.inventory:
         character.inventory.append("Echo shard")
     return TurnResult(
         action,
         [
             f"Behind a cracked sarcophagus you find an echo shard and {CRYPT_RELIC_GOLD_GP} gold from a forgotten burial.",
-            "You gain 10 XP for uncovering the relic.",
+            *xp_events,
         ],
         True,
     )

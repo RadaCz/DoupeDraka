@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import {
   backToAdventure,
   clickQuestChip,
-  ensureLevelAtLeast,
+  completeVaultDescentViaEngine,
   fetchCharacterState,
   syncPlayScreen,
   mapTravelTo,
@@ -70,17 +70,12 @@ test('completes chapter one through UI chips and map travel', async ({ page, req
   await clickQuestChip(page, /Vault|Krypt|Caldus/i);
   await waitForQuestFlag(request, token, characterId!, 'vault_unlocked');
 
-  await request.post('http://127.0.0.1:8001/economy/topup', {
-    headers: { Authorization: `Bearer ${token}` },
-    data: { package_key: 'starter' },
-  });
-  await ensureLevelAtLeast(request, token, characterId!, 5, 120);
-  await syncPlayScreen(page);
-
   await openMap(page);
   await mapTravelTo(page, /Sunken Corridor|Potopen/i);
-  await openMap(page);
-  await mapTravelTo(page, /Vault of Echoes|Komnata ozvěn/i);
+  await backToAdventure(page);
+  await completeVaultDescentViaEngine(request, token, characterId!);
+  await syncPlayScreen(page);
+
   await openMap(page);
   await mapTravelTo(page, /Bell Warden|Jáma strážce/i);
   await backToAdventure(page);

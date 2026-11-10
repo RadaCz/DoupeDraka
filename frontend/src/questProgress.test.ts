@@ -31,6 +31,18 @@ describe('visibleQuestTimeline', () => {
     expect(teaser).toBeTruthy();
   });
 
+  it('shows vault descent after vault is unlocked', () => {
+    const { active } = visibleQuestTimeline({
+      bell_quest_accepted: true,
+      bell_acquired: true,
+      bell_quest_complete: true,
+      vault_hint_given: true,
+      vault_unlocked: true,
+    });
+    expect(active?.id).toBe('vault_first_descent');
+    expect(active?.hint).toMatch(/level 3/i);
+  });
+
   it('points to Caldus for the vault step after the bell is returned', () => {
     const { active } = visibleQuestTimeline({
       bell_quest_accepted: true,

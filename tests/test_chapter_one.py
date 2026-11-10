@@ -6,7 +6,8 @@ def test_vault_route_locked_until_caldus_hint():
     hero = game.create_character(1, "Trail", "human", "fighter")
     hero.location = "The Sunken Corridor"
     hero.quest_flags = {}
-    result = game._travel(hero, "travel to The Vault of Echoes")
+    result, monster = game._travel(hero, "travel to The Vault of Echoes")
+    assert monster is None
     assert not result.state_changed
     assert "sealed" in result.events[0].casefold() or "caldus" in result.events[0].casefold()
 
@@ -16,9 +17,11 @@ def test_vault_opens_after_vault_unlocked():
     hero = game.create_character(1, "Trail", "human", "fighter")
     hero.location = "The Sunken Corridor"
     hero.quest_flags = {"vault_unlocked": True, "vault_hint_given": True}
-    result = game._travel(hero, "travel to The Vault of Echoes")
+    result, monster = game._travel(hero, "travel to The Vault of Echoes")
     assert result.state_changed
     assert hero.location == "The Vault of Echoes"
+    assert monster is not None
+    assert hero.in_combat
 
 
 def test_bell_acquired_persists_after_delivery():

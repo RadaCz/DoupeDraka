@@ -5,6 +5,7 @@ export type QuestStepId =
   | 'bell_acquired'
   | 'bell_quest_complete'
   | 'vault_hint_given'
+  | 'vault_first_descent'
   | 'chapter_one_complete';
 
 export interface QuestStep {
@@ -51,9 +52,15 @@ const CHAPTER_ONE_STEPS: QuestStep[] = [
     location: 'The Shrine of the Forgotten',
   },
   {
+    id: 'vault_first_descent',
+    label: 'Brave the Vault of Echoes',
+    hint: 'Travel into the vault — survive the first descent and grow strong enough (at least level 3) before the Bell Warden.',
+    location: 'The Vault of Echoes',
+  },
+  {
     id: 'chapter_one_complete',
     label: 'Defeat the Bell Warden',
-    hint: 'Enter the Vault of Echoes and face the Bell Warden in the pit.',
+    hint: "Enter the Bell Warden's Pit when you are at least level 3, then face the Warden.",
     location: "The Bell Warden's Pit",
   },
 ];
@@ -63,6 +70,9 @@ function stepDone(id: QuestStepId, flags: Record<string, boolean>) {
   if (id === 'bell_acquired') return Boolean(flags.bell_acquired || flags.bell_found);
   if (id === 'vault_hint_given') {
     return Boolean(flags.vault_hint_given || flags.vault_unlocked || flags.chapter_one_complete);
+  }
+  if (id === 'vault_first_descent') {
+    return Boolean(flags.vault_first_descent_story_awarded || flags.chapter_one_complete);
   }
   return Boolean(flags[id]);
 }

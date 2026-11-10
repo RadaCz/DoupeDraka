@@ -184,6 +184,32 @@ export async function travelToPitViaEngine(
   }
 }
 
+export async function completeVaultDescentViaEngine(
+  request: APIRequestContext,
+  token: string,
+  characterId: string,
+) {
+  for (const step of ['travel to The Vault of Echoes']) {
+    await postGameAction(request, token, characterId, step);
+  }
+  for (let round = 0; round < 60; round += 1) {
+    const state = await fetchCharacterState(request, token, characterId);
+    if (state.quest_flags?.vault_first_descent_story_awarded) break;
+    if (state.hp <= 0) {
+      await reviveIfFallen(request, token, characterId);
+      continue;
+    }
+    if (state.in_combat && state.combatant?.name) {
+      await postGameAction(request, token, characterId, `attack ${state.combatant.name}`);
+      continue;
+    }
+    break;
+  }
+  const final = await fetchCharacterState(request, token, characterId);
+  expect(final.level, `Vault descent should reach L3+, got L${final.level}`).toBeGreaterThanOrEqual(3);
+  expect(final.quest_flags?.vault_first_descent_story_awarded).toBe(true);
+}
+
 export async function completeBossViaEngine(
   request: APIRequestContext,
   token: string,

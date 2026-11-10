@@ -142,6 +142,10 @@ const DISCOVERY_BODY_CS: Record<string, string> = {
     'Za prasklým sarkofágem najdeš střep ozvěny a 15 zlatých z dávno zapomenutého pohřbu.',
   'You gain 10 XP for uncovering the relic.':
     'Získáváš 10 XP za nalezení relikvie.',
+  'You gain 50 XP for uncovering the vault route.':
+    'Získáváš 50 XP za odhalení cesty do krypta.',
+  "You gain 85 XP for surviving the vault's first descent.":
+    'Získáváš 85 XP za přežití prvního sestupu do krypta.',
 };
 
 const BELL_WARDEN_LEVEL_BLOCK =

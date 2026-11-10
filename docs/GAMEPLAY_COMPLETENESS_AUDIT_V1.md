@@ -42,6 +42,31 @@ See [`SPRINT_13_CZECH_NARRATION_QA.md`](SPRINT_13_CZECH_NARRATION_QA.md).
 | `narration_language` drift vs UI | **FIXED** | Auto-sync on character load |
 | Play-surface provider meta (Lite) | **UNCHANGED OK** | Hidden on play; economy copy remains in Settings |
 
+### Sprint 15 — Story-paced progression & first descent V1 (2026-11-10, local)
+
+See [`SPRINT_15_PROGRESSION_FIRST_DESCENT.md`](SPRINT_15_PROGRESSION_FIRST_DESCENT.md). Main path **200 XP** (30+50+35+85) → L3 without mandatory `search` grind; first Vault entry = kobold encounter + story flags.
+
+| Finding (Sprint 14) | Status |
+|---------------------|--------|
+| Post-vault XP gap | **ADDRESSED** (story milestones + first descent) |
+| E2E `ensureLevelAtLeast` mask | **REMOVED** from chapter E2E |
+| Crypt XP without level_up | **FIXED** |
+
+### Sprint 14 — Gameplay fun audit & experience design V1 (2026-11-10, audit only)
+
+**HEAD:** `dc08808` · **no code / commit / deploy.** Human fun & playtest **NOT VERIFIED.**
+
+See [`SPRINT_14_GAMEPLAY_FUN_AUDIT.md`](SPRINT_14_GAMEPLAY_FUN_AUDIT.md) — 20‑min journey map, grind simulation, location/class/NPC audits, TOP 10 fun fixes, backlog **Sprints 15–17**.
+
+| Finding | Status | Notes |
+|---------|--------|--------|
+| Bell quest chain completable (UI chips) | **VERIFIED (code + E2E)** | Grind/boss phases cheat level in E2E |
+| Post-vault XP gap → search grind | **OPEN (design)** | Sim 13–90 explores to L5 (seed 99) |
+| Exploration core loop repetitive | **OPEN** | d6 search + cooldown |
+| Ranger L1 without prepared spells | **OPEN** | Half-caster slot table |
+| Optional locations weak narrative payoff | **OPEN** | Bandit Camp, Underground River |
+| „Is it fun?“ | **NOT TESTED** | Requires facilitator playtest |
+
 ### Sprint 11.4 — Boss readiness & progression UX (2026-11-10, local)
 
 See [`CHAPTER_ONE_PROGRESSION_SPRINT_11_4.md`](CHAPTER_ONE_PROGRESSION_SPRINT_11_4.md) for XP tables, RNG scenarios, and design variants A/B/C.
