@@ -9,6 +9,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 
+from app.ai.stream_frames import StreamReplaceFrame
 from app.api import app
 from app.db import ActionReceipt, EventRecord, Session, decode_state, init_db
 from tests.test_concurrency import _character
@@ -111,6 +112,62 @@ async def _read_persisted(character_id: str, receipt_key: str):
         )).all()
         receipt = await session.get(ActionReceipt, receipt_key)
         return events[0].result if events else "", decode_state(receipt.response)["narration"]
+
+
+def test_cs_stream_replace_frame_coerced_not_english(auth, monkeypatch, setup_db):
+    character = _cs_character(auth)
+    key = uuid.uuid4().hex
+
+    class _Gateway:
+        providers = ("mock",)
+        has_online_providers = True
+
+    for target in ("app.api.narration_gateway_for", "app.ai.registry.narration_gateway_for"):
+        monkeypatch.setattr(target, lambda _settings: _Gateway())
+    monkeypatch.setattr("app.ai.registry.has_external_paid_narration_provider", lambda _settings: True)
+    assert client.post("/economy/tier", json={"tier": "normal"}, headers=auth).status_code == 200
+
+    async def english_replace(_self, context, **_kwargs):
+        yield StreamReplaceFrame("You take a moment to catch your breath.")
+
+    monkeypatch.setattr("app.narrator.Narrator.stream", english_replace)
+    headers = {**auth, "Idempotency-Key": key}
+    path = f"/characters/{character['id']}/actions/stream"
+    body = client.post(path, json={"action": "look around"}, headers=headers).text
+
+    assert "event: delta" not in body
+    if "event: replace" in body:
+        replace = json.loads(re.search(r"event: replace\ndata: (.*)", body).group(1))
+        assert "catch your breath" not in replace["narration"].lower()
+    complete = json.loads(re.search(r"event: complete\ndata: (.*)", body).group(1))
+    assert "catch your breath" not in complete["narration"].lower()
+
+
+def test_cs_stream_provider_exception_replace_is_cs(auth, monkeypatch, setup_db):
+    character = _cs_character(auth)
+    key = uuid.uuid4().hex
+
+    class _Gateway:
+        providers = ("mock",)
+        has_online_providers = True
+
+    for target in ("app.api.narration_gateway_for", "app.ai.registry.narration_gateway_for"):
+        monkeypatch.setattr(target, lambda _settings: _Gateway())
+    monkeypatch.setattr("app.ai.registry.has_external_paid_narration_provider", lambda _settings: True)
+    assert client.post("/economy/tier", json={"tier": "normal"}, headers=auth).status_code == 200
+
+    async def broken(_self, context, **_kwargs):
+        yield "partial "
+        raise RuntimeError("provider down")
+
+    monkeypatch.setattr("app.narrator.Narrator.stream", broken)
+    headers = {**auth, "Idempotency-Key": key}
+    path = f"/characters/{character['id']}/actions/stream"
+    body = client.post(path, json={"action": "look around"}, headers=headers).text
+
+    complete = json.loads(re.search(r"event: complete\ndata: (.*)", body).group(1))
+    assert complete["narration"]
+    assert "catch your breath" not in complete["narration"].lower()
 
 
 def test_cs_stream_complete_matches_persisted_journal(auth, monkeypatch, setup_db):

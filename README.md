@@ -14,9 +14,12 @@ zranění, HP a mana provádí deterministický Python engine.
 ## Interface languages
 
 The Mini App uses English by default. Open **Settings → Language** to switch to
-Czech (without diacritics); the choice is saved in this browser. UI controls and
-guided character creation are localized. Rule-reference names and game-generated
-journal text may still appear in English.
+**Czech (with diacritics)**; the choice is saved in this browser. UI strings,
+play chrome, and **presentation-layer** names (locations, creatures, items in
+journal/combat UI) are localized. Canonical engine IDs, SRD spell names in the
+reference catalog, and mechanic fact lines in the journal may remain English.
+Narration language follows the character (`narration_language`); Czech narration
+is coerced offline when a paid stream would leak English.
 
 ## Hotovo
 
@@ -34,7 +37,7 @@ journal text may still appear in English.
 - REST API, aiogram botové handlery a persistentní deník;
 - AI hranice: narátor dostává výsledek engine a vrací jen prózu;
 - postupné streamování narace přes SSE po uložení tahu;
-- Telegram Mini App s pěti záložkami: Home, Tools, Character, Campaign a Settings;
+- Telegram Mini App: **Overview**, **Hra**, **Postava**, **Více** (Deník, Úkoly, Mapa, Nástroje, Nastavení, Kampaně);
   tvorba postavy, hraní s uloženým deníkem, přehled postavy, nastavení kampaně,
   knihovna kouzel a plánovač střetů.
 

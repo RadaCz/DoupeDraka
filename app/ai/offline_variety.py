@@ -66,10 +66,13 @@ def _action_echoes_place(context: NarrationContext) -> bool:
 
 def generic_scene_prose(context: NarrationContext, *, language: str) -> str:
     """Fallback when no fact-specific offline branch matched — sensory, no meta-game voice."""
+    from ..display_localization import display_location
+
     seed = variety_seed(context)
     lead = familiarity_lead(context, language=language)
     kind = context.scene_kind or "general"
-    place = _place_name(context)
+    raw_place = _place_name(context)
+    place = display_location(raw_place, language) if language == "cs" else raw_place
     echo_place = _action_echoes_place(context)
 
     if language == "cs":

@@ -834,6 +834,13 @@ def sse_message(event: str, payload: dict) -> str:
     return f"event: {event}\ndata: {json.dumps(payload, ensure_ascii=False, separators=(',', ':'))}\n\n"
 
 
+def _client_narration_prose(context: NarrationContext, prose: str) -> str:
+    """Validate/coerce narration before any SSE payload reaches the client."""
+    from .narration_prose_guard import coerce_narration_prose
+
+    return coerce_narration_prose(context, prose)
+
+
 @app.post("/characters/{character_id}/actions/stream")
 @limiter.limit(get_settings().action_rate_limit)
 async def action_stream(
@@ -926,18 +933,21 @@ async def action_stream(
                 async for chunk in narrator.stream(context, billing_tier=billing_tier):
                     if isinstance(chunk, StreamReplaceFrame):
                         chunks.clear()
-                        chunks.append(chunk.narration)
+                        safe = _client_narration_prose(context, chunk.narration)
+                        chunks.append(safe)
                         status = "fallback"
-                        yield sse_message("replace", {"narration": chunk.narration})
+                        if stream_live_deltas:
+                            yield sse_message("replace", {"narration": safe})
                     elif chunk:
                         chunks.append(chunk)
                         if stream_live_deltas:
                             yield sse_message("delta", {"text": chunk})
-                narration = "".join(chunks).strip()
+                narration = _client_narration_prose(context, "".join(chunks).strip())
             if not narration:
                 status = "fallback"
-                narration = response.narration
-                yield sse_message("replace", {"narration": narration})
+                narration = _client_narration_prose(context, response.narration)
+                if stream_live_deltas:
+                    yield sse_message("replace", {"narration": narration})
         except asyncio.CancelledError:
             logger.info("Client disconnected during narration stream for event %s", event_id)
             status = "fallback"
@@ -947,8 +957,9 @@ async def action_stream(
         except Exception:
             logger.exception(f"Streaming narration failed for event {event_id}; using offline fallback")
             status = "fallback"
-            narration = Narrator.narrate_offline(context)
-            yield sse_message("replace", {"narration": narration})
+            narration = _client_narration_prose(context, Narrator.narrate_offline(context))
+            if stream_live_deltas:
+                yield sse_message("replace", {"narration": narration})
 
         await finalize_turn()
         yield sse_message(

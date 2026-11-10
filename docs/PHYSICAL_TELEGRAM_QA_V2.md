@@ -295,7 +295,7 @@ Git HEAD:
 | Oblast | Nástroj | Poslední známý stav (agent, ne telefon) |
 |--------|---------|------------------------------------------|
 | Vitest | `npm run test -- --run` | 119 passed (po UX POLISH V1) |
-| pytest | `python -m pytest` | 398 passed, 2 skipped |
+| pytest | `python -m pytest -q` | lokální report agenta / CI na HEAD — nefixní číslo |
 | Build | `npm run build` | OK |
 | E2E | `npm run test:e2e` | 8 passed (mock WebApp, ne TG) |
 | Safe-area logika | `telegramWebApp.test.ts` | unit |
@@ -360,4 +360,30 @@ Git HEAD:
 
 **Fyzický Telegram:** všechny položky §N zůstávají **NOT TESTED** po V3 — nutný nový běh na telefonu.
 
-**Poznámka (stream):** V3 buffruje CS provider text na serveru; klient nedostává nevalidované anglické delty (complete = journal = receipt).
+**Poznámka (stream):** V3 buffruje CS provider text na serveru; klient nedostává nevalidované anglické delty (complete = journal = receipt). V3.1: `replace` také pouze po coerce; CS často dostane jen `turn` + `complete`.
+
+---
+
+## O. Release candidate checklist (V3.1 build — vyplní jen tester)
+
+**Metadata:** HEAD `git rev-parse HEAD`, datum, zařízení, Telegram verze, tier Lite/Normal, jazyk UI + `narration_language`.
+
+Všechny položky níže startují jako **NOT TESTED**; agent je nevyplňuje.
+
+| # | Oblast | Co ověřit |
+|---|--------|-----------|
+| RC1 | CS/EN přepnutí | Settings jazyk UI; postava `language=cs`; žádná ztráta stavu po reload |
+| RC2 | Narace CS | 15–20 min: žádná anglická věta v offline/paid próze (jen mechanické řádky v deníku) |
+| RC3 | SSE přerušení | Odejít / ztratit síť uprostřed tahu → deník konzistentní, refund dle tieru |
+| RC4 | Safe area | Header pod TG chrome; spodní nav + composer nad home indikátorem |
+| RC5 | Klávesnice | Composer viditelný; `--keyboard-offset` (fyzicky) |
+| RC6 | Overview / Adventure | Lokalizované názvy lokací; stream bez EN flicker (CS) |
+| RC7 | Combat | CS nepřítel/předměty; disabled důvody česky |
+| RC8 | Character | Inventář, equip, potion, lokalizované itemy |
+| RC9 | Tools | Spell rules; SRD anglické názvy OK |
+| RC10 | Journal / Quest | Stejná próza jako Adventure (`presentNarrationProse`) |
+| RC11 | Map | CS názvy uzlů |
+| RC12 | Level up | Diakritika v modalu |
+| RC13 | Settings | Tier, kredity, jazyk |
+
+**Verdikt buildu:** (prázdné — tester)

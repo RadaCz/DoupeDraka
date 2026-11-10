@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased (2026-11-10) — Localization Integrity V3 / V3.1
+
+### V3 (`f8ce5b1`)
+- CS SSE: buffer provider tokens; no `delta` for `language=cs`; `coerce_narration_prose` before persistence.
+- Shared `localization/chapter_one_display.json` + `app/display_localization.py`; frontend `presentNarrationProse` / `formatJournalStreamResult`.
+- Telegram `contentSafeAreaChanged`; expanded `csCatalog.test.ts` (agent run: ~250 `i18n.tsx` value touch-ups via `tools/polish_cs_i18n.py`).
+
+### V3.1 (local, not pushed)
+- CS SSE: coerce before every client `replace`/`complete`; CS suppresses live `replace` where EN still streams.
+- Offline defeat respawn + `generic_scene_prose` CS places via display catalog.
+- Catalog audit test: per-word ASCII Czech detection (ne jen absence of all diacritics).
+- Docs sync: README, PROJECT_BRAIN, ROADMAP, QA V2 release checklist.
+- **Physical Telegram:** still **NOT TESTED**.
+
 ## Unreleased (2026-11-09)
 
 ### Telegram UX (local, not pushed)

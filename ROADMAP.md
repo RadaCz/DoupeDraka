@@ -1,6 +1,6 @@
 # Roadmap
 
-Updated 2026-11-09. Chapter one is a gated six-location slice on `clean-main`. ActionIntent routes player commands; Pro narration tier is disabled until OpenRouter exists.
+Updated 2026-11-10 (`f8ce5b1`+). Chapter one is a gated six-location slice on `clean-main`. ActionIntent routes player commands; Pro narration tier is disabled until OpenRouter exists.
 
 ## Priority 0c — Product UX Redesign V1 (audit done; partial implementation)
 - [x] [`docs/PRODUCT_UX_AUDIT_V1.md`](docs/PRODUCT_UX_AUDIT_V1.md) — P0–P3 inventář problémů
@@ -62,7 +62,8 @@ Platby a produkční top-up zůstávají v **Deferred product decisions** (Prior
 - [x] Split project history, decisions, roadmap, architecture, engine, content, and deployment documentation.
 - [x] Narrator provider boundary in `app/ai/` with offline fallback.
 - [ ] Implement OpenRouter adapter, then re-enable Pro tier with honest pricing.
-- [ ] Decide whether to localize generated narration; Czech UI is already available without diacritics.
+- [x] Czech UI diacritics + presentation-layer names (V3); CS SSE buffered/coerced (`f8ce5b1`).
+- [ ] Physical Telegram QA on device — **NOT TESTED** (`docs/PHYSICAL_TELEGRAM_QA_V2.md` §N historické FAIL/PASS zůstávají).
 
 ## Deferred product decisions
 - Payments (Telegram Stars/YooKassa), referrals, Redis, campaigns/payments tables, multiplayer, and higher-level spell progression remain out of scope until separately prioritized.

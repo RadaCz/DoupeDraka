@@ -3,7 +3,8 @@
 **Baseline commit (P2):** `adceca6` · **P2.1:** memory hardening (`journal_prose`)  
 **P3 commit:** `b7f1315` — offline `scene_kind`, journal UX, SSE refresh dedupe  
 **CI baseline:** `ec646fc` / run `42679663584` — 4/4 SUCCESS před P3; P3 CI = poslední run na `b7f1315`  
-**Branch:** `clean-main`
+**Branch:** `clean-main`  
+**V3 (`f8ce5b1`):** CS SSE — žádné nevalidované `delta`; `coerce_narration_prose` před persistence i před client `replace`/`complete` (V3.1). Katalog: `localization/chapter_one_display.json`.
 
 ## Co bylo špatně / matoucí (P1)
 

@@ -4,10 +4,10 @@
 
 - **Repository:** `D:\DoupeDraka`
 - **Development branch:** `clean-main` (merge to `main` after green CI only)
-- **Last updated:** 2026-11-09 (immersion sprint — local)
+- **Last updated:** 2026-11-10 (Localization Integrity V3 / V3.1 — `f8ce5b1` na `clean-main`)
 - **CI lifecycle baseline:** `ec646fc` · Actions `42679663584` (4/4 SUCCESS).
 - **Narrator V2 P3:** commit `b7f1315` na `clean-main` (push proveden).
-- **Local (P3 pre-commit, 2026-11-09):** backend **386 passed**, **2 skipped**; strict `-W error` thread warnings **386 passed**; frontend **53** Vitest; **8** E2E; secret scan OK; Alembic **v005**. **Telefonní playtest** stále **NEOVĚŘEN**.
+- **Local test report (V3.1 agent run — ověř v CI):** backend pytest, frontend Vitest, build, E2E — viz závěrečný report sprintu; čísla nejsou závazná bez zeleného GitHub Actions na HEAD. **Telefonní playtest** stále **NOT TESTED**.
 - **External verification:** real Telegram visual QA and Docker/Postgres in production-like deploy remain **UNVERIFIED** by the maintainer.
 
 ## 1. Directives
@@ -20,7 +20,7 @@
 
 ## 2. Product and invariants
 
-Solo D&D 5e is a Telegram Mini App with an English default UI and Czech localization without diacritics. Players create a hero, explore, fight, cast supported spells, rest, and progress. **Chapter one** has **six main** locations (bell quest → vault → Bell Warden) plus **three optional** sites (Forgotten Crypt, Bandit Camp, Underground River) — nine nodes on the map. **Ruleset v1** supports **four races** (Human, Elf, Dwarf, Halfling) and **four classes** (Fighter, Rogue, Cleric, Wizard); other SRD entries are reference-only.
+Solo D&D 5e is a Telegram Mini App with an English default UI and Czech UI **with diacritics** (`i18n.tsx` + `applyCzechDiacritics` backfill for legacy keys). Presentation catalog: `localization/chapter_one_display.json`. Players create a hero, explore, fight, cast supported spells, rest, and progress. **Chapter one** has **six main** locations (bell quest → vault → Bell Warden) plus **three optional** sites (Forgotten Crypt, Bandit Camp, Underground River) — nine nodes on the map. **Ruleset v1** supports **four races** (Human, Elf, Dwarf, Halfling) and **four classes** (Fighter, Rogue, Cleric, Wizard); other SRD entries are reference-only.
 
 `app/engine/` owns dice, HP, XP, spell slots, encounters, location transitions, quest flags, ActionIntent routing, and costs. It has no database, Telegram, or LLM calls. The API persists engine outcomes and journal events before streaming narration. Invalid/no-op actions do not spend **narrator credits** (⚡).
 

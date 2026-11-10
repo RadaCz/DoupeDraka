@@ -1,8 +1,8 @@
 # Master plan — stav (sync s DOUPEDRAKA_MASTER_PLAN.md v1.0)
 
-Poslední revize: **2026-11-09 (P3 journal/offline)**. Etapy 7–9 záměrně otevřené až po uzavření sólo smyčky.  
-**CI baseline:** `ec646fc` · run `42679663584` — 4/4 SUCCESS.  
-**P3 commit:** `b7f1315` — push na `origin/clean-main`; výsledek Actions ověřte na GitHubu po dokončení běhu.
+Poslední revize: **2026-11-10 (Localization V3 / V3.1)**. Etapy 7–9 záměrně otevřené až po uzavření sólo smyčky.  
+**Kódový HEAD (audit):** `f8ce5b1` na `clean-main`; V3.1 změny mohou být lokální diff.  
+**CI:** ověř `gh run list --commit <HEAD>` — agent čísla pytest/Vitest uvádí jako lokální report, ne jako náhradu Actions.
 
 | Etapa | Název | Stav | Poznámka |
 |------:|-------|------|----------|
@@ -12,7 +12,7 @@ Poslední revize: **2026-11-09 (P3 journal/offline)**. Etapy 7–9 záměrně ot
 | 3 | Ruleset v1 | Průběžně | `ruleset_v1.py` + MVP lock při tvorbě; UI „Planned“; iniciativa/akce — backlog |
 | 4 | First campaign slice | Průběžně | `quests.py` + `/reference` katalog; side quest Crypt; hlavní quest refaktor |
 | 5 | AI DM CZ | **P2 + P2.1 + P3 (WT)** | Paměť, online `scene_kind`, offline fallbacky (`offline_variety`), journal UX stream order + CZ mechaniky |
-| 6 | Mini App & Telegram QA | Hotovo (uživatel) | Checklist vyplněn; CS chips; frontend polish fáze 0–6 (theme-dark, play, polish moduly, `styles/README.md`, volitelný `e2e/visual-baseline.spec.ts`) |
+| 6 | Mini App & Telegram QA | **Kód připraven; fyzicky NOT TESTED** | V2/V3 checklist `PHYSICAL_TELEGRAM_QA_V2.md`; historické §N nálezy beze změny; agent nevyplňuje PASS na telefonu |
 | 7 | Closed beta | **E1–E2b + minimální telemetrie implementováno** (lokální audit nad `e012532`); **E3 pozastaveno** | Postgres migrace **v005**, CI/dev deps, racial bonusy, vault hint, tier billing; playtest 10–15 hráčů ať po sign-off commitu |
 | 8 | Co-op MP | Nezačato | Záměrně po sólo kapitole |
 | 9 | Monetizace | Nezačato | GDS01 pilíře v dokumentaci; hypotézy 49/99/149 Kč v `ECONOMY_MODEL_V1.md`; **žádné platby** před playtestem a produktovým go (E6 až po validaci) |
@@ -34,7 +34,7 @@ Poslední revize: **2026-11-09 (P3 journal/offline)**. Etapy 7–9 záměrně ot
 ## Ověření (release gate)
 
 ```bash
-python -m pytest -q   # lokálně 382 passed, 2 skipped (ec646fc); P3 +test_offline_scene_kind
+python -m pytest -q   # lokální počty viz CHANGELOG / agent report; nefixujte bez CI na HEAD
 python scripts/secret_scan.py
 cd frontend && npm run test -- --run && npm run build && npm run test:e2e
 ```
