@@ -5,6 +5,28 @@ import { inventoryItemMeta, inventoryItemCategory } from '../game/inventoryCatal
 /** Mirrors app/engine/service.py XP_THRESHOLD — display only. */
 export const XP_PER_LEVEL = 100;
 
+/** Mirrors `app/engine/equipment.proficiency_bonus` — sheet display only. */
+export function proficiencyBonus(level: number): number {
+  return 2 + Math.max(0, Math.floor((level - 1) / 4));
+}
+
+const SAVE_LABEL_KEYS: Record<string, string> = {
+  strength: 'Strength',
+  dexterity: 'Dexterity',
+  constitution: 'Constitution',
+  intelligence: 'Intelligence',
+  wisdom: 'Wisdom',
+  charisma: 'Charisma',
+};
+
+export function formatSavingThrowProficiencies(
+  proficiencies: string[] | undefined,
+  t: (label: string) => string,
+): string {
+  if (!proficiencies?.length) return '';
+  return proficiencies.map(key => t(SAVE_LABEL_KEYS[key] ?? key)).join(' · ');
+}
+
 export const ABILITY_KEYS = [
   'strength',
   'dexterity',

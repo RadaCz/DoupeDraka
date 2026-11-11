@@ -1,8 +1,10 @@
 # Master plan — stav (sync s DOUPEDRAKA_MASTER_PLAN.md v1.0)
 
-Poslední revize: **2026-11-11 (Sprint 19.3 — ghoul E2E RNG isolation + combat UI; lokálně, necommitováno)**. Etapy 7–9 záměrně otevřené až po uzavření sólo smyčky.  
-**Kódový HEAD (commit):** `e639335` na `clean-main` (= origin). **Sprint 19.3:** working tree diff (E2E runner + ghoul spec).  
-**CI:** GHA run #57 na `e639335` — ghoul fail; **19.3 fix nepushnutý — GHA neověřeno**.  
+Poslední revize: **2026-11-11 (Sprint 20 — character→adventure audit + sheet/E2E; lokálně, necommitováno)**. Etapy 7–9 záměrně otevřené až po uzavření sólo smyčky.
+
+**Kódový HEAD (commit):** `3102bf2` na `clean-main` (= origin po Sprint 19.3 push). **Sprint 20:** working tree diff (sheet, tests, E2E).
+
+**CI:** Poslední push `3102bf2` — GHA **neověřeno lokálně** (bez `gh`); Sprint 20 diff **necommitován**.
 **Staging HTTPS:** **NOT DEPLOYED** — viz `docs/STAGING_DEVICE_VALIDATION_V1.md`.  
 **Fyzický Telegram:** Android / iOS **NOT TESTED** (`docs/TELEGRAM_MOBILE_QA_V1.md`).  
 **Normal debit/refund na stagingu:** **NOT TESTED**.

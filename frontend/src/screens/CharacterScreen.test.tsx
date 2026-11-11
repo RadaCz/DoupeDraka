@@ -31,6 +31,8 @@ const hero: Character = {
   tone: 'balanced',
   humor: 'rare',
   verbose: false,
+  saving_throw_proficiencies: ['strength', 'constitution'],
+  speed: 30,
 };
 
 const spells: Spell[] = [];
@@ -47,5 +49,9 @@ describe('CharacterScreen V2', () => {
     expect(screen.getByText(/ability scores/i)).toBeInTheDocument();
     expect(screen.getAllByText('Mace').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(/40 \/ 100 XP/)).toBeInTheDocument();
+    expect(screen.getByText(/Combat basics/i)).toBeInTheDocument();
+    expect(screen.getByText(/Proficiency bonus/i)).toBeInTheDocument();
+    expect(screen.getByText(/Strength · Constitution/)).toBeInTheDocument();
+    expect(screen.getByText(/30 ft\./)).toBeInTheDocument();
   });
 });

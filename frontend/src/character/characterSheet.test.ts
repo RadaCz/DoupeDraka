@@ -5,8 +5,10 @@ import {
   canWieldInventoryItem,
   equippedWeaponInstance,
   formatModifier,
+  formatSavingThrowProficiencies,
   inventoryCounts,
   potionUseBlocked,
+  proficiencyBonus,
   xpProgress,
 } from './characterSheet';
 
@@ -46,6 +48,17 @@ describe('characterSheet', () => {
   it('formats ability modifiers', () => {
     expect(abilityModifier(16)).toBe(3);
     expect(formatModifier(8)).toBe('-1');
+  });
+
+  it('mirrors engine proficiency bonus by level', () => {
+    expect(proficiencyBonus(1)).toBe(2);
+    expect(proficiencyBonus(5)).toBe(3);
+  });
+
+  it('formats saving throw proficiencies for display', () => {
+    const line = formatSavingThrowProficiencies(['strength', 'constitution'], key => key);
+    expect(line).toContain('Strength');
+    expect(line).toContain('Constitution');
   });
 
   it('tracks XP progress toward engine threshold', () => {

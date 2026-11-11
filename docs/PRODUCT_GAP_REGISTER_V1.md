@@ -30,7 +30,7 @@
 
 | Area | Status | Source / evidence | Player impact | Priority | Next sprint |
 |------|--------|-------------------|---------------|----------|-------------|
-| Character creation wizard | **PARTIAL** | `CharacterWizard.tsx`, `character_creation.py`, E2E `character-creation-wizard.spec.ts` | 9-step UI + persistence; E2E covers manual/quick/caster | P0 | 17 — CS pills, trait badges |
+| Character creation wizard | **PARTIAL** | `CharacterWizard.tsx`, `character_creation.py`, E2E `character-creation-wizard.spec.ts`, `character-to-adventure.spec.ts` | 9-step UI + persistence; **4-class** create→play E2E (Sprint 20); quick summary on identity step | P0 | Class features, racial depth |
 | Races (MVP 4) | **PARTIAL** | `service._d20_check`, `assemble_skill_proficiencies` | ASI + speed; **Lucky** on player d20 checks; Elf Perception | P0 | 17 — Darkvision, Dwarf resilience, Nimbleness |
 | Classes (MVP 4) | **PARTIAL** | `catalog.py`, `equipment.py`, `spells.py`, `saving_throws.py` | HD, AC, save prof stored **and used** on `perform_saving_throw`; class features still thin | P0 | 19 — class features |
 | Backgrounds | **PARTIAL** | `MVP_BACKGROUNDS` (6 SRD), wizard footnote | Skills + gear + gold verified in tests; features **narrative-only** (UI labeled) | P1 | 17 — model 1–2 features |

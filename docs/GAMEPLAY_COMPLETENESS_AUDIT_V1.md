@@ -7,6 +7,18 @@
 
 **Deployment / human fun:** HTTPS staging **NOT DEPLOYED** · Android/iOS playtest **NOT TESTED** · Claimed “fun” **NOT VERIFIED** by this audit.
 
+### Sprint 20 — Character → Adventure V1 (2026-11-11, local)
+
+See [`SPRINT_20_CHARACTER_TO_ADVENTURE_ACCEPTANCE.md`](SPRINT_20_CHARACTER_TO_ADVENTURE_ACCEPTANCE.md).
+
+| Finding | Status | Notes |
+|---------|--------|--------|
+| 4×4 MVP create (engine) | **VERIFIED** | `test_character_creation_mvp_matrix.py` (16 pairs) |
+| 4-class E2E create → first turn | **VERIFIED** | `character-to-adventure.spec.ts` |
+| Character sheet combat basics | **IMPROVED** | Speed, save profs, proficiency display |
+| Background features in play | **OPEN** | Narrative-only |
+| Full 15-min class-distinct fun | **NOT TESTED** | Facilitator playtest |
+
 ### Sprint 11.1 — Player experience gap closure (2026-11-10, local)
 
 | Audit gap | Status after 11.1 | Notes |

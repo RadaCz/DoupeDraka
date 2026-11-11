@@ -170,3 +170,40 @@ def test_legacy_create_without_options_still_valid():
 def test_racial_abilities_applied_after_standard_array():
     scores = apply_racial_ability_increases("dwarf", _scores(constitution=15))
     assert scores["constitution"] == 17
+
+
+def test_rogue_creation_skill_count_and_saves():
+    game = GameEngine(random.Random(9))
+    hero = game.create_character(
+        1,
+        "Trix",
+        "halfling",
+        "rogue",
+        _scores(dexterity=15, charisma=14, constitution=13, intelligence=12, wisdom=10, strength=8),
+        background="criminal",
+        class_skills=["Sleight of Hand", "Perception", "Investigation", "Acrobatics"],
+        equipment_package="scout",
+    )
+    assert hero.saving_throw_proficiencies == ["dexterity", "intelligence"]
+    assert "Stealth" in hero.skill_proficiencies
+    assert hero.speed == 25
+
+
+def test_cleric_creation_prepares_spells_and_wisdom_saves():
+    game = GameEngine(random.Random(10))
+    choices = default_creation_choices("cleric")
+    hero = game.create_character(
+        1,
+        "Sanvi",
+        "human",
+        "cleric",
+        _scores(wisdom=15, constitution=14, strength=13, charisma=12, intelligence=10, dexterity=8),
+        background=choices.background,
+        class_skills=choices.class_skills,
+        equipment_package=choices.equipment_package,
+        cantrips=choices.cantrips,
+        level_one_spells=choices.level_one_spells,
+    )
+    assert hero.saving_throw_proficiencies == ["wisdom", "charisma"]
+    assert hero.max_spell_slots.get(1, 0) >= 2
+    assert hero.prepared_spells or hero.known_spells

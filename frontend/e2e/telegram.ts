@@ -228,10 +228,11 @@ export async function completeCharacterWizard(page: Page, options: WizardBuildOp
   await wizardCard(page, characterClass).click();
   await wizardContinue(page);
   await wizardCard(page, background).click();
-  await wizardContinue(page);
-  await wizardContinue(page);
-  await wizardContinue(page);
-  await wizardContinue(page);
+  const caster = /^(wizard|cleric)$/i.test(characterClass);
+  const continueCount = caster ? 5 : 4;
+  for (let index = 0; index < continueCount; index += 1) {
+    await wizardContinue(page);
+  }
   await page.getByLabel(/character name|jméno postavy/i).fill(options.name);
   await wizardContinue(page);
   await expect(page.getByRole('heading', { name: MEET_ADVENTURER_HEADING })).toBeVisible();

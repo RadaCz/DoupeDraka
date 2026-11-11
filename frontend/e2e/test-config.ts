@@ -15,4 +15,5 @@ export const E2E_TELEGRAM_ID = {
   characterCreation: 760_000_000,
   playerJourney: 760_000_002,
   playLayout: 762_200_000,
+  characterToAdventure: 775_000_000,
 } as const;

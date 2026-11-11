@@ -6,6 +6,26 @@
   padding-bottom: 24px;
 }
 
+.char-v2-combat-basics {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px dashed var(--border-subtle);
+  background: color-mix(in srgb, var(--surface-raised) 40%, transparent);
+}
+
+.char-v2-combat-basics .char-v2-section-title.visually-compact {
+  margin: 0 0 4px;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.char-v2-muted-hint {
+  opacity: 0.85;
+  font-size: 0.78rem;
+}
+
 .char-v2-identity {
   padding: 14px 14px 12px;
   border-radius: 14px;

@@ -12,6 +12,8 @@ import {
   equippedShieldInstance,
   equippedWeaponInstance,
   formatModifier,
+  formatSavingThrowProficiencies,
+  proficiencyBonus,
   xpProgress,
 } from '../character/characterSheet';
 import { heroSpellRows } from '../spells/spellbook';
@@ -86,6 +88,20 @@ export function CharacterScreen({
           )}
         </div>
         <HpBar character={character} />
+        <div className="char-v2-combat-basics" aria-labelledby="char-combat-basics-heading">
+          <h2 id="char-combat-basics-heading" className="char-v2-section-title visually-compact">{t('Combat basics')}</h2>
+          <p className="char-v2-section-lead">
+            <span>{t('Proficiency bonus')}: <strong className="tabular-nums">+{proficiencyBonus(character.level)}</strong></span>
+            {' · '}
+            <span>{t('Speed')}: <strong className="tabular-nums">{character.speed ?? 30} {t('ft.')}</strong></span>
+          </p>
+          {character.saving_throw_proficiencies && character.saving_throw_proficiencies.length > 0 && (
+            <p className="char-v2-section-lead">
+              {t('Saving throw proficiencies')}: {formatSavingThrowProficiencies(character.saving_throw_proficiencies, t)}
+            </p>
+          )}
+          <p className="char-v2-section-lead char-v2-muted-hint">{t('Initiative in combat uses your Dexterity modifier on the roll.')}</p>
+        </div>
         {character.invisible && (
           <p className="char-v2-condition" role="status">{t('Condition')}: {t('Invisible')}</p>
         )}

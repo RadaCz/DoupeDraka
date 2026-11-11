@@ -469,6 +469,12 @@ export function CharacterWizard({
         <div className="wizard-content">
           <p className="eyebrow">{t('STEP 8 · IDENTITY')}</p>
           <h1 id="wizard-title">{t('Name and campaign tone')}</h1>
+          {race && characterClass && background && (
+            <p className="wizard-note" role="status">
+              {t(race.name)} · {t(characterClass.name)} · {t(background.name)}
+              {abilityText(abilityScores ?? {}) ? ` · ${abilityText(abilityScores ?? {})}` : ''}
+            </p>
+          )}
           <label className="field-label" htmlFor="hero-name">{t('Character name')}</label>
           <input id="hero-name" className="form-input" value={name} onChange={event => setName(event.target.value)} maxLength={48} required />
           <label className="field-label" htmlFor="hero-alignment">{t('Alignment (narrative)')}</label>
