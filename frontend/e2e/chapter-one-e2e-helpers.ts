@@ -261,25 +261,41 @@ export async function completeBossViaEngine(
     if ((state.hp ?? 1) <= 0) {
       await reviveIfFallen(request, token, characterId);
       await ensureAtBellWardenPit(request, token, characterId);
-      await postGameAction(request, token, characterId, 'rest');
       continue;
     }
     if (!state.in_combat && !/Bell Warden|Pit|Jáma/i.test(state.location)) {
       await ensureAtBellWardenPit(request, token, characterId);
       continue;
     }
-    if (!state.in_combat && (state.hp ?? 1) < 18) {
-      await postGameAction(request, token, characterId, 'rest');
-      continue;
-    }
+    const lowHp = (state.hp ?? 1) < Math.max(6, Math.floor((state.max_hp ?? 12) * 0.4));
     if (state.in_combat) {
+      if (lowHp) {
+        await postGameAction(request, token, characterId, 'drink potion');
+        const afterPotion = await fetchCharacterState(request, token, characterId);
+        if ((afterPotion.hp ?? 0) <= (state.hp ?? 0)) {
+          await postGameAction(request, token, characterId, 'defend');
+        }
+        continue;
+      }
       const foe = state.combatant?.name ?? 'Bell Warden';
       await postGameAction(request, token, characterId, `attack ${foe}`);
       continue;
     }
+    if (lowHp) {
+      await postGameAction(request, token, characterId, 'drink potion');
+      const healed = await fetchCharacterState(request, token, characterId);
+      if ((healed.hp ?? 0) <= (state.hp ?? 0)) {
+        await postGameAction(request, token, characterId, 'rest');
+      }
+      continue;
+    }
     await postGameAction(request, token, characterId, 'attack the Bell Warden');
   }
-  await waitForQuestFlag(request, token, characterId, 'chapter_one_complete', true, 240_000);
+  const final = await fetchCharacterState(request, token, characterId);
+  expect(
+    final.quest_flags?.chapter_one_complete,
+    `Bell Warden loop ended without chapter_one_complete after 200 turns (level ${final.level}, hp ${final.hp}, in_combat ${final.in_combat})`,
+  ).toBe(true);
 }
 
 export { apiTelegramToken };

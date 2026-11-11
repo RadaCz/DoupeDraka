@@ -57,6 +57,7 @@ test('ghoul paralyzing claws apply paralysis through real combat and UI', async 
   await waitForAdventureComposerReady(page);
   const beforeTurn = await fetchCharacterState(request, token, characterId!);
   expect(beforeTurn.conditions?.some(c => c.condition_id === 'paralyzed')).toBeTruthy();
+  await expect(page.getByText(/paralyz|Paralyza/i)).toBeVisible({ timeout: 30_000 });
 
   const journal = page.getByRole('log', { name: /Adventure journal|Dobrodružný deník/i });
   await page.getByRole('textbox', { name: ACTION_TEXTBOX }).fill('attack ghoul');

@@ -23,7 +23,12 @@ export default defineConfig({
   projects: visualOnly
     ? [{ name: 'visual', testMatch: ['**/visual-baseline.spec.ts'] }]
     : [
-        // Combat saves + ghoul paralysis need a fresh E2E_RNG_SEED stream (before chapter journey).
+        // Chapter journey must run on a fresh E2E_RNG_SEED stream (Bell Warden finish is seed-sensitive).
+        {
+          name: 'chapter-journey',
+          testMatch: ['**/chapter-one-quest.spec.ts'],
+          timeout: 900_000,
+        },
         {
           name: 'combat-saves',
           testMatch: [
@@ -31,12 +36,7 @@ export default defineConfig({
             '**/spell-save-combat.spec.ts',
             '**/saving-throw-combat.spec.ts',
           ],
-        },
-        {
-          name: 'chapter-journey',
-          testMatch: ['**/chapter-one-quest.spec.ts'],
-          timeout: 900_000,
-          dependencies: ['combat-saves'],
+          dependencies: ['chapter-journey'],
         },
         {
           name: 'e2e-smoke',
@@ -47,7 +47,7 @@ export default defineConfig({
             '**/spell-save-combat.spec.ts',
             '**/saving-throw-combat.spec.ts',
           ],
-          dependencies: ['chapter-journey'],
+          dependencies: ['combat-saves'],
         },
       ],
   use: {

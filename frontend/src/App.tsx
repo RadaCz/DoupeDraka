@@ -361,12 +361,33 @@ function AppContent() {
     setCharacters(previous => previous.map(item => item.id === updated.id ? updated : item));
   };
 
-  const refreshCharacter = async (characterId: string) => {
-    const list = await request<Character[]>('/characters');
-    setCharacters(list);
-    const fresh = list.find(item => item.id === characterId);
-    if (fresh) setCharacter(fresh);
-  };
+  const refreshCharacter = useCallback(async (characterId: string) => {
+    const fresh = await request<Character>(`/characters/${characterId}`);
+    setCharacter(fresh);
+    setCharacters(previous => previous.map(item => (item.id === characterId ? fresh : item)));
+  }, []);
+
+  const prevScreenRef = useRef<AppScreen>(screen);
+  useEffect(() => {
+    const enteredGame = screen === 'game' && prevScreenRef.current !== 'game';
+    prevScreenRef.current = screen;
+    if (enteredGame && character?.id && !busy) {
+      void refreshCharacter(character.id);
+    }
+  }, [screen, character?.id, busy, refreshCharacter]);
+
+  useEffect(() => {
+    const syncFromServer = () => {
+      if (document.visibilityState !== 'visible' || screen !== 'game' || !character?.id || busy) return;
+      void refreshCharacter(character.id);
+    };
+    window.addEventListener('pageshow', syncFromServer);
+    document.addEventListener('visibilitychange', syncFromServer);
+    return () => {
+      window.removeEventListener('pageshow', syncFromServer);
+      document.removeEventListener('visibilitychange', syncFromServer);
+    };
+  }, [character?.id, screen, busy, refreshCharacter]);
 
   const reviveCharacter = async () => {
     if (!character || busy) return;
@@ -513,6 +534,7 @@ function AppContent() {
       });
       await refreshEvents(character.id);
       if (streamCompleted) {
+        await refreshCharacter(character.id);
         clearPendingAction();
         setTurnPhase('idle');
       }

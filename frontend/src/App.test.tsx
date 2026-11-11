@@ -158,6 +158,13 @@ function setupApp(initialCharacters: Character[] = [], initialHistory: Record<st
     const eventMatch = url.pathname.match(/^\/api\/characters\/([^/]+)\/events$/);
     if (eventMatch && method === 'GET') return jsonResponse(history[eventMatch[1]] ?? []);
 
+    const characterMatch = url.pathname.match(/^\/api\/characters\/([^/]+)$/);
+    if (characterMatch && method === 'GET') {
+      const current = characters.find(item => item.id === characterMatch[1]);
+      if (!current) return jsonResponse({ detail: 'missing' }, 404);
+      return jsonResponse(current);
+    }
+
     if (url.pathname === '/api/characters' && method === 'POST') {
       const created = {
         ...mockCharacter,
@@ -281,6 +288,26 @@ describe('Telegram Mini App', () => {
     expect(await screen.findByRole('heading', { name: /welcome back, rada/i })).toBeInTheDocument();
     await waitFor(() => expect(requests.some(item => item.url === `/api/characters/${mockCharacter.id}/events`)).toBe(true));
     expect(screen.getByText(/ranger/i)).toBeInTheDocument();
+  });
+
+  it('refreshes combat conditions from the server when entering adventure play', async () => {
+    localStorage.setItem('active_character_id', mockCharacter.id);
+    const paralyzed: Character = {
+      ...mockCharacter,
+      in_combat: true,
+      combatant: { name: 'Cellar ghoul', hp: 12, max_hp: 22, armor_class: 12 },
+      conditions: [{ condition_id: 'paralyzed' }],
+    };
+    const requests = setupApp([paralyzed]);
+    render(<App />);
+    await screen.findByRole('heading', { name: /welcome back, rada/i });
+    fireEvent.click(screen.getByRole('button', { name: /continue adventure/i }));
+    await waitFor(() => {
+      expect(requests.some(
+        item => item.url === `/api/characters/${mockCharacter.id}` && item.method === 'GET',
+      )).toBe(true);
+    });
+    expect(await screen.findByText(/paralyz/i)).toBeInTheDocument();
   });
 
   it('shows the active enemy and only relevant combat choices during a fight', async () => {
