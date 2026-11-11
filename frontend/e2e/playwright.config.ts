@@ -23,15 +23,31 @@ export default defineConfig({
   projects: visualOnly
     ? [{ name: 'visual', testMatch: ['**/visual-baseline.spec.ts'] }]
     : [
-        // Shared API RNG seed: run the long chapter journey before shorter specs mutate rolls.
+        // Combat saves + ghoul paralysis need a fresh E2E_RNG_SEED stream (before chapter journey).
+        {
+          name: 'combat-saves',
+          testMatch: [
+            '**/ghoul-paralysis-combat.spec.ts',
+            '**/spell-save-combat.spec.ts',
+            '**/saving-throw-combat.spec.ts',
+          ],
+        },
         {
           name: 'chapter-journey',
           testMatch: ['**/chapter-one-quest.spec.ts'],
           timeout: 900_000,
+          dependencies: ['combat-saves'],
         },
         {
           name: 'e2e-smoke',
-          testIgnore: ['**/chapter-one-quest.spec.ts', '**/visual-baseline.spec.ts'],
+          testIgnore: [
+            '**/chapter-one-quest.spec.ts',
+            '**/visual-baseline.spec.ts',
+            '**/ghoul-paralysis-combat.spec.ts',
+            '**/spell-save-combat.spec.ts',
+            '**/saving-throw-combat.spec.ts',
+          ],
+          dependencies: ['chapter-journey'],
         },
       ],
   use: {

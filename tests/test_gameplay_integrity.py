@@ -194,7 +194,7 @@ def test_disadvantage_natural_twenty_on_wrong_die_not_auto_hit(monkeypatch):
         return game.roll(dice, modifier, critical)
 
     monkeypatch.setattr(game, "roll", fake_roll)
-    events = game._enemy_turn(hero, monster, disadvantage=True)
+    events, _ = game._enemy_turn(hero, monster, disadvantage=True)
     assert any("miss" in event.lower() for event in events)
     assert hero.hp == hero.max_hp
 
@@ -212,7 +212,7 @@ def test_disadvantage_five_twenty_uses_lower_die(monkeypatch):
         return RollResult(dice, (3,), modifier, 3 + modifier, critical)
 
     monkeypatch.setattr(game, "roll", fake_roll)
-    events = game._enemy_turn(hero, monster, disadvantage=True)
+    events, _ = game._enemy_turn(hero, monster, disadvantage=True)
     assert seen
     assert any("miss" in event.lower() for event in events)
 

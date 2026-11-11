@@ -6,7 +6,9 @@
 
 ## Co hra skutečně modeluje
 
-- Útoky, obrana, základní saving throws u některých kouzel
+- Útoky, obrana, jednotné saving throws (hráč i monstrum u modeled kouzel a vybraných schopností)
+- Minimální conditions: paralýza (ghoul — opakovaný CON save na **konci tahu** postiženého), nevýhoda na další útok (Vicious Mockery, spotřeba při rollu)
+- Melee krit vs paralyzovaný: každý zásah zblízka je krit (`encounters.enemy_attack_is_melee`); výhoda sama o sobě nekrituje na dálku
 - Omezený whitelist kouzel (`MODELED_SPELL_EFFECTS`) se sloty a cantrip škálováním
 - Short/long rest, level 1–5 progression (zjednodušené prahy XP)
 - Inventář jako seznam řetězců + obchod v Goblin Market
@@ -22,7 +24,7 @@
 ## Co je záměrně zjednodušené (neslibovat hráči)
 
 - Plná akce / bonus / reakce / pohyb / koncentrace
-- Kompletní conditions, death saves, ASI/feature stromy
+- Kompletní conditions (kromě paralýzy a jednorázové nevýhody), death saves, ASI/feature stromy
 - Inventář jako ItemDefinition/Instance
 - Všechna kouzla z SRD katalogu — pouze ty s `MODELED_SPELL_EFFECTS`
 

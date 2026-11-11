@@ -4,6 +4,7 @@ from .catalog import ABILITY_ORDER, CLASSES, RACES, standard_abilities
 from .encounters import (
     MONSTERS,
     build_monster,
+    enemy_attack_is_melee,
     filter_encounter_pool,
     monster_allowed_for_character,
     monster_key_from_phrase,
@@ -34,7 +35,16 @@ from .character_creation import (
     saving_throw_proficiencies,
 )
 from .combat_effects import ENEMY_SAVE_ABILITIES, try_vault_hazard, resolve_save_effect
-from .saving_throws import SavingThrowRequest, perform_saving_throw, roll_result_compat
+from .saving_throws import SavingThrowRequest, perform_saving_throw, roll_result_compat, spell_save_dc
+from .spell_saves import resolve_spell_save_damage
+from .conditions import (
+    attacks_against_player_have_advantage,
+    consume_monster_disadvantage,
+    player_action_blocked,
+    player_paralyzed,
+    tick_condition_durations,
+    try_player_repeat_saves,
+)
 from .ruleset_v1 import MAX_MVP_LEVEL
 from .intent import (
     AMBIGUOUS,
@@ -345,23 +355,85 @@ class GameEngine:
             )
         return None
 
+    def _begin_player_combat_action(
+        self, character: CharacterState, action: str,
+    ) -> tuple[list[str], TurnResult | None]:
+        if player_action_blocked(character):
+            return (
+                [],
+                TurnResult(
+                    action,
+                    ["You are paralyzed and cannot act."],
+                    False,
+                    costs_adventure_mana=False,
+                ),
+            )
+        return [], None
+
+    def _close_player_combat_turn(self, character: CharacterState) -> list[str]:
+        if not character.in_combat:
+            return []
+        events = try_player_repeat_saves(self, character)
+        tick_condition_durations(character)
+        return events
+
+    def _finish_paralyzed_player_turn(
+        self,
+        character: CharacterState,
+        action: str,
+        monster: MonsterState | None,
+        *,
+        prefix_events: list[str] | None = None,
+    ) -> tuple[TurnResult, MonsterState | None]:
+        events = list(prefix_events or [])
+        if not any("paralyzed" in line.casefold() for line in events):
+            events.append("You are paralyzed and cannot act.")
+        events.extend(self._close_player_combat_turn(character))
+        if monster is not None and character.in_combat and character.hp > 0:
+            enemy_events, enemy_save = self._enemy_turn(character, monster)
+            events.extend(enemy_events)
+            return (
+                TurnResult(action, events, True, save_facts=enemy_save),
+                monster if character.in_combat else None,
+            )
+        return TurnResult(action, events, True), monster
+
     @staticmethod
     def _finish_player_combat_round(character: CharacterState) -> None:
         if character.in_combat:
             character.combat_turn = "player"
             character.combat_round += 1
 
-    def _enemy_turn(self, character: CharacterState, monster: MonsterState, disadvantage: bool = False) -> list[str]:
+    def _enemy_turn(
+        self,
+        character: CharacterState,
+        monster: MonsterState,
+        disadvantage: bool = False,
+    ) -> tuple[list[str], dict]:
         if character.hp <= 0:
-            return []
+            return [], {}
         events: list[str] = []
+        save_facts: dict = {}
         key = monster_template_key(monster)
-        # every_turn save abilities (none in MVP catalog yet)
-        pre_save, _pre_facts = self._enemy_save_ability(character, key, "every_turn")
+        pre_save, pre_facts = self._enemy_save_ability(character, key, "every_turn")
         events.extend(pre_save)
+        if pre_facts:
+            save_facts = {**save_facts, **pre_facts}
         if character.hp <= 0:
-            return events
-        if disadvantage:
+            return events, save_facts
+
+        attack_disadvantage = disadvantage or consume_monster_disadvantage(monster)
+        attack_advantage = attacks_against_player_have_advantage(character)
+        if attack_advantage and attack_disadvantage:
+            attack_advantage = False
+            attack_disadvantage = False
+
+        if attack_advantage:
+            enemy = self.roll("2d20", monster.attack_bonus)
+            chosen = max(enemy.values[0], enemy.values[1])
+            attack_total = chosen + enemy.modifier
+            natural = chosen
+        elif attack_disadvantage:
             enemy = self.roll("2d20", monster.attack_bonus)
             chosen = min(enemy.values[0], enemy.values[1])
             attack_total = chosen + enemy.modifier
@@ -372,28 +444,42 @@ class GameEngine:
             natural = enemy.values[0]
         if natural == 1 or attack_total < character.armor_class:
             miss = [f"{monster.name}'s attack misses."]
-            if disadvantage and natural != 1:
+            if attack_disadvantage and natural != 1:
                 miss = [f"{monster.name}'s disadvantaged attack misses. You keep your guard."]
+            elif attack_advantage:
+                miss = [f"{monster.name}'s attack misses despite advantage against you."]
             events.extend(miss)
             self._finish_player_combat_round(character)
-            return events
+            return events, save_facts
         dice, _, bonus = monster.damage.partition("+")
-        damage = self.roll(dice, int(bonus) if bonus else 0, natural == 20)
+        melee = enemy_attack_is_melee(key)
+        critical = natural == 20
+        if melee and player_paralyzed(character) and natural != 1:
+            if natural != 20:
+                critical = True
+            events.append("Melee hit against a paralyzed foe — critical damage.")
+        damage = self.roll(dice, int(bonus) if bonus else 0, critical)
         character.hp = max(0, character.hp - damage.total)
         events.append(f"{monster.name} hits you for {damage.total}. Your HP: {character.hp}/{character.max_hp}.")
-        post_save, _post_facts = self._enemy_save_ability(character, key, "on_hit")
-        events.extend(post_save)
+        if character.hp > 0:
+            post_save, post_facts = self._enemy_save_ability(character, key, "on_hit")
+            events.extend(post_save)
+            if post_facts:
+                save_facts = {**save_facts, **post_facts}
         if character.hp == 0:
             events.extend(self._recover_from_combat_defeat(character))
-            return events
+            return events, save_facts
         self._finish_player_combat_round(character)
-        return events
+        return events, save_facts
 
     def _use_item(self, character: CharacterState, action: str, monster: MonsterState | None) -> tuple[TurnResult, MonsterState | None]:
         if monster is not None and character.in_combat:
             blocked = self._require_player_combat_turn(character, action)
             if blocked:
                 return blocked, monster
+            blocked_turn = self._begin_player_combat_action(character, action)[1]
+            if blocked_turn:
+                return self._finish_paralyzed_player_turn(character, action, monster)
         potion = next((item for item in character.inventory if "potion" in item.casefold()), None)
         if potion is None:
             return TurnResult(action, ["You have no usable potion."], False), monster
@@ -404,10 +490,16 @@ class GameEngine:
         character.hp += amount
         character.inventory.remove(potion)
         sync_item_instances(character)
-        events = [f"You drink a healing potion and recover {amount} HP. Your HP: {character.hp}/{character.max_hp}."]
+        events = [
+            f"You drink a healing potion and recover {amount} HP. Your HP: {character.hp}/{character.max_hp}.",
+        ]
+        save_payload: dict = {}
         if monster and character.in_combat:
-            events.extend(self._enemy_turn(character, monster))
-        return TurnResult(action, events, True), None if not character.in_combat else monster
+            events.extend(self._close_player_combat_turn(character))
+            enemy_events, enemy_save = self._enemy_turn(character, monster)
+            events.extend(enemy_events)
+            save_payload = enemy_save
+        return TurnResult(action, events, True, save_facts=save_payload), None if not character.in_combat else monster
 
     def _equip_item(
         self, character: CharacterState, action: str, monster: MonsterState | None
@@ -463,6 +555,9 @@ class GameEngine:
             blocked = self._require_player_combat_turn(character, action)
             if blocked:
                 return blocked, monster
+            blocked_turn = self._begin_player_combat_action(character, action)[1]
+            if blocked_turn:
+                return self._finish_paralyzed_player_turn(character, action, monster)
         spell_name, target_name = self._spell_action_parts(action)
         if not spell_name:
             return TurnResult(action, ["Name a spell to cast. No spell slot was spent."], False), monster
@@ -646,6 +741,7 @@ class GameEngine:
         upcast = max(0, (slot_level or level) - level)
         effect_facts: dict = {"type": kind}
         save_result = None
+        merged_save_facts: dict = {}
         events: list[str] = []
         damage = 0
 
@@ -733,29 +829,22 @@ class GameEngine:
             if level == 0:
                 damage_count += self._cantrip_dice_count(character.level) - 1
             damage_die = dice.split("d", 1)[1]
-            rolled = self.roll(f"{damage_count}d{damage_die}")
-            save_roll = self.roll("1d20", monster.saving_throws.get(save_ability, 0))
-            saved = save_roll.total >= 8 + (2 + max(0, (character.level - 1) // 4)) + ability_bonus
-            damage = rolled.total
-            if saved:
-                damage = damage // 2 if save_on_success == "half" else 0
-            save_result = {
-                "ability": save_ability,
-                "roll": self._roll_facts(save_roll),
-                "dc": 8 + (2 + max(0, (character.level - 1) // 4)) + ability_bonus,
-                "succeeded": saved,
-            }
-            effect_facts.update({
-                "dice_result": self._roll_facts(rolled),
-                "damage": damage,
-                "debuff_not_applied": selected == "Vicious Mockery" and not saved,
-            })
-            events.append(
-                f"{monster.name} {'succeeds' if saved else 'fails'} a {save_ability.title()} save against {selected} "
-                f"(DC {save_result['dc']}); takes {damage} damage."
+            damage, save_outcome, save_lines, save_extras = resolve_spell_save_damage(
+                self,
+                character,
+                monster,
+                selected,
+                damage_dice=dice,
+                save_ability=save_ability,
+                save_on_success=save_on_success,
+                damage_count=damage_count,
+                damage_die=damage_die,
             )
-            if effect_facts["debuff_not_applied"]:
-                events.append("Vicious Mockery's attack-disadvantage effect is not modeled.")
+            events.extend(save_lines)
+            save_result = save_outcome.to_facts()
+            save_result["dc"] = spell_save_dc(character)
+            effect_facts.update({"damage": damage, **save_extras})
+            merged_save_facts = {"save": save_result, "spell": selected}
 
         if monster and damage_kind:
             monster.hp = max(0, monster.hp - max(0, damage))
@@ -792,7 +881,11 @@ class GameEngine:
             monster = None
         elif monster:
             events.append(f"{monster.name} has {monster.hp}/{monster.max_hp} HP.")
-            events.extend(self._enemy_turn(character, monster))
+            events.extend(self._close_player_combat_turn(character))
+            enemy_events, enemy_save = self._enemy_turn(character, monster)
+            events.extend(enemy_events)
+            if enemy_save:
+                merged_save_facts = {**merged_save_facts, **enemy_save}
             monster = None if not character.in_combat else monster
 
         facts = {
@@ -808,7 +901,12 @@ class GameEngine:
             "save_result": save_result,
         }
         return TurnResult(
-            action, events, True, combat_over, facts,
+            action,
+            events,
+            True,
+            combat_over,
+            facts,
+            save_facts=merged_save_facts,
             level_up_facts=level_up_facts if combat_over else {},
         ), monster
 
@@ -1007,7 +1105,14 @@ class GameEngine:
                 return [], {}
             character.quest_flags[flag] = True
         result, damage, events = resolve_save_effect(self, character, ability_def)
-        return events, {"save": result.to_facts(), "damage": damage, "ability_id": ability_def.source_id}
+        from .conditions import condition_labels
+
+        return events, {
+            "save": result.to_facts(),
+            "damage": damage,
+            "ability_id": ability_def.source_id,
+            "conditions": condition_labels(character),
+        }
 
     def skill_modifier(self, character: CharacterState, skill: str) -> int:
         ability = SKILL_ABILITIES.get(skill, "dexterity")
@@ -1112,19 +1217,24 @@ class GameEngine:
             character.in_combat = True
             events.extend(self._roll_initiative(character, monster))
             if character.combat_turn == "enemy":
-                events.extend(self._enemy_turn(character, monster))
+                enemy_events, enemy_save = self._enemy_turn(character, monster)
+                events.extend(enemy_events)
                 if not character.in_combat:
-                    return TurnResult(action, events, True, True), None
+                    return TurnResult(action, events, True, True, save_facts=enemy_save), None
         elif not character.in_combat:
             character.in_combat = True
             events.extend(self._roll_initiative(character, monster))
             if character.combat_turn == "enemy":
-                events.extend(self._enemy_turn(character, monster))
+                enemy_events, enemy_save = self._enemy_turn(character, monster)
+                events.extend(enemy_events)
                 if not character.in_combat:
-                    return TurnResult(action, events, True, True), None
+                    return TurnResult(action, events, True, True, save_facts=enemy_save), None
         blocked = self._require_player_combat_turn(character, action)
         if blocked:
             return blocked, monster
+        blocked_turn = self._begin_player_combat_action(character, action)[1]
+        if blocked_turn:
+            return self._finish_paralyzed_player_turn(character, action, monster)
         events.extend(self.attack(character, monster))
         if monster.hp == 0:
             character.in_combat = False
@@ -1148,9 +1258,14 @@ class GameEngine:
                 level_up_facts = {**level_up_facts, **story_facts}
             events.extend(level_events)
             return TurnResult(action, events, True, True, level_up_facts=level_up_facts), None
-        events.extend(self._enemy_turn(character, monster))
+        events.extend(self._close_player_combat_turn(character))
+        enemy_events, enemy_save = self._enemy_turn(character, monster)
+        events.extend(enemy_events)
         self._regenerate_mana(character)
-        return TurnResult(action, events, True), None if not character.in_combat else monster
+        return (
+            TurnResult(action, events, True, save_facts=enemy_save),
+            None if not character.in_combat else monster,
+        )
 
     def resolve_action(self, character: CharacterState, action: str, monster: MonsterState | None) -> tuple[TurnResult, MonsterState | None]:
         if character.hp <= 0:
@@ -1196,11 +1311,19 @@ class GameEngine:
             blocked = self._require_player_combat_turn(character, action)
             if blocked:
                 return blocked, monster
+            blocked_turn = self._begin_player_combat_action(character, action)[1]
+            if blocked_turn:
+                return self._finish_paralyzed_player_turn(character, action, monster)
             character.dodging = True
             events = ["You dodge and gain disadvantage protection against the next enemy attack."]
-            events.extend(self._enemy_turn(character, monster, disadvantage=True))
+            events.extend(self._close_player_combat_turn(character))
+            enemy_events, enemy_save = self._enemy_turn(character, monster, disadvantage=True)
+            events.extend(enemy_events)
             character.dodging = False
-            return TurnResult(action, events, True), monster if character.in_combat else None
+            return (
+                TurnResult(action, events, True, save_facts=enemy_save),
+                monster if character.in_combat else None,
+            )
 
         if intent.kind == REST:
             from .economy_balance import (

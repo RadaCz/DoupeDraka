@@ -401,6 +401,8 @@ const cs: Record<string, string> = {
   'Shield or buckler. Extra protection when equipped.': 'Štít nebo pavesa — další ochrana, když je vybaven.',
   'Condition': 'Stav',
   'Invisible': 'Neviditelny',
+  'paralyzed': 'Paralyza',
+  'disadvantage_next_attack': 'Nevyhoda na dalsi utok',
   'Spell slots power casting for spellcaster classes. They are separate from Adventure Mana, which pays only for story turns.': 'Kouzelné sloty pohánějí sesílání u sesilacich povolani. Jsou oddelene od dobrodruzne many, které platí pouze za herní tahy.',
   'None': 'Zadne',
   'Cast a spell': 'Seslat kouzlo',

@@ -1,9 +1,10 @@
-"""Player-facing saving throw triggers: enemy abilities, hazards, enemy spells."""
+"""Player-facing saving throw triggers: enemy abilities, hazards, monster abilities."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 
+from .conditions import apply_paralysis_on_failed_save
 from .models import CharacterState
 from .saving_throws import SavingThrowRequest, SavingThrowResult, format_saving_throw_lines
 
@@ -27,12 +28,25 @@ class SaveEffectDefinition:
     context_en: str
     outcome_success_en: str
     outcome_fail_en: str
+    on_fail_condition: str | None = None
 
 
 @dataclass(frozen=True)
-class EnemySaveAbility(SaveEffectDefinition):
+class EnemySaveAbility:
     monster_key: str
-    trigger: str  # every_turn | on_hit
+    trigger: str
+    ability: str
+    dc: int
+    damage_dice: str
+    damage_bonus: int
+    on_fail: OnFail
+    on_success: OnSuccess
+    source: str
+    source_id: str
+    context_en: str
+    outcome_success_en: str
+    outcome_fail_en: str
+    on_fail_condition: str | None = None
 
 
 LOCATION_HAZARDS: dict[str, SaveEffectDefinition] = {
@@ -57,15 +71,16 @@ ENEMY_SAVE_ABILITIES: dict[str, EnemySaveAbility] = {
         trigger="on_hit",
         ability="constitution",
         dc=10,
-        damage_dice="1d4",
+        damage_dice="",
         damage_bonus=0,
-        on_fail="full",
+        on_fail="none",
         on_success="none",
-        source="enemy ability",
+        source="monster ability",
         source_id="ghoul_paralyzing_claws",
-        context_en="The ghoul's claws leave a grave-cold sting — resist!",
-        outcome_success_en="You shake off the paralysis.",
-        outcome_fail_en="Necrotic cold wracks your body.",
+        context_en="The ghoul's claws carry paralytic venom — resist!",
+        outcome_success_en="You shrug off the paralysis.",
+        outcome_fail_en="Your muscles lock.",
+        on_fail_condition="paralyzed",
     ),
     "kobold": EnemySaveAbility(
         monster_key="kobold",
@@ -76,7 +91,7 @@ ENEMY_SAVE_ABILITIES: dict[str, EnemySaveAbility] = {
         damage_bonus=0,
         on_fail="full",
         on_success="none",
-        source="enemy spell",
+        source="monster ability",
         source_id="kobold_caustic_spittle",
         context_en="The kobold spits alchemical froth — dodge or burn!",
         outcome_success_en="You avoid the worst of the spittle.",
@@ -90,21 +105,21 @@ VAULT_HAZARD_FLAG = "vault_falling_stones_triggered"
 
 
 def _apply_damage_multiplier(base: int, mode: str) -> int:
-    if mode == "none":
+    if mode == "none" or mode == "":
         return 0
     if mode == "half":
         return max(0, base // 2)
     return max(0, base)
 
 
-def _combat_save_flag(definition: SaveEffectDefinition) -> str:
+def _combat_save_flag(definition: SaveEffectDefinition | EnemySaveAbility) -> str:
     return f"combat_save_used_{definition.source_id}"
 
 
 def resolve_save_effect(
     engine: "GameEngine",
     character: CharacterState,
-    definition: SaveEffectDefinition,
+    definition: SaveEffectDefinition | EnemySaveAbility,
 ) -> tuple[SavingThrowResult, int, list[str]]:
     request = SavingThrowRequest(
         ability=definition.ability,
@@ -113,27 +128,30 @@ def resolve_save_effect(
         source_id=definition.source_id,
     )
     result = engine.resolve_saving_throw(character, request)
-    rolled = engine.roll(definition.damage_dice, definition.damage_bonus)
-    if result.success:
-        damage = _apply_damage_multiplier(rolled.total, definition.on_success)
-        tail = definition.outcome_success_en
-    else:
-        damage = _apply_damage_multiplier(rolled.total, definition.on_fail)
-        tail = definition.outcome_fail_en
-
     events = format_saving_throw_lines(result, context=definition.context_en)
-    if damage > 0:
-        character.hp = max(0, character.hp - damage)
-        events.append(f"{tail} You take {damage} damage. Your HP: {character.hp}/{character.max_hp}.")
-    else:
-        events.append(f"{tail} You take no damage.")
-
-    if character.hp == 0:
-        if character.in_combat and character.combatant:
-            character.hp = 1
-            events.append("You drop to one knee but force yourself upright — the fight continues.")
+    damage = 0
+    if definition.damage_dice:
+        rolled = engine.roll(definition.damage_dice, definition.damage_bonus)
+        if result.success:
+            damage = _apply_damage_multiplier(rolled.total, definition.on_success)
+            tail = definition.outcome_success_en
         else:
-            events.extend(engine._recover_from_combat_defeat(character))  # type: ignore[attr-defined]
+            damage = _apply_damage_multiplier(rolled.total, definition.on_fail)
+            tail = definition.outcome_fail_en
+        if damage > 0:
+            character.hp = max(0, character.hp - damage)
+            events.append(f"{tail} You take {damage} damage. Your HP: {character.hp}/{character.max_hp}.")
+        else:
+            events.append(f"{tail} You take no damage.")
+    else:
+        tail = definition.outcome_success_en if result.success else definition.outcome_fail_en
+        events.append(tail)
+
+    if not result.success and definition.on_fail_condition == "paralyzed":
+        events.extend(apply_paralysis_on_failed_save(engine, character, definition.source_id))
+
+    if damage > 0 and character.hp == 0:
+        events.extend(engine._recover_from_combat_defeat(character))  # type: ignore[attr-defined]
 
     return result, damage, events
 

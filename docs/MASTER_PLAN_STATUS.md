@@ -1,8 +1,8 @@
 # Master plan — stav (sync s DOUPEDRAKA_MASTER_PLAN.md v1.0)
 
-Poslední revize: **2026-11-11 (Sprint 18 — saving throws & combat effects V1, lokálně, necommitováno)**. Etapy 7–9 záměrně otevřené až po uzavření sólo smyčky.  
-**Kódový HEAD (lokální):** `def6a93` na `clean-main` + Sprint 18 working tree.  
-**CI:** GitHub Actions run `42824720654` na `339271d` — **4/4 SUCCESS**.  
+Poslední revize: **2026-11-11 (Sprint 19.1 — git truth, SRD paralysis/crit, combat-saves E2E; lokálně, necommitováno)**. Etapy 7–9 záměrně otevřené až po uzavření sólo smyčky.  
+**Kódový HEAD (commit):** `0f1dd12` na `clean-main` (= origin). **Sprint 19/19.1:** working tree.  
+**CI:** Poslední ověřený GHA na starším commitu; **aktuální diff nepushnutý — CI neověřeno**.  
 **Staging HTTPS:** **NOT DEPLOYED** — viz `docs/STAGING_DEVICE_VALIDATION_V1.md`.  
 **Fyzický Telegram:** Android / iOS **NOT TESTED** (`docs/TELEGRAM_MOBILE_QA_V1.md`).  
 **Normal debit/refund na stagingu:** **NOT TESTED**.

@@ -204,6 +204,14 @@ def monster_template_key(monster: MonsterState) -> str:
     return matched if matched else DEFAULT_MONSTER
 
 
+# MVP catalog attacks are melee weapon swings unless listed here (future ranged foes).
+RANGED_ATTACK_MONSTERS: frozenset[str] = frozenset()
+
+
+def enemy_attack_is_melee(template_key: str) -> bool:
+    return template_key not in RANGED_ATTACK_MONSTERS
+
+
 def monster_allowed_for_character(character: CharacterState, key: str) -> bool:
     """Whether this monster may appear in combat for the hero's current chapter state."""
     if key not in MONSTERS:

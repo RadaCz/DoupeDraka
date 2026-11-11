@@ -99,6 +99,12 @@ export function CombatHeroStrip({ character }: { character: Character }) {
         {character.invisible && (
           <span className="combat-stat"><small>{t('Condition')}</small><strong>{t('Invisible')}</strong></span>
         )}
+        {(character.conditions ?? []).map(cond => (
+          <span key={String(cond.condition_id)} className="combat-stat">
+            <small>{t('Condition')}</small>
+            <strong>{t(String(cond.condition_id))}</strong>
+          </span>
+        ))}
       </div>
     </div>
   );

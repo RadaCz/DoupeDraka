@@ -13,6 +13,7 @@ export type CharacterSnapshot = {
   gold?: number;
   combatant?: { name?: string } | null;
   combat_turn?: string;
+  conditions?: Array<{ condition_id: string }>;
 };
 
 export async function reviveIfFallen(
@@ -160,7 +161,8 @@ export async function ensureLevelAtLeast(
       await postGameAction(request, token, characterId, `attack ${state.combatant.name}`);
       continue;
     }
-    await postGameAction(request, token, characterId, `search ${state.location}`);
+    const tier1Foe = state.location?.includes('Cellar') ? 'goblin' : 'kobold';
+    await postGameAction(request, token, characterId, `attack ${tier1Foe}`);
   }
 
   const final = await fetchCharacterState(request, token, characterId);

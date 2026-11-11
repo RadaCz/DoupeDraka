@@ -438,7 +438,7 @@ def test_hp_never_goes_negative_when_damaged():
     hero.in_combat = True
     monster = MonsterState(name="Brute", hp=30, max_hp=30, armor_class=8, attack_bonus=12, damage="1d6+0")
     game.rng.randint = lambda a, b: 20
-    game._enemy_turn(hero, monster)
+    game._enemy_turn(hero, monster)[0]
     assert hero.hp >= 0
 
 
@@ -451,7 +451,7 @@ def test_combat_knockout_respawns_at_safe_hub_with_one_hp():
     monster = MonsterState(
         name="Brute", hp=30, max_hp=30, armor_class=8, attack_bonus=15, damage="2d6+6",
     )
-    events = game._enemy_turn(hero, monster)
+    events, _ = game._enemy_turn(hero, monster)
     assert hero.hp == 1
     assert hero.location == "The Whispering Cellar"
     assert not hero.in_combat

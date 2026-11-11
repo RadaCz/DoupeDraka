@@ -220,7 +220,7 @@ def test_burning_hands_successful_save_halves_damage_and_consumes_slot():
     monster = MonsterState(hp=50, max_hp=50, saving_throws={"dexterity": 0})
     result, _ = game.resolve_action(hero, "cast Burning Hands", monster)
     assert result.spell_facts["save_result"]["succeeded"]
-    assert result.spell_facts["save_result"]["dc"] == 12
+    assert result.spell_facts["save_result"]["dc"] == 10  # INT 10 wizard: 8 + prof + mod
     assert result.spell_facts["effect"]["damage"] == 9
     assert monster.hp == 41
     assert hero.spell_slots == {1: 1}
@@ -296,12 +296,13 @@ def test_failed_cast_on_legacy_character_does_not_hydrate_spell_state():
     ) == before
 
 
-def test_vicious_mockery_marks_unmodeled_disadvantage_without_applying_it():
+def test_vicious_mockery_failed_save_applies_disadvantage():
     game = GameEngine(random.Random(1))
-    game.rng.randint = lambda lower, upper: upper if upper == 4 else lower
+    game.rng.randint = lambda lower, upper: 1 if upper == 20 else lower
     hero = create_hero("bard", charisma=16)
+    begin_combat(hero)
     monster = MonsterState(hp=50, max_hp=50, saving_throws={"wisdom": 0})
-    result, _ = game.resolve_action(hero, "cast Vicious Mockery", monster)
-    assert result.spell_facts["effect"]["debuff_not_applied"]
-    assert any("effect is not modeled" in event for event in result.events)
-    assert hero.spell_slots == {1: 2}
+    result, monster = game.resolve_action(hero, "cast Vicious Mockery", monster)
+    assert result.spell_facts["effect"].get("disadvantage_next_attack") is True
+    assert any("disadvantage on its next attack" in event for event in result.events)
+    assert not any("effect is not modeled" in event for event in result.events)

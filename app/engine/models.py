@@ -32,6 +32,7 @@ class CharacterState:
     # fallen = 0 HP and cannot act until revived.
     death_state: str = "alive"
     dodging: bool = False
+    conditions: list[dict] = field(default_factory=list)
     memory_summary: str = ""
     long_term_memory: str = ""
     journal_archived_through_event_id: int = 0
@@ -59,6 +60,7 @@ class MonsterState:
     # Defaulted so combatants persisted before rewards existed still decode.
     reward_xp: int = 50
     saving_throws: dict[str, int] = field(default_factory=dict)
+    conditions: list[dict] = field(default_factory=list)
 
 @dataclass(frozen=True)
 class RollResult:

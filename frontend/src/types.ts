@@ -26,6 +26,7 @@ export interface Character {
   prepared_spells: string[];
   spellcasting_ability: string;
   invisible?: boolean;
+  conditions?: Array<Record<string, unknown>>;
   difficulty: string;
   tone: string;
   humor: string;
@@ -61,6 +62,7 @@ export interface Combatant {
   hp: number;
   max_hp: number;
   armor_class: number;
+  conditions?: Array<Record<string, unknown>>;
 }
 
 export interface RaceReference {

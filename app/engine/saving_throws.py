@@ -6,7 +6,7 @@ from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING, Callable
 
 from .catalog import ABILITY_ORDER
-from .models import CharacterState, RollResult
+from .models import CharacterState, MonsterState, RollResult
 
 if TYPE_CHECKING:
     from .service import GameEngine
@@ -44,10 +44,14 @@ class SavingThrowResult:
     lucky_note: str
     natural_1: bool
     natural_20: bool
+    actor_type: str = "player"
+    actor_name: str = ""
+    automatic_failure: bool = False
 
     def to_facts(self) -> dict:
         payload = asdict(self)
         payload["dice"] = "1d20"
+        payload["succeeded"] = self.success
         return payload
 
 
@@ -77,16 +81,37 @@ def format_saving_throw_lines(result: SavingThrowResult, *, context: str = "") -
         adv = " (disadvantage)"
     prof = f" +{result.proficiency_bonus} proficiency" if result.proficient else ""
     outcome = "success" if result.success else "failure"
-    lines = [
-        f"Saving throw — {result.ability.title()}. DC {result.dc}{adv}.",
-        (
+    actor = result.actor_name.strip()
+    if result.actor_type == "monster" and actor:
+        header = f"{actor} saving throw — {result.ability.title()}. DC {result.dc}{adv}."
+        mod = result.ability_modifier
+        roll_line = f"Roll {result.d20_roll} + {mod} save = {result.total} — {outcome}.{result.lucky_note}"
+    else:
+        header = f"Saving throw — {result.ability.title()}. DC {result.dc}{adv}."
+        roll_line = (
             f"Roll {result.d20_roll} + {result.ability_modifier} ability"
             f"{prof} = {result.total} — {outcome}.{result.lucky_note}"
-        ),
-    ]
+        )
+    if result.automatic_failure:
+        roll_line = f"Automatic failure — {result.ability.title()} save.{result.lucky_note}"
+    lines = [header, roll_line]
     if context:
         lines.insert(0, context)
     return lines
+
+
+def spell_save_dc(character: CharacterState) -> int:
+    return 8 + _proficiency_bonus(character.level) + _ability_modifier_for_spellcasting(character)
+
+
+def _ability_modifier_for_spellcasting(character: CharacterState) -> int:
+    from .spells import SPELLCASTING_ABILITIES
+
+    ability_key = character.spellcasting_ability or SPELLCASTING_ABILITIES.get(character.character_class, "int")
+    ability_name = {"int": "intelligence", "wis": "wisdom", "cha": "charisma"}.get(ability_key, ability_key)
+    if ability_name not in VALID_ABILITIES:
+        ability_name = "intelligence"
+    return _ability_modifier(character, ability_name)
 
 
 def perform_saving_throw(
@@ -97,6 +122,30 @@ def perform_saving_throw(
     roll_d20: Callable[[], int] | None = None,
 ) -> SavingThrowResult:
     validate_saving_throw_request(request)
+    from .conditions import player_save_forced_failure
+
+    if player_save_forced_failure(character, request.ability):
+        return SavingThrowResult(
+            ability=request.ability,
+            dc=request.dc,
+            d20_roll=1,
+            second_d20=None,
+            ability_modifier=_ability_modifier(character, request.ability),
+            proficiency_bonus=0,
+            proficient=request.ability in character.saving_throw_proficiencies,
+            total=0,
+            success=False,
+            advantage=False,
+            disadvantage=False,
+            source=request.source,
+            source_id=request.source_id,
+            lucky_note="",
+            natural_1=True,
+            natural_20=False,
+            actor_type="player",
+            actor_name=character.name,
+            automatic_failure=True,
+        )
     ability_mod = _ability_modifier(character, request.ability)
     prof = _proficiency_bonus(character.level)
     proficient = request.ability in character.saving_throw_proficiencies
@@ -151,6 +200,66 @@ def perform_saving_throw(
         lucky_note=lucky_note,
         natural_1=natural == 1,
         natural_20=natural == 20,
+        actor_type="player",
+        actor_name=character.name,
+    )
+
+
+def perform_monster_saving_throw(
+    engine: "GameEngine",
+    monster: MonsterState,
+    request: SavingThrowRequest,
+    *,
+    roll_d20: Callable[[], int] | None = None,
+) -> SavingThrowResult:
+    validate_saving_throw_request(request)
+    save_bonus = int(monster.saving_throws.get(request.ability, 0))
+
+    advantage = request.advantage
+    disadvantage = request.disadvantage
+    if advantage and disadvantage:
+        advantage = False
+        disadvantage = False
+
+    def pull_natural() -> int:
+        if roll_d20 is not None:
+            return roll_d20()
+        return engine.rng.randint(1, 20)
+
+    second: int | None = None
+    if advantage or disadvantage:
+        first = pull_natural()
+        other = pull_natural()
+        if advantage:
+            natural = max(first, other)
+            second = min(first, other)
+        else:
+            natural = min(first, other)
+            second = max(first, other)
+    else:
+        natural = pull_natural()
+
+    total = natural + save_bonus
+    success = total >= request.dc
+    return SavingThrowResult(
+        ability=request.ability,
+        dc=request.dc,
+        d20_roll=natural,
+        second_d20=second,
+        ability_modifier=save_bonus,
+        proficiency_bonus=0,
+        proficient=False,
+        total=total,
+        success=success,
+        advantage=advantage,
+        disadvantage=disadvantage,
+        source=request.source,
+        source_id=request.source_id,
+        lucky_note="",
+        natural_1=natural == 1,
+        natural_20=natural == 20,
+        actor_type="monster",
+        actor_name=monster.name,
     )
 
 

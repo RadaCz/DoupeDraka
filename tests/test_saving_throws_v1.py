@@ -171,7 +171,7 @@ def test_ghoul_on_hit_triggers_con_save():
     monster.attack_bonus = 30
     hero.armor_class = 10
     hero.hp = 30
-    events = game._enemy_turn(hero, monster)
+    events, _ = game._enemy_turn(hero, monster)
     joined = " ".join(events)
     assert "hits you" in joined
     assert "Saving throw" in joined or "Constitution" in joined
@@ -186,6 +186,6 @@ def test_kobold_spell_save_on_hit():
     hero.armor_class = 10
     monster = build_monster("normal", "kobold")
     monster.attack_bonus = 25
-    events = game._enemy_turn(hero, monster)
+    events, _ = game._enemy_turn(hero, monster)
     assert any("Saving throw" in e for e in events)
     assert any("spit" in e.lower() or "froth" in e.lower() for e in events)
