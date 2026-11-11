@@ -1,7 +1,7 @@
 # Master plan — stav (sync s DOUPEDRAKA_MASTER_PLAN.md v1.0)
 
-Poslední revize: **2026-11-11 (Sprint 17.1 — E2E equipment/intent fix, lokálně, necommitováno)**. Etapy 7–9 záměrně otevřené až po uzavření sólo smyčky.  
-**Kódový HEAD (lokální):** `ebb4cd8` na `clean-main` + Sprint 17 working tree.  
+Poslední revize: **2026-11-11 (Sprint 18 — saving throws & combat effects V1, lokálně, necommitováno)**. Etapy 7–9 záměrně otevřené až po uzavření sólo smyčky.  
+**Kódový HEAD (lokální):** `def6a93` na `clean-main` + Sprint 18 working tree.  
 **CI:** GitHub Actions run `42824720654` na `339271d` — **4/4 SUCCESS**.  
 **Staging HTTPS:** **NOT DEPLOYED** — viz `docs/STAGING_DEVICE_VALIDATION_V1.md`.  
 **Fyzický Telegram:** Android / iOS **NOT TESTED** (`docs/TELEGRAM_MOBILE_QA_V1.md`).  
@@ -12,7 +12,7 @@ Poslední revize: **2026-11-11 (Sprint 17.1 — E2E equipment/intent fix, lokál
 | 0 | Security & clean package | Hotovo (uživatel) | Secret scan v CI, clean export script; token rotován |
 | 1 | P0 correctness | Hotovo v kódu | Idempotence, atomická energie, pending klíč ve frontendu; spell testy sjednocené s kontraktem `resolve_action` |
 | 2 | Deploy & DB lifecycle | Hotovo v kódu | Alembic v003, Docker, health 503, PG job v CI |
-| 3 | Ruleset v1 | Průběžně | SRD 5.1 AC from worn armor/shield (`equipment.py`); iniciativa/akce — backlog |
+| 3 | Ruleset v1 | Průběžně | SRD 5.1 AC + **player saving throws in play** (`saving_throws.py`, hazards/enemy riders); iniciativa/ekonomie akcí — backlog |
 | 4 | First campaign slice | Průběžně | `quests.py` + `/reference` katalog; side quest Crypt; hlavní quest refaktor |
 | 5 | AI DM CZ | **P2 + P2.1 + P3 (WT)** | Paměť, online `scene_kind`, offline fallbacky (`offline_variety`), journal UX stream order + CZ mechaniky |
 | 6 | Mini App & Telegram QA | **Kód připraven; fyzicky NOT TESTED** | Sprint 5: BackButton lifecycle, viewport E2E; `TELEGRAM_MOBILE_QA_V1.md` + `PHYSICAL_TELEGRAM_QA_V2.md` |

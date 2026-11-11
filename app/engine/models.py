@@ -68,6 +68,7 @@ class RollResult:
 class TurnResult:
     action: str; events: list[str]; state_changed: bool; combat_over: bool = False
     spell_facts: dict = field(default_factory=dict)
+    save_facts: dict = field(default_factory=dict)
     rest_facts: dict = field(default_factory=dict)
     level_up_facts: dict = field(default_factory=dict)
     purchase_facts: dict = field(default_factory=dict)

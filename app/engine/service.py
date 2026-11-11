@@ -33,6 +33,8 @@ from .character_creation import (
     resolve_creation_options,
     saving_throw_proficiencies,
 )
+from .combat_effects import ENEMY_SAVE_ABILITIES, try_vault_hazard, resolve_save_effect
+from .saving_throws import SavingThrowRequest, perform_saving_throw, roll_result_compat
 from .ruleset_v1 import MAX_MVP_LEVEL
 from .intent import (
     AMBIGUOUS,
@@ -352,6 +354,13 @@ class GameEngine:
     def _enemy_turn(self, character: CharacterState, monster: MonsterState, disadvantage: bool = False) -> list[str]:
         if character.hp <= 0:
             return []
+        events: list[str] = []
+        key = monster_template_key(monster)
+        # every_turn save abilities (none in MVP catalog yet)
+        pre_save, _pre_facts = self._enemy_save_ability(character, key, "every_turn")
+        events.extend(pre_save)
+        if character.hp <= 0:
+            return events
         if disadvantage:
             enemy = self.roll("2d20", monster.attack_bonus)
             chosen = min(enemy.values[0], enemy.values[1])
@@ -362,15 +371,18 @@ class GameEngine:
             attack_total = enemy.total
             natural = enemy.values[0]
         if natural == 1 or attack_total < character.armor_class:
-            events = [f"{monster.name}'s attack misses."]
+            miss = [f"{monster.name}'s attack misses."]
             if disadvantage and natural != 1:
-                events = [f"{monster.name}'s disadvantaged attack misses. You keep your guard."]
+                miss = [f"{monster.name}'s disadvantaged attack misses. You keep your guard."]
+            events.extend(miss)
             self._finish_player_combat_round(character)
             return events
         dice, _, bonus = monster.damage.partition("+")
         damage = self.roll(dice, int(bonus) if bonus else 0, natural == 20)
         character.hp = max(0, character.hp - damage.total)
-        events = [f"{monster.name} hits you for {damage.total}. Your HP: {character.hp}/{character.max_hp}."]
+        events.append(f"{monster.name} hits you for {damage.total}. Your HP: {character.hp}/{character.max_hp}.")
+        post_save, _post_facts = self._enemy_save_ability(character, key, "on_hit")
+        events.extend(post_save)
         if character.hp == 0:
             events.extend(self._recover_from_combat_defeat(character))
             return events
@@ -860,6 +872,18 @@ class GameEngine:
         side = try_side_quest_explore(character, action, self._level_up)
         if side is not None:
             return side, None
+
+        hazard = try_vault_hazard(self, character, action)
+        if hazard is not None:
+            hazard_events, save_facts = hazard
+            return TurnResult(
+                action,
+                hazard_events,
+                True,
+                save_facts=save_facts,
+                costs_adventure_mana=False,
+            ), None
+
         if character.exploration_cooldown:
             character.exploration_cooldown -= 1
             return TurnResult(
@@ -947,12 +971,43 @@ class GameEngine:
         result, note = self._d20_check(character, self.modifier(character.abilities[ability]))
         return result, result.total >= dc, note
 
+    def resolve_saving_throw(
+        self,
+        character: CharacterState,
+        request: SavingThrowRequest,
+    ):
+        from .saving_throws import SavingThrowResult
+
+        return perform_saving_throw(self, character, request)
+
     def saving_throw(self, character: CharacterState, ability: str, dc: int) -> tuple[RollResult, bool, str]:
-        base = self.modifier(character.abilities.get(ability, 10))
-        prof = 2 + max(0, (character.level - 1) // 4)
-        modifier = base + (prof if ability in character.saving_throw_proficiencies else 0)
-        result, note = self._d20_check(character, modifier)
-        return result, result.total >= dc, note
+        request = SavingThrowRequest(
+            ability=ability,
+            dc=dc,
+            source="action",
+            source_id="explicit_save",
+        )
+        outcome = perform_saving_throw(self, character, request)
+        return roll_result_compat(outcome), outcome.success, outcome.lucky_note
+
+    def _enemy_save_ability(
+        self,
+        character: CharacterState,
+        monster_key: str,
+        trigger: str,
+    ) -> tuple[list[str], dict]:
+        ability_def = ENEMY_SAVE_ABILITIES.get(monster_key)
+        if ability_def is None or ability_def.trigger != trigger:
+            return [], {}
+        from .combat_effects import ONCE_PER_COMBAT_SAVE_IDS, _combat_save_flag
+
+        if ability_def.source_id in ONCE_PER_COMBAT_SAVE_IDS:
+            flag = _combat_save_flag(ability_def)
+            if character.quest_flags.get(flag):
+                return [], {}
+            character.quest_flags[flag] = True
+        result, damage, events = resolve_save_effect(self, character, ability_def)
+        return events, {"save": result.to_facts(), "damage": damage, "ability_id": ability_def.source_id}
 
     def skill_modifier(self, character: CharacterState, skill: str) -> int:
         ability = SKILL_ABILITIES.get(skill, "dexterity")
