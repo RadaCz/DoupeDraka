@@ -26,7 +26,7 @@ Unified saving throw resolution for **players** and **monsters**, spell save DC 
 
 ## E2E
 
-- Playwright project **`combat-saves`** runs **before** chapter journey (fresh `E2E_RNG_SEED=27` stream).
+- Full `npm run test:e2e` runs **three Playwright phases** (`chapter-journey`, `combat-saves`, `e2e-smoke`), each with a fresh API DB and `E2E_RNG_SEED=27` (ghoul paralysis needs an isolated stream).
 - `ghoul-paralysis-combat.spec.ts` — UI creation, API grind to L2, real `attack ghoul` until `paralyzed`, UI composer blocked attack, optional repeat-save journal line.
 - `spell-save-combat.spec.ts` — Burning Hands during active kobold fight.
 - Sacred Flame / Vicious Mockery: **pytest** (`test_sprint19_unified_combat.py`, `test_spells.py`); no bard MVP wizard E2E.

@@ -44,10 +44,11 @@
 |-------|---------|--------|
 | Backend | `python -m pytest -q` | **564 passed**, 2 skipped |
 | Secret scan | `python scripts/secret_scan.py` | OK |
-| Frontend unit | `cd frontend && npm run test -- --run` | **153 passed** |
+| Frontend unit | `cd frontend && npm run test -- --run` | **156 passed** |
 | Build | `cd frontend && npm run build` | OK |
 | E2E combat-saves | `npm run test:e2e -- --project=combat-saves` | **3 passed** (ghoul paralysis, vault DEX save, Burning Hands) |
-| Full E2E matrix (~26 specs) | `npm run test:e2e` | **NOT re-run** this pass |
+| Full E2E matrix (26 specs) | `npm run test:e2e` (3-phase runner) | **25/26** first full run; `player-journey-hub` flake (combat after `look around`); **1/1** on isolated re-run |
+| Sprint 19.3 ghoul fix | phased `run-tests.mjs` + combat UI E2E | **PASS** (deterministic `E2E_RNG_SEED=27` per phase) |
 | PostgreSQL / Alembic on GHA | — | **NOT VERIFIED** (no push) |
 
 ---
@@ -77,8 +78,8 @@
 | 4 | Melee/ranged crit | **OK** (pytest; ranged set empty) |
 | 5 | Unified saves | **OK** (pytest) |
 | 6 | Three save spells | **OK** (pytest); **Sacred Flame / Mockery UI E2E** only via pytest (no MVP bard UI path) |
-| 7 | Ghoul stable E2E | **OK** in `combat-saves` project (real fight; up to 8 ghoul exchanges; no debug endpoint) |
-| 8 | Full E2E matrix | **NOT RUN** |
+| 7 | Ghoul stable E2E | **OK** — fresh RNG phase + combat-v2 UI stream assertion (no `__e2e/paralyze`) |
+| 8 | Full E2E matrix | **MOSTLY** — 25/26 first run; hub spec flaky; CI `retries: 1` may mask |
 | 9 | Regression suites | **OK** locally |
 | 10 | PG/Alembic CI | **UNVERIFIED** |
 | 11 | Docs | **OK** |

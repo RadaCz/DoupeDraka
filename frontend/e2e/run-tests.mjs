@@ -5,49 +5,86 @@ import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 
 const frontendRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const databaseDirectory = join(tmpdir(), `doupedraka-e2e-${process.pid}`);
 const playwrightCli = join(frontendRoot, 'node_modules', '@playwright', 'test', 'cli.js');
-mkdirSync(databaseDirectory, { recursive: false });
 
 const argv = process.argv.slice(2);
 const visualMode = argv.includes('--visual') || process.env.E2E_SUITE === 'visual';
 const forwardedArgs = argv.filter(arg => arg !== '--visual');
 
-const playwrightArgs = [playwrightCli, 'test', '--config=e2e/playwright.config.ts', ...forwardedArgs];
+const isScopedRun = forwardedArgs.some(
+  arg => arg.includes('.spec.') || arg.startsWith('--grep') || arg === '--project=chapter-journey'
+    || arg === '--project=combat-saves' || arg === '--project=e2e-smoke' || arg.startsWith('--project='),
+);
 
-const child = spawn(process.execPath, playwrightArgs, {
-  cwd: frontendRoot,
-  env: {
-    ...process.env,
-    E2E_DATABASE_DIRECTORY: databaseDirectory,
-    ...(visualMode ? { E2E_SUITE: 'visual' } : {}),
-  },
-  stdio: 'inherit',
-});
+/** Full matrix: one Playwright process per project so each gets a fresh API DB and E2E_RNG_SEED stream. */
+const FULL_SUITE_PHASES = visualMode
+  ? [['--project=visual']]
+  : [
+    ['--project=chapter-journey'],
+    ['--project=combat-saves'],
+    ['--project=e2e-smoke'],
+  ];
 
-let spawnFailed = false;
-child.once('error', error => {
-  spawnFailed = true;
-  console.error('Could not start Playwright:', error);
-});
-
-child.once('close', (code, signal) => {
-  process.exitCode = spawnFailed ? 1 : (code ?? (signal ? 1 : 0));
-
-  const resolved = resolve(databaseDirectory);
+function rmDatabaseDir(dir) {
+  const resolved = resolve(dir);
   if (
     dirname(resolved) !== resolve(tmpdir()) ||
     !basename(resolved).startsWith('doupedraka-e2e-')
   ) {
-    console.error(`Refusing to remove unexpected E2E database directory: ${resolved}`);
-    process.exitCode = 1;
-    return;
+    throw new Error(`Refusing to remove unexpected E2E database directory: ${resolved}`);
   }
+  rmSync(resolved, { recursive: true, force: true });
+}
 
-  try {
-    rmSync(resolved, { recursive: true, force: true });
-  } catch (error) {
-    console.error(`Could not remove the E2E database directory ${resolved}:`, error);
-    process.exitCode = 1;
+function runPlaywright(extraArgs, databaseDirectory) {
+  return new Promise((resolvePromise, reject) => {
+    const playwrightArgs = [playwrightCli, 'test', '--config=e2e/playwright.config.ts', ...extraArgs];
+    const child = spawn(process.execPath, playwrightArgs, {
+      cwd: frontendRoot,
+      env: {
+        ...process.env,
+        E2E_DATABASE_DIRECTORY: databaseDirectory,
+        ...(visualMode ? { E2E_SUITE: 'visual' } : {}),
+      },
+      stdio: 'inherit',
+    });
+    child.once('error', reject);
+    child.once('close', (code, signal) => {
+      resolvePromise(code ?? (signal ? 1 : 0));
+    });
+  });
+}
+
+async function main() {
+  const phases = isScopedRun
+    ? [forwardedArgs]
+    : FULL_SUITE_PHASES.map(phase => [...phase, ...forwardedArgs.filter(a => !a.startsWith('--project='))]);
+
+  let exitCode = 0;
+  for (let index = 0; index < phases.length; index += 1) {
+    const databaseDirectory = join(tmpdir(), `doupedraka-e2e-${process.pid}-${index}`);
+    mkdirSync(databaseDirectory, { recursive: false });
+    const phaseLabel = phases[index].join(' ');
+    console.info(`[e2e] Phase ${index + 1}/${phases.length}: ${phaseLabel}`);
+    try {
+      const code = await runPlaywright(phases[index], databaseDirectory);
+      if (code !== 0) {
+        exitCode = code;
+        break;
+      }
+    } finally {
+      try {
+        rmDatabaseDir(databaseDirectory);
+      } catch (error) {
+        console.error(error.message);
+        exitCode = 1;
+      }
+    }
   }
+  process.exitCode = exitCode;
+}
+
+main().catch(error => {
+  console.error('Could not run Playwright:', error);
+  process.exitCode = 1;
 });

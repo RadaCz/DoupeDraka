@@ -7,7 +7,7 @@ cd D:\DoupeDraka\frontend
 npm run test:e2e
 ```
 
-`e2e/run-tests.mjs` **nestahuje** browsery — pouze spustí `playwright test` s dočasnou E2E SQLite DB.
+`e2e/run-tests.mjs` spouští Playwright s dočasnou E2E SQLite DB. **Plná sada** (`npm run test:e2e` bez filtru) běží ve **3 fázích** (`chapter-journey` → `combat-saves` → `e2e-smoke`), každá s novým API procesem a čistým `E2E_RNG_SEED=27` (ghoul paralýza).
 
 ## Instalace browseru (jednou na stroji)
 

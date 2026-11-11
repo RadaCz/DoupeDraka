@@ -278,6 +278,21 @@ export async function waitForAdventureComposerIdle(page: Page) {
   await expect(page.getByRole('textbox', { name: ACTION_TEXTBOX })).toBeEnabled({ timeout: 90_000 });
 }
 
+export async function waitForGameScreenIdle(page: Page) {
+  const screen = page.locator('section.game-screen, section.combat-screen');
+  await expect(screen.first()).toBeVisible({ timeout: 30_000 });
+  await expect(screen.first()).not.toHaveAttribute('aria-busy', 'true', { timeout: 120_000 });
+}
+
+export function playStreamResponse(page: Page) {
+  return page.waitForResponse(
+    response => response.url().includes('/actions/stream')
+      && response.request().method() === 'POST'
+      && response.status() === 200,
+    { timeout: 120_000 },
+  );
+}
+
 export async function waitForCharacterInventoryIdle(page: Page) {
   await expect(page.getByRole('status', { name: SENDING_ACTION_STATUS })).toBeHidden({ timeout: 60_000 });
 }

@@ -48,7 +48,7 @@
 | Level-up | **PARTIAL** | `_level_up`, `spells.learn_level_up_spells` | XP threshold; auto spell picks | P2 | 18 |
 | Lite / Normal / Pro | see above | `economy.py`, `settings.py` | No pay-to-win; no paid rolls | P0 | — |
 | Mobile UX Ch.1 | **PARTIAL** | E2E play-layout + mobile-viewports | 16.2: bilingual helpers + ID bands; 23/23 E2E ~4 min | P0 | Staging deploy |
-| E2E CI stability | **PARTIAL** | `playwright.config.ts` combat-saves project | Ghoul + spell-save + vault save green locally; full matrix + GHA **unverified** on 19.1 diff | P0 | Push + GHA |
+| E2E CI stability | **PARTIAL** | `run-tests.mjs` (3 phases, fresh DB/RNG), `ghoul-paralysis-combat.spec.ts` | CI run #57 ghoul fail = shared RNG after chapter; fixed locally; full 26 **25/26** (hub flake); GHA **pending push** | P0 | Push + confirm GHA |
 | Staging HTTPS | **MISSING** (runtime) | `STAGING_RUNBOOK_V1.md` | No live Telegram test | P0 | Ops |
 
 ---

@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { expect, type APIRequestContext, type Page } from '@playwright/test';
-import { apiTelegramToken } from './telegram.ts';
+import { apiTelegramToken, waitForAdventureComposerReady } from './telegram.ts';
 
 const E2E_API_BASE = 'http://127.0.0.1:8001';
 
@@ -167,6 +167,26 @@ export async function ensureLevelAtLeast(
 
   const final = await fetchCharacterState(request, token, characterId);
   expect(final.level, `Expected level >= ${minLevel}, got ${final.level}`).toBeGreaterThanOrEqual(minLevel);
+}
+
+const COMBAT_ACTIONS = /combat actions|bojové akce/i;
+
+export async function syncCombatOrAdventurePlay(page: Page) {
+  await page.reload();
+  const continueBtn = page.getByRole('button', { name: /Continue adventure|Pokračovat/i });
+  if (await continueBtn.isVisible().catch(() => false)) {
+    await continueBtn.click();
+  } else {
+    const nav = page.getByRole('navigation', { name: /Main navigation|Hlavní navigace/i });
+    await nav.getByRole('button', { name: /^Adventure$|^Hra$/i }).click();
+  }
+  const combatDeck = page.getByRole('group', { name: COMBAT_ACTIONS });
+  if (await combatDeck.isVisible().catch(() => false)) {
+    await expect(combatDeck).toBeVisible({ timeout: 30_000 });
+    return 'combat' as const;
+  }
+  await waitForAdventureComposerReady(page);
+  return 'adventure' as const;
 }
 
 export async function syncPlayScreen(page: Page) {

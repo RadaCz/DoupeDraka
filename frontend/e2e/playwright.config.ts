@@ -36,7 +36,6 @@ export default defineConfig({
             '**/spell-save-combat.spec.ts',
             '**/saving-throw-combat.spec.ts',
           ],
-          dependencies: ['chapter-journey'],
         },
         {
           name: 'e2e-smoke',
@@ -47,7 +46,6 @@ export default defineConfig({
             '**/spell-save-combat.spec.ts',
             '**/saving-throw-combat.spec.ts',
           ],
-          dependencies: ['combat-saves'],
         },
       ],
   use: {
