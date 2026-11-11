@@ -113,7 +113,7 @@ _NEGATION_BY_KIND: dict[str, tuple[str, ...]] = {
     TALK: ("talk", "speak", "ask", "mluv", "mluvit", "zeptej", "promluv"),
     SHOP: ("buy", "purchase", "kup", "nakup", "koupit", "koup"),
     USE_ITEM: ("use", "drink", "pouzij", "vypij", "potion", "lektvar"),
-    EQUIP: ("equip", "wield", "draw", "vybav", "vzít"),
+    EQUIP: ("equip", "wield", "draw", "vybav", "vzít", "unequip", "remove", "sundat", "sejmout"),
     EXPLORE: ("explore", "search", "investigate", "prozkoumej", "prohledej"),
 }
 
@@ -185,6 +185,8 @@ def _matched_kinds(text: str) -> set[str]:
     for kind, pattern in _PATTERNS.items():
         if pattern.search(text):
             found.add(kind)
+    if UNEQUIP_PATTERN.search(text):
+        found.add(EQUIP)
     if TRAVEL_EXPLORE_PATTERN.search(text):
         found.add(EXPLORE)
     return found

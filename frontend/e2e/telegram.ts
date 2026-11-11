@@ -15,6 +15,9 @@ export const ENTER_ADVENTURE_BTN = /enter the adventure|vstoupit do dobrodružst
 export const MEET_ADVENTURER_HEADING = /meet your adventurer|tvůj hrdina|poznej svého dobrodruha/i;
 export const CELLAR_HEADING = /whispering cellar|šeptající sklep/i;
 export const MAIN_NAV = /main navigation|hlavní navigace/i;
+export const ACTION_TEXTBOX = /your action|tvoje akce/i;
+export const SEND_ACTION_BTN = /send action|odeslat akci/i;
+export const SENDING_ACTION_STATUS = /sending your action|odesílám tvoji akci/i;
 
 export function signedTelegramInitData(userId: number) {
   const fields = {
@@ -259,4 +262,22 @@ export async function completeWizardWizardCaster(page: Page, name: string) {
 /** Default fighter manual wizard — used by legacy chapter E2E specs. */
 export async function completeWizardFighter(page: Page, name: string) {
   await completeCharacterWizard(page, { name, race: 'Human', characterClass: 'Fighter', background: 'Folk Hero' });
+}
+
+export async function waitForAdventureComposerReady(page: Page) {
+  const input = page.getByRole('textbox', { name: ACTION_TEXTBOX });
+  await expect(input).toBeEnabled({ timeout: 90_000 });
+  const send = page.getByRole('button', { name: SEND_ACTION_BTN });
+  await expect(send).not.toHaveAttribute('aria-busy', 'true');
+}
+
+/** After a streamed turn: composer accepts input again and send is not narrating. */
+export async function waitForAdventureComposerIdle(page: Page) {
+  const send = page.getByRole('button', { name: SEND_ACTION_BTN });
+  await expect(send).not.toHaveAttribute('aria-busy', 'true', { timeout: 90_000 });
+  await expect(page.getByRole('textbox', { name: ACTION_TEXTBOX })).toBeEnabled({ timeout: 90_000 });
+}
+
+export async function waitForCharacterInventoryIdle(page: Page) {
+  await expect(page.getByRole('status', { name: SENDING_ACTION_STATUS })).toBeHidden({ timeout: 60_000 });
 }

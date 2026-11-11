@@ -19,6 +19,7 @@ from app.engine.equipment import (
     unequip_armor,
     unequip_shield,
 )
+from app.engine.intent import parse_action_intent, EQUIP
 from app.engine.models import CharacterState, MonsterState
 from app.engine.service import GameEngine
 
@@ -33,6 +34,16 @@ def test_ac_unarmored_uses_dex():
     wizard = game.create_character(1, "Mage", "human", "wizard", None)
     dex = game.modifier(wizard.abilities["dexterity"])
     assert wizard.armor_class == 10 + dex
+
+
+def test_unequip_shield_via_resolve_action():
+    game = GameEngine()
+    hero = _fighter()
+    assert hero.armor_class == 16 + SHIELD_AC_BONUS
+    assert parse_action_intent("unequip shield").kind == EQUIP
+    result, _ = game.resolve_action(hero, "unequip shield", None)
+    assert result.state_changed
+    assert hero.armor_class == 16
 
 
 def test_fighter_starts_chain_and_shield():

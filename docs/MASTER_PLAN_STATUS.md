@@ -1,6 +1,6 @@
 # Master plan — stav (sync s DOUPEDRAKA_MASTER_PLAN.md v1.0)
 
-Poslední revize: **2026-11-11 (Sprint 17 — Equipment & AC V1, lokálně, necommitováno)**. Etapy 7–9 záměrně otevřené až po uzavření sólo smyčky.  
+Poslední revize: **2026-11-11 (Sprint 17.1 — E2E equipment/intent fix, lokálně, necommitováno)**. Etapy 7–9 záměrně otevřené až po uzavření sólo smyčky.  
 **Kódový HEAD (lokální):** `ebb4cd8` na `clean-main` + Sprint 17 working tree.  
 **CI:** GitHub Actions run `42824720654` na `339271d` — **4/4 SUCCESS**.  
 **Staging HTTPS:** **NOT DEPLOYED** — viz `docs/STAGING_DEVICE_VALIDATION_V1.md`.  

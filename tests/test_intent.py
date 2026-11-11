@@ -1,4 +1,4 @@
-from app.engine.intent import ATTACK, AMBIGUOUS, CAST, CHECK, EXPLORE, TALK, parse_action_intent
+from app.engine.intent import ATTACK, AMBIGUOUS, CAST, CHECK, EQUIP, EXPLORE, TALK, parse_action_intent
 
 
 def test_intent_recognizes_attack_and_cast():
@@ -27,3 +27,9 @@ def test_conflicting_attack_and_talk_is_ambiguous():
 def test_intent_defaults_unknown_to_check():
     assert parse_action_intent("mumble something cryptic").kind == CHECK
     assert parse_action_intent("look around").kind == EXPLORE
+
+
+def test_unequip_routes_to_equip_intent():
+    assert parse_action_intent("unequip shield").kind == EQUIP
+    assert parse_action_intent("unequip armor").kind == EQUIP
+    assert parse_action_intent("sundat štít").kind == EQUIP

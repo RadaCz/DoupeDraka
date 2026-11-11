@@ -46,7 +46,7 @@
 | Level-up | **PARTIAL** | `_level_up`, `spells.learn_level_up_spells` | XP threshold; auto spell picks | P2 | 18 |
 | Lite / Normal / Pro | see above | `economy.py`, `settings.py` | No pay-to-win; no paid rolls | P0 | — |
 | Mobile UX Ch.1 | **PARTIAL** | E2E play-layout + mobile-viewports | 16.2: bilingual helpers + ID bands; 23/23 E2E ~4 min | P0 | Staging deploy |
-| E2E CI stability | **PARTIAL** | `telegram.ts`, `test-config.ts` | Fixed locale/ID flakes (run 42992223490); chapter ~160s | P0 | Shorten caldus UI arc |
+| E2E CI stability | **PARTIAL** | `telegram.ts`, Sprint 17.1 composer waits | Unequip intent + post-stream idle; local 23/23 green | P0 | Confirm on GHA |
 | Staging HTTPS | **MISSING** (runtime) | `STAGING_RUNBOOK_V1.md` | No live Telegram test | P0 | Ops |
 
 ---
