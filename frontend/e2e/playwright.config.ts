@@ -11,7 +11,7 @@ if (!process.env.E2E_DATABASE_DIRECTORY) {
 
 export default defineConfig({
   testDir: '.',
-  testMatch: visualOnly ? ['**/visual-baseline.spec.ts'] : ['**/*.spec.ts'],
+  testMatch: visualOnly ? ['**/visual-baseline.spec.ts'] : undefined,
   testIgnore: visualOnly ? [] : ['**/visual-baseline.spec.ts'],
   fullyParallel: false,
   workers: 1,
@@ -20,6 +20,20 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   reporter: 'line',
   outputDir: '../.playwright-results',
+  projects: visualOnly
+    ? [{ name: 'visual', testMatch: ['**/visual-baseline.spec.ts'] }]
+    : [
+        // Shared API RNG seed: run the long chapter journey before shorter specs mutate rolls.
+        {
+          name: 'chapter-journey',
+          testMatch: ['**/chapter-one-quest.spec.ts'],
+          timeout: 900_000,
+        },
+        {
+          name: 'e2e-smoke',
+          testIgnore: ['**/chapter-one-quest.spec.ts', '**/visual-baseline.spec.ts'],
+        },
+      ],
   use: {
     ...devices['iPhone 13'],
     browserName: 'chromium',

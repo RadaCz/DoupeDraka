@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 
 from app.api import app
 from app.engine.chapter_one_progression import (
+    FLAG_VAULT_DESCENT_SPAWNED,
     FLAG_VAULT_DESCENT_STORY_XP,
     FLAG_VAULT_ROUTE_XP,
     VAULT_FIRST_DESCENT_STORY_XP,
@@ -46,6 +47,21 @@ def test_vault_route_xp_idempotent():
     second = resolve_main_quest_step(hero, "talk", "accept_caldus", game._level_up)
     assert second and not second.state_changed
     assert hero.xp == xp_after_first
+
+
+def test_vault_first_descent_only_on_vault_entry():
+    game = GameEngine(random.Random(99))
+    hero = game.create_character(1, "Route", "human", "fighter")
+    hero.location = "The Shrine of the Forgotten"
+    hero.quest_flags = {"vault_unlocked": True, "vault_hint_given": True}
+    _, monster = game._travel(hero, "travel to The Sunken Corridor")
+    assert monster is None
+    assert not hero.in_combat
+    assert not hero.quest_flags.get(FLAG_VAULT_DESCENT_SPAWNED)
+    _, monster = game._travel(hero, "travel to The Vault of Echoes")
+    assert monster is not None
+    assert hero.in_combat
+    assert hero.quest_flags.get(FLAG_VAULT_DESCENT_SPAWNED)
 
 
 def test_vault_first_descent_story_xp_once():

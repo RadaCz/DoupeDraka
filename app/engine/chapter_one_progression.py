@@ -100,6 +100,8 @@ def begin_vault_first_descent(
     difficulty: str,
 ) -> tuple[list[str], MonsterState | None]:
     """One-time scripted encounter on first entry to the Vault (or reprise if fled)."""
+    if character.location != VAULT_LOCATION:
+        return [], None
     if not character.quest_flags.get("vault_unlocked"):
         return [], None
     if character.quest_flags.get(FLAG_VAULT_DESCENT_STORY_XP):

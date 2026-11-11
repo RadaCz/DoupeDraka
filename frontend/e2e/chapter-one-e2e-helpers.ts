@@ -6,11 +6,13 @@ const E2E_API_BASE = 'http://127.0.0.1:8001';
 
 export type CharacterSnapshot = {
   level: number;
+  hp?: number;
   quest_flags?: Record<string, boolean>;
   location: string;
   in_combat?: boolean;
   gold?: number;
   combatant?: { name?: string } | null;
+  combat_turn?: string;
 };
 
 export async function reviveIfFallen(
@@ -61,11 +63,12 @@ export async function waitForQuestFlag(
   characterId: string,
   flag: string,
   expected = true,
+  timeoutMs = 120_000,
 ) {
   await expect.poll(async () => {
     const state = await fetchCharacterState(request, token, characterId);
     return Boolean(state.quest_flags?.[flag]) === expected;
-  }, { timeout: 120_000 }).toBe(true);
+  }, { timeout: timeoutMs }).toBe(true);
 }
 
 export async function waitForActionRound(page: Page) {
@@ -109,25 +112,29 @@ export async function backToAdventure(page: Page) {
 }
 
 export async function resolveCombat(page: Page, maxTurns = 48) {
+  const defeatPattern = /You have fallen|You have been defeated|Padl jsi|You blacked out/i;
+  const victoryPattern = /Chapter complete|bells fall silent|Warden.*defeated/i;
+  const arena = page.locator('.combat-arena');
   for (let turn = 0; turn < maxTurns; turn += 1) {
-    if (await page.getByRole('heading', { name: /You have fallen|Padl jsi/i }).isVisible().catch(() => false)) {
-      return;
-    }
-    const playerTurn = await page.getByText(/Your turn|Tvůj tah/i).isVisible().catch(() => false);
-    if (!playerTurn) {
-      await page.waitForTimeout(300);
+    if (await page.getByText(defeatPattern).first().isVisible().catch(() => false)) return;
+    if (await page.getByText(victoryPattern).first().isVisible().catch(() => false)) return;
+    if (!(await page.getByText(/Your turn|Tvůj tah/i).isVisible().catch(() => false))) {
+      await page.waitForTimeout(350);
       continue;
     }
-    const attack = page.getByRole('button', { name: /^Attack$|^Útok$|^Zaútoč/i });
-    if (await attack.first().isVisible().catch(() => false)) {
-      await attack.first().click();
-    } else {
-      break;
+    const attack = page.getByRole('button', { name: /^Attack$|^Útok$|^Zaútoč/i }).first();
+    if (!(await attack.isVisible().catch(() => false))) break;
+    await attack.click();
+    if (await page.getByText(defeatPattern).first().isVisible().catch(() => false)) return;
+    if (await page.getByText(victoryPattern).first().isVisible().catch(() => false)) return;
+    if (await arena.isVisible().catch(() => false)) {
+      try {
+        await expect(arena).not.toHaveAttribute('data-busy', 'true', { timeout: 60_000 });
+      } catch {
+        // Narration can lag; if defeat or victory surfaced, exit below.
+      }
     }
-    await waitForActionRound(page);
-    if (!await page.getByText(/Your turn|Enemy turn|Tvůj tah|Nepřítel/i).isVisible().catch(() => false)) {
-      return;
-    }
+    if (!(await arena.isVisible().catch(() => false))) return;
   }
 }
 
@@ -199,8 +206,9 @@ export async function completeVaultDescentViaEngine(
       await reviveIfFallen(request, token, characterId);
       continue;
     }
-    if (state.in_combat && state.combatant?.name) {
-      await postGameAction(request, token, characterId, `attack ${state.combatant.name}`);
+    if (state.in_combat) {
+      const foe = state.combatant?.name ?? 'Kobold skirmisher';
+      await postGameAction(request, token, characterId, `attack ${foe}`);
       continue;
     }
     break;
@@ -210,35 +218,64 @@ export async function completeVaultDescentViaEngine(
   expect(final.quest_flags?.vault_first_descent_story_awarded).toBe(true);
 }
 
+async function ensureAtBellWardenPit(
+  request: APIRequestContext,
+  token: string,
+  characterId: string,
+) {
+  const pitPattern = /Bell Warden|Pit|Jáma strážce/i;
+  let state = await fetchCharacterState(request, token, characterId);
+  if (pitPattern.test(state.location)) return;
+
+  const routes: string[] = [];
+  if (!/Vault of Echoes|Krypt echa/i.test(state.location)) {
+    if (!/Sunken Corridor|Potopen/i.test(state.location)) {
+      routes.push('travel to The Sunken Corridor');
+    }
+    routes.push('travel to The Vault of Echoes');
+  }
+  routes.push("travel to The Bell Warden's Pit");
+  for (const step of routes) {
+    await postGameAction(request, token, characterId, step);
+  }
+  state = await fetchCharacterState(request, token, characterId);
+  expect(pitPattern.test(state.location)).toBeTruthy();
+}
+
 export async function completeBossViaEngine(
   request: APIRequestContext,
   token: string,
   characterId: string,
 ) {
-  for (let attempt = 0; attempt < 12; attempt += 1) {
-    const snapshot = await fetchCharacterState(request, token, characterId);
-    if (snapshot.quest_flags?.chapter_one_complete) return;
+  await ensureAtBellWardenPit(request, token, characterId);
+  let state = await fetchCharacterState(request, token, characterId);
+  expect(state.level, `Bell Warden requires level 3+, got L${state.level}`).toBeGreaterThanOrEqual(3);
 
-    await postGameAction(request, token, characterId, 'rest');
-    await travelToPitViaEngine(request, token, characterId);
-    await postGameAction(request, token, characterId, 'attack the Bell Warden');
-
-    for (let turn = 0; turn < 100; turn += 1) {
-      const state = await fetchCharacterState(request, token, characterId);
-      if (state.quest_flags?.chapter_one_complete) return;
-      if (state.hp <= 0) {
-        await reviveIfFallen(request, token, characterId);
-        await postGameAction(request, token, characterId, 'rest');
-        continue;
-      }
-      if (state.in_combat && state.combatant?.name) {
-        await postGameAction(request, token, characterId, `attack ${state.combatant.name}`);
-      } else if (!state.in_combat) {
-        await postGameAction(request, token, characterId, 'attack the Bell Warden');
-      }
+  for (let round = 0; round < 400; round += 1) {
+    state = await fetchCharacterState(request, token, characterId);
+    if (state.quest_flags?.chapter_one_complete) return;
+    if ((state.hp ?? 1) <= 0) {
+      await reviveIfFallen(request, token, characterId);
+      await ensureAtBellWardenPit(request, token, characterId);
+      await postGameAction(request, token, characterId, 'rest');
+      continue;
     }
+    if (!state.in_combat && !/Bell Warden|Pit|Jáma/i.test(state.location)) {
+      await ensureAtBellWardenPit(request, token, characterId);
+      continue;
+    }
+    if (!state.in_combat && (state.hp ?? 1) < 18) {
+      await postGameAction(request, token, characterId, 'rest');
+      continue;
+    }
+    if (state.in_combat) {
+      const foe = state.combatant?.name ?? 'Bell Warden';
+      await postGameAction(request, token, characterId, `attack ${foe}`);
+      continue;
+    }
+    await postGameAction(request, token, characterId, 'attack the Bell Warden');
   }
-  await waitForQuestFlag(request, token, characterId, 'chapter_one_complete');
+  await waitForQuestFlag(request, token, characterId, 'chapter_one_complete', true, 240_000);
 }
 
 export { apiTelegramToken };

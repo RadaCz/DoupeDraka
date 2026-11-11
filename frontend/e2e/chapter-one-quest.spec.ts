@@ -86,6 +86,8 @@ test('completes chapter one through UI chips and map travel', async ({ page, req
   await expect(
     page.locator('.suggested-actions-row button').filter({ hasText: /Bell Warden|Strážce zvonu|Face/i }),
   ).toBeVisible();
+  const pitReady = await fetchCharacterState(request, token, characterId!);
+  expect(pitReady.level, 'Bell Warden gate expects L3+').toBeGreaterThanOrEqual(3);
   await completeBossViaEngine(request, token, characterId!);
   await syncPlayScreen(page);
   await expect(page.getByRole('log', { name: 'Adventure journal' })).toContainText(
