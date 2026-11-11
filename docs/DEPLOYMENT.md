@@ -82,10 +82,13 @@ Set `PYTEST_DATABASE_URL` to the same URL when running concurrency tests against
 Merge `clean-main` into `main` only after CI is green on `clean-main`, including the
 PostgreSQL migration job and Playwright E2E.
 
-**Current `clean-main` baseline (2026-11-10):** commit `339271d` · GitHub Actions run
-`42824720654` — backend, backend-postgres, frontend, e2e all SUCCESS. Staging HTTPS
-deploy is separate and remains **NOT DEPLOYED** until ops follows
-[`STAGING_DEVICE_VALIDATION_V1.md`](STAGING_DEVICE_VALIDATION_V1.md).
+**Current `clean-main` repo baseline (2026-11-11):** commit `50a88900756792d72284b40fb162f5639a5c29e9`
+(`50a8890`) — ověř poslední GitHub Actions run na tomto SHA (backend, backend-postgres,
+frontend, e2e). **Poslední nasazený staging commit:** none — HTTPS staging deploy remains
+**NOT DEPLOYED** until ops completes the checklist in
+[`STAGING_RUNBOOK_V1.md`](STAGING_RUNBOOK_V1.md) and
+[`STAGING_DEVICE_VALIDATION_V1.md`](STAGING_DEVICE_VALIDATION_V1.md). Audit report:
+[`SPRINT_15_3_STAGING_AND_PLAYER_VALIDATION.md`](SPRINT_15_3_STAGING_AND_PLAYER_VALIDATION.md).
 
 ## Staging deployment (Lite-first)
 
@@ -96,22 +99,28 @@ migrations, backup/rollback, smoke tests).
 (`Dockerfile`), production frontend (`frontend/Dockerfile` + nginx `/api` proxy), Postgres 16
 with named volume `pgdata`, and Telegram bot (`python -m app.bot`).
 
-Before first staging start:
+**First staging deploy order** (detail v [`STAGING_RUNBOOK_V1.md`](STAGING_RUNBOOK_V1.md) §4–§6):
+
+1. Configure `.env.docker` on the server (never commit).
+2. `python scripts/staging_preflight.py .env.docker --mode staging` → exit 0.
+3. `docker compose … config` — requires **Compose v2.24+** (`ports: !reset` in staging overlay).
+4. `up -d postgres` → wait healthy.
+5. `run --rm api alembic upgrade head`.
+6. `up -d api frontend bot` (+ HTTPS reverse proxy to `127.0.0.1:5173`).
+7. Verify `/api/health` and `/api/ready` over HTTPS, then Telegram Mini App smoke.
 
 ```powershell
 Copy-Item .env.docker.example .env.docker
 # Edit on the server only — never commit.
 python scripts/staging_preflight.py .env.docker --mode staging
-```
-
-Public staging merges **`docker-compose.staging.yml`** (loopback frontend, no Postgres/API
-host ports):
-
-```powershell
 docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.staging.yml config
+docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.staging.yml up -d postgres
 docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.staging.yml run --rm api alembic upgrade head
-docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.staging.yml up -d
+docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.staging.yml up -d api frontend bot
 ```
+
+Until steps 1–7 pass on a real host, staging is **not verified for players** (repository
+artifacts alone are insufficient).
 
 Lite-first staging requires `DB_BOOTSTRAP=none`, `LLM_PROVIDER=fallback`,
 `postgresql+asyncpg` `DATABASE_URL` aligned with `POSTGRES_*`, HTTPS `MINI_APP_URL`, and

@@ -1,8 +1,8 @@
 # Staging deployment runbook V1 — Lite-first
 
-**Baseline kódu:** `339271d` na `clean-main` · CI run `42824720654` (4/4 SUCCESS).  
-**Stav nasazení:** HTTPS staging **NOT DEPLOYED** (tento runbook připravuje první deploy).  
-**Související:** [`DEPLOYMENT.md`](DEPLOYMENT.md), [`STAGING_DEVICE_VALIDATION_V1.md`](STAGING_DEVICE_VALIDATION_V1.md), [`TELEGRAM_MOBILE_QA_V1.md`](TELEGRAM_MOBILE_QA_V1.md).
+**Repo baseline (audit / připravenost k deployi):** `50a88900756792d72284b40fb162f5639a5c29e9` na `clean-main` — ověř `git rev-parse HEAD` před nasazením; CI na tomto commitu má být zelené (backend, backend-postgres, frontend, E2E).  
+**Poslední nasazený commit (runtime):** **žádný** — HTTPS staging **NOT DEPLOYED** (tento runbook připravuje první deploy; neznamená to, že staging už běží).  
+**Související:** [`DEPLOYMENT.md`](DEPLOYMENT.md), [`STAGING_DEVICE_VALIDATION_V1.md`](STAGING_DEVICE_VALIDATION_V1.md), [`TELEGRAM_MOBILE_QA_V1.md`](TELEGRAM_MOBILE_QA_V1.md), [`SPRINT_15_3_STAGING_AND_PLAYER_VALIDATION.md`](SPRINT_15_3_STAGING_AND_PLAYER_VALIDATION.md), [`SPRINT_15_3_1_DOCUMENTATION_TRUTH_SYNC.md`](SPRINT_15_3_1_DOCUMENTATION_TRUTH_SYNC.md).
 
 ---
 
@@ -32,7 +32,7 @@ PostgreSQL (volume pgdata) ◄── API (žádný veřejný port)
 |--------|---------|
 | **VPS / VM** | 2 vCPU, 4 GB RAM, 20+ GB disk (Lite-first bez GPU) |
 | **OS** | Linux (Ubuntu 22.04+ doporučeno) nebo Windows Server s Docker Desktop pro smoke |
-| **Docker** | Engine 24+ a `docker compose` v2 |
+| **Docker** | Engine 24+ a **`docker compose` v2.24+** (overlay `docker-compose.staging.yml` používá `ports: !reset`) |
 | **DNS** | A/AAAA záznam na veřejný hostname (např. `play.staging.example`) |
 | **HTTPS** | Platný certifikát (Let’s Encrypt přes Caddy doporučeno) |
 | **Telegram** | BotFather: domain + menu button Web App URL = **`MINI_APP_URL`** |
@@ -81,43 +81,69 @@ Soubor na serveru: `.env.docker` (zkopírovat z `.env.docker.example`, **nikdy**
 
 ## 4. Příprava před prvním startem (Windows — lokální správa repa)
 
+Pořadí před jakýmkoli `up` na VPS (stejná logika jako §5):
+
+1. **Konfigurace** — `.env.docker` na serveru (zkopírovat z `.env.docker.example`, vyplnit tajné hodnoty, **nikdy** necommitovat).
+2. **Preflight** — `python scripts/staging_preflight.py .env.docker --mode staging` → exit 0.
+3. **Compose config** — na hostu s Dockerem ověřit merge overlay (viz §5 krok 3).
+4. **Secret scan** — `python scripts/secret_scan.py` → OK (lze i před kopírováním env na VPS).
+
 ```powershell
 cd D:\DoupeDraka
 Copy-Item .env.docker.example .env.docker
-# Upravte .env.docker na serveru nebo zkopírujte na VPS — necommitovat.
+# Upravte .env.docker na serveru — necommitovat.
 
 python scripts/staging_preflight.py .env.docker --mode staging
 python scripts/secret_scan.py
+# Volitelně (Docker na stroji): docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.staging.yml config
 ```
 
 `staging_preflight.py` kontroluje **pojmenované klíče a politiku** (Postgres URL, `DB_BOOTSTRAP=none`, `LLM_PROVIDER=fallback`, HTTPS `MINI_APP_URL`, shodu CORS). **Nevypisuje** hodnoty secretů.
+
+**Runtime stav:** Dokud neproběhnou §5–§6 na skutečném hostu, považujte staging za **nepřipravený k použití testerům** (repo artefakty mohou být připravené).
 
 ---
 
 ## 5. První spuštění (server — Linux)
 
-> Nahraďte cestu k repozitáři a env souboru.
+> Nahraďte cestu k repozitáři a env souboru. Držte pořadí: **konfigurace → preflight → `compose config` → služby (Postgres) → migrace → zbytek služeb → HTTPS → health/ready → Telegram smoke**.
+
+| Krok | Akce |
+|------|------|
+| 1 | Checkout repo na commit s **zeleným CI** (audit baseline: `50a8890` na `clean-main`); `.env.docker` na serveru vyplněn (§3). |
+| 2 | `python scripts/staging_preflight.py .env.docker --mode staging` → exit 0. |
+| 3 | `docker compose … config` — validace merge `docker-compose.yml` + `docker-compose.staging.yml` (Compose **v2.24+**). |
+| 4 | `build` (při prvním deployi nebo po změně Dockerfile). |
+| 5 | `up -d postgres` — počkat na **healthy** healthcheck. |
+| 6 | `run --rm api alembic upgrade head` — head **v005**. |
+| 7 | `up -d api frontend bot`. |
+| 8 | HTTPS reverse proxy na `127.0.0.1:5173` (§5.1). |
+| 9 | `curl` `/api/health` a `/api/ready` přes HTTPS (§6). |
+| 10 | Telegram smoke — `/start`, Mini App, jeden Lite tah (§6). |
 
 ```bash
 cd /opt/doupedraka
-docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.staging.yml build
-docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.staging.yml up -d postgres
+export COMPOSE_FILES="-f docker-compose.yml -f docker-compose.staging.yml"
+docker compose --env-file .env.docker $COMPOSE_FILES config
+docker compose --env-file .env.docker $COMPOSE_FILES build
+docker compose --env-file .env.docker $COMPOSE_FILES up -d postgres
 # Počkej na healthy postgres (healthcheck v compose).
 
-docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.staging.yml run --rm api alembic upgrade head
-docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.staging.yml up -d api frontend bot
+docker compose --env-file .env.docker $COMPOSE_FILES run --rm api alembic upgrade head
+docker compose --env-file .env.docker $COMPOSE_FILES up -d api frontend bot
 ```
 
 **Lokální ekvivalent (PowerShell na stroji s Dockerem):**
 
 ```powershell
 cd D:\DoupeDraka
+docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.staging.yml config
 docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.staging.yml up -d postgres
 docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.staging.yml run --rm api alembic upgrade head
 docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.staging.yml up -d api frontend bot
 ```
 
-### HTTPS reverse proxy (příklad — Caddy)
+### 5.1 HTTPS reverse proxy (příklad — Caddy)
 
 Veřejný proxy směruje na **frontend** (port mapovaný z compose, typicky `5173:80`):
 
@@ -201,7 +227,7 @@ Migrace po restore: pokud dump je z aktuální head, `alembic upgrade head` by m
 ### Bezpečná aktualizace
 
 ```bash
-git fetch && git checkout 339271d   # nebo novější tag po CI green
+git fetch && git checkout 50a8890   # nebo novější commit po CI green na clean-main
 docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.staging.yml build
 docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.staging.yml run --rm api alembic upgrade head
 docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.staging.yml up -d

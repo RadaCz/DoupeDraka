@@ -1,13 +1,13 @@
 # Staging & real device validation — Sprint 9
 
-**Baseline kódu (remote):** `339271d` na `origin/clean-main` (Sprint 10.2.1).  
-**CI:** GitHub Actions run `42824720654` — 4/4 SUCCESS.  
-**Compose (veřejný staging):** `docker-compose.staging.yml` + `python scripts/staging_preflight.py .env.docker --mode staging`.
-**HTTPS staging:** **NOT DEPLOYED** (tento dokument = preflight před prvním deployem).  
-**Fyzické QA:** Android **NOT TESTED** · iOS **NOT TESTED** (až po staging URL v Telegramu).  
-**Normal (debit/refund):** **NOT TESTED** bez nakonfigurovaného placeného providera.
+**Repo baseline (audit):** `50a88900756792d72284b40fb162f5639a5c29e9` na `origin/clean-main` — ověř `git rev-parse HEAD` a CI na tomto SHA před deployem.  
+**Poslední nasazený commit:** žádný — **HTTPS staging NOT DEPLOYED** (dokument = příprava před prvním deployem; staging **neběží**, dokud ops nedokončí runbook).  
+**Compose (veřejný staging):** merge `docker-compose.staging.yml` + `python scripts/staging_preflight.py .env.docker --mode staging`; Compose **v2.24+**.  
+**Fyzické QA:** Android **NOT TESTED** · iOS **NOT TESTED** (až po HTTPS `MINI_APP_URL` v Telegramu).  
+**Normal (debit/refund):** **NOT TESTED** bez nakonfigurovaného placeného providera.  
+**Not verified bez runtime:** živé HTTPS, vyplněný produkční `.env.docker`, `docker compose config` na VPS, fyzický Telegram test (viz [`SPRINT_15_3_STAGING_AND_PLAYER_VALIDATION.md`](SPRINT_15_3_STAGING_AND_PLAYER_VALIDATION.md)).
 
-Související: [`DEPLOYMENT.md`](DEPLOYMENT.md), [`STAGING_RUNBOOK_V1.md`](STAGING_RUNBOOK_V1.md), [`TELEGRAM_MOBILE_QA_V1.md`](TELEGRAM_MOBILE_QA_V1.md), [`CLOSED_BETA_ONBOARDING_V1.md`](CLOSED_BETA_ONBOARDING_V1.md).
+Související: [`DEPLOYMENT.md`](DEPLOYMENT.md), [`STAGING_RUNBOOK_V1.md`](STAGING_RUNBOOK_V1.md), [`TELEGRAM_MOBILE_QA_V1.md`](TELEGRAM_MOBILE_QA_V1.md), [`CLOSED_BETA_ONBOARDING_V1.md`](CLOSED_BETA_ONBOARDING_V1.md), [`SPRINT_15_3_1_DOCUMENTATION_TRUTH_SYNC.md`](SPRINT_15_3_1_DOCUMENTATION_TRUTH_SYNC.md).
 
 ---
 
@@ -49,12 +49,19 @@ Související: [`DEPLOYMENT.md`](DEPLOYMENT.md), [`STAGING_RUNBOOK_V1.md`](STAGI
 
 ### Kontrolní kroky před otevřením testerům
 
-0. `python scripts/staging_preflight.py .env.docker` → OK (viz [`STAGING_RUNBOOK_V1.md`](STAGING_RUNBOOK_V1.md)).
-1. `docker compose` / hosting: Postgres běží, volume persistuje data.
-2. `alembic upgrade head` (head **v005**).
-3. `curl -s https://<api>/health` → OK; `curl -s https://<api>/ready` → OK po DB.
-4. Bot menu button → `MINI_APP_URL` (stejná doména jako `CORS_ORIGINS`).
-5. Otevřít Mini App v Telegramu — login přes `initData`, ne prázdná brána.
+(shoda s [`STAGING_RUNBOOK_V1.md`](STAGING_RUNBOOK_V1.md) §4–§6)
+
+1. Konfigurace `.env.docker` na serveru (Lite: `LLM_PROVIDER=fallback`, `DB_BOOTSTRAP=none`, HTTPS `MINI_APP_URL` + `CORS_ORIGINS`).
+2. `python scripts/staging_preflight.py .env.docker --mode staging` → OK.
+3. `docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.staging.yml config` → bez chyby (Compose v2.24+).
+4. Postgres běží, volume `pgdata` persistuje data.
+5. `alembic upgrade head` (head **v005**).
+6. API, frontend, bot běží; HTTPS proxy na frontend (`127.0.0.1:5173`).
+7. `curl -s https://<host>/api/health` → OK; `curl -s https://<host>/api/ready` → OK po DB.
+8. BotFather menu button = `MINI_APP_URL`.
+9. Mini App v Telegramu — login přes `initData`, vytvoření postavy, jeden Lite tah.
+
+Testerům **neotvírejte** URL, dokud nejsou splněny kroky 1–9 (runtime ověření).
 
 ---
 
@@ -116,4 +123,4 @@ Viz [`CLOSED_BETA_ONBOARDING_V1.md`](CLOSED_BETA_ONBOARDING_V1.md) + [`design/CH
 | 7 | Mapa / travel (pokud odemčeno) |
 | 8 | Dotazník + bug šablona z onboarding doc |
 
-**GO beta:** Lite PASS na Android **a** iOS + stabilní HTTPS staging + CI zelené na HEAD (`339271d` splněno v CI; staging HTTPS a fyzické QA dosud ne).
+**GO beta:** Lite PASS na Android **a** iOS + stabilní HTTPS staging (runtime) + CI zelené na deployovaném commitu (repo baseline `50a8890` k 15.3.1; staging HTTPS a fyzické QA dosud **NOT VERIFIED**).
