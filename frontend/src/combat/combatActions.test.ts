@@ -58,9 +58,10 @@ describe('combatActions', () => {
     expect(attack?.description).not.toMatch(/Strike|with your weapon/i);
   });
 
-  it('builds five combat actions with potion when in pack', () => {
+  it('builds combat actions with movement and potion when in pack', () => {
     const actions = buildCombatActions(fighter, spells, t);
-    expect(actions).toHaveLength(5);
+    expect(actions).toHaveLength(7);
+    expect(actions.find(a => a.id === 'advance')?.action).toBe('advance 15 ft');
     expect(actions.find(a => a.id === 'potion')?.disabled).toBe(false);
     expect(hasHealingPotion({ ...fighter, inventory: [] })).toBe(false);
     expect(buildCombatActions({ ...fighter, inventory: [] }, spells, t).find(a => a.id === 'potion')?.disabled).toBe(

@@ -54,6 +54,12 @@ export interface Character {
     darkvision_ft: number | null;
     traits: Array<{ id: string; name: string; modeled: boolean; deferred: boolean }>;
   };
+  combat_tactics?: {
+    distance_ft?: number;
+    movement_remaining_ft?: number;
+    speed_ft?: number;
+    weapon_range?: Record<string, unknown>;
+  };
 }
 
 export interface RaceTraitReference {

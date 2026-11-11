@@ -60,6 +60,8 @@ class CharacterState:
     arcane_recovery_available: bool = False
     arcane_recovery_ready: bool = False
     combat_flags: dict[str, bool] = field(default_factory=dict)
+    combat_distance_ft: int = 0
+    combat_movement_remaining_ft: int = 0
 
 @dataclass
 class MonsterState:
@@ -69,6 +71,7 @@ class MonsterState:
     reward_xp: int = 50
     saving_throws: dict[str, int] = field(default_factory=dict)
     conditions: list[dict] = field(default_factory=list)
+    template_key: str = ""
 
 @dataclass(frozen=True)
 class RollResult:

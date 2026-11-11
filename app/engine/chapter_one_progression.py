@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Callable
 
+from .combat_positioning import init_combat_distance
 from .encounters import build_monster
 from .models import CharacterState, MonsterState
 from .ruleset_v1 import MAX_MVP_LEVEL
@@ -121,6 +122,7 @@ def begin_vault_first_descent(
     character.combat_turn = "player"
     character.combat_round = 0
     character.exploration_cooldown = 1
+    distance_lines = init_combat_distance(character, FIRST_DESCENT_MONSTER_KEY)
 
     lead = (
         "The echoes still hunt anyone who fled the threshold."
@@ -133,6 +135,7 @@ def begin_vault_first_descent(
             "A kobold scout darts from the bell-chains — the vault still defends itself.",
             f"An enemy appears: {monster.name} ({monster.hp} HP).",
             "The creature has not attacked yet. Choose your next action.",
+            *distance_lines,
         ],
         monster,
     )

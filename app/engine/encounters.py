@@ -205,7 +205,7 @@ def monster_template_key(monster: MonsterState) -> str:
 
 
 # MVP catalog attacks are melee weapon swings unless listed here (future ranged foes).
-RANGED_ATTACK_MONSTERS: frozenset[str] = frozenset()
+RANGED_ATTACK_MONSTERS: frozenset[str] = frozenset({"kobold"})
 
 
 def enemy_attack_is_melee(template_key: str) -> bool:
@@ -257,6 +257,7 @@ def build_monster(difficulty: str = "normal", target: str | None = None) -> Mons
         attack_bonus=scaled.attack_bonus,
         damage=format_damage(scaled.damage_dice, scaled.damage_bonus),
         reward_xp=scaled.reward_xp,
+        template_key=scaled.key,
         saving_throws={
             "dexterity": DEX_SAVE_MODIFIERS.get(scaled.key, 0),
             "wisdom": WIS_SAVE_MODIFIERS.get(scaled.key, 0),

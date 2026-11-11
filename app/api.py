@@ -25,7 +25,17 @@ from .engine.race_features import enrich_character_dict
 
 
 def character_api_payload(character: CharacterState) -> dict:
-    return enrich_character_dict(character)
+    payload = enrich_character_dict(character)
+    if character.in_combat:
+        from .engine.combat_positioning import positioning_facts
+        from .engine.combat_range import combat_range_facts
+        from .engine.equipment import equipped_weapon
+
+        payload["combat_tactics"] = {
+            **positioning_facts(character),
+            "weapon_range": combat_range_facts(character, equipped_weapon(character)),
+        }
+    return payload
 from .heroes import HEROES, get_hero
 from .campaign_memory import effective_long_term_memory
 from .narration_dossier import narration_beats_from_journal, scene_dossier_for_character

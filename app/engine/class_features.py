@@ -135,8 +135,10 @@ def reset_player_combat_class_flags(character: CharacterState) -> None:
 
 def mark_player_turn_start(character: CharacterState) -> None:
     from .combat_action_economy import reset_player_turn_economy
+    from .combat_positioning import reset_movement_on_player_turn
 
     reset_player_turn_economy(character)
+    reset_movement_on_player_turn(character)
 
 
 def sneak_attack_dice(level: int) -> str:
@@ -352,15 +354,26 @@ def try_hide_in_combat(engine: GameEngine, character: CharacterState) -> tuple[b
     )
 
 
-def attack_advantage_roll(engine: GameEngine, character: CharacterState, bonus: int) -> tuple[object, int, str]:
+def attack_advantage_roll(
+    engine: GameEngine,
+    character: CharacterState,
+    bonus: int,
+    *,
+    range_disadvantage: bool = False,
+) -> tuple[object, int, str]:
     """Roll attack d20; use advantage when hidden."""
-    if _combat_flag(character, "attack_advantage") or _combat_flag(character, "hidden"):
+    advantage = _combat_flag(character, "attack_advantage") or _combat_flag(character, "hidden")
+    disadvantage = _combat_flag(character, "attack_disadvantage") or range_disadvantage
+    if advantage and disadvantage:
+        advantage = False
+        disadvantage = False
+    if advantage:
         roll_a, _ = engine._d20_check(character, bonus)
         roll_b, note = engine._d20_check(character, bonus)
         if roll_b.total >= roll_a.total:
             return roll_b, roll_b.values[0], note
         return roll_a, roll_a.values[0], note + " (advantage)"
-    if _combat_flag(character, "attack_disadvantage"):
+    if disadvantage:
         roll_a, _ = engine._d20_check(character, bonus)
         roll_b, note = engine._d20_check(character, bonus)
         chosen = roll_a if roll_a.total <= roll_b.total else roll_b

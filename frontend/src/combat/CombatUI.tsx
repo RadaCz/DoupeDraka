@@ -14,6 +14,7 @@ import {
 } from './combatActions';
 import { combatAtmosphereLine, canonicalPlayLocation, combatIntroProse, isPreStrikeCombatBeat } from './combatDisplay';
 import { economyDenialReason, readCombatEconomy, spellEconomySlot } from './combatEconomy';
+import { rangeDisadvantageLabel, readCombatTactics } from './combatRange';
 
 function economyChipLabel(
   available: boolean,
@@ -21,6 +22,38 @@ function economyChipLabel(
   t: (key: string) => string,
 ): string {
   return available ? label : `${label} — ${t('spent')}`;
+}
+
+export function CombatTacticsStrip({ character }: { character: Character }) {
+  const { t } = useI18n();
+  const tactics = readCombatTactics(character);
+  if (!character.in_combat || !tactics) return null;
+  const wr = tactics.weapon_range;
+  const dis = rangeDisadvantageLabel(wr?.disadvantage_reason, t);
+  return (
+    <div className="combat-tactics-strip" role="status">
+      <p className="combat-tactics-line">
+        <span>{t('Distance')}: <strong>{tactics.distance_ft} {t('ft.')}</strong></span>
+        {tactics.movement_remaining_ft != null && (
+          <>
+            {' · '}
+            <span>{t('Movement left')}: <strong>{tactics.movement_remaining_ft} {t('ft.')}</strong></span>
+          </>
+        )}
+      </p>
+      {wr && (
+        <p className="combat-tactics-line">
+          {t('Weapon')}: <strong>{wr.weapon_key ?? '—'}</strong>
+          {' · '}
+          {t('Range')}: <strong>{wr.normal_ft}{wr.long_ft && wr.long_ft !== wr.normal_ft ? `/${wr.long_ft}` : ''} {t('ft.')}</strong>
+          {!wr.can_attack && wr.denial && (
+            <span className="combat-tactics-warn"> — {wr.denial}</span>
+          )}
+          {dis && <span className="combat-tactics-warn"> — {dis}</span>}
+        </p>
+      )}
+    </div>
+  );
 }
 
 export function CombatActionEconomyStrip({ character }: { character: Character }) {
@@ -85,9 +118,12 @@ export function CombatArena({
         <p className={`combat-turn-pill ${playerTurn ? 'player' : 'enemy'}`} role="status">
           {playerTurn ? t('Your turn — choose an action.') : t('Enemy turn — wait for the outcome.')}
         </p>
-        {character.in_combat && (
-          <CombatActionEconomyStrip character={character} />
-        )}
+          {character.in_combat && (
+            <>
+              <CombatTacticsStrip character={character} />
+              <CombatActionEconomyStrip character={character} />
+            </>
+          )}
       </div>
       <p className="combat-atmosphere">{atmosphere}</p>
     </header>

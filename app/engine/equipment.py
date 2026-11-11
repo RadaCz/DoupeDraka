@@ -32,6 +32,14 @@ class WeaponDefinition:
     damage: str
     ability: str
     finesse: bool = False
+    weapon_type: str = "melee"
+    range_normal_ft: int = 5
+    range_long_ft: int = 5
+    thrown_normal_ft: int = 0
+    thrown_long_ft: int = 0
+    ammunition: str = ""
+    properties: tuple[str, ...] = ()
+    damage_type: str = "slashing"
 
 
 @dataclass(frozen=True)
@@ -65,6 +73,16 @@ INVENTORY_GEAR: dict[str, tuple[str | None, int]] = {
     "rapier": ("rapier", 0),
     "mace": ("mace", 0),
     "dagger": ("dagger", 0),
+    "longbow": ("longbow", 0),
+    "shortbow": ("shortbow", 0),
+    "light crossbow": ("light_crossbow", 0),
+    "heavy crossbow": ("heavy_crossbow", 0),
+    "javelin": ("javelin", 0),
+    "spear": ("spear", 0),
+    "handaxe": ("handaxe", 0),
+    "quarterstaff": ("quarterstaff", 0),
+    "20 arrows": (None, 0),
+    "19 arrows": (None, 0),
     "healing potion": (None, 0),
     "leather armor": ("leather_armor", 0),
     "studded leather": ("studded_leather", 0),
@@ -75,12 +93,74 @@ INVENTORY_GEAR: dict[str, tuple[str | None, int]] = {
 
 
 WEAPONS: dict[str, WeaponDefinition] = {
-    "unarmed": WeaponDefinition("unarmed", "unarmed strike", "1d4", "strength"),
+    "unarmed": WeaponDefinition("unarmed", "unarmed strike", "1d4", "strength", damage_type="bludgeoning"),
     "shortsword": WeaponDefinition("shortsword", "shortsword", "1d6", "strength", finesse=True),
     "longsword": WeaponDefinition("longsword", "longsword", "1d8", "strength"),
     "rapier": WeaponDefinition("rapier", "rapier", "1d8", "dexterity", finesse=True),
-    "mace": WeaponDefinition("mace", "mace", "1d6", "strength"),
-    "dagger": WeaponDefinition("dagger", "dagger", "1d4", "strength", finesse=True),
+    "mace": WeaponDefinition("mace", "mace", "1d6", "strength", damage_type="bludgeoning"),
+    "dagger": WeaponDefinition(
+        "dagger", "dagger", "1d4", "strength", finesse=True, thrown_normal_ft=20, thrown_long_ft=60
+    ),
+    "quarterstaff": WeaponDefinition(
+        "quarterstaff", "quarterstaff", "1d6", "strength", damage_type="bludgeoning", thrown_normal_ft=20, thrown_long_ft=60
+    ),
+    "handaxe": WeaponDefinition(
+        "handaxe", "handaxe", "1d6", "strength", thrown_normal_ft=20, thrown_long_ft=60
+    ),
+    "javelin": WeaponDefinition(
+        "javelin", "javelin", "1d6", "strength", thrown_normal_ft=30, thrown_long_ft=120, damage_type="piercing"
+    ),
+    "spear": WeaponDefinition(
+        "spear", "spear", "1d6", "strength", thrown_normal_ft=20, thrown_long_ft=60, damage_type="piercing"
+    ),
+    "shortbow": WeaponDefinition(
+        "shortbow",
+        "shortbow",
+        "1d6",
+        "dexterity",
+        weapon_type="ranged",
+        range_normal_ft=80,
+        range_long_ft=320,
+        ammunition="arrow",
+        properties=("ammunition", "two-handed"),
+        damage_type="piercing",
+    ),
+    "longbow": WeaponDefinition(
+        "longbow",
+        "longbow",
+        "1d8",
+        "dexterity",
+        weapon_type="ranged",
+        range_normal_ft=150,
+        range_long_ft=600,
+        ammunition="arrow",
+        properties=("ammunition", "heavy", "two-handed"),
+        damage_type="piercing",
+    ),
+    "light_crossbow": WeaponDefinition(
+        "light_crossbow",
+        "light crossbow",
+        "1d8",
+        "dexterity",
+        weapon_type="ranged",
+        range_normal_ft=80,
+        range_long_ft=320,
+        ammunition="bolt",
+        properties=("ammunition", "loading", "two-handed"),
+        damage_type="piercing",
+    ),
+    "heavy_crossbow": WeaponDefinition(
+        "heavy_crossbow",
+        "heavy crossbow",
+        "1d10",
+        "dexterity",
+        weapon_type="ranged",
+        range_normal_ft=100,
+        range_long_ft=400,
+        ammunition="bolt",
+        properties=("ammunition", "heavy", "loading", "two-handed"),
+        damage_type="piercing",
+    ),
 }
 
 

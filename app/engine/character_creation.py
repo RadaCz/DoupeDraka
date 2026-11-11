@@ -105,9 +105,10 @@ EQUIPMENT_PACKAGES: dict[str, dict[str, list[str]]] = {
     "fighter": {
         "guardian": ["shortsword", "shield", "traveler's clothes"],
         "duelist": ["longsword", "shortsword", "traveler's clothes"],
+        "archer": ["longbow", "shortsword", "20 arrows", "traveler's clothes"],
     },
     "rogue": {
-        "scout": ["shortsword", "dagger", "thieves' tools", "traveler's clothes"],
+        "scout": ["shortbow", "shortsword", "dagger", "20 arrows", "thieves' tools", "traveler's clothes"],
     },
     "cleric": {
         "warpriest": ["mace", "shield", "traveler's clothes"],

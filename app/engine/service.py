@@ -1295,9 +1295,14 @@ class GameEngine:
             sneak_attack_eligible,
         )
 
+        from .combat_range import consume_ammunition, evaluate_player_attack_range
+
         weapon = equipped_weapon(character)
+        range_ctx = evaluate_player_attack_range(character, weapon)
         bonus = attack_modifier(character, weapon) + item_attack_bonus(character)
-        attack_roll, natural, lucky_note = attack_advantage_roll(self, character, bonus)
+        attack_roll, natural, lucky_note = attack_advantage_roll(
+            self, character, bonus, range_disadvantage=range_ctx.disadvantage
+        )
         weapon_label = weapon.name if weapon.key != "unarmed" else "your weapon"
         class_facts: dict = {}
         if natural == 1:
@@ -1307,6 +1312,11 @@ class GameEngine:
                 f"Attack with {weapon_label}: {attack_roll.total} (d20 +{bonus}) — critical miss.{lucky_note}"
             ], class_facts
         hit = natural == 20 or attack_roll.total >= monster.armor_class
+        ammo_note = ""
+        if hit:
+            spent, ammo_note = consume_ammunition(character, weapon)
+            if not spent:
+                return [f"Attack hits but you have no ammunition for {weapon.name}."], class_facts
         if not hit:
             character.combat_flags["hidden"] = False
             character.combat_flags["attack_advantage"] = False
@@ -1319,7 +1329,7 @@ class GameEngine:
         damage = self.roll(weapon.damage, dmg_mod, natural == 20)
         monster.hp = max(0, monster.hp - max(1, damage.total))
         events = [
-            f"Attack with {weapon_label}: {attack_roll.total} (d20 +{bonus}) — hit.{lucky_note}",
+            f"Attack with {weapon_label}: {attack_roll.total} (d20 +{bonus}) — hit.{lucky_note}{ammo_note}",
             f"Damage {damage.total} ({weapon.damage} + modifier); {monster.name} has {monster.hp}/{monster.max_hp} HP.",
         ]
         eligible, reason = sneak_attack_eligible(character, weapon, hit=True)
@@ -1423,6 +1433,9 @@ class GameEngine:
                     None,
                 )
             monster = build_monster(character.difficulty, target_key)
+            from .combat_positioning import init_combat_distance
+
+            events.extend(init_combat_distance(character, monster_template_key(monster)))
         elif monster is None:
             return (
                 TurnResult(action, ["No enemy is in front of you."], False),
@@ -1450,6 +1463,26 @@ class GameEngine:
         blocked_turn = self._begin_player_combat_action(character, action)[1]
         if blocked_turn:
             return self._finish_paralyzed_player_turn(character, action, monster)
+        from .combat_range import evaluate_player_attack_range, has_ammunition
+        from .equipment import equipped_weapon
+
+        weapon = equipped_weapon(character)
+        range_ctx = evaluate_player_attack_range(character, weapon)
+        if not range_ctx.allowed:
+            return (
+                TurnResult(action, [range_ctx.denial], False, costs_adventure_mana=False),
+                monster,
+            )
+        if not has_ammunition(character, weapon):
+            return (
+                TurnResult(
+                    action,
+                    [f"You have no ammunition for {weapon.name}."],
+                    False,
+                    costs_adventure_mana=False,
+                ),
+                monster,
+            )
         from .combat_action_economy import reserve_combat_cost
 
         ok, reason = reserve_combat_cost(character, "action")
