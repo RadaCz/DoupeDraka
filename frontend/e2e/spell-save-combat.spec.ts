@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { fetchCharacterState, postGameAction, syncPlayScreen } from './chapter-one-e2e-helpers.ts';
+import { fetchCharacterState, postCombatAttack, postGameAction, syncPlayScreen } from './chapter-one-e2e-helpers.ts';
 import {
   apiTelegramToken,
   completeWizardWizardCaster,
@@ -23,7 +23,7 @@ test('wizard Burning Hands shows monster saving throw and reduced HP', async ({ 
   for (let round = 0; round < 6; round += 1) {
     const state = await fetchCharacterState(request, token, characterId!);
     if (state.in_combat && (state.combatant?.hp ?? 0) > 0) break;
-    await postGameAction(request, token, characterId!, 'attack goblin scout');
+    await postCombatAttack(request, token, characterId!, 'goblin scout');
   }
   const before = await fetchCharacterState(request, token, characterId!);
   expect(before.in_combat).toBeTruthy();

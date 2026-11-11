@@ -37,6 +37,117 @@ os.environ["DOUPE_TEST_DB"] = "1"
 import pytest  # noqa: E402
 import pytest_asyncio  # noqa: E402
 
+_SLOW_TEST_NAMES = frozenset(
+    {
+        "test_main_story_reaches_level_3_without_search",
+        "test_main_story_optional_crypt_still_level_3",
+    }
+)
+
+_INTEGRATION_MODULES = frozenset(
+    {
+        "test_integration",
+        "test_concurrency",
+        "test_alembic_v004",
+        "test_alembic_v005",
+        "test_gameplay_integrity",
+        "test_gameplay_consequences",
+        "test_chapter_one",
+        "test_chapter_one_boss",
+        "test_chapter_one_journey",
+        "test_character_creation_v2",
+        "test_character_creation_mvp_matrix",
+        "test_spells",
+        "test_saving_throws_v1",
+        "test_sprint15_story_progression",
+        "test_sprint19_unified_combat",
+        "test_class_identity_sprint21",
+        "test_sprint22_chapter_one_completion",
+        "test_sprint23_skill_challenges",
+        "test_sprint24_background_features",
+        "test_sprint25_combat_action_economy",
+        "test_sprint26_racial_traits",
+        "test_sprint27_ranged_combat",
+        "test_sprint27_1_combat_integration",
+        "test_sprint28_gameplay_journey_smoke",
+        "test_sprint28_1_vault_e2e_combat_parity",
+        "test_api_systems",
+        "test_auth",
+        "test_engine",
+        "test_quests_engine",
+        "test_economy_balance",
+        "test_equipment_armor_v1",
+        "test_inventory_equipment",
+        "test_rest_progression",
+        "test_systems",
+    }
+)
+
+_REGRESS_MODULES = frozenset(
+    {
+        name
+        for name in _INTEGRATION_MODULES
+        if name.startswith("test_sprint")
+        or name
+        in {
+            "test_gameplay_integrity",
+            "test_saving_throws_v1",
+            "test_class_identity_sprint21",
+            "test_character_creation_mvp_matrix",
+            "test_chapter_one_journey",
+        }
+    }
+)
+
+
+def pytest_configure(config):
+    config.addinivalue_line("markers", "unit: Sprint 28 fast layer")
+    config.addinivalue_line("markers", "integration: Sprint 28 engine/API layer")
+    config.addinivalue_line("markers", "slow: long parametrized simulations")
+    config.addinivalue_line("markers", "regress: gameplay contract regressions")
+
+    junit = os.environ.get("DOUPE_JUNIT", "").strip()
+    if junit and not getattr(config.option, "junitxml", None):
+        config.option.junitxml = junit
+        report_dir = os.path.dirname(os.path.abspath(junit))
+        if report_dir:
+            os.makedirs(report_dir, exist_ok=True)
+
+
+def pytest_collection_modifyitems(config, items):
+    for item in items:
+        mod = item.module.__name__.rsplit(".", 1)[-1]
+        if item.name in _SLOW_TEST_NAMES and not item.get_closest_marker("slow"):
+            item.add_marker(pytest.mark.slow)
+            item.add_marker(pytest.mark.timeout(600))
+        if mod in _INTEGRATION_MODULES or mod.startswith("test_sprint"):
+            item.add_marker(pytest.mark.integration)
+        elif item.get_closest_marker("slow"):
+            item.add_marker(pytest.mark.integration)
+        else:
+            item.add_marker(pytest.mark.unit)
+        if mod in _REGRESS_MODULES or mod.startswith("test_sprint"):
+            item.add_marker(pytest.mark.regress)
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    outcome = yield
+    report = outcome.get_result()
+    if call.when != "call" or not report.failed:
+        return
+    longrepr = str(report.longrepr or "")
+    if "Timeout" in longrepr or "timeout" in longrepr.lower():
+        duration = getattr(report, "duration", None)
+        os.environ["DOUPE_LAST_TIMEOUT_TEST"] = item.nodeid
+        if duration is not None:
+            os.environ["DOUPE_LAST_TIMEOUT_SEC"] = f"{duration:.2f}"
+        os.environ["DOUPE_LAST_TIMEOUT_TRACE"] = longrepr[:4000]
+        print(
+            f"\n[pytest-timeout] {item.nodeid} duration={duration!s}s\n{longrepr[:2000]}\n",
+            flush=True,
+        )
+
 import app.api as app_api  # noqa: E402
 import app.db as app_db  # noqa: E402
 def _assert_isolated() -> None:

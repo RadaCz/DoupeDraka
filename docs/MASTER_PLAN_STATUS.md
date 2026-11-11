@@ -1,8 +1,8 @@
 # Master plan — stav (sync s DOUPEDRAKA_MASTER_PLAN.md v1.0)
 
-Poslední revize: **2026-11-11 (Sprint 27.1 — combat move integrace; lokálně, necommitováno)**. Etapy 7–9 záměrně otevřené až po uzavření sólo smyčky.
+Poslední revize: **2026-11-11 (Sprint 28 — engineering reliability; working tree, nepushováno)**. Etapy 7–9 záměrně otevřené až po uzavření sólo smyčky.
 
-**Kódový HEAD (commit):** `3573362` na `clean-main` (= `origin/clean-main` po Sprintu 25). **Sprint 25:** commitnutý. **Sprint 26:** viz `docs/SPRINT_26_RACIAL_TRAITS_ACCEPTANCE.md` (working tree).
+**Kódový HEAD (baseline gameplay):** `4f9f5bc` na `clean-main` (= `origin/clean-main` po Sprintu 27.1). **Sprint 28:** test vrstvy, runners, kontrakty — viz `docs/SPRINT_28_ENGINEERING_RELIABILITY_ACCEPTANCE.md`.
 
 **CI (baseline `53a6fed`):** GREEN #66 po Sprintu 24; po Sprintu 25 znovu ověřit před pushem.
 **Staging HTTPS:** **NOT DEPLOYED** — viz `docs/STAGING_DEVICE_VALIDATION_V1.md`.  
@@ -38,8 +38,9 @@ Poslední revize: **2026-11-11 (Sprint 27.1 — combat move integrace; lokálně
 
 ## Ověření (release gate)
 
-```bash
-python -m pytest -q   # lokální počty viz CHANGELOG / agent report; nefixujte bez CI na HEAD
+```powershell
+.\scripts\run_tests.ps1 fast      # diagnostika bez slow simulací
+.\scripts\run_tests.ps1 full      # včetně Sprint 15 parametrizovaných simů
 python scripts/secret_scan.py
-cd frontend && npm run test -- --run && npm run build && npm run test:e2e
+cd frontend; npm run test -- --run; npm run build; npm run test:e2e
 ```

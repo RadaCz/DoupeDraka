@@ -1,8 +1,8 @@
 # Product Gap Register V1
 
-**Repo baseline (commit):** `53a6fedf862c3e64c29fde4c28b13d037e9bc46a` (`clean-main` = `origin/clean-main`)  
-**Last acceptance pass (committed):** Sprint 24 — [`SPRINT_24_BACKGROUND_FEATURES_ACCEPTANCE.md`](SPRINT_24_BACKGROUND_FEATURES_ACCEPTANCE.md)  
-**In progress (local):** Sprint 25 — [`SPRINT_25_COMBAT_ACTION_ECONOMY_ACCEPTANCE.md`](SPRINT_25_COMBAT_ACTION_ECONOMY_ACCEPTANCE.md)  
+**Repo baseline (commit):** `4f9f5bc` (`clean-main` = `origin/clean-main` po Sprintu 27.1)  
+**Last acceptance pass (committed):** Sprint 27.1 — combat move integrace  
+**In progress (local):** Sprint 28 — [`SPRINT_28_ENGINEERING_RELIABILITY_ACCEPTANCE.md`](SPRINT_28_ENGINEERING_RELIABILITY_ACCEPTANCE.md) (proces/testy, ne gameplay)  
 **Authority:** engine + persisted `CharacterState`; UI must not pretend unmodeled rules apply.  
 **Related audits:** [`GAMEPLAY_COMPLETENESS_AUDIT_V1.md`](GAMEPLAY_COMPLETENESS_AUDIT_V1.md), [`SPRINT_16_CHARACTER_CREATION_V2.md`](SPRINT_16_CHARACTER_CREATION_V2.md)
 

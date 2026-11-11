@@ -84,6 +84,8 @@ def test_vault_first_descent_story_xp_once():
     assert hero.xp == xp
 
 
+@pytest.mark.slow
+@pytest.mark.timeout(600)
 @pytest.mark.parametrize("character_class", CLASSES)
 @pytest.mark.parametrize("seed", SEEDS)
 def test_main_story_reaches_level_3_without_search(character_class, seed):
@@ -93,6 +95,8 @@ def test_main_story_reaches_level_3_without_search(character_class, seed):
     assert row["level"] >= 3, row
 
 
+@pytest.mark.slow
+@pytest.mark.timeout(600)
 def test_main_story_optional_crypt_still_level_3():
     row = simulate_main_path("fighter", 42, include_crypt=True)
     assert row["level"] >= 3

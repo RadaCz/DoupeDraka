@@ -1,6 +1,13 @@
 # Roadmap
 
-Updated 2026-11-11 (`3573362` on `clean-main`; Sprint 26 in working tree). Chapter one is a gated six-location slice. ActionIntent routes player commands; **Pro NOT AVAILABLE** until OpenRouter exists.
+Updated 2026-11-11 (`4f9f5bc` on `clean-main`; Sprint 28 reliability in working tree). Chapter one is a gated six-location slice. ActionIntent routes player commands; **Pro NOT AVAILABLE** until OpenRouter exists.
+
+## Priority 0i — Engineering reliability (Sprint 28, local)
+- [x] pytest layers + `scripts/run_tests.ps1` (fast / diagnose / regress / full / slow)
+- [x] `docs/GAMEPLAY_CONTRACTS_V1.md`, `ENGINE_DEPENDENCY_MAP_V1.md`, `DEVELOPMENT_WORKFLOW_V1.md`
+- [x] CI JUnit + slow job split (workflow; GH run after push)
+- [x] Sprint 27.1 committed (`4f9f5bc`)
+- [ ] Playwright `chapter-one-quest` vault L3 — red locally (gameplay/E2E, not Sprint 28)
 
 ## Priority 0h — Racial traits V1 (Sprint 26, local)
 - [x] `app/engine/race_features.py` — MVP Human / Elf / Dwarf / Halfling

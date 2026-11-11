@@ -3,6 +3,71 @@ import { expect, type APIRequestContext, type Page } from '@playwright/test';
 import { apiTelegramToken, waitForAdventureComposerReady } from './telegram.ts';
 
 const E2E_API_BASE = 'http://127.0.0.1:8001';
+const MELEE_REACH_FT = 5;
+
+function combatDistanceFt(state: CharacterSnapshot): number {
+  return (
+    state.combat_tactics?.distance_ft
+    ?? state.combat_distance_ft
+    ?? 0
+  );
+}
+
+function movementRemainingFt(state: CharacterSnapshot): number {
+  return (
+    state.combat_tactics?.movement_remaining_ft
+    ?? state.combat_movement_remaining_ft
+    ?? 0
+  );
+}
+
+/** Sprint 27+ vault kobold opens at range — mirror ``resolve_combat_action_for_simulation`` advance loop. */
+export async function advanceIntoMeleeIfNeeded(
+  request: APIRequestContext,
+  token: string,
+  characterId: string,
+) {
+  const state = await fetchCharacterState(request, token, characterId);
+  if (!state.in_combat || state.combat_turn !== 'player') return;
+  let distance = combatDistanceFt(state);
+  let moveLeft = movementRemainingFt(state);
+  while (moveLeft > 0 && distance > MELEE_REACH_FT) {
+    const step = Math.min(moveLeft, distance - MELEE_REACH_FT);
+    if (step <= 0) break;
+    await postGameAction(request, token, characterId, `advance ${step} ft`);
+    const next = await fetchCharacterState(request, token, characterId);
+    distance = combatDistanceFt(next);
+    moveLeft = movementRemainingFt(next);
+    if (next.combat_turn !== 'player') break;
+  }
+}
+
+export async function postCombatAttack(
+  request: APIRequestContext,
+  token: string,
+  characterId: string,
+  foeName: string,
+) {
+  await expect.poll(async () => {
+    const probe = await fetchCharacterState(request, token, characterId);
+    return !probe.in_combat || probe.combat_turn === 'player';
+  }, { timeout: 60_000, intervals: [200, 400, 800] }).toBe(true);
+  await advanceIntoMeleeIfNeeded(request, token, characterId);
+  await postGameAction(request, token, characterId, `attack ${foeName}`);
+  const state = await fetchCharacterState(request, token, characterId);
+  const flags = state.combat_flags ?? {};
+  if (state.in_combat && state.combat_turn === 'player') {
+    const dist = combatDistanceFt(state);
+    const moveLeft = movementRemainingFt(state);
+    if (flags.action_used && !flags.bonus_action_used) {
+      await postGameAction(request, token, characterId, 'end turn');
+    } else if (!flags.action_used && moveLeft === 0 && dist > MELEE_REACH_FT) {
+      /* Mirror tests/combat_turn_helpers — close turn after partial advance without a legal attack. */
+      await postGameAction(request, token, characterId, 'end turn');
+    }
+  }
+  await closeCombatTurnIfStalled(request, token, characterId);
+}
 
 export type CharacterSnapshot = {
   level: number;
@@ -14,6 +79,13 @@ export type CharacterSnapshot = {
   gold?: number;
   combatant?: { name?: string } | null;
   combat_turn?: string;
+  combat_distance_ft?: number;
+  combat_movement_remaining_ft?: number;
+  combat_tactics?: {
+    distance_ft?: number;
+    movement_remaining_ft?: number;
+    weapon_range?: { allowed?: boolean; weapon_type?: string };
+  };
   combat_flags?: Record<string, boolean>;
   conditions?: Array<{ condition_id: string }>;
   fighting_style?: string;
@@ -189,13 +261,11 @@ export async function ensureLevelAtLeast(
       continue;
     }
     if (state.in_combat && state.combatant?.name) {
-      await postGameAction(request, token, characterId, `attack ${state.combatant.name}`);
-      await closeCombatTurnIfStalled(request, token, characterId);
+      await postCombatAttack(request, token, characterId, state.combatant.name);
       continue;
     }
     const tier1Foe = state.location?.includes('Cellar') ? 'goblin' : 'kobold';
-    await postGameAction(request, token, characterId, `attack ${tier1Foe}`);
-    await closeCombatTurnIfStalled(request, token, characterId);
+    await postCombatAttack(request, token, characterId, tier1Foe);
   }
 
   const final = await fetchCharacterState(request, token, characterId);
@@ -265,8 +335,7 @@ export async function completeVaultDescentViaEngine(
     }
     if (state.in_combat) {
       const foe = state.combatant?.name ?? 'Kobold skirmisher';
-      await postGameAction(request, token, characterId, `attack ${foe}`);
-      await closeCombatTurnIfStalled(request, token, characterId);
+      await postCombatAttack(request, token, characterId, foe);
       continue;
     }
     await postGameAction(request, token, characterId, 'search the vault');
@@ -334,8 +403,7 @@ export async function completeBossViaEngine(
         continue;
       }
       const foe = state.combatant?.name ?? 'Bell Warden';
-      await postGameAction(request, token, characterId, `attack ${foe}`);
-      await closeCombatTurnIfStalled(request, token, characterId);
+      await postCombatAttack(request, token, characterId, foe);
       continue;
     }
     if (lowHp) {
