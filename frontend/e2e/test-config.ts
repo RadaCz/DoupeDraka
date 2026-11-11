@@ -18,4 +18,5 @@ export const E2E_TELEGRAM_ID = {
   characterToAdventure: 775_000_000,
   classIdentity: 776_000_000,
   banditCamp: 777_000_000,
+  backgroundFeatures: 778_000_000,
 } as const;

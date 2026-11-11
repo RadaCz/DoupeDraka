@@ -1,8 +1,8 @@
 # Product Gap Register V1
 
-**Repo baseline (commit):** `9e7fbac25467d30055efb295e9e863b443ca88d2` (`clean-main` = `origin/clean-main`)  
-**Last acceptance pass (committed):** Sprint 22 — [`SPRINT_22_CHAPTER_ONE_GAMEPLAY_ACCEPTANCE.md`](SPRINT_22_CHAPTER_ONE_GAMEPLAY_ACCEPTANCE.md)  
-**In progress (local):** Sprint 23 — [`SPRINT_23_SKILL_CHECKS_PLAYER_AGENCY_ACCEPTANCE.md`](SPRINT_23_SKILL_CHECKS_PLAYER_AGENCY_ACCEPTANCE.md)  
+**Repo baseline (commit):** `32ebfd78309637077e264bbb8a8cdbe8c867fb12` (`clean-main` = `origin/clean-main`)  
+**Last acceptance pass (committed):** Sprint 23 — [`SPRINT_23_SKILL_CHECKS_PLAYER_AGENCY_ACCEPTANCE.md`](SPRINT_23_SKILL_CHECKS_PLAYER_AGENCY_ACCEPTANCE.md)  
+**In progress (local):** Sprint 24 — [`SPRINT_24_BACKGROUND_FEATURES_ACCEPTANCE.md`](SPRINT_24_BACKGROUND_FEATURES_ACCEPTANCE.md)  
 **Authority:** engine + persisted `CharacterState`; UI must not pretend unmodeled rules apply.  
 **Related audits:** [`GAMEPLAY_COMPLETENESS_AUDIT_V1.md`](GAMEPLAY_COMPLETENESS_AUDIT_V1.md), [`SPRINT_16_CHARACTER_CREATION_V2.md`](SPRINT_16_CHARACTER_CREATION_V2.md)
 
@@ -34,7 +34,7 @@
 | Character creation wizard | **PARTIAL** | `CharacterWizard.tsx`, `character_creation.py`, E2E `character-creation-wizard.spec.ts`, `character-to-adventure.spec.ts` | 9-step UI + persistence; **4-class** create→play E2E (Sprint 20); quick summary on identity step | P0 | Class features, racial depth |
 | Races (MVP 4) | **PARTIAL** | `service._d20_check`, `assemble_skill_proficiencies` | ASI + speed; **Lucky** on player d20 checks; Elf Perception | P0 | 17 — Darkvision, Dwarf resilience, Nimbleness |
 | Classes (MVP 4) | **PARTIAL** | `class_features.py`, `tests/test_class_identity_sprint21.py`, E2E `class-identity.spec.ts` | Lvl‑1 identity: Fighting Style, Second Wind, Expertise/Sneak/Hide, Life/Disciple, Wizard spellbook + **Arcane Recovery** (SRD budget); ostatní domény/styly deferred | P0 | Rozšířit featury mimo MVP 4 |
-| Backgrounds | **PARTIAL** | `MVP_BACKGROUNDS` (6 SRD), wizard footnote | Skills + gear + gold verified in tests; features **narrative-only** (UI labeled) | P1 | 17 — model 1–2 features |
+| Backgrounds | **PARTIAL** | `background_features.py`, `MVP_BACKGROUNDS` | Six chapter-one features modeled; idempotent flags; more locations backlog | P1 | Expand beyond Ch.1 |
 | Abilities (standard array) | **IMPLEMENTED** | `catalog.STANDARD_ARRAY`, wizard step | Validated permutation; racial ASI after assign | P0 | — |
 | Skills & proficiency | **PARTIAL** | `skill_challenges.py`, `skill_check()`, Sprint 23 tests | Engine challenges @ Bandit Camp; fail-closed unknown actions; broader routing still backlog | P0 | More locations / inspect challenges |
 | Equipment at creation | **IMPLEMENTED** | `apply_starting_equipment`, `EQUIPMENT_PACKAGES` | Class packages + auto body armor; instances + slots at create | P1 | — |

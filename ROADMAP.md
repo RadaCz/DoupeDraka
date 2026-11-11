@@ -1,14 +1,20 @@
 # Roadmap
 
-Updated 2026-11-11 (`9e7fbac` on `clean-main`; Sprint 23 in working tree). Chapter one is a gated six-location slice. ActionIntent routes player commands; **Pro NOT AVAILABLE** until OpenRouter exists.
+Updated 2026-11-11 (`32ebfd7` on `clean-main`; Sprint 24 in working tree). Chapter one is a gated six-location slice. ActionIntent routes player commands; **Pro NOT AVAILABLE** until OpenRouter exists.
 
-## Priority 0e — Skill checks & player agency (Sprint 23, local)
+## Priority 0f — Background features (Sprint 24, local)
+- [x] `app/engine/background_features.py` — six one-shot chapter gifts
+- [x] Play chips + character sheet status
+- [x] Stealth disadvantage success fix (`skill_challenges.py`)
+- [x] Tests + E2E (acolyte + criminal)
+
+## Priority 0e — Skill checks & player agency (Sprint 23, committed `32ebfd7`)
 - [x] Fail-closed action resolution (`intent.UNKNOWN`, no generic Cha/skill fallback)
 - [x] `app/engine/skill_challenges.py` — Bandit Camp stealth / social / combat evidence
 - [x] UI chips + `bandit-camp-skill.spec.ts`
 - [x] `tests/test_sprint23_skill_challenges.py`
 - [ ] More optional locations with challenges — backlog
-- [ ] Background feature mechanics — open
+- [x] Background feature mechanics — Sprint 24 (Chapter One six)
 
 ## Priority 0d — Character Creation V2 (Sprint 16+, committed)
 - [x] Engine: `app/engine/character_creation.py`, persisted fields on `CharacterState`

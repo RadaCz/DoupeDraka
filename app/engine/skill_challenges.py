@@ -142,13 +142,14 @@ def try_skill_challenge(engine: "GameEngine", character, action: str) -> TurnRes
         mod_note = ""
         if flags.get(FLAG_ALERTED):
             mod_note = " The camp is on alert — disadvantage on Stealth."
-        check, success, lucky = engine.skill_check(character, "Stealth", STEALTH_DC)
+        check, _, lucky = engine.skill_check(character, "Stealth", STEALTH_DC)
         if flags.get(FLAG_ALERTED):
-            # Simplified: roll twice and keep lower (disadvantage).
+            # Roll twice and keep lower (disadvantage); outcome follows the kept roll.
             check2, _, lucky2 = engine.skill_check(character, "Stealth", STEALTH_DC)
             if check2.total < check.total:
                 check, lucky = check2, lucky2
             mod_note += " (disadvantage applied)"
+        success = check.total >= STEALTH_DC
         skill_facts = {
             "challenge_id": CHALLENGE_STEALTH,
             "skill": "Stealth",

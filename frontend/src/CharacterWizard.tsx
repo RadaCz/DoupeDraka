@@ -386,7 +386,7 @@ export function CharacterWizard({
             <p className="muted-copy">
               {t(background.feature.name)}: {t(background.feature.text)}
               {' '}
-              <em>{t('Background features are narrative-only until modeled in the engine.')}</em>
+              <em>{t('Background features unlock at specific chapter locations in play.')}</em>
             </p>
           )}
         </div>

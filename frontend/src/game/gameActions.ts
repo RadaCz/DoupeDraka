@@ -1,4 +1,5 @@
 import type { Locale } from '../i18n';
+import { backgroundFeatureAvailable, backgroundFeatureFor } from '../character/backgroundFeatures';
 import { latestStoryBeatForOverview } from '../journal/journalPresentation';
 import type { Character, JournalEvent, LocationReference } from '../types';
 import { routeOpen } from '../chapterOneMap';
@@ -63,6 +64,16 @@ export function resolveNpcTalkAction(
 
 /** Tier-3 bosses (Bell Warden) require hero level 3+ — matches `encounters.minimum_level_for_tier`. */
 const BELL_WARDEN_MIN_LEVEL = 3;
+
+/** Background feature chip when location and chapter flags allow a one-time use. */
+export function resolveBackgroundFeatureChip(
+  character: Character,
+  t: (value: string) => string,
+): SuggestedAction | null {
+  const spec = backgroundFeatureFor(character);
+  if (!spec || !backgroundFeatureAvailable(character, spec)) return null;
+  return { label: t(spec.chipLabelKey), action: spec.chipAction };
+}
 
 /** Optional Bandit Camp skill challenges (engine `skill_challenges.py`). */
 export function resolveBanditCampChips(
@@ -305,6 +316,9 @@ export function playActionChips(
   if (questTravel && questTravel.action !== npcTalk?.action) {
     push(`quest-travel-${questTravel.action}`, questTravel.label, questTravel.action);
   }
+
+  const bgFeature = resolveBackgroundFeatureChip(character, t);
+  if (bgFeature) push(bgFeature.action, bgFeature.label, bgFeature.action);
 
   for (const bandit of resolveBanditCampChips(character, t)) {
     push(bandit.action, bandit.label, bandit.action);

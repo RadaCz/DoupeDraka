@@ -1,10 +1,10 @@
 # Master plan — stav (sync s DOUPEDRAKA_MASTER_PLAN.md v1.0)
 
-Poslední revize: **2026-11-11 (Sprint 23 — skill checks & player agency; lokálně, necommitováno)**. Etapy 7–9 záměrně otevřené až po uzavření sólo smyčky.
+Poslední revize: **2026-11-11 (Sprint 24 — background features; lokálně, necommitováno)**. Etapy 7–9 záměrně otevřené až po uzavření sólo smyčky.
 
-**Kódový HEAD (commit):** `9e7fbac` na `clean-main` (= `origin/clean-main`). **Sprint 22:** commitnutý — viz `docs/SPRINT_22_CHAPTER_ONE_GAMEPLAY_ACCEPTANCE.md`. **Sprint 23:** viz `docs/SPRINT_23_SKILL_CHECKS_PLAYER_AGENCY_ACCEPTANCE.md`.
+**Kódový HEAD (commit):** `32ebfd7` na `clean-main` (= `origin/clean-main`). **Sprint 23:** commitnutý (`32ebfd7`). **Sprint 24:** viz `docs/SPRINT_24_BACKGROUND_FEATURES_ACCEPTANCE.md`.
 
-**CI (baseline `9e7fbac`):** GitHub Actions run **`43061224115`** — GREEN (pytest 596, PostgreSQL 10, Vitest 161, E2E 31, build + secret scan). **Sprint 23 diff** — ověřit lokálním během před commitem.
+**CI (baseline `32ebfd7`):** ověřit na pushi po Sprintu 24; předchozí GREEN na `9e7fbac` run `43061224115`.
 **Staging HTTPS:** **NOT DEPLOYED** — viz `docs/STAGING_DEVICE_VALIDATION_V1.md`.  
 **Fyzický Telegram:** Android / iOS **NOT TESTED** (`docs/TELEGRAM_MOBILE_QA_V1.md`).  
 **Normal debit/refund na stagingu:** **NOT TESTED**.

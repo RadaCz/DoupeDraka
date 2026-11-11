@@ -16,6 +16,7 @@ import {
   proficiencyBonus,
   xpProgress,
 } from '../character/characterSheet';
+import { backgroundFeatureFor, backgroundFeatureUsed } from '../character/backgroundFeatures';
 import { classFeatureLines } from '../character/classFeatures';
 import { heroSpellRows } from '../spells/spellbook';
 
@@ -59,6 +60,7 @@ export function CharacterScreen({
   const xp = xpProgress(character.xp);
   const spellRows = useMemo(() => heroSpellRows(character, spells), [character, spells]);
   const features = useMemo(() => classFeatureLines(character, t), [character, t]);
+  const backgroundFeature = useMemo(() => backgroundFeatureFor(character), [character]);
   const hasSpellcasting = Object.values(character.max_spell_slots ?? {}).some(count => count > 0);
 
   return (
@@ -186,6 +188,30 @@ export function CharacterScreen({
           </p>
         </article>
       </section>
+
+      {backgroundFeature && (
+        <section className="char-v2-section" aria-labelledby="char-background-feature-heading">
+          <h2 id="char-background-feature-heading" className="char-v2-section-title">{t('Background feature')}</h2>
+          <ul className="char-v2-spell-list">
+            <li className="char-v2-spell-row">
+              <div className="char-v2-spell-head">
+                <strong>{t(backgroundFeature.nameKey)}</strong>
+                <small>
+                  {backgroundFeatureUsed(character, backgroundFeature)
+                    ? t('Used this chapter')
+                    : character.location === backgroundFeature.location
+                      ? t('Available here')
+                      : t('Travel to use')}
+                </small>
+              </div>
+              <p className="char-v2-spell-text">{t(backgroundFeature.descriptionKey)}</p>
+              <p className="char-v2-section-lead">
+                {t('Usable at')}: {displayLocation(backgroundFeature.location, locale)}
+              </p>
+            </li>
+          </ul>
+        </section>
+      )}
 
       {features.length > 0 && (
         <section className="char-v2-section" aria-labelledby="char-features-heading">

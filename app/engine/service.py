@@ -1656,6 +1656,12 @@ class GameEngine:
         if challenge is not None:
             return challenge, monster
 
+        from .background_features import try_background_feature
+
+        background_outcome = try_background_feature(character, action)
+        if background_outcome is not None:
+            return background_outcome, monster
+
         if intent.kind == UNKNOWN:
             return TurnResult(
                 action,

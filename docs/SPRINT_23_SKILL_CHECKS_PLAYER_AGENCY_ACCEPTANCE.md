@@ -1,8 +1,7 @@
 # Sprint 23 — Meaningful skill checks & player agency V1
 
 **Datum:** 2026-11-11  
-**Git baseline (committed):** `9e7fbac` (`origin/clean-main`) — Sprint 22 merged  
-**Sprint 23:** lokální working tree (necommitováno)  
+**Git commit:** `32ebfd7` (`origin/clean-main`) — Sprint 23 **commitnutý**  
 **Předchozí:** [`SPRINT_22_CHAPTER_ONE_GAMEPLAY_ACCEPTANCE.md`](SPRINT_22_CHAPTER_ONE_GAMEPLAY_ACCEPTANCE.md) (`9e7fbac`)
 
 ## Cíl

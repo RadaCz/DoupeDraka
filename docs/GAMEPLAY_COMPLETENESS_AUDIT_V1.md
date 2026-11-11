@@ -7,7 +7,16 @@
 
 **Deployment / human fun:** HTTPS staging **NOT DEPLOYED** · Android/iOS playtest **NOT TESTED** · Claimed “fun” **NOT VERIFIED** by this audit.
 
-### Sprint 23 — Skill checks & Bandit Camp (2026-11-11, local)
+### Sprint 24 — Background features (2026-11-11, local)
+
+See [`SPRINT_24_BACKGROUND_FEATURES_ACCEPTANCE.md`](SPRINT_24_BACKGROUND_FEATURES_ACCEPTANCE.md). **Baseline:** `32ebfd7`. Six MVP backgrounds; one-shot informational gifts; Stealth disadvantage fix.
+
+| Finding | Status |
+|---------|--------|
+| Background features mechanical | **PARTIAL** (Chapter One, 6/6) |
+| Sprint 23 stealth disadvantage | **FIXED** |
+
+### Sprint 23 — Skill checks & Bandit Camp (2026-11-11, committed `32ebfd7`)
 
 See [`SPRINT_23_SKILL_CHECKS_PLAYER_AGENCY_ACCEPTANCE.md`](SPRINT_23_SKILL_CHECKS_PLAYER_AGENCY_ACCEPTANCE.md). **Committed baseline:** `9e7fbac`. Fail-closed unknown actions; Bandit Camp stealth/social/combat evidence (20 gp, ledger); optional — main chapter unchanged.
 
