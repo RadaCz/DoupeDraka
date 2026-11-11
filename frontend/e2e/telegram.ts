@@ -78,16 +78,83 @@ export async function ensureTelegramHome(page: Page) {
   throw new Error('Telegram sign-in did not reach the home screen');
 }
 
-export async function completeWizardFighter(page: Page, name: string) {
+export type WizardBuildOptions = {
+  name: string;
+  race?: string;
+  characterClass?: string;
+  background?: string;
+  mode?: 'step' | 'quick';
+};
+
+async function wizardContinue(page: Page) {
+  await page.getByRole('button', { name: 'Continue', exact: true }).click();
+}
+
+function wizardCard(page: Page, label: string) {
+  return page.getByRole('button', { name: new RegExp(`^${label}\\b`, 'i') });
+}
+
+export async function completeCharacterWizard(page: Page, options: WizardBuildOptions) {
+  const race = options.race ?? 'Human';
+  const characterClass = options.characterClass ?? 'Fighter';
+  const background = options.background ?? 'Folk Hero';
+
+  await ensureTelegramHome(page);
+  await page.getByRole('button', { name: /create your character/i }).click();
+
+  if (options.mode === 'quick') {
+    await page.getByRole('button', { name: /Quick generate/i }).click();
+    await page.getByLabel('Character name').fill(options.name);
+    await page.getByRole('button', { name: 'Continue', exact: true }).click();
+    await expect(page.getByRole('heading', { name: /Meet your adventurer/i })).toBeVisible();
+    await page.getByRole('button', { name: 'Enter the adventure' }).click();
+    await page.getByRole('heading', { name: 'The Whispering Cellar' }).waitFor();
+    return;
+  }
+
+  await page.getByRole('button', { name: 'Step-by-step wizard' }).click();
+  await wizardCard(page, race).click();
+  await wizardContinue(page);
+  await wizardCard(page, characterClass).click();
+  await wizardContinue(page);
+  await wizardCard(page, background).click();
+  await wizardContinue(page);
+  // Abilities: class defaults already assigned in UI
+  await wizardContinue(page);
+  // Skills: defaults from background/class
+  await wizardContinue(page);
+  // Gear
+  await wizardContinue(page);
+  // Spells step skipped for non-casters
+  await page.getByLabel('Character name').fill(options.name);
+  await wizardContinue(page);
+  await expect(page.getByRole('heading', { name: /Meet your adventurer/i })).toBeVisible();
+  await page.getByRole('button', { name: 'Enter the adventure' }).click();
+  await page.getByRole('heading', { name: 'The Whispering Cellar' }).waitFor();
+}
+
+export async function completeWizardWizardCaster(page: Page, name: string) {
   await ensureTelegramHome(page);
   await page.getByRole('button', { name: /create your character/i }).click();
   await page.getByRole('button', { name: 'Step-by-step wizard' }).click();
-  await page.getByRole('button', { name: 'Human' }).click();
-  await page.getByRole('button', { name: 'Continue', exact: true }).click();
-  await page.getByRole('button', { name: 'Fighter' }).click();
-  await page.getByRole('button', { name: 'Continue', exact: true }).click();
+  await wizardCard(page, 'Elf').click();
+  await wizardContinue(page);
+  await wizardCard(page, 'Wizard').click();
+  await wizardContinue(page);
+  await wizardCard(page, 'Sage').click();
+  await wizardContinue(page);
+  await wizardContinue(page);
+  await wizardContinue(page);
+  await wizardContinue(page);
+  await wizardContinue(page);
   await page.getByLabel('Character name').fill(name);
-  await page.getByRole('button', { name: 'Continue', exact: true }).click();
+  await wizardContinue(page);
+  await expect(page.getByRole('heading', { name: /Meet your adventurer/i })).toBeVisible();
   await page.getByRole('button', { name: 'Enter the adventure' }).click();
   await page.getByRole('heading', { name: 'The Whispering Cellar' }).waitFor();
+}
+
+/** Default fighter manual wizard — used by legacy chapter E2E specs. */
+export async function completeWizardFighter(page: Page, name: string) {
+  await completeCharacterWizard(page, { name, race: 'Human', characterClass: 'Fighter', background: 'Folk Hero' });
 }

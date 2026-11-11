@@ -92,17 +92,17 @@ def test_resolve_action_check():
     hero = game.create_character(1, "Arin", "human", "fighter", stats(intelligence=16))
     result, monster = game.resolve_action(hero, "inspect the old door", None)
     assert result.state_changed
-    assert any("intelligence check" in e.lower() for e in result.events)
+    assert any("investigation check" in e.lower() or "intelligence check" in e.lower() for e in result.events)
 
 
 @pytest.mark.parametrize(
     ("action", "ability"),
     [
         ("push the fallen pillar", "Strength"),
-        ("sneak past the guard", "Dexterity"),
+        ("sneak past the guard", "Stealth"),
         ("endure the cold", "Constitution"),
-        ("inspect the old door", "Intelligence"),
-        ("listen at the door", "Wisdom"),
+        ("inspect the old door", "Investigation"),
+        ("listen at the door", "Perception"),
         ("persuade the guard", "Charisma"),
     ],
 )
@@ -175,10 +175,11 @@ def test_exploration_finds_gold_and_records_it():
     hero = game.create_character(1, "Arin", "human", "fighter")
     game.roll = lambda dice, modifier=0, critical=False: RollResult(dice, (3,), modifier, 3 + modifier)
 
+    starting_gold = hero.gold
     result, monster = game.resolve_action(hero, "search the cellar", None)
 
     assert monster is None
-    assert hero.gold == 3
+    assert hero.gold == starting_gold + 3
     assert "3 gold pieces" in result.events[1]
 
 

@@ -28,17 +28,19 @@ def _hero(game: GameEngine, location: str = "The Whispering Cellar"):
 def test_explore_gold_one_time_per_location(game):
     hero = _hero(game)
     game.roll = lambda dice, modifier=0, critical=False: RollResult(dice, (3,), modifier, 3 + modifier)
+    starting_gold = hero.gold
     first, _ = game.resolve_action(hero, "look around", None)
-    assert hero.gold == 3
+    assert hero.gold == starting_gold + 3
     assert first.state_changed
     second, _ = game.resolve_action(hero, "look around", None)
-    assert hero.gold == 3
+    assert hero.gold == starting_gold + 3
     assert not second.state_changed
     assert any("no loose coin" in event.casefold() for event in second.events)
 
 
 def test_explore_gold_farm_simulation_cap(game):
     hero = _hero(game)
+    starting_gold = hero.gold
     total_gold = hero.gold
     for _ in range(30):
         game.roll = lambda dice, modifier=0, critical=False: RollResult(
@@ -48,7 +50,7 @@ def test_explore_gold_farm_simulation_cap(game):
         total_gold = hero.gold
         if not result.state_changed and hero.quest_flags.get(gold_scavenge_flag(hero.location)):
             break
-    assert total_gold <= 4
+    assert total_gold <= starting_gold + 4
 
 
 def test_bell_return_gold_idempotent(game):
@@ -140,13 +142,14 @@ def test_class_can_afford_potion_after_bell_quest(game, cls):
     from app.engine.quests import resolve_main_quest_step
 
     hero = game.create_character(1, "Hero", "human", cls)
+    starting_gold = hero.gold
     hero.location = "The Shrine of the Forgotten"
     hero.quest_flags["bell_acquired"] = True
     hero.inventory.append("Shrine bell")
     resolve_main_quest_step(hero, "return bell", "return_bell", game._level_up)
     from app.engine.economy_balance import CHAPTER_BOSS_GOLD_GP, CRYPT_RELIC_GOLD_GP, QUEST_BELL_RETURN_GOLD_GP
 
-    assert hero.gold == QUEST_BELL_RETURN_GOLD_GP
+    assert hero.gold == starting_gold + QUEST_BELL_RETURN_GOLD_GP
     hero.gold += CRYPT_RELIC_GOLD_GP + CHAPTER_BOSS_GOLD_GP
     assert hero.gold >= HEALING_POTION_PRICE_GP
 

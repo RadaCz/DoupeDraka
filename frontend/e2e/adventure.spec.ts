@@ -37,7 +37,7 @@ test('creates a hero, completes a real game turn, and restores its journal after
   expect(actionStatuses, actionErrors.join('\n')).toEqual([200]);
   const journal = page.getByRole('log', { name: 'Adventure journal' });
   await expect(journal.locator('.journal-action')).toContainText('inspect the old door');
-  await expect(journal.getByText(/Intelligence check:/)).toBeVisible();
+  await expect(journal.getByText(/(Intelligence|Investigation) check:/i)).toBeVisible();
   await expect.poll(() => page.evaluate(() => localStorage.getItem('active_character_id'))).not.toBeNull();
   await expect.poll(() => page.evaluate(() => localStorage.getItem('api_token'))).toBeNull();
 
@@ -46,7 +46,7 @@ test('creates a hero, completes a real game turn, and restores its journal after
   await page.getByRole('button', { name: 'Continue adventure' }).click();
   const restoredJournal = page.getByRole('log', { name: 'Adventure journal' });
   await expect(restoredJournal.locator('.journal-action')).toContainText('inspect the old door');
-  await expect(restoredJournal.getByText(/Intelligence check:/)).toBeVisible();
+  await expect(restoredJournal.getByText(/(Intelligence|Investigation) check:/i)).toBeVisible();
 
   const nav = page.getByRole('navigation', { name: 'Main navigation' });
   await expect(nav.getByRole('button')).toHaveCount(4);

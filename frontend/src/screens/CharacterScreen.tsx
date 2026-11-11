@@ -61,7 +61,9 @@ export function CharacterScreen({
           <div className="char-v2-identity-copy">
             <h1 className="char-v2-name">{character.name}</h1>
             <p className="char-v2-subtitle">
-              {t(titleCase(character.race))} · {t(titleCase(character.character_class))} · {t('Level')} {character.level}
+              {t(titleCase(character.race))} · {t(titleCase(character.character_class))}
+              {character.background ? ` · ${t(titleCase(character.background.replace(/_/g, ' ')))}` : ''}
+              {' · '}{t('Level')} {character.level}
             </p>
             <p className="char-v2-location" title={character.location}>
               <span aria-hidden="true">⌖</span> {displayLocation(character.location, locale)}
@@ -137,6 +139,13 @@ export function CharacterScreen({
           </p>
         </article>
       </section>
+
+      {character.skill_proficiencies && character.skill_proficiencies.length > 0 && (
+        <section className="char-v2-section" aria-labelledby="char-skills-heading">
+          <h2 id="char-skills-heading" className="char-v2-section-title">{t('Skill proficiencies')}</h2>
+          <p className="char-v2-section-lead">{character.skill_proficiencies.join(' · ')}</p>
+        </section>
+      )}
 
       <details className="char-v2-section char-v2-abilities-fold">
         <summary className="char-v2-section-title">{t('Ability scores')}</summary>

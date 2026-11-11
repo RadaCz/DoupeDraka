@@ -1,6 +1,16 @@
 # Roadmap
 
-Updated 2026-11-10 (`339271d`). Chapter one is a gated six-location slice on `clean-main`. ActionIntent routes player commands; **Pro NOT AVAILABLE** until OpenRouter exists.
+Updated 2026-11-11 (`50a8890` working tree). Chapter one is a gated six-location slice on `clean-main`. **Sprint 16 (local):** Character Creation V2 — engine-authoritative SRD level-1 choices for MVP 4×4; see `docs/SPRINT_16_CHARACTER_CREATION_V2.md` and `docs/PRODUCT_GAP_REGISTER_V1.md`. ActionIntent routes player commands; **Pro NOT AVAILABLE** until OpenRouter exists.
+
+## Priority 0d — Character Creation V2 (Sprint 16, uncommitted)
+- [x] Engine: `app/engine/character_creation.py`, persisted fields on `CharacterState`
+- [x] API: extended `CharacterCreate`, `/reference` → `character_creation`
+- [x] UI: 9-step `CharacterWizard.tsx` + quick generate with same rules
+- [x] Tests: `tests/test_character_creation_v2.py`; pytest **516 passed**
+- [x] Vitest **153 passed**, `npm run build` OK
+- [ ] E2E full matrix on this tree — **NOT RUN** in Sprint 16 slice
+- [ ] Racial traits beyond Lucky/Perception — Sprint 17
+- [ ] Background feature mechanics — Sprint 17
 
 ## Priority 0c — Product UX Redesign V1 (historical audit 2026-11-09; partial implementation since)
 - [x] [`docs/PRODUCT_UX_AUDIT_V1.md`](docs/PRODUCT_UX_AUDIT_V1.md) — **historický** P0–P3 inventář (2026-11-09), ne aktuální backlog

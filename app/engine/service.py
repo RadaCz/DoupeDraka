@@ -19,6 +19,15 @@ from .equipment import (
     set_equipped_weapon,
     sync_item_instances,
 )
+from .character_creation import (
+    CreationChoices,
+    EXPLORE_SKILL_CUES,
+    SKILL_ABILITIES,
+    assemble_skill_proficiencies,
+    racial_speed,
+    resolve_creation_options,
+    saving_throw_proficiencies,
+)
 from .ruleset_v1 import MAX_MVP_LEVEL
 from .intent import (
     AMBIGUOUS,
@@ -55,6 +64,7 @@ from .spells import (
     MODELED_SPELL_EFFECTS,
     SPELLCASTING_ABILITIES,
     advance_spellcasting,
+    apply_creation_spell_choices,
     ensure_spellcasting,
     initialize_spellcasting,
     learn_level_up_spells,
@@ -107,27 +117,76 @@ class GameEngine:
     @staticmethod
     def modifier(score: int) -> int: return (score - 10) // 2
 
-    def create_character(self, owner_id: int, name: str, race: str, character_class: str, abilities: dict[str, int] | None = None) -> CharacterState:
-        if race not in RACES or character_class not in CLASSES: raise ValueError("Unknown race or class")
-        # Falling back to the standard array keeps a blank character able to hit AC 13.
-        scores = abilities or standard_abilities(character_class)
-        if set(scores) != set(ABILITY_ORDER) or any(not 3 <= score <= 20 for score in scores.values()):
-            raise ValueError("Ability scores must contain each ability in range 3-20")
-        scores = catalog.apply_racial_ability_increases(race, scores)
-        spec = CLASSES[character_class]; hp = max(1, spec.hit_die + self.modifier(scores["constitution"]))
-        # Only classes with a spellcasting pool get mana; martial classes never do.
+    def create_character(
+        self,
+        owner_id: int,
+        name: str,
+        race: str,
+        character_class: str,
+        abilities: dict[str, int] | None = None,
+        *,
+        background: str | None = None,
+        class_skills: list[str] | None = None,
+        equipment_package: str | None = None,
+        cantrips: list[str] | None = None,
+        level_one_spells: list[str] | None = None,
+        personality: CreationChoices | None = None,
+    ) -> CharacterState:
+        if race not in RACES or character_class not in CLASSES:
+            raise ValueError("Unknown race or class")
+
+        base_scores, choices, inventory, gold = resolve_creation_options(
+            race,
+            character_class,
+            abilities,
+            background=background,
+            class_skills=class_skills,
+            equipment_package=equipment_package,
+            cantrips=cantrips,
+            level_one_spells=level_one_spells,
+            personality=personality,
+        )
+        scores = catalog.apply_racial_ability_increases(race, base_scores)
+        spec = CLASSES[character_class]
+        hp = max(1, spec.hit_die + self.modifier(scores["constitution"]))
         mana = spec.mana + max(0, self.modifier(scores[spec.primary])) if spec.mana else 0
         dexterity = self.modifier(scores["dexterity"])
         armor_class = spec.armor[0] + (dexterity if spec.armor[1] is None else min(dexterity, spec.armor[1]))
-        inventory = list(STARTING_INVENTORY_BY_CLASS.get(character_class, ["traveler's clothes"]))
+        if not inventory:
+            inventory = list(STARTING_INVENTORY_BY_CLASS.get(character_class, ["traveler's clothes"]))
+
         character = CharacterState(
-            str(uuid.uuid4()), owner_id, name.strip()[:48], race, character_class,
-            abilities=scores, max_hp=hp, hp=hp, armor_class=armor_class,
-            mana=mana, max_mana=mana, inventory=inventory,
+            str(uuid.uuid4()),
+            owner_id,
+            name.strip()[:48],
+            race,
+            character_class,
+            abilities=scores,
+            max_hp=hp,
+            hp=hp,
+            armor_class=armor_class,
+            mana=mana,
+            max_mana=mana,
+            inventory=inventory,
+            gold=gold,
+            background=choices.background,
+            equipment_package=choices.equipment_package,
+            skill_proficiencies=assemble_skill_proficiencies(
+                race, character_class, choices.background, choices.class_skills
+            ),
+            saving_throw_proficiencies=saving_throw_proficiencies(character_class),
+            speed=racial_speed(race),
+            alignment=choices.alignment[:48],
+            ideal=choices.ideal[:256],
+            bond=choices.bond[:256],
+            flaw=choices.flaw[:256],
+            backstory=choices.backstory[:2048],
         )
         character.visited_locations = [character.location]
         character.item_instances = default_item_instances(character.inventory, character)
         initialize_spellcasting(character)
+        if cantrips is not None or level_one_spells is not None:
+            apply_creation_spell_choices(character, choices.cantrips, choices.level_one_spells)
         return character
 
     def roll(self, dice: str, modifier: int = 0, critical: bool = False) -> RollResult:
@@ -869,9 +928,44 @@ class GameEngine:
             character.narration_language = language
         return character
 
-    def ability_check(self, character: CharacterState, ability: str, dc: int) -> tuple[RollResult, bool]:
-        result = self.roll("1d20", self.modifier(character.abilities[ability]))
-        return result, result.total >= dc
+    def _d20_check(self, character: CharacterState, modifier: int) -> tuple[RollResult, str]:
+        roll = self.roll("1d20", modifier)
+        note = ""
+        if character.race == "halfling" and roll.values[0] == 1:
+            roll = self.roll("1d20", modifier)
+            note = f" Halfling Lucky: 1 → {roll.values[0]}."
+        return roll, note
+
+    def ability_check(self, character: CharacterState, ability: str, dc: int) -> tuple[RollResult, bool, str]:
+        result, note = self._d20_check(character, self.modifier(character.abilities[ability]))
+        return result, result.total >= dc, note
+
+    def saving_throw(self, character: CharacterState, ability: str, dc: int) -> tuple[RollResult, bool, str]:
+        base = self.modifier(character.abilities.get(ability, 10))
+        prof = 2 + max(0, (character.level - 1) // 4)
+        modifier = base + (prof if ability in character.saving_throw_proficiencies else 0)
+        result, note = self._d20_check(character, modifier)
+        return result, result.total >= dc, note
+
+    def skill_modifier(self, character: CharacterState, skill: str) -> int:
+        ability = SKILL_ABILITIES.get(skill, "dexterity")
+        base = self.modifier(character.abilities.get(ability, 10))
+        prof = 2 + max(0, (character.level - 1) // 4)
+        if skill in character.skill_proficiencies:
+            return base + prof
+        return base
+
+    def skill_check(self, character: CharacterState, skill: str, dc: int) -> tuple[RollResult, bool, str]:
+        result, note = self._d20_check(character, self.skill_modifier(character, skill))
+        return result, result.total >= dc, note
+
+    @staticmethod
+    def _explore_skill_for_text(text: str) -> str | None:
+        lowered = text.casefold()
+        for skill, cues in EXPLORE_SKILL_CUES.items():
+            if any(cue in lowered for cue in cues):
+                return skill
+        return None
 
     @staticmethod
     def _ability_for_action(text: str) -> str:
@@ -898,18 +992,19 @@ class GameEngine:
     def attack(self, character: CharacterState, monster: MonsterState) -> list[str]:
         weapon = equipped_weapon(character)
         bonus = attack_modifier(character, weapon) + item_attack_bonus(character)
-        attack_roll = self.roll("1d20", bonus)
+        attack_roll, lucky_note = self._d20_check(character, bonus)
+        natural = attack_roll.values[0]
         weapon_label = weapon.name if weapon.key != "unarmed" else "your weapon"
-        if attack_roll.values[0] == 1:
-            return [f"Attack with {weapon_label}: {attack_roll.total} (d20 +{bonus}) — critical miss."]
-        if attack_roll.values[0] != 20 and attack_roll.total < monster.armor_class:
+        if natural == 1:
+            return [f"Attack with {weapon_label}: {attack_roll.total} (d20 +{bonus}) — critical miss.{lucky_note}"]
+        if natural != 20 and attack_roll.total < monster.armor_class:
             return [
-                f"Attack with {weapon_label}: {attack_roll.total} (d20 +{bonus}) vs AC {monster.armor_class} — miss.",
+                f"Attack with {weapon_label}: {attack_roll.total} (d20 +{bonus}) vs AC {monster.armor_class} — miss.{lucky_note}",
             ]
-        damage = self.roll(weapon.damage, damage_modifier(character, weapon), attack_roll.values[0] == 20)
+        damage = self.roll(weapon.damage, damage_modifier(character, weapon), natural == 20)
         monster.hp = max(0, monster.hp - max(1, damage.total))
         return [
-            f"Attack with {weapon_label}: {attack_roll.total} (d20 +{bonus}) — hit.",
+            f"Attack with {weapon_label}: {attack_roll.total} (d20 +{bonus}) — hit.{lucky_note}",
             f"Damage {damage.total} ({weapon.damage} + modifier); {monster.name} has {monster.hp}/{monster.max_hp} HP.",
         ]
 
@@ -1159,12 +1254,12 @@ class GameEngine:
                 blocked = self._require_player_combat_turn(character, action)
                 if blocked:
                     return blocked, monster
-            check, success = self.ability_check(character, "dexterity", FLEE_DC)
+            check, success, lucky = self.ability_check(character, "dexterity", FLEE_DC)
             if not success:
-                return TurnResult(action, [f"Dexterity check: {check.total} vs DC {FLEE_DC} — you fail to break away."], True), monster
+                return TurnResult(action, [f"Dexterity check: {check.total} vs DC {FLEE_DC} — you fail to break away.{lucky}"], True), monster
             character.in_combat = False
             character.exploration_cooldown = 1
-            return TurnResult(action, [f"Dexterity check: {check.total} vs DC {FLEE_DC} — you break away and escape the fight."], True, True), None
+            return TurnResult(action, [f"Dexterity check: {check.total} vs DC {FLEE_DC} — you break away and escape the fight.{lucky}"], True, True), None
 
         if intent.kind in (TRAVEL, EXPLORE):
             if monster is not None or character.in_combat:
@@ -1180,11 +1275,11 @@ class GameEngine:
             npc_id = npc_id_from_action(action)
             if npc_id:
                 return resolve_npc_talk(character, action, npc_id), monster
-            check, success = self.ability_check(character, "charisma", 12)
+            check, success, lucky = self.ability_check(character, "charisma", 12)
             self._regenerate_mana(character)
             return TurnResult(
                 action,
-                [f"Charisma check: {check.total} vs DC 12 — {'success' if success else 'failure'}."],
+                [f"Charisma check: {check.total} vs DC 12 — {'success' if success else 'failure'}.{lucky}"],
                 True,
             ), monster
 
@@ -1194,7 +1289,18 @@ class GameEngine:
         if focused is not None:
             return focused, monster
 
+        explore_skill = self._explore_skill_for_text(text)
+        if explore_skill:
+            check, success, lucky = self.skill_check(character, explore_skill, 12)
+            self._regenerate_mana(character)
+            label = f"{explore_skill} check"
+            return TurnResult(
+                action,
+                [f"{label}: {check.total} vs DC 12 — {'success' if success else 'failure'}.{lucky}"],
+                True,
+            ), monster
+
         ability = self._ability_for_action(text)
-        check, success = self.ability_check(character, ability, 12)
+        check, success, lucky = self.ability_check(character, ability, 12)
         self._regenerate_mana(character)
-        return TurnResult(action, [f"{ability.title()} check: {check.total} vs DC 12 — {'success' if success else 'failure'}."], True), monster
+        return TurnResult(action, [f"{ability.title()} check: {check.total} vs DC 12 — {'success' if success else 'failure'}.{lucky}"], True), monster

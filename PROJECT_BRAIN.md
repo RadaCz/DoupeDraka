@@ -4,8 +4,8 @@
 
 - **Repository:** `D:\DoupeDraka`
 - **Development branch:** `clean-main` (merge to `main` after green CI only)
-- **Last updated:** 2026-11-10 (Sprint 10.3 staging security hardening docs)
-- **HEAD (origin `clean-main`):** `339271d` — Sprints 7–9 shipped v `885ea4e`; 10.1–10.2.1 staging docs + CI secret-scan fix.
+- **Last updated:** 2026-11-11 (Sprint 16 character creation v2 — local, uncommitted)
+- **HEAD (working tree):** `50a8890` on `clean-main` — Character Creation V2 (SRD standard array, backgrounds, skills, gear/spells where modeled); staging HTTPS still **NOT DEPLOYED**.
 - **CI (2026-11-10):** GitHub Actions run `42824720654` na `339271d` — **4/4 SUCCESS**.
 - **Staging:** HTTPS deploy **NOT DEPLOYED**; checklist `docs/STAGING_DEVICE_VALIDATION_V1.md`.
 - **Fyzické QA:** Android / iOS Telegram **NOT TESTED** (`docs/TELEGRAM_MOBILE_QA_V1.md`).
@@ -22,7 +22,7 @@
 
 ## 2. Product and invariants
 
-Solo D&D 5e is a Telegram Mini App with an English default UI and Czech UI **with diacritics** (`i18n.tsx` + `applyCzechDiacritics` backfill for legacy keys). Presentation catalog: `localization/chapter_one_display.json`. Players create a hero, explore, fight, cast supported spells, rest, and progress. **Chapter one** has **six main** locations (bell quest → vault → Bell Warden) plus **three optional** sites (Forgotten Crypt, Bandit Camp, Underground River) — nine nodes on the map. **Ruleset v1** supports **four races** (Human, Elf, Dwarf, Halfling) and **four classes** (Fighter, Rogue, Cleric, Wizard); other SRD entries are reference-only.
+Solo D&D 5e is a Telegram Mini App with an English default UI and Czech UI **with diacritics** (`i18n.tsx` + `applyCzechDiacritics` backfill for legacy keys). Presentation catalog: `localization/chapter_one_display.json`. Players create a hero through **Character Creation V2** (9-step wizard or quick/preset paths using the same engine rules): MVP **four races** and **four classes**, six SRD backgrounds, standard array, class/background skills, equipment packages, cleric/wizard spell picks, narrative personality fields. **Chapter one** has **six main** locations (bell quest → vault → Bell Warden) plus **three optional** sites — nine nodes on the map. Other SRD races/classes remain reference-only in `/reference`.
 
 `app/engine/` owns dice, HP, XP, spell slots, encounters, location transitions, quest flags, ActionIntent routing, and costs. It has no database, Telegram, or LLM calls. The API persists engine outcomes and journal events before streaming narration. Invalid/no-op actions do not spend **narrator credits** (⚡).
 

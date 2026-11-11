@@ -21,6 +21,16 @@ class CharacterCreate(BaseModel):
     race: str
     character_class: str
     abilities: dict[str, int] | None = None
+    background: str | None = None
+    class_skills: list[str] | None = Field(default=None, max_length=6)
+    equipment_package: str | None = None
+    cantrips: list[str] | None = Field(default=None, max_length=6)
+    level_one_spells: list[str] | None = Field(default=None, max_length=8)
+    alignment: str | None = Field(default=None, max_length=48)
+    ideal: str | None = Field(default=None, max_length=256)
+    bond: str | None = Field(default=None, max_length=256)
+    flaw: str | None = Field(default=None, max_length=256)
+    backstory: str | None = Field(default=None, max_length=2048)
     # Optional campaign settings applied at creation time.
     difficulty: str | None = None
     tone: str | None = None

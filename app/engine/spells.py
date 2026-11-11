@@ -147,6 +147,22 @@ def _ability_modifier(character: CharacterState, ability_code: str) -> int:
     return (character.abilities[ability] - 10) // 2
 
 
+def apply_creation_spell_choices(
+    character: CharacterState,
+    cantrips: list[str],
+    level_one_spells: list[str],
+) -> None:
+    """Replace auto starters when the player chose spells at creation."""
+    if not cantrips and not level_one_spells:
+        return
+    if character.character_class in PREPARED_CASTERS:
+        character.prepared_spells = list(cantrips) + list(level_one_spells)
+        character.known_spells = []
+    else:
+        character.known_spells = list(cantrips) + list(level_one_spells)
+        character.prepared_spells = []
+
+
 def initialize_spellcasting(character: CharacterState) -> None:
     """Set class-appropriate starting spells and slot capacity."""
     character.spellcasting_ability = SPELLCASTING_ABILITIES.get(character.character_class, "")

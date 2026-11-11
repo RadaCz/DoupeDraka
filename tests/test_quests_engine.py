@@ -25,6 +25,7 @@ def test_quest_catalog_matches_chapter_one_steps():
 def test_crypt_relic_pays_once():
     game = GameEngine(random.Random(2))
     hero = game.create_character(1, "Arin", "human", "fighter")
+    starting_gold = hero.gold
     hero.location = "The Forgotten Crypt"
     hero.quest_flags = {}
 
@@ -32,13 +33,13 @@ def test_crypt_relic_pays_once():
     assert first is not None
     assert first.state_changed
     assert hero.quest_flags["crypt_relic_claimed"]
-    assert hero.gold == 15
+    assert hero.gold == starting_gold + 15
     assert hero.xp == 10
 
     second = try_side_quest_explore(hero, "search the crypt", game._level_up)
     assert second is not None
     assert not second.state_changed
-    assert hero.gold == 15
+    assert hero.gold == starting_gold + 15
 
 
 def test_bell_quest_idempotent_completion():

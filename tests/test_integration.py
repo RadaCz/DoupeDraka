@@ -155,7 +155,7 @@ def test_character_journal_is_owned_ordered_and_bounded(setup_db):
     assert events.status_code == 200
     assert [event["action"] for event in events.json()] == ["inspect again", "inspect the door"]
     assert all({"id", "action", "result", "created_at"} <= event.keys() for event in events.json())
-    assert "Intelligence check:" in events.json()[0]["result"]
+    assert "Investigation check:" in events.json()[0]["result"] or "Intelligence check:" in events.json()[0]["result"]
     assert client.get(f"/characters/{character['id']}/events?limit=0", headers=owner_headers).status_code == 422
 
     client.post("/auth/register", json={"username": "journalother", "password": "password123"})

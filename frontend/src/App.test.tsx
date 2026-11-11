@@ -39,15 +39,52 @@ const presetList = [
 
 const referenceData = {
   races: [
-    { key: 'human', name: 'Human', speed: 30, ability_increase: { strength: 1 }, subraces: [], traits: [{ name: 'Versatile', text: 'An extra language.' }] },
-    { key: 'elf', name: 'Elf', speed: 30, ability_increase: { dexterity: 2 }, subraces: ['high_elf'], traits: [{ name: 'Keen Senses', text: 'Perception training.' }] },
+    { key: 'human', name: 'Human', speed: 30, ability_increase: { strength: 1 }, subraces: [], traits: [{ name: 'Versatile', text: 'Extra language.' }], mvp_playable: true },
+    { key: 'elf', name: 'Elf', speed: 30, ability_increase: { dexterity: 2 }, subraces: ['high_elf'], traits: [{ name: 'Keen Senses', text: 'Perception training.' }], mvp_playable: true },
+    { key: 'halfling', name: 'Halfling', speed: 25, ability_increase: { dexterity: 2 }, subraces: [], traits: [{ name: 'Lucky', text: 'Reroll 1s.' }], mvp_playable: true },
   ],
   classes: [
-    { key: 'fighter', name: 'Fighter', hit_die: 10, primary: 'strength', saving_throws: ['strength', 'constitution'], armor: ['light', 'heavy'], weapons: ['simple', 'martial'], subclasses: [{ name: 'Champion', text: 'A focused martial path.' }] },
-    { key: 'wizard', name: 'Wizard', hit_die: 6, primary: 'intelligence', saving_throws: ['intelligence', 'wisdom'], armor: [], weapons: ['daggers'], subclasses: [{ name: 'School of Evocation', text: 'Shape your spells.' }] },
+    { key: 'fighter', name: 'Fighter', hit_die: 10, primary: 'strength', saving_throws: ['strength', 'constitution'], armor: ['light', 'heavy'], weapons: ['simple', 'martial'], subclasses: [{ name: 'Champion', text: 'A focused martial path.' }], mvp_playable: true },
+    { key: 'rogue', name: 'Rogue', hit_die: 8, primary: 'dexterity', saving_throws: ['dexterity', 'intelligence'], armor: ['light'], weapons: ['simple'], subclasses: [{ name: 'Thief', text: 'Fast hands.' }], mvp_playable: true },
+    { key: 'cleric', name: 'Cleric', hit_die: 8, primary: 'wisdom', saving_throws: ['wisdom', 'charisma'], armor: ['light'], weapons: ['simple'], subclasses: [{ name: 'Life', text: 'Healing.' }], mvp_playable: true },
+    { key: 'wizard', name: 'Wizard', hit_die: 6, primary: 'intelligence', saving_throws: ['intelligence', 'wisdom'], armor: [], weapons: ['daggers'], subclasses: [{ name: 'School of Evocation', text: 'Shape your spells.' }], mvp_playable: true },
   ],
   feats: [{ name: 'Grappler', prerequisite: 'Strength 13', benefits: ['Pin a foe.'] }],
-  backgrounds: [{ name: 'Acolyte', skill_proficiencies: ['Insight', 'Religion'], languages: 'Two', equipment: [], feature: { name: 'Shelter', text: 'Help from temples.' } }],
+  backgrounds: [
+    { key: 'acolyte', mvp_playable: true, name: 'Acolyte', skill_proficiencies: ['Insight', 'Religion'], languages: 2, equipment: [], feature: { name: 'Shelter', text: 'Help from temples.' } },
+  ],
+  character_creation: {
+    standard_array: [15, 14, 13, 12, 10, 8],
+    ability_order: ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'],
+    skill_abilities: { Stealth: 'dexterity', Arcana: 'intelligence' },
+    backgrounds: [
+      { key: 'acolyte', mvp_playable: true, name: 'Acolyte', skill_proficiencies: ['Insight', 'Religion'], languages: 2, equipment: [], feature: { name: 'Shelter', text: 'Help from temples.' } },
+      { key: 'folk_hero', mvp_playable: true, name: 'Folk Hero', skill_proficiencies: ['Animal Handling', 'Survival'], languages: 0, equipment: [], feature: { name: 'Hospitality', text: 'Common folk help you.' } },
+      { key: 'sage', mvp_playable: true, name: 'Sage', skill_proficiencies: ['Arcana', 'History'], languages: 2, equipment: [], feature: { name: 'Researcher', text: 'Libraries grant lore.' } },
+      { key: 'criminal', mvp_playable: true, name: 'Criminal', skill_proficiencies: ['Deception', 'Stealth'], languages: 0, equipment: [], feature: { name: 'Contact', text: 'Underworld contact.' } },
+    ],
+    class_skill_picks: {
+      wizard: { options: ['Arcana', 'History', 'Investigation'], count: 2 },
+      fighter: { options: ['Athletics', 'Perception'], count: 2 },
+      rogue: { options: ['Stealth', 'Perception', 'Acrobatics', 'Deception'], count: 4 },
+      cleric: { options: ['Insight', 'Medicine', 'Religion'], count: 2 },
+    },
+    equipment_packages: {
+      wizard: { scholar: ['dagger', 'spellbook'] },
+      fighter: { guardian: ['shortsword'] },
+      rogue: { scout: ['shortsword', 'dagger'] },
+      cleric: { warpriest: ['mace'] },
+    },
+    spell_pick_limits: {
+      wizard: { cantrips: 3, level_one_known: 3 },
+      cleric: { cantrips: 3, level_one_prepared: 4 },
+    },
+    spell_options: {
+      wizard: { cantrips: ['Fire Bolt', 'Light', 'Mage Hand'], level_one: ['Magic Missile', 'Shield', 'Detect Magic'] },
+      cleric: { cantrips: ['Guidance', 'Sacred Flame', 'Thaumaturgy'], level_one: ['Cure Wounds', 'Bless', 'Shield of Faith', 'Guiding Bolt'] },
+    },
+    personality_fields: ['alignment', 'ideal', 'bond', 'flaw', 'backstory'],
+  },
   draconic_ancestry: {},
   locations: [
     { name: 'The Whispering Cellar', connections: ['The Sunken Corridor'] },
@@ -309,18 +346,14 @@ describe('Telegram Mini App', () => {
     const requests = setupApp();
     render(<App />);
     fireEvent.click(await screen.findByRole('button', { name: /create your character/i }));
-    fireEvent.click(screen.getByRole('button', { name: /step-by-step wizard/i }));
-    fireEvent.click(screen.getByRole('button', { name: /elf/i }));
-    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
-    fireEvent.click(screen.getByRole('button', { name: /wizard/i }));
-    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+    fireEvent.click(screen.getByRole('button', { name: /quick generate/i }));
     fireEvent.change(screen.getByLabelText('Character name'), { target: { value: 'Rada' } });
     fireEvent.click(screen.getByRole('button', { name: /continue/i }));
     expect(await screen.findByRole('heading', { name: /meet your adventurer/i })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /enter the adventure/i }));
     expect(await screen.findByRole('heading', { name: /the whispering cellar/i })).toBeInTheDocument();
     const createRequest = requests.find(item => item.url === '/api/characters' && item.method === 'POST');
-    expect(createRequest?.body).toMatchObject({ name: 'Rada', race: 'elf', character_class: 'wizard', difficulty: 'normal' });
+    expect(createRequest?.body).toMatchObject({ name: 'Rada', difficulty: 'normal', abilities: expect.any(Object) });
   });
 
   it('creates a ready-made hero from the quick start cards', async () => {

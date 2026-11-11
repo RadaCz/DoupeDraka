@@ -120,7 +120,10 @@ def test_reference_endpoint_exposes_races_and_classes():
     assert [subclass["name"] for subclass in warlock["subclasses"]] == ["The Fiend"]
     assert all(len(klass["subclasses"]) == 1 for klass in data["classes"])
     assert [feat["name"] for feat in data["feats"]] == ["Grappler"]
-    assert [background["name"] for background in data["backgrounds"]] == ["Acolyte"]
+    playable_backgrounds = [background for background in data["backgrounds"] if background.get("mvp_playable")]
+    assert len(playable_backgrounds) >= 6
+    assert any(background["name"] == "Acolyte" for background in playable_backgrounds)
+    assert data["character_creation"]["standard_array"] == [15, 14, 13, 12, 10, 8]
     assert len(data["draconic_ancestry"]) == 10
 
 

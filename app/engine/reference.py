@@ -312,15 +312,32 @@ def feat_list() -> list[dict]:
 
 
 def background_list() -> list[dict]:
-    return [
+    from .character_creation import MVP_BACKGROUNDS
+
+    playable = [
         {
-            **background,
-            "skill_proficiencies": list(background["skill_proficiencies"]),
-            "equipment": list(background["equipment"]),
-            "feature": dict(background["feature"]),
+            "key": key,
+            "mvp_playable": True,
+            **{k: v for k, v in spec.items() if k != "feature"},
+            "skill_proficiencies": list(spec["skill_proficiencies"]),
+            "equipment": list(spec["equipment"]),
+            "feature": dict(spec["feature"]),
         }
-        for background in BACKGROUNDS
+        for key, spec in MVP_BACKGROUNDS.items()
     ]
+    reference_only = [
+        {
+            "key": spec["name"].casefold().replace(" ", "_"),
+            "mvp_playable": False,
+            **spec,
+            "skill_proficiencies": list(spec["skill_proficiencies"]),
+            "equipment": list(spec["equipment"]),
+            "feature": dict(spec["feature"]),
+        }
+        for spec in BACKGROUNDS
+        if spec["name"] not in {item["name"] for item in MVP_BACKGROUNDS.values()}
+    ]
+    return playable + reference_only
 
 
 __all__ = [

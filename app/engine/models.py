@@ -40,6 +40,17 @@ class CharacterState:
     # before these existed still decode cleanly.
     difficulty: str = "normal"; tone: str = "balanced"; humor: str = "rare"; verbose: bool = True
     narration_language: str = "en"
+    # Character creation v2 (Sprint 16) — defaulted for legacy payloads.
+    background: str = ""
+    skill_proficiencies: list[str] = field(default_factory=list)
+    saving_throw_proficiencies: list[str] = field(default_factory=list)
+    speed: int = 30
+    equipment_package: str = ""
+    alignment: str = ""
+    ideal: str = ""
+    bond: str = ""
+    flaw: str = ""
+    backstory: str = ""
 
 @dataclass
 class MonsterState:

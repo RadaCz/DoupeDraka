@@ -31,6 +31,16 @@ export interface Character {
   humor: string;
   verbose: boolean;
   narration_language?: string;
+  background?: string;
+  skill_proficiencies?: string[];
+  saving_throw_proficiencies?: string[];
+  speed?: number;
+  equipment_package?: string;
+  alignment?: string;
+  ideal?: string;
+  bond?: string;
+  flaw?: string;
+  backstory?: string;
 }
 
 export interface ItemInstance {
@@ -102,19 +112,36 @@ export interface RulesetReference {
   notes: string;
 }
 
+export interface BackgroundReference {
+  key?: string;
+  name: string;
+  mvp_playable?: boolean;
+  skill_proficiencies: string[];
+  languages: string | number;
+  equipment: string[];
+  feature: { name: string; text: string };
+}
+
+export interface CharacterCreationReference {
+  standard_array: number[];
+  ability_order: string[];
+  skill_abilities: Record<string, string>;
+  backgrounds: BackgroundReference[];
+  class_skill_picks: Record<string, { options: string[]; count: number }>;
+  equipment_packages: Record<string, Record<string, string[]>>;
+  spell_pick_limits: Record<string, Record<string, number>>;
+  spell_options?: Record<string, { cantrips: string[]; level_one: string[] }>;
+  personality_fields: string[];
+}
+
 export interface ReferenceCatalog {
   ruleset?: RulesetReference;
   quests?: QuestCatalog;
   races: RaceReference[];
   classes: ClassReference[];
   feats: Array<{ name: string; prerequisite: string; benefits: string[] }>;
-  backgrounds: Array<{
-    name: string;
-    skill_proficiencies: string[];
-    languages: string;
-    equipment: string[];
-    feature: { name: string; text: string };
-  }>;
+  backgrounds: BackgroundReference[];
+  character_creation?: CharacterCreationReference;
   draconic_ancestry: Record<string, { damage_type: string; breath_weapon: string }>;
   locations: LocationReference[];
 }

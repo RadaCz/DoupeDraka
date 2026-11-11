@@ -372,17 +372,47 @@ async def login(request: Request, payload: UserCreate) -> Token:
         logger.info(f"User logged in: {user.username}")
         return Token(access_token=token)
 
-def build_character(user: User, name: str, race: str, character_class: str, abilities: dict[str, int] | None = None, settings_payload: dict | None = None) -> CharacterState:
+def build_character(
+    user: User,
+    name: str,
+    race: str,
+    character_class: str,
+    abilities: dict[str, int] | None = None,
+    settings_payload: dict | None = None,
+    *,
+    creation: dict | None = None,
+) -> CharacterState:
     """Create and validate a character, applying any campaign settings."""
+    from .engine.character_creation import CreationChoices
     from .engine.ruleset_v1 import validate_mvp_creation
 
     validate_mvp_creation(race, character_class)
+    personality = None
+    extra: dict = {}
+    if creation:
+        personality = CreationChoices(
+            background=creation.get("background") or "",
+            alignment=creation.get("alignment") or "",
+            ideal=creation.get("ideal") or "",
+            bond=creation.get("bond") or "",
+            flaw=creation.get("flaw") or "",
+            backstory=creation.get("backstory") or "",
+        )
+        extra = {
+            "background": creation.get("background"),
+            "class_skills": creation.get("class_skills"),
+            "equipment_package": creation.get("equipment_package"),
+            "cantrips": creation.get("cantrips"),
+            "level_one_spells": creation.get("level_one_spells"),
+            "personality": personality,
+        }
     character = game.create_character(
         owner_id=user.id,
         name=name,
         race=race,
         character_class=character_class,
         abilities=abilities,
+        **extra,
     )
     if settings_payload: game.apply_settings(character, **settings_payload)
     return character
@@ -456,6 +486,18 @@ async def create_character(request: CharacterCreate, user: User = Depends(get_us
                 "humor": request.humor,
                 "language": request.language,
             },
+            creation={
+                "background": request.background,
+                "class_skills": request.class_skills,
+                "equipment_package": request.equipment_package,
+                "cantrips": request.cantrips,
+                "level_one_spells": request.level_one_spells,
+                "alignment": request.alignment,
+                "ideal": request.ideal,
+                "bond": request.bond,
+                "flaw": request.flaw,
+                "backstory": request.backstory,
+            },
         )
     except ValueError as error: 
         logger.warning(f"Character creation failed for user {user.username}: {error}")
@@ -479,6 +521,9 @@ async def get_reference() -> dict:
         "classes": reference.class_list(),
         "feats": reference.feat_list(),
         "backgrounds": reference.background_list(),
+        "character_creation": __import__(
+            "app.engine.character_creation", fromlist=["public_creation_reference"]
+        ).public_creation_reference(),
         "draconic_ancestry": reference.draconic_ancestry(),
         "locations": [
             {

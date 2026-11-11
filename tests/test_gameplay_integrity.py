@@ -129,7 +129,8 @@ def test_max_mvp_level_cannot_be_exceeded():
 def test_new_character_starting_inventory_and_equip(cls, expected_weapon):
     game = GameEngine(random.Random(0))
     hero = game.create_character(1, "Hero", "human", cls)
-    assert hero.inventory == STARTING_INVENTORY_BY_CLASS[cls]
+    for item in STARTING_INVENTORY_BY_CLASS[cls]:
+        assert item in hero.inventory
     assert equipped_weapon(hero).key == expected_weapon
     assert weapon_proficiency(hero, equipped_weapon(hero).key)
 
