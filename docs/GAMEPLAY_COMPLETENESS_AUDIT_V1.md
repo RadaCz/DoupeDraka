@@ -7,9 +7,19 @@
 
 **Deployment / human fun:** HTTPS staging **NOT DEPLOYED** · Android/iOS playtest **NOT TESTED** · Claimed “fun” **NOT VERIFIED** by this audit.
 
-### Sprint 22 — Chapter One completion audit (2026-11-11, local)
+### Sprint 23 — Skill checks & Bandit Camp (2026-11-11, local)
 
-See [`SPRINT_22_CHAPTER_ONE_GAMEPLAY_ACCEPTANCE.md`](SPRINT_22_CHAPTER_ONE_GAMEPLAY_ACCEPTANCE.md). **Baseline:** `c542f75`. No XP/loot rebalance; UI gates Bell Warden chip until L3; added completion/idempotency tests.
+See [`SPRINT_23_SKILL_CHECKS_PLAYER_AGENCY_ACCEPTANCE.md`](SPRINT_23_SKILL_CHECKS_PLAYER_AGENCY_ACCEPTANCE.md). **Committed baseline:** `9e7fbac`. Fail-closed unknown actions; Bandit Camp stealth/social/combat evidence (20 gp, ledger); optional — main chapter unchanged.
+
+| Finding | Status |
+|---------|--------|
+| Unknown free text → no fake checks | **IMPLEMENTED** (Sprint 23) |
+| Meaningful skill challenge + persistence | **PARTIAL** (Bandit Camp V1) |
+| Optional location payoff | **IMPROVED** (Bandit Camp); Underground River **OPEN** |
+
+### Sprint 22 — Chapter One completion audit (2026-11-11, committed `9e7fbac`)
+
+See [`SPRINT_22_CHAPTER_ONE_GAMEPLAY_ACCEPTANCE.md`](SPRINT_22_CHAPTER_ONE_GAMEPLAY_ACCEPTANCE.md). No XP/loot rebalance; UI gates Bell Warden chip until L3; completion/idempotency tests.
 
 | Finding | Status |
 |---------|--------|
@@ -17,7 +27,6 @@ See [`SPRINT_22_CHAPTER_ONE_GAMEPLAY_ACCEPTANCE.md`](SPRINT_22_CHAPTER_ONE_GAMEP
 | Full chapter E2E → `chapter_one_complete` | **VERIFIED** (`chapter-one-quest.spec.ts`) |
 | Boss / quest rewards idempotent | **VERIFIED** (+ Sprint 22 pytest) |
 | Exploration gold farm | **MITIGATED** (one-time per location) |
-| Optional locations narrative payoff | **OPEN** (Bandit Camp, Underground River) |
 | Background features mechanical | **OPEN** |
 | Human fun on device | **NOT TESTED** |
 

@@ -1,7 +1,8 @@
 # Sprint 22 — Chapter One gameplay depth & completion V1
 
 **Datum:** 2026-11-11  
-**Git baseline:** `c542f75` (`origin/clean-main`) · working tree: Sprint 22 změny necommitované  
+**Git commit:** `9e7fbac` (`origin/clean-main`) — Sprint 22 **commitnutý**  
+**CI:** run `43061224115` GREEN (user-reported)  
 **Předchozí:** Sprint 21 class identity (`c542f75`)
 
 ## Cíl

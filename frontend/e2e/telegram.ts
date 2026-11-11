@@ -275,6 +275,7 @@ export async function waitForAdventureComposerReady(page: Page) {
 /** After a streamed turn: composer accepts input again and send is not narrating. */
 export async function waitForAdventureComposerIdle(page: Page) {
   const send = page.getByRole('button', { name: SEND_ACTION_BTN });
+  await expect(send).toBeVisible({ timeout: 90_000 });
   await expect(send).not.toHaveAttribute('aria-busy', 'true', { timeout: 90_000 });
   await expect(page.getByRole('textbox', { name: ACTION_TEXTBOX })).toBeEnabled({ timeout: 90_000 });
 }

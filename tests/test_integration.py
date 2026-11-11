@@ -141,7 +141,7 @@ def test_character_journal_is_owned_ordered_and_bounded(setup_db):
         headers=owner_headers,
     ).json()
 
-    for action_text in ("inspect the old door", "inspect again", "inspect the door"):
+    for action_text in ("look around", "look around", "take a breather"):
         response = client.post(
             f"/characters/{character['id']}/actions",
             json={"action": action_text},
@@ -153,9 +153,9 @@ def test_character_journal_is_owned_ordered_and_bounded(setup_db):
         f"/characters/{character['id']}/events?limit=2", headers=owner_headers
     )
     assert events.status_code == 200
-    assert [event["action"] for event in events.json()] == ["inspect again", "inspect the door"]
+    assert [event["action"] for event in events.json()] == ["look around", "take a breather"]
     assert all({"id", "action", "result", "created_at"} <= event.keys() for event in events.json())
-    assert "Investigation check:" in events.json()[0]["result"] or "Intelligence check:" in events.json()[0]["result"]
+    assert "Exploration roll" in events.json()[0]["result"] or "short rest" in events.json()[0]["result"].lower()
     assert client.get(f"/characters/{character['id']}/events?limit=0", headers=owner_headers).status_code == 422
 
     client.post("/auth/register", json={"username": "journalother", "password": "password123"})

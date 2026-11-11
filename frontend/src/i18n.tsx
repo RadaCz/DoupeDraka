@@ -490,6 +490,9 @@ const cs: Record<string, string> = {
     'Někde pod zemí zmizel chrámový zvon. Vydej se ke svatyni přes Cesta nebo aktuální úkol.',
   'Ask Nib about the shrine bell': 'Zeptat se Niba na chrámový zvon',
   'Face the Bell Warden': 'Postav se Strážci zvonu',
+  'Read the bounty notice': 'Přečíst odměnu',
+  'Sneak past sentries': 'Proklouznout kolem hlídek',
+  'Bluff the captain': 'Oklamat velitele',
   'Return the shrine bell': 'Vratit chrámový zvon',
   'At the Shrine of the Forgotten, talk to Caldus about the bell.':
     'Ve Svatyni zapomenutých promluv s Caldusem o zvonu.',

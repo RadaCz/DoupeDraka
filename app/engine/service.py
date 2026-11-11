@@ -902,6 +902,9 @@ class GameEngine:
             level_events, level_up_facts = self._grant_xp(character, monster.reward_xp)
             events.append(f"{monster.name} is defeated. You gain {monster.reward_xp} XP.")
             events.extend(self._chapter_one_boss_rewards(character, defeated_key))
+            from .skill_challenges import bandit_captain_defeat_rewards
+
+            events.extend(bandit_captain_defeat_rewards(character))
             from .chapter_one_progression import (
                 award_vault_first_descent_story_xp,
                 on_vault_descent_victory,
@@ -1063,6 +1066,7 @@ class GameEngine:
             state_changed = is_new
         else:
             discovery = "You explore the area but find no immediate threat."
+        self._regenerate_mana(character)
         return TurnResult(
             action,
             [f"Exploration roll: {encounter_roll.total} on a six-sided die.", discovery],
@@ -1371,6 +1375,9 @@ class GameEngine:
             level_events, level_up_facts = self._grant_xp(character, reward)
             events.append(f"{monster.name} is defeated. You gain {reward} XP.")
             events.extend(self._chapter_one_boss_rewards(character, defeated_key))
+            from .skill_challenges import bandit_captain_defeat_rewards
+
+            events.extend(bandit_captain_defeat_rewards(character))
             from .chapter_one_progression import (
                 award_vault_first_descent_story_xp,
                 on_vault_descent_victory,
@@ -1421,8 +1428,6 @@ class GameEngine:
                 False,
                 costs_adventure_mana=False,
             ), monster
-        if intent.kind == UNKNOWN:
-            return TurnResult(action, ["Say what your character attempts."], False), monster
         if intent.kind == REJECTED:
             return TurnResult(
                 action,
@@ -1630,12 +1635,13 @@ class GameEngine:
             npc_id = npc_id_from_action(action)
             if npc_id:
                 return resolve_npc_talk(character, action, npc_id), monster
-            check, success, lucky = self.ability_check(character, "charisma", 12)
-            self._regenerate_mana(character)
             return TurnResult(
                 action,
-                [f"Charisma check: {check.total} vs DC 12 — {'success' if success else 'failure'}.{lucky}"],
-                True,
+                [
+                    "No one here answers to that. Name an NPC (Caldus, Nib) or use a suggested conversation chip.",
+                ],
+                False,
+                costs_adventure_mana=False,
             ), monster
 
         from .discoveries import try_focused_inspect
@@ -1644,18 +1650,26 @@ class GameEngine:
         if focused is not None:
             return focused, monster
 
-        explore_skill = self._explore_skill_for_text(text)
-        if explore_skill:
-            check, success, lucky = self.skill_check(character, explore_skill, 12)
-            self._regenerate_mana(character)
-            label = f"{explore_skill} check"
+        from .skill_challenges import try_skill_challenge
+
+        challenge = try_skill_challenge(self, character, action)
+        if challenge is not None:
+            return challenge, monster
+
+        if intent.kind == UNKNOWN:
             return TurnResult(
                 action,
-                [f"{label}: {check.total} vs DC 12 — {'success' if success else 'failure'}.{lucky}"],
-                True,
+                [
+                    "The game does not understand that command yet. "
+                    "Try travel, explore, attack, an NPC chip, or a suggested action.",
+                ],
+                False,
+                costs_adventure_mana=False,
             ), monster
 
-        ability = self._ability_for_action(text)
-        check, success, lucky = self.ability_check(character, ability, 12)
-        self._regenerate_mana(character)
-        return TurnResult(action, [f"{ability.title()} check: {check.total} vs DC 12 — {'success' if success else 'failure'}.{lucky}"], True), monster
+        return TurnResult(
+            action,
+            ["That action cannot be resolved here. Try a clearer command or a UI chip."],
+            False,
+            costs_adventure_mana=False,
+        ), monster

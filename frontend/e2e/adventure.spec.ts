@@ -30,14 +30,14 @@ test('creates a hero, completes a real game turn, and restores its journal after
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'An adventure awaits.' })).toBeVisible();
   await completeWizardFighter(page, 'E2E Arin');
-  await page.getByRole('textbox', { name: 'Your action' }).fill('inspect the old door');
+  await page.getByRole('textbox', { name: 'Your action' }).fill('look around');
   await page.getByRole('button', { name: 'Send action' }).click();
   await expect.poll(() => actionStatuses.length).toBe(1);
   await expect.poll(() => actionStatuses.length).toBe(1);
   expect(actionStatuses, actionErrors.join('\n')).toEqual([200]);
   const journal = page.getByRole('log', { name: 'Adventure journal' });
-  await expect(journal.locator('.journal-action')).toContainText('inspect the old door');
-  await expect(journal.getByText(/(Intelligence|Investigation) check:/i)).toBeVisible();
+  await expect(journal.locator('.journal-action')).toContainText('look around');
+  await expect(journal.getByText(/Exploration roll/i)).toBeVisible();
   await expect.poll(() => page.evaluate(() => localStorage.getItem('active_character_id'))).not.toBeNull();
   await expect.poll(() => page.evaluate(() => localStorage.getItem('api_token'))).toBeNull();
 
@@ -45,8 +45,8 @@ test('creates a hero, completes a real game turn, and restores its journal after
   await expect(page.getByRole('heading', { name: 'Welcome back, E2E Arin.' })).toBeVisible();
   await page.getByRole('button', { name: 'Continue adventure' }).click();
   const restoredJournal = page.getByRole('log', { name: 'Adventure journal' });
-  await expect(restoredJournal.locator('.journal-action')).toContainText('inspect the old door');
-  await expect(restoredJournal.getByText(/(Intelligence|Investigation) check:/i)).toBeVisible();
+  await expect(restoredJournal.locator('.journal-action')).toContainText('look around');
+  await expect(restoredJournal.getByText(/Exploration roll/i)).toBeVisible();
 
   const nav = page.getByRole('navigation', { name: 'Main navigation' });
   await expect(nav.getByRole('button')).toHaveCount(4);

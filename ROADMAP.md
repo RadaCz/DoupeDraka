@@ -1,14 +1,21 @@
 # Roadmap
 
-Updated 2026-11-11 (`50a8890` working tree). Chapter one is a gated six-location slice on `clean-main`. **Sprint 16 (local):** Character Creation V2 — engine-authoritative SRD level-1 choices for MVP 4×4; see `docs/SPRINT_16_CHARACTER_CREATION_V2.md` and `docs/PRODUCT_GAP_REGISTER_V1.md`. ActionIntent routes player commands; **Pro NOT AVAILABLE** until OpenRouter exists.
+Updated 2026-11-11 (`9e7fbac` on `clean-main`; Sprint 23 in working tree). Chapter one is a gated six-location slice. ActionIntent routes player commands; **Pro NOT AVAILABLE** until OpenRouter exists.
 
-## Priority 0d — Character Creation V2 (Sprint 16, uncommitted)
+## Priority 0e — Skill checks & player agency (Sprint 23, local)
+- [x] Fail-closed action resolution (`intent.UNKNOWN`, no generic Cha/skill fallback)
+- [x] `app/engine/skill_challenges.py` — Bandit Camp stealth / social / combat evidence
+- [x] UI chips + `bandit-camp-skill.spec.ts`
+- [x] `tests/test_sprint23_skill_challenges.py`
+- [ ] More optional locations with challenges — backlog
+- [ ] Background feature mechanics — open
+
+## Priority 0d — Character Creation V2 (Sprint 16+, committed)
 - [x] Engine: `app/engine/character_creation.py`, persisted fields on `CharacterState`
 - [x] API: extended `CharacterCreate`, `/reference` → `character_creation`
 - [x] UI: 9-step `CharacterWizard.tsx` + quick generate with same rules
-- [x] Tests: `tests/test_character_creation_v2.py`; pytest **516 passed**
-- [x] Vitest **153 passed**, `npm run build` OK
-- [ ] E2E full matrix on this tree — **NOT RUN** in Sprint 16 slice
+- [x] Tests: `tests/test_character_creation_v2.py`; full pytest green on `9e7fbac` baseline (596+)
+- [x] Vitest **161 passed** on baseline CI #64; E2E **31 passed**
 - [ ] Racial traits beyond Lucky/Perception — Sprint 17
 - [ ] Background feature mechanics — Sprint 17
 

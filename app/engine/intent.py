@@ -280,4 +280,4 @@ def parse_action_intent(action: str) -> ActionIntent:
     if quest_negated:
         return ActionIntent(REJECTED, text, confidence=0.85, needs_clarification=True)
 
-    return ActionIntent(CHECK, text, confidence=0.5)
+    return ActionIntent(UNKNOWN, text, confidence=0.0, needs_clarification=True)

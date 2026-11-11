@@ -40,12 +40,14 @@ test('primary hub screens stay reachable without duplicate stream posts', async 
   await waitForAdventureComposerReady(page);
   const send = page.getByRole('button', { name: SEND_ACTION_BTN });
 
-  await input.fill('look around');
+  await input.fill('travel to The Sunken Corridor');
   await send.click();
   await expect.poll(() => streamStatuses.filter(s => s === 200).length, { timeout: 90_000 }).toBe(1);
+  await nav.getByRole('button', { name: /^Adventure$/i }).click();
+  await waitForAdventureComposerReady(page);
   await waitForAdventureComposerIdle(page);
 
-  await input.fill('look around');
+  await input.fill('travel to The Whispering Cellar');
   await send.dblclick();
   await expect.poll(() => streamStatuses.filter(s => s === 200).length, { timeout: 90_000 }).toBeGreaterThanOrEqual(1);
   expect(streamStatuses.filter(s => s === 200).length).toBeLessThanOrEqual(3);

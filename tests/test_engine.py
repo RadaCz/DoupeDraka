@@ -87,32 +87,34 @@ def test_cantrip_cast_does_not_spend_mana_or_spell_slots():
     assert hero.mana == hero.max_mana
 
 
-def test_resolve_action_check():
+def test_unscoped_inspect_does_not_roll_generic_check():
     game = GameEngine(random.Random(42))
     hero = game.create_character(1, "Arin", "human", "fighter", stats(intelligence=16))
-    result, monster = game.resolve_action(hero, "inspect the old door", None)
-    assert result.state_changed
-    assert any("investigation check" in e.lower() or "intelligence check" in e.lower() for e in result.events)
+    before = hero.gold, hero.xp, dict(hero.quest_flags)
+    result, _ = game.resolve_action(hero, "inspect the old door", None)
+    assert not result.state_changed
+    assert not any("check:" in e.lower() for e in result.events)
+    assert (hero.gold, hero.xp, hero.quest_flags) == before
 
 
 @pytest.mark.parametrize(
-    ("action", "ability"),
+    "action",
     [
-        ("push the fallen pillar", "Strength"),
-        ("sneak past the guard", "Stealth"),
-        ("endure the cold", "Constitution"),
-        ("inspect the old door", "Investigation"),
-        ("listen at the door", "Perception"),
-        ("persuade the guard", "Charisma"),
+        "push the fallen pillar",
+        "sneak past the guard",
+        "endure the cold",
+        "persuade the guard",
+        "mumble something cryptic",
     ],
 )
-def test_free_text_checks_use_the_ability_that_fits_the_action(action, ability):
+def test_unknown_phrases_fail_closed_without_checks(action):
     game = GameEngine(random.Random(42))
     hero = game.create_character(1, "Arin", "human", "fighter")
-
+    before = hero.hp, hero.gold, hero.xp, dict(hero.spell_slots)
     result, _ = game.resolve_action(hero, action, None)
-
-    assert result.events[0].startswith(f"{ability} check:")
+    assert not result.state_changed
+    assert not any(" check:" in e for e in result.events)
+    assert (hero.hp, hero.gold, hero.xp, hero.spell_slots) == before
 
 
 def test_exploration_can_start_a_level_appropriate_random_encounter():
@@ -272,7 +274,7 @@ def test_mana_regenerates_after_a_turn():
     game = GameEngine(random.Random(42))
     hero = game.create_character(1, "Arin", "human", "wizard", stats(intelligence=16))
     hero.mana = hero.max_mana - 1
-    game.resolve_action(hero, "inspect the old door", None)
+    game.resolve_action(hero, "look around", None)
     assert hero.mana == hero.max_mana
 
 
@@ -280,7 +282,7 @@ def test_mana_regeneration_stops_at_max():
     game = GameEngine(random.Random(42))
     hero = game.create_character(1, "Arin", "human", "wizard", stats(intelligence=16))
     for _ in range(5):
-        game.resolve_action(hero, "inspect the old door", None)
+        game.resolve_action(hero, "look around", None)
     assert hero.mana == hero.max_mana
 
 

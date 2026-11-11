@@ -64,6 +64,28 @@ export function resolveNpcTalkAction(
 /** Tier-3 bosses (Bell Warden) require hero level 3+ — matches `encounters.minimum_level_for_tier`. */
 const BELL_WARDEN_MIN_LEVEL = 3;
 
+/** Optional Bandit Camp skill challenges (engine `skill_challenges.py`). */
+export function resolveBanditCampChips(
+  character: Character,
+  t: (value: string) => string,
+): SuggestedAction[] {
+  const quests = character.quest_flags ?? {};
+  if (character.location !== 'The Bandit Camp' || quests.bandit_shrine_evidence) {
+    return [];
+  }
+  const chips: SuggestedAction[] = [];
+  if (!quests.bandit_bounty_read) {
+    chips.push({ label: t('Read the bounty notice'), action: 'inspect the bounty notice' });
+  }
+  if (!quests.bandit_stealth_challenge_done) {
+    chips.push({ label: t('Sneak past sentries'), action: 'sneak past the bandit sentries' });
+  }
+  if (!quests.bandit_social_challenge_done) {
+    chips.push({ label: t('Bluff the captain'), action: 'bluff the bandit captain' });
+  }
+  return chips;
+}
+
 /** Boss confrontation chip when chapter rules allow a named attack at the pit. */
 export function resolveQuestBossAction(
   character: Character,
@@ -282,6 +304,10 @@ export function playActionChips(
   const questTravel = resolveQuestTravelAction(character, locations, t);
   if (questTravel && questTravel.action !== npcTalk?.action) {
     push(`quest-travel-${questTravel.action}`, questTravel.label, questTravel.action);
+  }
+
+  for (const bandit of resolveBanditCampChips(character, t)) {
+    push(bandit.action, bandit.label, bandit.action);
   }
 
   const latest = events[events.length - 1]?.result.toLowerCase() ?? '';

@@ -99,6 +99,25 @@ def try_focused_inspect(character: CharacterState, action: str) -> TurnResult | 
             costs_adventure_mana=False,
         )
 
+    if loc == "The Bandit Camp" and ("bounty" in folded or "notice" in folded or "poster" in folded):
+        if flags.get("bandit_bounty_read"):
+            return TurnResult(
+                action,
+                ["The bounty notice is singed — you already memorized the reward for stolen shrine goods."],
+                False,
+                costs_adventure_mana=False,
+            )
+        flags["bandit_bounty_read"] = True
+        return TurnResult(
+            action,
+            [
+                "New discovery: A singed bounty notice offers gold for proof that bandits fenced shrine goods to the Goblin Market.",
+                "Try sneaking past sentries, bluffing the captain, or fighting your way to evidence.",
+            ],
+            True,
+            costs_adventure_mana=False,
+        )
+
     if loc == "The Goblin Market" and ("stall" in folded or "nib" in folded):
         if flags.get("bell_market_rumor"):
             return TurnResult(

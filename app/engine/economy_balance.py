@@ -9,6 +9,7 @@ from .models import CharacterState
 QUEST_BELL_RETURN_GOLD_GP = 10
 CRYPT_RELIC_GOLD_GP = 15
 CHAPTER_BOSS_GOLD_GP = 25
+BANDIT_CAMP_EVIDENCE_GOLD_GP = 20
 
 # --- Shop (Nib's stall) ---
 HEALING_POTION_PRICE_GP = 45
