@@ -1,8 +1,15 @@
 # Roadmap
 
-Updated 2026-11-11 (`32ebfd7` on `clean-main`; Sprint 24 in working tree). Chapter one is a gated six-location slice. ActionIntent routes player commands; **Pro NOT AVAILABLE** until OpenRouter exists.
+Updated 2026-11-11 (`53a6fed` on `clean-main`; Sprint 25 in working tree). Chapter one is a gated six-location slice. ActionIntent routes player commands; **Pro NOT AVAILABLE** until OpenRouter exists.
 
-## Priority 0f — Background features (Sprint 24, local)
+## Priority 0g — Combat action economy (Sprint 25, local)
+- [x] `app/engine/combat_action_economy.py` — action / bonus / reaction flags per player turn
+- [x] Healing Word, Second Wind, Hide, attacks, defend/flee/potion wired
+- [x] Combat UI economy strip (EN/CS)
+- [x] Tests + E2E spec `combat-action-economy.spec.ts`
+- [ ] Reaction abilities (Shield, OA, …) — backlog
+
+## Priority 0f — Background features (Sprint 24, committed `53a6fed`)
 - [x] `app/engine/background_features.py` — six one-shot chapter gifts
 - [x] Play chips + character sheet status
 - [x] Stealth disadvantage success fix (`skill_challenges.py`)

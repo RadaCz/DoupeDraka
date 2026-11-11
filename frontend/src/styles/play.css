@@ -579,6 +579,34 @@
   border: 1px solid color-mix(in srgb, #8b3030 35%, transparent);
 }
 
+.combat-economy-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.combat-economy-strip li {
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  border: 1px solid color-mix(in srgb, var(--text-soft) 25%, transparent);
+}
+
+.combat-economy-strip li.available {
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent-verb) 12%, transparent);
+}
+
+.combat-economy-strip li.spent {
+  color: var(--text-soft);
+  opacity: 0.85;
+  text-decoration: line-through;
+}
+
 .combat-atmosphere {
   margin: 8px 0 0;
   font-size: 0.88rem;

@@ -7,9 +7,18 @@
 
 **Deployment / human fun:** HTTPS staging **NOT DEPLOYED** · Android/iOS playtest **NOT TESTED** · Claimed “fun” **NOT VERIFIED** by this audit.
 
-### Sprint 24 — Background features (2026-11-11, local)
+### Sprint 25 — Combat action economy (2026-11-11, local)
 
-See [`SPRINT_24_BACKGROUND_FEATURES_ACCEPTANCE.md`](SPRINT_24_BACKGROUND_FEATURES_ACCEPTANCE.md). **Baseline:** `32ebfd7`. Six MVP backgrounds; one-shot informational gifts; Stealth disadvantage fix.
+See [`SPRINT_25_COMBAT_ACTION_ECONOMY_ACCEPTANCE.md`](SPRINT_25_COMBAT_ACTION_ECONOMY_ACCEPTANCE.md). **Start baseline:** `53a6fed`. Action + bonus pools; Healing Word / Second Wind / Hide; reaction slot without triggers.
+
+| Finding | Status |
+|---------|--------|
+| Unified action economy | **PARTIAL** (no reaction abilities) |
+| Bonus-action class/spells in combat | **IMPLEMENTED** (MVP set) |
+
+### Sprint 24 — Background features (2026-11-11, committed `53a6fed`)
+
+See [`SPRINT_24_BACKGROUND_FEATURES_ACCEPTANCE.md`](SPRINT_24_BACKGROUND_FEATURES_ACCEPTANCE.md). Six MVP backgrounds; one-shot informational gifts; Stealth disadvantage fix.
 
 | Finding | Status |
 |---------|--------|

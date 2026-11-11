@@ -92,19 +92,21 @@ def test_bandit_captain_combat_awards_without_duplication():
     for _ in range(3):
         game._grant_xp(hero, 100)
     game.rng.randint = lambda a, b: b
-    _, captain = game.resolve_action(hero, "attack the bandit captain", None)
+    from tests.combat_turn_helpers import resolve_combat_action_for_simulation
+
+    _, captain = resolve_combat_action_for_simulation(game, hero, "attack the bandit captain", None)
     for _ in range(60):
         if not hero.in_combat and hero.quest_flags.get(FLAG_EVIDENCE):
             break
         if captain is None and not hero.in_combat:
-            _, monster = game.resolve_action(hero, "attack the bandit captain", None)
+            _, monster = resolve_combat_action_for_simulation(game, hero, "attack the bandit captain", None)
             captain = monster
             continue
         if captain is None:
             break
         if captain.hp <= 0:
             break
-        _, captain = game.resolve_action(hero, f"attack {captain.name}", captain)
+        _, captain = resolve_combat_action_for_simulation(game, hero, f"attack {captain.name}", captain)
     assert hero.quest_flags[FLAG_EVIDENCE]
     assert hero.gold >= BANDIT_CAMP_EVIDENCE_GOLD_GP
     before_gold = hero.gold

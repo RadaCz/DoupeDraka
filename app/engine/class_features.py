@@ -128,31 +128,15 @@ def _set_combat_flag(character: CharacterState, key: str, value: bool) -> None:
 
 
 def reset_player_combat_class_flags(character: CharacterState) -> None:
-    character.combat_flags = {
-        **character.combat_flags,
-        "bonus_action_used": False,
-        "sneak_attack_used": False,
-        "attack_advantage": character.combat_flags.get("hidden", False),
-        "attack_disadvantage": False,
-    }
+    from .combat_action_economy import reset_player_turn_economy
+
+    reset_player_turn_economy(character)
 
 
 def mark_player_turn_start(character: CharacterState) -> None:
-    hidden = bool(character.combat_flags.get("hidden"))
-    character.combat_flags = {
-        "bonus_action_used": False,
-        "sneak_attack_used": False,
-        "hidden": hidden,
-        "attack_advantage": hidden,
-        "attack_disadvantage": False,
-    }
+    from .combat_action_economy import reset_player_turn_economy
 
-
-def spend_bonus_action(character: CharacterState) -> tuple[bool, str]:
-    if _combat_flag(character, "bonus_action_used"):
-        return False, "You already used your bonus action this turn."
-    _set_combat_flag(character, "bonus_action_used", True)
-    return True, ""
+    reset_player_turn_economy(character)
 
 
 def sneak_attack_dice(level: int) -> str:
@@ -194,6 +178,8 @@ def apply_sneak_attack(
 
 
 def use_second_wind(engine: GameEngine, character: CharacterState) -> tuple[bool, list[str], dict]:
+    from .combat_action_economy import spend_bonus_action
+
     if character.character_class != "fighter":
         return False, ["Only a fighter can use Second Wind."], {}
     if not character.second_wind_available:
@@ -243,6 +229,8 @@ def arcane_recovery_slot_levels(level: int) -> int:
 
 
 def use_arcane_recovery(character: CharacterState) -> tuple[bool, list[str], dict]:
+    if character.in_combat:
+        return False, ["Arcane Recovery cannot be used during combat."], {}
     if character.character_class != "wizard":
         return False, ["Only a wizard can use Arcane Recovery."], {}
     if not character.arcane_recovery_available:
@@ -326,8 +314,13 @@ def rebuild_wizard_spellbook(character: CharacterState, level_one_spells: list[s
 
 
 def try_hide_in_combat(engine: GameEngine, character: CharacterState) -> tuple[bool, list[str], dict]:
+    from .combat_action_economy import spend_bonus_action
+
     if not character.in_combat:
         return False, ["You can only Hide during combat."], {}
+    ok, reason = spend_bonus_action(character)
+    if not ok:
+        return False, [reason], {}
     weapon = equipped_weapon(character)
     armor_entry = equipped_armor_instance(character)
     disadvantage = False

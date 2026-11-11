@@ -14,6 +14,7 @@ export type CharacterSnapshot = {
   gold?: number;
   combatant?: { name?: string } | null;
   combat_turn?: string;
+  combat_flags?: Record<string, boolean>;
   conditions?: Array<{ condition_id: string }>;
   fighting_style?: string;
   divine_domain?: string;
@@ -65,6 +66,23 @@ export async function fetchCharacterState(
   });
   await expect(response).toBeOK();
   return response.json() as Promise<CharacterSnapshot>;
+}
+
+/** After Sprint 25 economy, lone Action leaves player turn open when Bonus remains — close it like the UI. */
+export async function closeCombatTurnIfStalled(
+  request: APIRequestContext,
+  token: string,
+  characterId: string,
+) {
+  const state = await fetchCharacterState(request, token, characterId);
+  if (
+    state.in_combat
+    && state.combat_turn === 'player'
+    && state.combat_flags?.action_used
+    && !state.combat_flags?.bonus_action_used
+  ) {
+    await postGameAction(request, token, characterId, 'end turn');
+  }
 }
 
 export async function waitForQuestFlag(
@@ -137,6 +155,10 @@ export async function resolveCombat(page: Page, maxTurns = 48) {
     const attack = page.getByRole('button', { name: /^Attack$|^Útok$|^Zaútoč/i }).first();
     if (!(await attack.isVisible().catch(() => false))) break;
     await attack.click();
+    const endTurn = page.getByRole('button', { name: /^End turn$|^Konec tahu$/i });
+    if (await endTurn.isVisible().catch(() => false)) {
+      await endTurn.click();
+    }
     if (await page.getByText(defeatPattern).first().isVisible().catch(() => false)) return;
     if (await page.getByText(victoryPattern).first().isVisible().catch(() => false)) return;
     if (await arena.isVisible().catch(() => false)) {
@@ -168,10 +190,12 @@ export async function ensureLevelAtLeast(
     }
     if (state.in_combat && state.combatant?.name) {
       await postGameAction(request, token, characterId, `attack ${state.combatant.name}`);
+      await closeCombatTurnIfStalled(request, token, characterId);
       continue;
     }
     const tier1Foe = state.location?.includes('Cellar') ? 'goblin' : 'kobold';
     await postGameAction(request, token, characterId, `attack ${tier1Foe}`);
+    await closeCombatTurnIfStalled(request, token, characterId);
   }
 
   const final = await fetchCharacterState(request, token, characterId);
@@ -242,6 +266,7 @@ export async function completeVaultDescentViaEngine(
     if (state.in_combat) {
       const foe = state.combatant?.name ?? 'Kobold skirmisher';
       await postGameAction(request, token, characterId, `attack ${foe}`);
+      await closeCombatTurnIfStalled(request, token, characterId);
       continue;
     }
     await postGameAction(request, token, characterId, 'search the vault');
@@ -300,14 +325,17 @@ export async function completeBossViaEngine(
     if (state.in_combat) {
       if (lowHp) {
         await postGameAction(request, token, characterId, 'drink potion');
+        await closeCombatTurnIfStalled(request, token, characterId);
         const afterPotion = await fetchCharacterState(request, token, characterId);
         if ((afterPotion.hp ?? 0) <= (state.hp ?? 0)) {
           await postGameAction(request, token, characterId, 'defend');
+          await closeCombatTurnIfStalled(request, token, characterId);
         }
         continue;
       }
       const foe = state.combatant?.name ?? 'Bell Warden';
       await postGameAction(request, token, characterId, `attack ${foe}`);
+      await closeCombatTurnIfStalled(request, token, characterId);
       continue;
     }
     if (lowHp) {

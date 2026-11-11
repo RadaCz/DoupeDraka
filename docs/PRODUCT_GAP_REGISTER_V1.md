@@ -1,8 +1,8 @@
 # Product Gap Register V1
 
-**Repo baseline (commit):** `32ebfd78309637077e264bbb8a8cdbe8c867fb12` (`clean-main` = `origin/clean-main`)  
-**Last acceptance pass (committed):** Sprint 23 — [`SPRINT_23_SKILL_CHECKS_PLAYER_AGENCY_ACCEPTANCE.md`](SPRINT_23_SKILL_CHECKS_PLAYER_AGENCY_ACCEPTANCE.md)  
-**In progress (local):** Sprint 24 — [`SPRINT_24_BACKGROUND_FEATURES_ACCEPTANCE.md`](SPRINT_24_BACKGROUND_FEATURES_ACCEPTANCE.md)  
+**Repo baseline (commit):** `53a6fedf862c3e64c29fde4c28b13d037e9bc46a` (`clean-main` = `origin/clean-main`)  
+**Last acceptance pass (committed):** Sprint 24 — [`SPRINT_24_BACKGROUND_FEATURES_ACCEPTANCE.md`](SPRINT_24_BACKGROUND_FEATURES_ACCEPTANCE.md)  
+**In progress (local):** Sprint 25 — [`SPRINT_25_COMBAT_ACTION_ECONOMY_ACCEPTANCE.md`](SPRINT_25_COMBAT_ACTION_ECONOMY_ACCEPTANCE.md)  
 **Authority:** engine + persisted `CharacterState`; UI must not pretend unmodeled rules apply.  
 **Related audits:** [`GAMEPLAY_COMPLETENESS_AUDIT_V1.md`](GAMEPLAY_COMPLETENESS_AUDIT_V1.md), [`SPRINT_16_CHARACTER_CREATION_V2.md`](SPRINT_16_CHARACTER_CREATION_V2.md)
 
@@ -42,7 +42,7 @@
 | Spells at creation | **PARTIAL** | `validate_spell_picks`, wizard/cleric only | Player picks; unmodeled spells flagged in UI | P1 | 17 — expand `MODELED_SPELL_EFFECTS` |
 | Player & monster saving throws | **IMPLEMENTED** | `saving_throws.py`, `spell_saves.py` | Unified resolver; spell saves use `perform_monster_saving_throw` + correct DC | P0 | Cover, concentration |
 | Conditions (combat) | **PARTIAL** | `conditions.py`, Sprint 19.1 E2E | Paralyzed (end-of-turn save, melee crit), mockery disadvantage consumed; CombatUI chip after API-only sync weak | P0 | More conditions / UI refresh |
-| Combat | **PARTIAL** | `service.py`, `equipment.py`, `combat_effects.py` | Attack, AC, slots, subset of spells, **3 save triggers** | P0 | Bonus action / reaction economy |
+| Combat | **PARTIAL** | `service.py`, `combat_action_economy.py`, `combat_effects.py` | Attack, AC, slots, spells, saves; **action + bonus pools (S25)** | P0 | Reaction triggers (OA, Shield, …) |
 | Inventory | **PARTIAL** | `equipment.py`, `CharacterInventoryPanel` | Weapon + armor + shield equip; bows/accessories not modeled | P1 | 18 — ranged weapons |
 | Exploration / checks | **PARTIAL** | `EXPLORE_SKILL_CUES`, `ability_check` | Skill mapping for some verbs | P1 | 17 |
 | NPC / quests Ch.1 | **IMPLEMENTED** | `quests.py`, `chapter-one-quest.spec.ts`, Sprint 22 tests | Full main arc + boss completion; NPC hints engine-gated | P0 | Optional location arcs |

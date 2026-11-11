@@ -4,6 +4,7 @@ from app.engine.catalog import ABILITY_ORDER, CLASSES
 from app.engine.encounters import build_monster
 from app.engine.models import CharacterState, MonsterState, RollResult
 from app.engine.service import GameEngine
+from tests.combat_turn_helpers import resolve_combat_action_for_simulation
 
 
 def stats(**values): 
@@ -311,7 +312,7 @@ def test_early_fights_are_winnable_with_default_stats():
         for _ in range(30):
             if hero.hp <= 0 or monster is None:
                 break
-            game.resolve_action(hero, "attack", monster)
+            resolve_combat_action_for_simulation(game, hero, "attack", monster)
         fights += 1
     assert hero.hp > 0
     assert hero.level >= 2
@@ -329,7 +330,7 @@ def test_all_ten_abilities_lose_to_the_standard_array():
             for _ in range(30):
                 if hero.hp <= 0 or monster is None:
                     break
-                result, monster = game.resolve_action(hero, "attack", monster)
+                result, monster = resolve_combat_action_for_simulation(game, hero, "attack", monster)
                 if any("Defeated in combat" in event for event in result.events):
                     knockouts += 1
                     break
@@ -379,7 +380,7 @@ def test_rest_does_not_work_mid_fight():
     hero = game.create_character(1, "Arin", "human", "fighter")
     monster = MonsterState(name="Goblin scout", hp=40, max_hp=40, armor_class=16)
     # Start a real fight and keep the goblin alive, then try to rest mid-combat.
-    _, monster = game.resolve_action(hero, "attack", monster)
+    _, monster = resolve_combat_action_for_simulation(game, hero, "attack", monster)
     monster = monster or build_monster("normal", "goblin")
     result, _ = game.resolve_action(hero, "rest", monster)
     assert any("cannot rest" in event for event in result.events)
@@ -392,7 +393,7 @@ def test_fleeing_ends_the_fight_and_clears_the_combatant():
     game = GameEngine(random.Random(3))
     hero = game.create_character(1, "Lyra", "halfling", "rogue")
     monster = build_monster("normal", "goblin")
-    _, monster = game.resolve_action(hero, "attack", monster)
+    _, monster = resolve_combat_action_for_simulation(game, hero, "attack", monster)
     if monster is None:
         pytest.skip("goblin died immediately; nothing to flee from")
     # Force a successful escape roll.
@@ -481,7 +482,7 @@ def test_player_turn_restored_after_attack_and_enemy_exchange():
     game = GameEngine(random.Random(22))
     hero = game.create_character(1, "Arin", "human", "fighter", stats(strength=16, dexterity=14))
     game.rng.randint = lambda a, b: 18
-    result, monster = game.resolve_action(hero, "attack the goblin", None)
+    result, monster = resolve_combat_action_for_simulation(game, hero, "attack the goblin", None)
     assert any("Initiative" in event for event in result.events)
     if hero.in_combat and monster is not None:
         assert hero.combat_turn == "player"

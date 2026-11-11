@@ -114,8 +114,10 @@ def test_xp_budget_main_path_fighter():
     hero.quest_flags["vault_unlocked"] = True
     hero.quest_flags["vault_hint_given"] = True
     _, monster = game._travel(hero, "travel to The Vault of Echoes")
+    from tests.combat_turn_helpers import resolve_combat_action_for_simulation
+
     while monster and monster.hp > 0:
-        _, monster = game.resolve_action(hero, f"attack {monster.name}", monster)
+        _, monster = resolve_combat_action_for_simulation(game, hero, f"attack {monster.name}", monster)
     assert hero.quest_flags[FLAG_VAULT_DESCENT_STORY_XP]
     assert hero.level >= 3
 

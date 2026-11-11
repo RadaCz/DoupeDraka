@@ -6,6 +6,8 @@ from dataclasses import asdict
 from app.engine.models import MonsterState
 from app.engine.service import GameEngine
 
+from tests.combat_turn_helpers import resolve_combat_action_for_simulation
+
 
 def _pit_hero(game: GameEngine):
     hero = game.create_character(1, "Champion", "human", "fighter")
@@ -20,7 +22,7 @@ def _pit_hero(game: GameEngine):
 
 def _turn(game: GameEngine, hero, action: str):
     monster = MonsterState(**hero.combatant) if hero.combatant else None
-    result, active = game.resolve_action(hero, action, monster)
+    result, active = resolve_combat_action_for_simulation(game, hero, action, monster)
     hero.combatant = asdict(active) if active else None
     return result
 

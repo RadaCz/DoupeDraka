@@ -195,18 +195,25 @@ def test_healing_spell_restores_hp_but_never_exceeds_maximum():
     assert hero.spell_slots == {1: 1}
 
 
-def test_healing_word_marks_bonus_action_timing_as_unmodeled():
+def test_healing_word_uses_bonus_action_in_combat():
     game = GameEngine(random.Random(1))
     force_high_rolls(game)
     hero = create_hero("bard", charisma=16)
     hero.max_hp = 20
     hero.hp = 10
+    hero.in_combat = True
+    hero.combat_turn = "player"
+    from app.engine.class_features import mark_player_turn_start
 
-    result, _ = game.resolve_action(hero, "cast Healing Word", None)
+    mark_player_turn_start(hero)
+    monster = MonsterState(name="Wolf", hp=20, max_hp=20, armor_class=12)
+
+    result, _ = game.resolve_action(hero, "cast Healing Word", monster)
 
     assert result.spell_facts["effect"]["healing"] == 7
-    assert result.spell_facts["effect"]["bonus_action_not_applied"]
-    assert any("main action" in event for event in result.events)
+    assert result.spell_facts["effect"]["action_cost"] == "bonus"
+    assert hero.combat_flags.get("bonus_action_used")
+    assert not hero.combat_flags.get("action_used")
     assert hero.spell_slots == {1: 1}
 
 

@@ -1,7 +1,8 @@
 # Sprint 24 — Background features in play V1
 
 **Datum:** 2026-11-11  
-**Git baseline (start):** `32ebfd7` (`origin/clean-main`)  
+**Git baseline (start):** `32ebfd7`  
+**Delivered / committed:** `53a6fedf862c3e64c29fde4c28b13d037e9bc46a` (`origin/clean-main`, CI #66 GREEN)  
 **Předchozí:** [`SPRINT_23_SKILL_CHECKS_PLAYER_AGENCY_ACCEPTANCE.md`](SPRINT_23_SKILL_CHECKS_PLAYER_AGENCY_ACCEPTANCE.md)
 
 ## Cíl

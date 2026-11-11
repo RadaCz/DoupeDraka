@@ -13,6 +13,36 @@ import {
   modeledCombatSpells,
 } from './combatActions';
 import { combatAtmosphereLine, canonicalPlayLocation, combatIntroProse, isPreStrikeCombatBeat } from './combatDisplay';
+import { economyDenialReason, readCombatEconomy, spellEconomySlot } from './combatEconomy';
+
+function economyChipLabel(
+  available: boolean,
+  label: string,
+  t: (key: string) => string,
+): string {
+  return available ? label : `${label} — ${t('spent')}`;
+}
+
+export function CombatActionEconomyStrip({ character }: { character: Character }) {
+  const { t } = useI18n();
+  const economy = readCombatEconomy(character);
+  if (!economy.inPlayerTurn && character.combat_turn === 'enemy') {
+    return null;
+  }
+  return (
+    <ul className="combat-economy-strip" role="list" aria-label={t('Action economy')}>
+      <li className={economy.actionAvailable ? 'available' : 'spent'}>
+        {economyChipLabel(economy.actionAvailable, t('Action'), t)}
+      </li>
+      <li className={economy.bonusAvailable ? 'available' : 'spent'}>
+        {economyChipLabel(economy.bonusAvailable, t('Bonus action'), t)}
+      </li>
+      <li className={economy.reactionAvailable ? 'available' : 'spent'}>
+        {economyChipLabel(economy.reactionAvailable, t('Reaction'), t)}
+      </li>
+    </ul>
+  );
+}
 
 export function CombatArena({
   character,
@@ -55,6 +85,9 @@ export function CombatArena({
         <p className={`combat-turn-pill ${playerTurn ? 'player' : 'enemy'}`} role="status">
           {playerTurn ? t('Your turn — choose an action.') : t('Enemy turn — wait for the outcome.')}
         </p>
+        {character.in_combat && (
+          <CombatActionEconomyStrip character={character} />
+        )}
       </div>
       <p className="combat-atmosphere">{atmosphere}</p>
     </header>
@@ -187,7 +220,11 @@ export function CombatActionDeck({
   const [pendingId, setPendingId] = useState('');
   const actions = buildCombatActions(character, spells, t, locale);
   const modeled = modeledCombatSpells(character, spells);
+  const economy = readCombatEconomy(character);
   const enemy = character.combatant?.name;
+  const spellCastBlocked = spellPick
+    ? economyDenialReason(economy, spellEconomySlot(spellPick), t)
+    : undefined;
 
   useEffect(() => {
     if (!busy) {
@@ -286,7 +323,8 @@ export function CombatActionDeck({
           <button
             type="button"
             className="combat-spell-cast"
-            disabled={busy || !spellPick || !isPlayerCombatTurn(character)}
+            disabled={busy || !spellPick || !isPlayerCombatTurn(character) || Boolean(spellCastBlocked)}
+            title={spellCastBlocked}
             onClick={onSpellCast}
           >
             {t('Cast')}

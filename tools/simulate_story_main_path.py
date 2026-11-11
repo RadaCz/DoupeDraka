@@ -7,6 +7,8 @@ from dataclasses import asdict
 from app.engine.models import MonsterState
 from app.engine.service import GameEngine
 
+from tests.combat_turn_helpers import resolve_combat_action_for_simulation
+
 CLASSES = ("fighter", "rogue", "cleric", "wizard")
 SEEDS = (0, 1, 7, 42, 99)
 
@@ -25,7 +27,7 @@ def _fight_to_clear(game: GameEngine, hero, monster: MonsterState | None, max_tu
             monster = None
             continue
         name = monster.name
-        _, monster = game.resolve_action(hero, f"attack {name}", monster)
+        _, monster = resolve_combat_action_for_simulation(game, hero, f"attack {name}", monster)
         if not hero.in_combat:
             monster = None
         elif hero.combatant:

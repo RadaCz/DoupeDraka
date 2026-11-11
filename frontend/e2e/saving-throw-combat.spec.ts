@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { fetchCharacterState, postGameAction, syncPlayScreen } from './chapter-one-e2e-helpers.ts';
+import { closeCombatTurnIfStalled, fetchCharacterState, postGameAction, syncPlayScreen } from './chapter-one-e2e-helpers.ts';
 import {
   ACTION_TEXTBOX,
   MAIN_NAV,
@@ -49,6 +49,7 @@ test('vault falling stones trigger a dexterity saving throw in the journal', asy
   for (let round = 0; round < 30 && state.in_combat; round += 1) {
     const foe = state.combatant?.name ?? 'Kobold skirmisher';
     await postGameAction(request, token, characterId!, `attack ${foe}`);
+    await closeCombatTurnIfStalled(request, token, characterId!);
     state = await fetchCharacterState(request, token, characterId!);
   }
   expect(state.in_combat).toBeFalsy();

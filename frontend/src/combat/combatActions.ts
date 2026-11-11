@@ -1,11 +1,18 @@
 import type { Locale } from '../i18n';
 import { castSpellAction, modeledCombatSpells as modeledSpellsFromBook } from '../spells/spellbook';
 import type { Character, JournalEvent, Spell } from '../types';
+import {
+  economyDenialReason,
+  readCombatEconomy,
+  shouldOfferEndTurn,
+  spellEconomySlot,
+  type EconomySlot,
+} from './combatEconomy';
 
 export type CombatActionKind = 'attack' | 'defend' | 'flee' | 'spell' | 'potion' | 'class_feature';
 
 export interface CombatActionItem {
-  id: CombatActionKind;
+  id: string;
   kind: CombatActionKind;
   label: string;
   description: string;
@@ -13,6 +20,7 @@ export interface CombatActionItem {
   action?: string;
   disabled: boolean;
   disabledReason?: string;
+  economySlot?: EconomySlot;
 }
 
 export function isPlayerCombatTurn(character: Character): boolean {
@@ -42,8 +50,9 @@ export function buildCombatActions(
 ): CombatActionItem[] {
   const enemy = character.combatant?.name ?? t('the enemy');
   const playerTurn = isPlayerCombatTurn(character);
-  const waitReason = t('Wait for the enemy to act.');
+  const economy = readCombatEconomy(character);
   const modeled = modeledCombatSpells(character, spells);
+  const soleSpellSlot = modeled.length === 1 ? spellEconomySlot(modeled[0].name) : 'action';
   const potion = hasHealingPotion(character);
 
   const wrap = (
@@ -51,9 +60,13 @@ export function buildCombatActions(
     extraDisabled?: boolean,
     extraReason?: string,
   ): CombatActionItem => {
-    const disabled = !playerTurn || extraDisabled === true;
+    const economyReason = item.economySlot
+      ? economyDenialReason(economy, item.economySlot, t)
+      : undefined;
+    const disabled = !playerTurn || extraDisabled === true || Boolean(economyReason);
     let disabledReason: string | undefined;
-    if (!playerTurn) disabledReason = waitReason;
+    if (!playerTurn) disabledReason = t('Wait for the enemy to act.');
+    else if (economyReason) disabledReason = economyReason;
     else if (extraDisabled) disabledReason = extraReason;
     return { ...item, disabled, disabledReason };
   };
@@ -68,6 +81,7 @@ export function buildCombatActions(
         description: t('Bonus action: recover 1d10 + level HP (once per rest).'),
         glyph: '♥',
         action: 'second wind',
+        economySlot: 'bonus',
       }),
     );
   }
@@ -77,14 +91,15 @@ export function buildCombatActions(
         id: 'hide',
         kind: 'class_feature',
         label: t('Hide'),
-        description: t('Stealth to gain advantage for Sneak Attack.'),
+        description: t('Stealth (bonus action) to gain advantage for Sneak Attack.'),
         glyph: '◌',
         action: 'hide',
+        economySlot: 'bonus',
       }),
     );
   }
 
-  return [
+  const actions: CombatActionItem[] = [
     ...featureActions,
     wrap(
       {
@@ -94,6 +109,7 @@ export function buildCombatActions(
         description: strikeDescription(enemy, locale),
         glyph: '⚔',
         action: `attack ${enemy}`,
+        economySlot: 'action',
       },
     ),
     wrap({
@@ -103,6 +119,7 @@ export function buildCombatActions(
       description: t('Brace yourself and soften the next blow.'),
       glyph: '🛡',
       action: 'defend',
+      economySlot: 'action',
     }),
     wrap({
       id: 'flee',
@@ -111,6 +128,7 @@ export function buildCombatActions(
       description: t('Look for a chance to break away.'),
       glyph: '↩',
       action: 'flee',
+      economySlot: 'action',
     }),
     wrap(
       {
@@ -121,6 +139,7 @@ export function buildCombatActions(
           ? t('Channel a prepared spell.')
           : t('No modeled combat spells are ready.'),
         glyph: '✦',
+        economySlot: soleSpellSlot,
       },
       modeled.length === 0,
       t('Prepare known spells on your character sheet.'),
@@ -133,11 +152,26 @@ export function buildCombatActions(
         description: potion ? t('Drink a potion from your pack.') : t('No healing potion in your inventory.'),
         glyph: '⚗',
         action: potion ? 'use potion' : undefined,
+        economySlot: 'action',
       },
       !potion,
       t('Loot or buy a healing potion first.'),
     ),
   ];
+
+  if (playerTurn && shouldOfferEndTurn(character)) {
+    actions.push({
+      id: 'end_turn',
+      kind: 'class_feature',
+      label: t('End turn'),
+      description: t('Pass to the enemy when you are done acting.'),
+      glyph: '→',
+      action: 'end turn',
+      disabled: false,
+    });
+  }
+
+  return actions;
 }
 
 export function lastCombatBeat(events: JournalEvent[]): JournalEvent | null {

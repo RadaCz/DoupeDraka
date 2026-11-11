@@ -52,6 +52,7 @@ from .intent import (
     CAST,
     CLASS_FEATURE,
     DEFEND,
+    END_TURN,
     EXPLORE,
     FLEE,
     QUEST,
@@ -370,6 +371,9 @@ class GameEngine:
         character.dodging = False
         character.invisible = False
         character.death_state = "alive"
+        from .combat_action_economy import clear_economy_on_combat_end
+
+        clear_economy_on_combat_end(character)
         return [
             "Defeated in combat. You black out and wake at "
             f"{SAFE_RESPAWN_LOCATION} with 1 HP ({character.hp}/{character.max_hp}).",
@@ -406,6 +410,45 @@ class GameEngine:
         events = try_player_repeat_saves(self, character)
         tick_condition_durations(character)
         return events
+
+    def _maybe_advance_enemy_after_player_action(
+        self,
+        character: CharacterState,
+        monster: MonsterState | None,
+        events: list[str],
+        *,
+        enemy_disadvantage: bool = False,
+    ) -> tuple[list[str], dict]:
+        from .combat_action_economy import should_advance_enemy_after_player_activity
+
+        save_payload: dict = {}
+        if monster and character.in_combat and should_advance_enemy_after_player_activity(character):
+            events.extend(self._close_player_combat_turn(character))
+            enemy_events, enemy_save = self._enemy_turn(character, monster, disadvantage=enemy_disadvantage)
+            events.extend(enemy_events)
+            if enemy_save:
+                save_payload = enemy_save
+        return events, save_payload
+
+    def _resolve_end_combat_turn(
+        self,
+        character: CharacterState,
+        action: str,
+        monster: MonsterState | None,
+    ) -> tuple[TurnResult, MonsterState | None]:
+        if not character.in_combat or monster is None:
+            return TurnResult(action, ["You are not in an active fight."], False, costs_adventure_mana=False), monster
+        blocked = self._require_player_combat_turn(character, action)
+        if blocked:
+            return blocked, monster
+        events = ["You end your turn."]
+        events.extend(self._close_player_combat_turn(character))
+        enemy_events, enemy_save = self._enemy_turn(character, monster)
+        events.extend(enemy_events)
+        return (
+            TurnResult(action, events, True, save_facts=enemy_save or {}, costs_adventure_mana=False),
+            monster if character.in_combat else None,
+        )
 
     def _finish_paralyzed_player_turn(
         self,
@@ -513,6 +556,11 @@ class GameEngine:
             blocked_turn = self._begin_player_combat_action(character, action)[1]
             if blocked_turn:
                 return self._finish_paralyzed_player_turn(character, action, monster)
+            from .combat_action_economy import reserve_combat_cost
+
+            ok, reason = reserve_combat_cost(character, "action")
+            if not ok:
+                return TurnResult(action, [reason], False, costs_adventure_mana=False), monster
         potion = next((item for item in character.inventory if "potion" in item.casefold()), None)
         if potion is None:
             return TurnResult(action, ["You have no usable potion."], False), monster
@@ -528,10 +576,7 @@ class GameEngine:
         ]
         save_payload: dict = {}
         if monster and character.in_combat:
-            events.extend(self._close_player_combat_turn(character))
-            enemy_events, enemy_save = self._enemy_turn(character, monster)
-            events.extend(enemy_events)
-            save_payload = enemy_save
+            events, save_payload = self._maybe_advance_enemy_after_player_action(character, monster, events)
         return TurnResult(action, events, True, save_facts=save_payload), None if not character.in_combat else monster
 
     def _equip_item(
@@ -764,6 +809,28 @@ class GameEngine:
                 },
             ), monster
 
+        if character.in_combat:
+            from .combat_action_economy import reserve_combat_cost, spell_combat_cost
+
+            combat_cost = spell_combat_cost(selected)
+            ok, reason = reserve_combat_cost(character, combat_cost)
+            if not ok:
+                return TurnResult(
+                    action,
+                    [reason],
+                    False,
+                    spell_facts={
+                        "spell_name": selected,
+                        "spell_level": level,
+                        "slot_level": None,
+                        "slot_consumed": False,
+                        "effect": {"type": "action_denied"},
+                        "target_hp_after": monster.hp if monster else None,
+                        "save_result": None,
+                    },
+                    costs_adventure_mana=False,
+                ), monster
+
         if character.invisible and selected != "Invisibility":
             character.invisible = False
 
@@ -794,9 +861,9 @@ class GameEngine:
             if life_bonus:
                 effect_facts["disciple_of_life"] = life_bonus
             if selected == "Healing Word":
-                effect_facts["bonus_action_not_applied"] = True
+                effect_facts["action_cost"] = "bonus"
                 events.append(
-                    f"{selected} restores {amount} HP as your main action in this MVP; bonus-action timing is not modeled."
+                    f"{selected} restores {amount} HP (bonus action). Your HP: {character.hp}/{character.max_hp}."
                 )
             else:
                 events.append(f"{selected} restores {amount} HP. Your HP: {character.hp}/{character.max_hp}.")
@@ -920,11 +987,9 @@ class GameEngine:
             events.extend(level_events)
             combat_over = True
             monster = None
-        elif monster:
+        elif monster and character.in_combat:
             events.append(f"{monster.name} has {monster.hp}/{monster.max_hp} HP.")
-            events.extend(self._close_player_combat_turn(character))
-            enemy_events, enemy_save = self._enemy_turn(character, monster)
-            events.extend(enemy_events)
+            events, enemy_save = self._maybe_advance_enemy_after_player_action(character, monster, events)
             if enemy_save:
                 merged_save_facts = {**merged_save_facts, **enemy_save}
             monster = None if not character.in_combat else monster
@@ -1290,16 +1355,15 @@ class GameEngine:
             events.extend(lines)
             changed = ok
             if ok and character.in_combat and monster:
-                events.extend(self._close_player_combat_turn(character))
-                enemy_events, enemy_save = self._enemy_turn(character, monster)
-                events.extend(enemy_events)
-                return TurnResult(
-                    action,
-                    events,
-                    changed,
-                    class_facts=class_facts,
-                    save_facts=enemy_save,
-                ), monster if character.in_combat else None
+                events, enemy_save = self._maybe_advance_enemy_after_player_action(character, monster, events)
+                if enemy_save:
+                    return TurnResult(
+                        action,
+                        events,
+                        changed,
+                        class_facts=class_facts,
+                        save_facts=enemy_save,
+                    ), monster if character.in_combat else None
             return TurnResult(action, events, changed, class_facts=class_facts), monster
 
         return TurnResult(action, ["That class feature cannot be used here."], False), monster
@@ -1364,6 +1428,11 @@ class GameEngine:
         blocked_turn = self._begin_player_combat_action(character, action)[1]
         if blocked_turn:
             return self._finish_paralyzed_player_turn(character, action, monster)
+        from .combat_action_economy import reserve_combat_cost
+
+        ok, reason = reserve_combat_cost(character, "action")
+        if not ok:
+            return TurnResult(action, [reason], False, costs_adventure_mana=False), monster
         attack_events, attack_facts = self.attack(character, monster)
         events.extend(attack_events)
         attack_class_facts = attack_facts
@@ -1399,16 +1468,15 @@ class GameEngine:
                 level_up_facts=level_up_facts,
                 class_facts=attack_class_facts,
             ), None
-        events.extend(self._close_player_combat_turn(character))
-        enemy_events, enemy_save = self._enemy_turn(character, monster)
-        events.extend(enemy_events)
+        save_payload: dict = {}
+        events, save_payload = self._maybe_advance_enemy_after_player_action(character, monster, events)
         self._regenerate_mana(character)
         return (
             TurnResult(
                 action,
                 events,
                 True,
-                save_facts=enemy_save,
+                save_facts=save_payload,
                 class_facts=attack_class_facts,
             ),
             None if not character.in_combat else monster,
@@ -1458,6 +1526,9 @@ class GameEngine:
                 monster,
             )
 
+        if intent.kind == END_TURN:
+            return self._resolve_end_combat_turn(character, action, monster)
+
         if intent.kind == DEFEND:
             if monster is None or not character.in_combat:
                 return TurnResult(action, ["You take a guarded stance, but there is no active enemy."], False), monster
@@ -1467,14 +1538,22 @@ class GameEngine:
             blocked_turn = self._begin_player_combat_action(character, action)[1]
             if blocked_turn:
                 return self._finish_paralyzed_player_turn(character, action, monster)
+            from .combat_action_economy import reserve_combat_cost
+
+            ok, reason = reserve_combat_cost(character, "action")
+            if not ok:
+                return TurnResult(action, [reason], False, costs_adventure_mana=False), monster
             character.dodging = True
             events = ["You dodge and gain disadvantage protection against the next enemy attack."]
-            events.extend(self._close_player_combat_turn(character))
-            enemy_events, enemy_save = self._enemy_turn(character, monster, disadvantage=True)
-            events.extend(enemy_events)
+            events, save_payload = self._maybe_advance_enemy_after_player_action(
+                character,
+                monster,
+                events,
+                enemy_disadvantage=True,
+            )
             character.dodging = False
             return (
-                TurnResult(action, events, True, save_facts=enemy_save),
+                TurnResult(action, events, True, save_facts=save_payload),
                 monster if character.in_combat else None,
             )
 
@@ -1614,11 +1693,19 @@ class GameEngine:
                 blocked = self._require_player_combat_turn(character, action)
                 if blocked:
                     return blocked, monster
+                from .combat_action_economy import reserve_combat_cost
+
+                ok, reason = reserve_combat_cost(character, "action")
+                if not ok:
+                    return TurnResult(action, [reason], False, costs_adventure_mana=False), monster
             check, success, lucky = self.ability_check(character, "dexterity", FLEE_DC)
             if not success:
                 return TurnResult(action, [f"Dexterity check: {check.total} vs DC {FLEE_DC} — you fail to break away.{lucky}"], True), monster
             character.in_combat = False
             character.exploration_cooldown = 1
+            from .combat_action_economy import clear_economy_on_combat_end
+
+            clear_economy_on_combat_end(character)
             return TurnResult(action, [f"Dexterity check: {check.total} vs DC {FLEE_DC} — you break away and escape the fight.{lucky}"], True, True), None
 
         if intent.kind in (TRAVEL, EXPLORE):

@@ -20,8 +20,13 @@ USE_ITEM = "use_item"
 EQUIP = "equip"
 QUEST = "quest"
 CLASS_FEATURE = "class_feature"
+END_TURN = "end_turn"
 
 SECOND_WIND_PATTERN = re.compile(r"\b(?:second wind|druh[yý]\s+dech)\b", re.IGNORECASE)
+END_TURN_PATTERN = re.compile(
+    r"\b(?:end(?:\s+my)?\s+turn|finish\s+my\s+turn|konec\s+tahu|ukonč(?:i|it)\s+tah)\b",
+    re.IGNORECASE,
+)
 ARCANE_RECOVERY_PATTERN = re.compile(r"\b(?:arcane recovery|arcan\w*\s+obnov)\b", re.IGNORECASE)
 HIDE_COMBAT_PATTERN = re.compile(r"\b(?:hide|schovej|ukry)\b", re.IGNORECASE)
 
@@ -87,6 +92,7 @@ _KIND_ORDER = (
     SHOP,
     USE_ITEM,
     EQUIP,
+    END_TURN,
     CAST,
     FLEE,
     DEFEND,
@@ -212,6 +218,8 @@ def _matched_kinds(text: str) -> set[str]:
         found.add(EXPLORE)
     if SECOND_WIND_PATTERN.search(text) or ARCANE_RECOVERY_PATTERN.search(text) or HIDE_COMBAT_PATTERN.search(text):
         found.add(CLASS_FEATURE)
+    if END_TURN_PATTERN.search(text):
+        found.add(END_TURN)
     return found
 
 

@@ -270,7 +270,7 @@ export function ActionComposer(props: PlayScreenProps) {
     ? t('This spell has no modeled effect yet. It will not be sent and no spell slot will be spent.')
     : null;
   const spellNotice = actionSpell?.name === 'Healing Word'
-    ? t('Healing Word is a bonus-action spell in the SRD; this MVP uses your main action.')
+    ? t('Healing Word uses your bonus action in combat.')
     : null;
 
   const handleSubmit = (event: React.FormEvent) => {
