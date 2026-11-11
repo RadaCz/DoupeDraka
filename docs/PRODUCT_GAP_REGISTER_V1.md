@@ -1,7 +1,7 @@
 # Product Gap Register V1
 
 **Repo baseline (audit):** `ebb4cd8ade948540bd97cfd557326b64cfc37236` (`clean-main`)  
-**Last acceptance pass:** Sprint 21.1 — [`SPRINT_21_CLASS_IDENTITY_ACCEPTANCE.md`](SPRINT_21_CLASS_IDENTITY_ACCEPTANCE.md) (local, uncommitted; HEAD `8b913cf`)  
+**Last acceptance pass:** Sprint 22 — [`SPRINT_22_CHAPTER_ONE_GAMEPLAY_ACCEPTANCE.md`](SPRINT_22_CHAPTER_ONE_GAMEPLAY_ACCEPTANCE.md) (local, uncommitted; baseline `c542f75`)  
 **Authority:** engine + persisted `CharacterState`; UI must not pretend unmodeled rules apply.  
 **Related audits:** [`GAMEPLAY_COMPLETENESS_AUDIT_V1.md`](GAMEPLAY_COMPLETENESS_AUDIT_V1.md), [`SPRINT_16_CHARACTER_CREATION_V2.md`](SPRINT_16_CHARACTER_CREATION_V2.md)
 
@@ -44,7 +44,7 @@
 | Combat | **PARTIAL** | `service.py`, `equipment.py`, `combat_effects.py` | Attack, AC, slots, subset of spells, **3 save triggers** | P0 | Bonus action / reaction economy |
 | Inventory | **PARTIAL** | `equipment.py`, `CharacterInventoryPanel` | Weapon + armor + shield equip; bows/accessories not modeled | P1 | 18 — ranged weapons |
 | Exploration / checks | **PARTIAL** | `EXPLORE_SKILL_CUES`, `ability_check` | Skill mapping for some verbs | P1 | 17 |
-| NPC / quests Ch.1 | **IMPLEMENTED** | `chapter_one_progression.py`, quests | Playable chapter 1 | P0 | — |
+| NPC / quests Ch.1 | **IMPLEMENTED** | `quests.py`, `chapter-one-quest.spec.ts`, Sprint 22 tests | Full main arc + boss completion; NPC hints engine-gated | P0 | Optional location arcs |
 | Level-up | **PARTIAL** | `_level_up`, `spells.learn_level_up_spells` | XP threshold; auto spell picks | P2 | 18 |
 | Lite / Normal / Pro | see above | `economy.py`, `settings.py` | No pay-to-win; no paid rolls | P0 | — |
 | Mobile UX Ch.1 | **PARTIAL** | E2E play-layout + mobile-viewports | 16.2: bilingual helpers + ID bands; 23/23 E2E ~4 min | P0 | Staging deploy |

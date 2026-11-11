@@ -61,6 +61,9 @@ export function resolveNpcTalkAction(
   return null;
 }
 
+/** Tier-3 bosses (Bell Warden) require hero level 3+ — matches `encounters.minimum_level_for_tier`. */
+const BELL_WARDEN_MIN_LEVEL = 3;
+
 /** Boss confrontation chip when chapter rules allow a named attack at the pit. */
 export function resolveQuestBossAction(
   character: Character,
@@ -68,6 +71,7 @@ export function resolveQuestBossAction(
 ): SuggestedAction | null {
   const quests = character.quest_flags ?? {};
   if (quests.chapter_one_complete || !quests.vault_unlocked) return null;
+  if (character.level < BELL_WARDEN_MIN_LEVEL) return null;
   if (character.location !== "The Bell Warden's Pit" || character.in_combat) return null;
   return {
     label: t('Face the Bell Warden'),

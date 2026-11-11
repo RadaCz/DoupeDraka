@@ -7,6 +7,20 @@
 
 **Deployment / human fun:** HTTPS staging **NOT DEPLOYED** · Android/iOS playtest **NOT TESTED** · Claimed “fun” **NOT VERIFIED** by this audit.
 
+### Sprint 22 — Chapter One completion audit (2026-11-11, local)
+
+See [`SPRINT_22_CHAPTER_ONE_GAMEPLAY_ACCEPTANCE.md`](SPRINT_22_CHAPTER_ONE_GAMEPLAY_ACCEPTANCE.md). **Baseline:** `c542f75`. No XP/loot rebalance; UI gates Bell Warden chip until L3; added completion/idempotency tests.
+
+| Finding | Status |
+|---------|--------|
+| Main path L3 without search grind | **VERIFIED** (Sprint 15 tests + simulator) |
+| Full chapter E2E → `chapter_one_complete` | **VERIFIED** (`chapter-one-quest.spec.ts`) |
+| Boss / quest rewards idempotent | **VERIFIED** (+ Sprint 22 pytest) |
+| Exploration gold farm | **MITIGATED** (one-time per location) |
+| Optional locations narrative payoff | **OPEN** (Bandit Camp, Underground River) |
+| Background features mechanical | **OPEN** |
+| Human fun on device | **NOT TESTED** |
+
 ### Sprint 20 — Character → Adventure V1 (2026-11-11, local)
 
 See [`SPRINT_20_CHARACTER_TO_ADVENTURE_ACCEPTANCE.md`](SPRINT_20_CHARACTER_TO_ADVENTURE_ACCEPTANCE.md).

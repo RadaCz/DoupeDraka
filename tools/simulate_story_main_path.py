@@ -7,7 +7,7 @@ from dataclasses import asdict
 from app.engine.models import MonsterState
 from app.engine.service import GameEngine
 
-CLASSES = ("fighter", "wizard", "cleric", "ranger")
+CLASSES = ("fighter", "rogue", "cleric", "wizard")
 SEEDS = (0, 1, 7, 42, 99)
 
 

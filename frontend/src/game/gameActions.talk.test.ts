@@ -128,9 +128,22 @@ describe('Talk quick action', () => {
     expect(resolveQuestTravelAction(hero, locations, t)?.action).toBe('travel to The Sunken Corridor');
   });
 
-  it('offers Bell Warden attack chip in the pit when the vault is unlocked', () => {
+  it('hides Bell Warden chip below level 3 even at the pit', () => {
+    const early: Character = {
+      ...base,
+      level: 2,
+      location: "The Bell Warden's Pit",
+      quest_flags: { vault_unlocked: true },
+    };
+    expect(resolveQuestBossAction(early, t)).toBeNull();
+    const chips = playActionChips(early, [], [], t, false, false);
+    expect(chips.some(c => c.action === 'attack the Bell Warden')).toBe(false);
+  });
+
+  it('offers Bell Warden attack chip in the pit at level 3+ when the vault is unlocked', () => {
     const pit: Character = {
       ...base,
+      level: 3,
       location: "The Bell Warden's Pit",
       quest_flags: { vault_unlocked: true },
     };
