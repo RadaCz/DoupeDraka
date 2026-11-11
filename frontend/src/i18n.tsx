@@ -549,6 +549,16 @@ const cs: Record<string, string> = {
   'Reference only': 'Pouze reference',
   'Used when the engine models light and vision.': 'Pouzije se, az engine modeluje svetlo a videni.',
   'Darkvision': 'Temnobys',
+  Advance: 'Priblizit se',
+  'Step back': 'Ustoupit',
+  Distance: 'Vzdalenost',
+  'Movement left': 'Zbyva pohybu',
+  Range: 'Dosah',
+  'Move closer to the enemy (uses movement, not your Action).':
+    'Pribliz se k nepriteli (spotrebuje pohyb, ne Akci).',
+  'Increase distance (uses movement, not your Action).':
+    'Zvetsi vzdalenost (spotrebuje pohyb, ne Akci).',
+  'No movement remaining this turn.': 'Tento tah uz nemas pohyb.',
   'Ruleset v1 supports Human, Elf, Dwarf, and Halfling for chapter one.':
     'Ruleset v1 podporuje pro kapitolu 1 lidskou, elfskou, trpaslickou a halfling rasu.',
   'Ruleset v1 supports Fighter, Rogue, Cleric, and Wizard in play.':

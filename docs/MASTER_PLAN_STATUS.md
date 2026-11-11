@@ -1,6 +1,6 @@
 # Master plan — stav (sync s DOUPEDRAKA_MASTER_PLAN.md v1.0)
 
-Poslední revize: **2026-11-11 (Sprint 26 — rasové vlastnosti MVP; lokálně, necommitováno)**. Etapy 7–9 záměrně otevřené až po uzavření sólo smyčky.
+Poslední revize: **2026-11-11 (Sprint 27.1 — combat move integrace; lokálně, necommitováno)**. Etapy 7–9 záměrně otevřené až po uzavření sólo smyčky.
 
 **Kódový HEAD (commit):** `3573362` na `clean-main` (= `origin/clean-main` po Sprintu 25). **Sprint 25:** commitnutý. **Sprint 26:** viz `docs/SPRINT_26_RACIAL_TRAITS_ACCEPTANCE.md` (working tree).
 

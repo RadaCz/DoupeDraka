@@ -53,6 +53,7 @@ from .intent import (
     CLASS_FEATURE,
     DEFEND,
     END_TURN,
+    COMBAT_MOVE,
     EXPLORE,
     FLEE,
     QUEST,
@@ -366,9 +367,12 @@ class GameEngine:
     @staticmethod
     def _recover_from_combat_defeat(character: CharacterState) -> list[str]:
         """MVP defeat: combat ends, hero wakes at the safe hub with 1 HP."""
+        from .combat_positioning import clear_combat_positioning
+
         character.hp = 1
         character.location = SAFE_RESPAWN_LOCATION
         character.in_combat = False
+        clear_combat_positioning(character)
         character.combat_turn = "player"
         character.combat_round = 0
         character.dodging = False
@@ -406,6 +410,12 @@ class GameEngine:
                 ),
             )
         return [], None
+
+    def _exit_combat(self, character: CharacterState) -> None:
+        character.in_combat = False
+        from .combat_positioning import clear_combat_positioning
+
+        clear_combat_positioning(character)
 
     def _close_player_combat_turn(self, character: CharacterState) -> list[str]:
         if not character.in_combat:
@@ -483,30 +493,57 @@ class GameEngine:
 
             mark_player_turn_start(character)
 
-    def _enemy_turn(
+    def _enemy_ranged_strike(
         self,
         character: CharacterState,
         monster: MonsterState,
-        disadvantage: bool = False,
-    ) -> tuple[list[str], dict]:
-        if character.hp <= 0:
-            return [], {}
+        profile,
+        *,
+        attack_advantage: bool,
+        attack_disadvantage: bool,
+    ) -> list[str]:
+        distance = max(0, int(character.combat_distance_ft or 0))
+        range_disadv = distance > profile.ranged_normal_ft
+        if range_disadv:
+            attack_disadvantage = True
         events: list[str] = []
-        save_facts: dict = {}
-        key = monster_template_key(monster)
-        pre_save, pre_facts = self._enemy_save_ability(character, key, "every_turn")
-        events.extend(pre_save)
-        if pre_facts:
-            save_facts = {**save_facts, **pre_facts}
-        if character.hp <= 0:
-            return events, save_facts
+        label = "ranged attack"
+        if attack_advantage:
+            enemy = self.roll("2d20", monster.attack_bonus)
+            chosen = max(enemy.values[0], enemy.values[1])
+            attack_total = chosen + enemy.modifier
+            natural = chosen
+        elif attack_disadvantage:
+            enemy = self.roll("2d20", monster.attack_bonus)
+            chosen = min(enemy.values[0], enemy.values[1])
+            attack_total = chosen + enemy.modifier
+            natural = chosen
+        else:
+            enemy = self.roll("1d20", monster.attack_bonus)
+            attack_total = enemy.total
+            natural = enemy.values[0]
+        if natural == 1 or attack_total < character.armor_class:
+            adv_note = " (long range)" if range_disadv and not attack_disadvantage else ""
+            events.append(f"{monster.name}'s {label} misses{adv_note}.")
+            return events
+        dice, _, bonus = monster.damage.partition("+")
+        damage = self.roll(dice, int(bonus) if bonus else 0, natural == 20)
+        character.hp = max(0, character.hp - damage.total)
+        events.append(
+            f"{monster.name}'s {label} from {distance} ft hits you for {damage.total}. "
+            f"Your HP: {character.hp}/{character.max_hp}."
+        )
+        return events
 
-        attack_disadvantage = disadvantage or consume_monster_disadvantage(monster)
-        attack_advantage = attacks_against_player_have_advantage(character)
-        if attack_advantage and attack_disadvantage:
-            attack_advantage = False
-            attack_disadvantage = False
-
+    def _enemy_melee_strike(
+        self,
+        character: CharacterState,
+        monster: MonsterState,
+        key: str,
+        *,
+        attack_advantage: bool,
+        attack_disadvantage: bool,
+    ) -> list[str]:
         if attack_advantage:
             enemy = self.roll("2d20", monster.attack_bonus)
             chosen = max(enemy.values[0], enemy.values[1])
@@ -527,12 +564,11 @@ class GameEngine:
                 miss = [f"{monster.name}'s disadvantaged attack misses. You keep your guard."]
             elif attack_advantage:
                 miss = [f"{monster.name}'s attack misses despite advantage against you."]
-            events.extend(miss)
-            self._finish_player_combat_round(character)
-            return events, save_facts
+            return miss
         dice, _, bonus = monster.damage.partition("+")
         melee = enemy_attack_is_melee(key)
         critical = natural == 20
+        events: list[str] = []
         if melee and player_paralyzed(character) and natural != 1:
             if natural != 20:
                 critical = True
@@ -540,6 +576,75 @@ class GameEngine:
         damage = self.roll(dice, int(bonus) if bonus else 0, critical)
         character.hp = max(0, character.hp - damage.total)
         events.append(f"{monster.name} hits you for {damage.total}. Your HP: {character.hp}/{character.max_hp}.")
+        return events
+
+    def _enemy_turn(
+        self,
+        character: CharacterState,
+        monster: MonsterState,
+        disadvantage: bool = False,
+    ) -> tuple[list[str], dict]:
+        from .combat_positioning import (
+            enemy_can_melee_attack,
+            enemy_can_ranged_attack,
+            enemy_movement_toward,
+            enemy_retreat_from_melee,
+            monster_profile,
+        )
+
+        if character.hp <= 0:
+            return [], {}
+        events: list[str] = []
+        save_facts: dict = {}
+        key = monster_template_key(monster)
+        profile = monster_profile(key)
+        pre_save, pre_facts = self._enemy_save_ability(character, key, "every_turn")
+        events.extend(pre_save)
+        if pre_facts:
+            save_facts = {**save_facts, **pre_facts}
+        if character.hp <= 0:
+            return events, save_facts
+
+        attack_disadvantage = disadvantage or consume_monster_disadvantage(monster)
+        attack_advantage = attacks_against_player_have_advantage(character)
+        if attack_advantage and attack_disadvantage:
+            attack_advantage = False
+            attack_disadvantage = False
+
+        melee_ok = enemy_can_melee_attack(character)
+        ranged_ok = enemy_can_ranged_attack(character, profile)
+
+        if not melee_ok and not ranged_ok:
+            if not profile.preferred_melee and profile.ranged_long_ft > 0:
+                events.extend(enemy_retreat_from_melee(character, profile, target_ft=min(60, profile.ranged_normal_ft)))
+            else:
+                events.extend(enemy_movement_toward(character, profile))
+            melee_ok = enemy_can_melee_attack(character)
+            ranged_ok = enemy_can_ranged_attack(character, profile)
+
+        use_ranged = ranged_ok and (not profile.preferred_melee or not melee_ok)
+
+        if use_ranged:
+            events.extend(
+                self._enemy_ranged_strike(
+                    character, monster, profile,
+                    attack_advantage=attack_advantage,
+                    attack_disadvantage=attack_disadvantage,
+                )
+            )
+        elif melee_ok:
+            events.extend(
+                self._enemy_melee_strike(
+                    character, monster, key,
+                    attack_advantage=attack_advantage,
+                    attack_disadvantage=attack_disadvantage,
+                )
+            )
+        else:
+            events.append(f"{monster.name} cannot reach you this turn.")
+            self._finish_player_combat_round(character)
+            return events, save_facts
+
         if character.hp > 0:
             post_save, post_facts = self._enemy_save_ability(character, key, "on_hit")
             events.extend(post_save)
@@ -550,6 +655,28 @@ class GameEngine:
             return events, save_facts
         self._finish_player_combat_round(character)
         return events, save_facts
+
+    def _resolve_combat_move(
+        self,
+        character: CharacterState,
+        action: str,
+        monster: MonsterState | None,
+        delta_ft: int,
+    ) -> tuple[TurnResult, MonsterState | None]:
+        from .combat_positioning import apply_player_movement
+
+        if not character.in_combat or monster is None:
+            return TurnResult(action, ["You can only reposition during an active fight."], False, costs_adventure_mana=False), monster
+        blocked = self._require_player_combat_turn(character, action)
+        if blocked:
+            return blocked, monster
+        blocked_turn = self._begin_player_combat_action(character, action)[1]
+        if blocked_turn:
+            return self._finish_paralyzed_player_turn(character, action, monster)
+        if delta_ft == 0:
+            return TurnResult(action, ["Specify a positive distance in feet."], False, costs_adventure_mana=False), monster
+        ok, lines = apply_player_movement(character, delta_ft)
+        return TurnResult(action, lines, ok, costs_adventure_mana=False), monster
 
     def _use_item(self, character: CharacterState, action: str, monster: MonsterState | None) -> tuple[TurnResult, MonsterState | None]:
         if monster is not None and character.in_combat:
@@ -1106,12 +1233,16 @@ class GameEngine:
             character.combat_turn = "player"
             character.combat_round = 0
             character.exploration_cooldown = 1
+            from .combat_positioning import ensure_encounter_distance
+
+            open_lines = ensure_encounter_distance(character, monster_template_key(monster))
             return TurnResult(
                 action,
                 [
                     f"Exploration roll: {encounter_roll.total} on a six-sided die.",
                     f"An enemy appears: {monster.name} ({monster.hp} HP).",
                     "The creature has not attacked yet. Choose your next action.",
+                    *open_lines,
                 ],
                 True,
             ), monster
@@ -1287,7 +1418,7 @@ class GameEngine:
             f"Initiative: you {player.total} (DEX), {monster.name} {enemy.total} (DEX). {order}.",
         ]
 
-    def attack(self, character: CharacterState, monster: MonsterState) -> tuple[list[str], dict]:
+    def attack(self, character: CharacterState, monster: MonsterState, *, thrown: bool = False) -> tuple[list[str], dict]:
         from .class_features import (
             apply_sneak_attack,
             attack_advantage_roll,
@@ -1298,25 +1429,27 @@ class GameEngine:
         from .combat_range import consume_ammunition, evaluate_player_attack_range
 
         weapon = equipped_weapon(character)
-        range_ctx = evaluate_player_attack_range(character, weapon)
+        range_ctx = evaluate_player_attack_range(character, weapon, thrown=thrown)
         bonus = attack_modifier(character, weapon) + item_attack_bonus(character)
+        ammo_note = ""
+        if weapon.weapon_type == "ranged" or (thrown and weapon.ammunition):
+            spent, ammo_note = consume_ammunition(character, weapon)
+            if not spent:
+                return [f"You have no ammunition for {weapon.name}."], {}
         attack_roll, natural, lucky_note = attack_advantage_roll(
             self, character, bonus, range_disadvantage=range_ctx.disadvantage
         )
         weapon_label = weapon.name if weapon.key != "unarmed" else "your weapon"
+        if thrown:
+            weapon_label = f"thrown {weapon_label}"
         class_facts: dict = {}
         if natural == 1:
             character.combat_flags["hidden"] = False
             character.combat_flags["attack_advantage"] = False
             return [
-                f"Attack with {weapon_label}: {attack_roll.total} (d20 +{bonus}) — critical miss.{lucky_note}"
+                f"Attack with {weapon_label}: {attack_roll.total} (d20 +{bonus}) — critical miss.{lucky_note}{ammo_note}"
             ], class_facts
         hit = natural == 20 or attack_roll.total >= monster.armor_class
-        ammo_note = ""
-        if hit:
-            spent, ammo_note = consume_ammunition(character, weapon)
-            if not spent:
-                return [f"Attack hits but you have no ammunition for {weapon.name}."], class_facts
         if not hit:
             character.combat_flags["hidden"] = False
             character.combat_flags["attack_advantage"] = False
@@ -1433,9 +1566,9 @@ class GameEngine:
                     None,
                 )
             monster = build_monster(character.difficulty, target_key)
-            from .combat_positioning import init_combat_distance
+            from .combat_positioning import ensure_encounter_distance
 
-            events.extend(init_combat_distance(character, monster_template_key(monster)))
+            events.extend(ensure_encounter_distance(character, monster_template_key(monster)))
         elif monster is None:
             return (
                 TurnResult(action, ["No enemy is in front of you."], False),
@@ -1463,17 +1596,18 @@ class GameEngine:
         blocked_turn = self._begin_player_combat_action(character, action)[1]
         if blocked_turn:
             return self._finish_paralyzed_player_turn(character, action, monster)
-        from .combat_range import evaluate_player_attack_range, has_ammunition
+        from .combat_range import attack_is_thrown, evaluate_player_attack_range, has_ammunition
         from .equipment import equipped_weapon
 
         weapon = equipped_weapon(character)
-        range_ctx = evaluate_player_attack_range(character, weapon)
+        thrown = attack_is_thrown(action, weapon)
+        range_ctx = evaluate_player_attack_range(character, weapon, thrown=thrown)
         if not range_ctx.allowed:
             return (
                 TurnResult(action, [range_ctx.denial], False, costs_adventure_mana=False),
                 monster,
             )
-        if not has_ammunition(character, weapon):
+        if weapon.weapon_type == "ranged" and not has_ammunition(character, weapon):
             return (
                 TurnResult(
                     action,
@@ -1488,11 +1622,11 @@ class GameEngine:
         ok, reason = reserve_combat_cost(character, "action")
         if not ok:
             return TurnResult(action, [reason], False, costs_adventure_mana=False), monster
-        attack_events, attack_facts = self.attack(character, monster)
+        attack_events, attack_facts = self.attack(character, monster, thrown=thrown)
         events.extend(attack_events)
         attack_class_facts = attack_facts
         if monster.hp == 0:
-            character.in_combat = False
+            self._exit_combat(character)
             reward = monster.reward_xp
             defeated_key = monster_template_key(monster)
             character.exploration_cooldown = 1
@@ -1583,6 +1717,9 @@ class GameEngine:
 
         if intent.kind == END_TURN:
             return self._resolve_end_combat_turn(character, action, monster)
+
+        if intent.kind == COMBAT_MOVE:
+            return self._resolve_combat_move(character, action, monster, intent.move_delta_ft)
 
         if intent.kind == DEFEND:
             if monster is None or not character.in_combat:
@@ -1756,7 +1893,7 @@ class GameEngine:
             check, success, lucky = self.ability_check(character, "dexterity", FLEE_DC)
             if not success:
                 return TurnResult(action, [f"Dexterity check: {check.total} vs DC {FLEE_DC} — you fail to break away.{lucky}"], True), monster
-            character.in_combat = False
+            self._exit_combat(character)
             character.exploration_cooldown = 1
             from .combat_action_economy import clear_economy_on_combat_end
 

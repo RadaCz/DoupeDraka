@@ -21,6 +21,7 @@ EQUIP = "equip"
 QUEST = "quest"
 CLASS_FEATURE = "class_feature"
 END_TURN = "end_turn"
+COMBAT_MOVE = "combat_move"
 
 SECOND_WIND_PATTERN = re.compile(r"\b(?:second wind|druh[yý]\s+dech)\b", re.IGNORECASE)
 END_TURN_PATTERN = re.compile(
@@ -93,6 +94,7 @@ _KIND_ORDER = (
     USE_ITEM,
     EQUIP,
     END_TURN,
+    COMBAT_MOVE,
     CAST,
     FLEE,
     DEFEND,
@@ -160,6 +162,7 @@ class ActionIntent:
     target_hint: str = ""
     quest_step: str = ""
     class_feature: str = ""
+    move_delta_ft: int = 0
 
 
 def _clause_negates(clause: str, escaped_term: str) -> bool:
@@ -220,6 +223,10 @@ def _matched_kinds(text: str) -> set[str]:
         found.add(CLASS_FEATURE)
     if END_TURN_PATTERN.search(text):
         found.add(END_TURN)
+    from .combat_move import is_combat_move_command
+
+    if is_combat_move_command(text):
+        found.add(COMBAT_MOVE)
     return found
 
 
@@ -276,6 +283,7 @@ def parse_action_intent(action: str) -> ActionIntent:
             confidence = 0.9 if kind in (CAST, ATTACK, TRAVEL, QUEST) else 0.8
             step = quest_step if kind == QUEST else ""
             feature = ""
+            move_delta = 0
             if kind == CLASS_FEATURE:
                 if SECOND_WIND_PATTERN.search(text):
                     feature = "second_wind"
@@ -283,7 +291,18 @@ def parse_action_intent(action: str) -> ActionIntent:
                     feature = "arcane_recovery"
                 else:
                     feature = "hide"
-            return ActionIntent(kind, text, confidence=confidence, quest_step=step, class_feature=feature)
+            if kind == COMBAT_MOVE:
+                from .combat_move import combat_move_delta_ft
+
+                parsed = combat_move_delta_ft(text)
+                if parsed is None:
+                    continue
+                if parsed == 0:
+                    return ActionIntent(REJECTED, text, confidence=0.9, needs_clarification=True)
+                move_delta = parsed
+            return ActionIntent(
+                kind, text, confidence=confidence, quest_step=step, class_feature=feature, move_delta_ft=move_delta
+            )
 
     if quest_negated:
         return ActionIntent(REJECTED, text, confidence=0.85, needs_clarification=True)

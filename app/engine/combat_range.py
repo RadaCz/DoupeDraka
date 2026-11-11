@@ -2,9 +2,18 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
 from .equipment import WeaponDefinition
+
+_THROW_PATTERN = re.compile(r"\b(?:throw|h(?:o|ů)d(?:it)?|hodit)\b", re.IGNORECASE)
+
+
+def attack_is_thrown(action: str, weapon: WeaponDefinition) -> bool:
+    if weapon.thrown_normal_ft <= 0:
+        return False
+    return bool(_THROW_PATTERN.search(action))
 from .models import CharacterState
 
 MELEE_REACH_FT = 5

@@ -63,6 +63,15 @@ def init_combat_distance(character: CharacterState, monster_key: str) -> list[st
     return [f"Combat opens at {character.combat_distance_ft} ft."]
 
 
+def ensure_encounter_distance(character: CharacterState, monster_key: str) -> list[str]:
+    """Set opening distance once per combat — never overwrite an active positioning state."""
+    if not character.in_combat:
+        return []
+    if character.combat_distance_ft > 0:
+        return []
+    return init_combat_distance(character, monster_key)
+
+
 def reset_movement_on_player_turn(character: CharacterState) -> None:
     character.combat_movement_remaining_ft = max(0, int(character.speed or 30))
 

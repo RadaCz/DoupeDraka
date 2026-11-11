@@ -102,7 +102,7 @@ WEAPONS: dict[str, WeaponDefinition] = {
         "dagger", "dagger", "1d4", "strength", finesse=True, thrown_normal_ft=20, thrown_long_ft=60
     ),
     "quarterstaff": WeaponDefinition(
-        "quarterstaff", "quarterstaff", "1d6", "strength", damage_type="bludgeoning", thrown_normal_ft=20, thrown_long_ft=60
+        "quarterstaff", "quarterstaff", "1d6", "strength", damage_type="bludgeoning"
     ),
     "handaxe": WeaponDefinition(
         "handaxe", "handaxe", "1d6", "strength", thrown_normal_ft=20, thrown_long_ft=60

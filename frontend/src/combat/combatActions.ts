@@ -8,8 +8,16 @@ import {
   spellEconomySlot,
   type EconomySlot,
 } from './combatEconomy';
+import { readCombatTactics } from './combatRange';
 
-export type CombatActionKind = 'attack' | 'defend' | 'flee' | 'spell' | 'potion' | 'class_feature';
+export type CombatActionKind =
+  | 'attack'
+  | 'defend'
+  | 'flee'
+  | 'spell'
+  | 'potion'
+  | 'class_feature'
+  | 'movement';
 
 export interface CombatActionItem {
   id: string;
@@ -51,6 +59,10 @@ export function buildCombatActions(
   const enemy = character.combatant?.name ?? t('the enemy');
   const playerTurn = isPlayerCombatTurn(character);
   const economy = readCombatEconomy(character);
+  const tactics = readCombatTactics(character);
+  const movementLeft =
+    tactics?.movement_remaining_ft ?? (character.in_combat ? (character.speed ?? 30) : 0);
+  const moveStep = movementLeft >= 15 ? 15 : movementLeft;
   const modeled = modeledCombatSpells(character, spells);
   const soleSpellSlot = modeled.length === 1 ? spellEconomySlot(modeled[0].name) : 'action';
   const potion = hasHealingPotion(character);
@@ -99,8 +111,39 @@ export function buildCombatActions(
     );
   }
 
+  const movementActions: CombatActionItem[] = [];
+  if (character.in_combat && playerTurn) {
+    movementActions.push(
+      wrap(
+        {
+          id: 'advance',
+          kind: 'movement',
+          label: t('Advance'),
+          description: t('Move closer to the enemy (uses movement, not your Action).'),
+          glyph: '⇢',
+          action: moveStep > 0 ? `advance ${moveStep} ft` : undefined,
+        },
+        moveStep <= 0,
+        t('No movement remaining this turn.'),
+      ),
+      wrap(
+        {
+          id: 'step_back',
+          kind: 'movement',
+          label: t('Step back'),
+          description: t('Increase distance (uses movement, not your Action).'),
+          glyph: '⇠',
+          action: moveStep > 0 ? `step back ${moveStep} ft` : undefined,
+        },
+        moveStep <= 0,
+        t('No movement remaining this turn.'),
+      ),
+    );
+  }
+
   const actions: CombatActionItem[] = [
     ...featureActions,
+    ...movementActions,
     wrap(
       {
         id: 'attack',
