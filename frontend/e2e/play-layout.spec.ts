@@ -5,7 +5,7 @@ import {
   assertPlayStoryFillsMiddle,
   simulateMobileKeyboard,
 } from './mobile-helpers.ts';
-import { completeWizardFighter, mockTelegramWebApp, signedTelegramInitData } from './telegram.ts';
+import { completeWizardFighter, HOME_HEADING, mockTelegramWebApp, signedTelegramInitData } from './telegram.ts';
 
 const VIEWPORTS = [
   { width: 320, height: 568 },
@@ -16,10 +16,11 @@ const VIEWPORTS = [
 
 for (const [index, viewport] of VIEWPORTS.entries()) {
   test(`play layout at ${viewport.width}x${viewport.height}`, async ({ page }, testInfo) => {
-    const telegramId = 760_100_000 + index;
+    const telegramId = 762_200_000 + index;
     await page.setViewportSize(viewport);
     await mockTelegramWebApp(page, signedTelegramInitData(telegramId));
     await page.goto('/');
+    await expect(page.getByRole('heading', { name: HOME_HEADING })).toBeVisible({ timeout: 25_000 });
     await completeWizardFighter(page, `Layout ${viewport.width}`);
     await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: /^Adventure$/i }).click();
 

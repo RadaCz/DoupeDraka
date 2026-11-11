@@ -18,7 +18,7 @@ export default defineConfig({
   forbidOnly: Boolean(process.env.CI),
   timeout: 120_000,
   retries: process.env.CI ? 1 : 0,
-  reporter: 'line',
+  reporter: [['list'], ['line']],
   outputDir: '../.playwright-results',
   projects: visualOnly
     ? [{ name: 'visual', testMatch: ['**/visual-baseline.spec.ts'] }]

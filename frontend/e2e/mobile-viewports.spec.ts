@@ -4,7 +4,7 @@ import {
   assertComposerAboveBottomNav,
   assertNoHorizontalOverflow,
 } from './mobile-helpers.ts';
-import { completeWizardFighter, mockTelegramWebApp, signedTelegramInitData } from './telegram.ts';
+import { completeWizardFighter, HOME_HEADING, mockTelegramWebApp, signedTelegramInitData } from './telegram.ts';
 
 const MOBILE_VIEWPORTS = [
   { width: 320, height: 568, label: '320x568' },
@@ -22,7 +22,7 @@ MOBILE_VIEWPORTS.forEach((viewport, index) => {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     await mockTelegramWebApp(page, signedTelegramInitData(telegramId));
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: /adventure awaits/i })).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByRole('heading', { name: HOME_HEADING })).toBeVisible({ timeout: 25_000 });
     await completeWizardFighter(page, `Viewport ${viewport.label}`);
 
     await assertNoHorizontalOverflow(page);

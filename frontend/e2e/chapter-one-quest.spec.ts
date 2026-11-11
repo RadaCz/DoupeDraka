@@ -18,11 +18,19 @@ test.describe.configure({ mode: 'serial' });
 test.setTimeout(900_000);
 
 test('completes chapter one through UI chips and map travel', async ({ page, request }, testInfo) => {
+  const marks: Record<string, number> = {};
+  const phase = (label: string) => {
+    marks[label] = Date.now();
+  };
+  const started = Date.now();
+  phase('start');
+
   const telegramId = 755_000_000 + testInfo.workerIndex;
   const initData = signedTelegramInitData(telegramId);
   await mockTelegramWebApp(page, initData);
   await page.goto('/');
   await completeWizardFighter(page, 'Chapter One E2E');
+  phase('wizard');
 
   const characterId = await page.evaluate(() => localStorage.getItem('active_character_id'));
   expect(characterId).toBeTruthy();
@@ -36,9 +44,11 @@ test('completes chapter one through UI chips and map travel', async ({ page, req
   await openMap(page);
   await mapTravelTo(page, /Shrine|Forgotten|Svatyn/i);
 
+  phase('travel_shrine');
   await clickQuestChip(page, /Caldus|zvon|bell/i);
   await waitForQuestFlag(request, token, characterId!, 'bell_quest_accepted');
-  const journal = page.getByRole('log', { name: 'Adventure journal' });
+  phase('caldus_quest');
+  const journal = page.getByRole('log', { name: /adventure journal|deník dobrodružství/i });
   await expect(journal).toContainText(/Goblin Market|goblin|Nib|trh/i, { timeout: 30_000 });
 
   await clickQuestChip(page, /Goblin Market|Gobliní trh|Travel to/i);
@@ -69,11 +79,13 @@ test('completes chapter one through UI chips and map travel', async ({ page, req
 
   await clickQuestChip(page, /Vault|Krypt|Caldus/i);
   await waitForQuestFlag(request, token, characterId!, 'vault_unlocked');
+  phase('vault_unlocked');
 
   await openMap(page);
   await mapTravelTo(page, /Sunken Corridor|Potopen/i);
   await backToAdventure(page);
   await completeVaultDescentViaEngine(request, token, characterId!);
+  phase('vault_descent_l3');
   await syncPlayScreen(page);
 
   await openMap(page);
@@ -89,9 +101,18 @@ test('completes chapter one through UI chips and map travel', async ({ page, req
   const pitReady = await fetchCharacterState(request, token, characterId!);
   expect(pitReady.level, 'Bell Warden gate expects L3+').toBeGreaterThanOrEqual(3);
   await completeBossViaEngine(request, token, characterId!);
+  phase('boss_complete');
   await syncPlayScreen(page);
-  await expect(page.getByRole('log', { name: 'Adventure journal' })).toContainText(
+  await expect(page.getByRole('log', { name: /adventure journal|deník dobrodružství/i })).toContainText(
     /Chapter complete|kapitol|bells fall silent|Warden.*defeated|zlato/i,
-    { timeout: 60_000 },
+    { timeout: 45_000 },
   );
+  phase('done');
+  const order = Object.keys(marks);
+  const timings = order.map((key, index) => {
+    const end = index + 1 < order.length ? marks[order[index + 1]!]! : Date.now();
+    return `${key}=${((end - marks[key]!) / 1000).toFixed(1)}s`;
+  });
+  timings.push(`total=${((Date.now() - started) / 1000).toFixed(1)}s`);
+  console.info(`[chapter-one-e2e] ${timings.join(' ')}`);
 });

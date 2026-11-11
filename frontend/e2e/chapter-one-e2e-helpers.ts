@@ -63,26 +63,28 @@ export async function waitForQuestFlag(
   characterId: string,
   flag: string,
   expected = true,
-  timeoutMs = 120_000,
+  timeoutMs = 60_000,
 ) {
   await expect.poll(async () => {
     const state = await fetchCharacterState(request, token, characterId);
     return Boolean(state.quest_flags?.[flag]) === expected;
-  }, { timeout: timeoutMs }).toBe(true);
+  }, { timeout: timeoutMs, intervals: [250, 500, 1000] }).toBe(true);
 }
 
+const ADVENTURE_JOURNAL = /adventure journal|deník dobrodružství/i;
+
 export async function waitForActionRound(page: Page) {
-  await expect(page.getByRole('log', { name: 'Adventure journal' })).toBeVisible({ timeout: 90_000 });
-  await expect(page.locator('button.composer-send[aria-busy="true"]')).toHaveCount(0, { timeout: 90_000 });
-  const journal = page.getByRole('log', { name: 'Adventure journal' });
-  await expect(journal.locator('.journal-action').last()).toBeVisible({ timeout: 90_000 });
+  const journal = page.getByRole('log', { name: ADVENTURE_JOURNAL });
+  await expect(journal).toBeVisible({ timeout: 45_000 });
+  await expect(page.locator('button.composer-send[aria-busy="true"]')).toHaveCount(0, { timeout: 45_000 });
+  await expect(journal.locator('.journal-action').last()).toBeVisible({ timeout: 45_000 });
 }
 
 export async function clickQuestChip(page: Page, pattern: RegExp) {
   const chip = page.locator('.suggested-actions-row button').filter({ hasText: pattern });
-  await expect(chip.first()).toBeVisible({ timeout: 30_000 });
+  await expect(chip.first()).toBeVisible({ timeout: 20_000 });
   await chip.first().click();
-  const inCombat = await page.getByText(/Your turn|Tvůj tah/i).waitFor({ state: 'visible', timeout: 60_000 })
+  const inCombat = await page.getByText(/Your turn|Tvůj tah/i).waitFor({ state: 'visible', timeout: 25_000 })
     .then(() => true)
     .catch(() => false);
   if (!inCombat) await waitForActionRound(page);
@@ -104,11 +106,11 @@ export async function openMap(page: Page) {
 export async function backToAdventure(page: Page) {
   const onMap = await page.getByRole('heading', { name: /^Map$|^Mapa$/i }).isVisible().catch(() => false);
   if (!onMap) {
-    await expect(page.getByRole('log', { name: 'Adventure journal' })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole('log', { name: ADVENTURE_JOURNAL })).toBeVisible({ timeout: 15_000 });
     return;
   }
   await page.getByRole('button', { name: /Continue adventure|Pokračovat v dobrodružství/i }).click();
-  await expect(page.getByRole('log', { name: 'Adventure journal' })).toBeVisible();
+  await expect(page.getByRole('log', { name: ADVENTURE_JOURNAL })).toBeVisible();
 }
 
 export async function resolveCombat(page: Page, maxTurns = 48) {
@@ -174,7 +176,7 @@ export async function syncPlayScreen(page: Page) {
     const nav = page.getByRole('navigation', { name: /Main navigation|Hlavní navigace/i });
     await nav.getByRole('button', { name: /^Adventure$|^Hra$/i }).click();
   }
-  await expect(page.getByRole('log', { name: 'Adventure journal' })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole('log', { name: ADVENTURE_JOURNAL })).toBeVisible({ timeout: 30_000 });
 }
 
 export async function travelToPitViaEngine(
@@ -199,7 +201,7 @@ export async function completeVaultDescentViaEngine(
   for (const step of ['travel to The Vault of Echoes']) {
     await postGameAction(request, token, characterId, step);
   }
-  for (let round = 0; round < 60; round += 1) {
+  for (let round = 0; round < 40; round += 1) {
     const state = await fetchCharacterState(request, token, characterId);
     if (state.quest_flags?.vault_first_descent_story_awarded) break;
     if (state.hp <= 0) {
@@ -211,7 +213,7 @@ export async function completeVaultDescentViaEngine(
       await postGameAction(request, token, characterId, `attack ${foe}`);
       continue;
     }
-    break;
+    await postGameAction(request, token, characterId, 'search the vault');
   }
   const final = await fetchCharacterState(request, token, characterId);
   expect(final.level, `Vault descent should reach L3+, got L${final.level}`).toBeGreaterThanOrEqual(3);
@@ -251,7 +253,7 @@ export async function completeBossViaEngine(
   let state = await fetchCharacterState(request, token, characterId);
   expect(state.level, `Bell Warden requires level 3+, got L${state.level}`).toBeGreaterThanOrEqual(3);
 
-  for (let round = 0; round < 400; round += 1) {
+  for (let round = 0; round < 200; round += 1) {
     state = await fetchCharacterState(request, token, characterId);
     if (state.quest_flags?.chapter_one_complete) return;
     if ((state.hp ?? 1) <= 0) {

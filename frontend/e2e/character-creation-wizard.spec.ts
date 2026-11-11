@@ -2,7 +2,9 @@ import { expect, test } from '@playwright/test';
 import {
   completeCharacterWizard,
   completeWizardWizardCaster,
+  HOME_HEADING,
   mockTelegramWebApp,
+  openCharacterCreation,
   signedTelegramInitData,
 } from './telegram.ts';
 import { assertNoHorizontalOverflow } from './mobile-helpers.ts';
@@ -57,8 +59,8 @@ test('wizard scrolls on narrow viewport without horizontal overflow', async ({ p
   await page.setViewportSize({ width: 375, height: 812 });
   await mockTelegramWebApp(page, signedTelegramInitData(telegramId));
   await page.goto('/');
-  await page.getByRole('button', { name: /create your character/i }).click();
-  await page.getByRole('button', { name: 'Step-by-step wizard' }).click();
+  await openCharacterCreation(page);
+  await page.getByRole('button', { name: /step-by-step wizard|průvodce krok za krokem/i }).click();
   await assertNoHorizontalOverflow(page);
   await page.getByRole('button', { name: /^Halfling\b/i }).click();
   await page.getByRole('button', { name: 'Continue', exact: true }).click();

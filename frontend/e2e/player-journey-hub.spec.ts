@@ -4,7 +4,7 @@ import { mockTelegramWebApp, signedTelegramInitData, completeWizardFighter } fro
 test.describe.configure({ mode: 'serial' });
 
 test('primary hub screens stay reachable without duplicate stream posts', async ({ page }, testInfo) => {
-  const telegramId = 760_000_000 + testInfo.workerIndex;
+  const telegramId = 763_000_000 + testInfo.workerIndex;
   const streamStatuses: number[] = [];
   page.on('response', response => {
     if (response.url().includes('/actions/stream') && response.request().method() === 'POST') {
