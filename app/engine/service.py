@@ -233,6 +233,9 @@ class GameEngine:
         if character.character_class == "cleric":
             apply_life_domain_prepared_spells(character)
         refresh_armor_class(character)
+        from .race_features import hydrate_race_on_load
+
+        hydrate_race_on_load(character)
         return character
 
     def roll(self, dice: str, modifier: int = 0, critical: bool = False) -> RollResult:
@@ -1165,11 +1168,17 @@ class GameEngine:
         return character
 
     def _d20_check(self, character: CharacterState, modifier: int) -> tuple[RollResult, str]:
+        from .race_features import halfling_lucky_reroll
+
         roll = self.roll("1d20", modifier)
-        note = ""
-        if character.race == "halfling" and roll.values[0] == 1:
-            roll = self.roll("1d20", modifier)
-            note = f" Halfling Lucky: 1 → {roll.values[0]}."
+        natural, note = halfling_lucky_reroll(
+            character,
+            roll.values[0],
+            lambda: self.rng.randint(1, 20),
+        )
+        if natural != roll.values[0]:
+            total = natural + modifier
+            roll = RollResult(roll.dice, (natural,), modifier, total)
         return roll, note
 
     def ability_check(self, character: CharacterState, ability: str, dc: int) -> tuple[RollResult, bool, str]:
@@ -1228,9 +1237,22 @@ class GameEngine:
         base = self.modifier(character.abilities.get(ability, 10))
         return base + skill_proficiency_multiplier(character, skill)
 
-    def skill_check(self, character: CharacterState, skill: str, dc: int) -> tuple[RollResult, bool, str]:
-        result, note = self._d20_check(character, self.skill_modifier(character, skill))
-        return result, result.total >= dc, note
+    def skill_check(
+        self,
+        character: CharacterState,
+        skill: str,
+        dc: int,
+        *,
+        stonework: bool = False,
+    ) -> tuple[RollResult, bool, str]:
+        from .race_features import stonecunning_bonus
+
+        modifier = self.skill_modifier(character, skill) + stonecunning_bonus(character, skill, stonework=stonework)
+        result, note = self._d20_check(character, modifier)
+        extra = ""
+        if stonecunning_bonus(character, skill, stonework=stonework):
+            extra = " (Stonecunning)"
+        return result, result.total >= dc, note + extra
 
     @staticmethod
     def _explore_skill_for_text(text: str) -> str | None:

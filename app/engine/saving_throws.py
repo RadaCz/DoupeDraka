@@ -24,6 +24,7 @@ class SavingThrowRequest:
     source_id: str
     advantage: bool = False
     disadvantage: bool = False
+    tags: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -151,7 +152,9 @@ def perform_saving_throw(
     proficient = request.ability in character.saving_throw_proficiencies
     modifier = ability_mod + (prof if proficient else 0)
 
-    advantage = request.advantage
+    from .race_features import halfling_lucky_reroll, saving_throw_racial_advantage
+
+    advantage = request.advantage or saving_throw_racial_advantage(character, request)
     disadvantage = request.disadvantage
     if advantage and disadvantage:
         advantage = False
@@ -175,11 +178,7 @@ def perform_saving_throw(
     else:
         natural = pull_natural()
 
-    lucky_note = ""
-    if character.race == "halfling" and natural == 1:
-        reroll = pull_natural()
-        lucky_note = f" Halfling Lucky: 1 → {reroll}."
-        natural = reroll
+    natural, lucky_note = halfling_lucky_reroll(character, natural, pull_natural)
 
     total = natural + modifier
     success = total >= request.dc

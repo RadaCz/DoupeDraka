@@ -21,6 +21,11 @@ from .engine.equipment import load_character_state
 from .engine.models import CharacterState, MonsterState
 from .engine.locations import LOCATIONS
 from .engine.service import GameEngine
+from .engine.race_features import enrich_character_dict
+
+
+def character_api_payload(character: CharacterState) -> dict:
+    return enrich_character_dict(character)
 from .heroes import HEROES, get_hero
 from .campaign_memory import effective_long_term_memory
 from .narration_dossier import narration_beats_from_journal, scene_dossier_for_character
@@ -514,7 +519,7 @@ async def create_character(request: CharacterCreate, user: User = Depends(get_us
         record_character_created(session, character.id, character.race, character.character_class)
         await session.commit()
     logger.info(f"Character created: {character.name} by user {user.username}")
-    return asdict(character)
+    return character_api_payload(character)
 
 @app.get("/reference")
 async def get_reference() -> dict:
@@ -674,7 +679,8 @@ async def get_character(character_id: str, user: User = Depends(get_user_by_toke
         if not record or record.owner_id != user.id: 
             logger.warning(f"Character not found for user {user.username}: {character_id}")
             raise HTTPException(404, "Character not found")
-        return asdict(load_character_state(decode_character_state(record.payload)))
+        character = load_character_state(decode_character_state(record.payload))
+        return character_api_payload(character)
 
 IDEMPOTENCY_HEADER = "Idempotency-Key"
 IDEMPOTENCY_KEY_LIMIT = 64
@@ -1174,7 +1180,7 @@ async def commit_action_turn(
             )
 
             response = ActionResponse(
-                events=result.events, narration=fallback, character=asdict(character),
+                events=result.events, narration=fallback, character=character_api_payload(character),
                 energy_tenths=balance, energy=economy.to_units(balance), tier=stored_tier,
                 narration_status="fallback",
                 spell_facts=result.spell_facts or None,

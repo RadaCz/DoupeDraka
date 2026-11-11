@@ -26,6 +26,7 @@ test('manual step-by-step creation persists on character sheet after reload', as
   await expect(page.getByRole('heading', { name: 'Manual E2E' })).toBeVisible();
   await expect(page.getByText(/Athletics/i)).toBeVisible();
   await expect(page.getByText(/Intimidation/i)).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Racial traits|Rasove vlastnosti/i })).toBeVisible();
 
   await page.reload();
   await expect(page.getByRole('heading', { name: /Welcome back, Manual E2E/i })).toBeVisible();
@@ -63,6 +64,7 @@ test('wizard scrolls on narrow viewport without horizontal overflow', async ({ p
   await page.getByRole('button', { name: /step-by-step wizard|průvodce krok za krokem/i }).click();
   await assertNoHorizontalOverflow(page);
   await page.getByRole('button', { name: /^Halfling\b/i }).click();
+  await expect(page.getByText(/Active in engine|Aktivni v engine/i).first()).toBeVisible();
   await page.getByRole('button', { name: 'Continue', exact: true }).click();
   await assertNoHorizontalOverflow(page);
   await expect(page.getByRole('heading', { name: /Choose a class/i })).toBeVisible();

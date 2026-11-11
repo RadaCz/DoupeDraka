@@ -470,6 +470,9 @@ def load_character_state(data: dict) -> CharacterState:
 
     character = CharacterState(**data)
     ensure_class_identity_defaults(character)
+    from .race_features import hydrate_race_on_load
+
+    hydrate_race_on_load(character)
     migrate_item_instances(character)
     return character
 

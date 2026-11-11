@@ -175,7 +175,9 @@ It is **not yet proven as an enjoyable tabletop-like experience**. Gameplay is *
 | Feature | Status | Evidence | Tests / journey |
 |---------|--------|----------|-----------------|
 | Character creation (4 race / 4 class) | IMPLEMENTED_AND_TESTED | `ruleset_v1.py`, `GameEngine.create_character` | API + wizard tests |
-| Racial ability bonuses at create | IMPLEMENTED_AND_TESTED | engine + `test_hero` patterns | pytest |
+| Racial ability bonuses at create | IMPLEMENTED_AND_TESTED | engine + `test_race_bonuses.py` | pytest |
+| Racial traits (Lucky, saves, poison, Perception) | IMPLEMENTED_AND_TESTED | `race_features.py`, `test_sprint26_racial_traits.py` | pytest; tagged content optional |
+| Darkvision / Trance / Nimbleness | DEFERRED | data contract or no movement grid | Sprint 26 acceptance |
 | HP / AC / abilities / XP / level ≤5 | IMPLEMENTED_AND_TESTED | `models.py`, `service._grant_xp` | combat + progression tests |
 | ActionIntent routing | IMPLEMENTED_AND_TESTED | `intent.py` | `test_intent_negation.py` |
 | Travel + vault gating | IMPLEMENTED_AND_TESTED | `locations.travel_allowed`, `_travel` | `test_chapter_one.py` |

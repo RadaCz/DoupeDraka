@@ -540,8 +540,15 @@ const cs: Record<string, string> = {
   'Search the cellar': 'Prohledat sklep',
   'Listen for movement': 'Naslouchat pohybu',
   Planned: 'Pripravovano',
-  'Ability score bonuses from your species are applied at creation. Trait text below is SRD reference — most traits are not modeled in Ruleset v1 yet.':
-    'Bonuses k vlastnostem z rasy se aplikuji pri vytvořeni. Text vlastnosti je reference SRD — vetsina vlastnosti ještě není v Ruleset v1 modelech.',
+  'Ability score bonuses from your species are applied at creation. Traits marked “Active in engine” are enforced by the game rules.':
+    'Bonuses k vlastnostem z rasy se aplikuji pri vytvoreni. Vlastnosti oznacene „Aktivni v engine“ vynucuje herni pravidla.',
+  'Racial traits': 'Rasove vlastnosti',
+  'Ability increases': 'Navyseni vlastnosti',
+  'Active in engine': 'Aktivni v engine',
+  'Deferred in MVP': 'Odlozeno v MVP',
+  'Reference only': 'Pouze reference',
+  'Used when the engine models light and vision.': 'Pouzije se, az engine modeluje svetlo a videni.',
+  'Darkvision': 'Temnobys',
   'Ruleset v1 supports Human, Elf, Dwarf, and Halfling for chapter one.':
     'Ruleset v1 podporuje pro kapitolu 1 lidskou, elfskou, trpaslickou a halfling rasu.',
   'Ruleset v1 supports Fighter, Rogue, Cleric, and Wizard in play.':

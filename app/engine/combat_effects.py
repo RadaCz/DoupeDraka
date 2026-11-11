@@ -29,6 +29,8 @@ class SaveEffectDefinition:
     outcome_success_en: str
     outcome_fail_en: str
     on_fail_condition: str | None = None
+    save_tags: tuple[str, ...] = ()
+    damage_type: str = ""
 
 
 @dataclass(frozen=True)
@@ -47,6 +49,8 @@ class EnemySaveAbility:
     outcome_success_en: str
     outcome_fail_en: str
     on_fail_condition: str | None = None
+    save_tags: tuple[str, ...] = ()
+    damage_type: str = ""
 
 
 LOCATION_HAZARDS: dict[str, SaveEffectDefinition] = {
@@ -126,6 +130,7 @@ def resolve_save_effect(
         dc=definition.dc,
         source=definition.source,
         source_id=definition.source_id,
+        tags=definition.save_tags,
     )
     result = engine.resolve_saving_throw(character, request)
     events = format_saving_throw_lines(result, context=definition.context_en)
@@ -139,6 +144,14 @@ def resolve_save_effect(
             damage = _apply_damage_multiplier(rolled.total, definition.on_fail)
             tail = definition.outcome_fail_en
         if damage > 0:
+            from .race_features import apply_poison_damage_resistance
+
+            reduced, resist_note = apply_poison_damage_resistance(
+                character, damage, damage_type=definition.damage_type,
+            )
+            damage = reduced
+            if resist_note:
+                events.append(resist_note.strip())
             character.hp = max(0, character.hp - damage)
             events.append(f"{tail} You take {damage} damage. Your HP: {character.hp}/{character.max_hp}.")
         else:

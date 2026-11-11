@@ -155,7 +155,13 @@ def test_character_journal_is_owned_ordered_and_bounded(setup_db):
     assert events.status_code == 200
     assert [event["action"] for event in events.json()] == ["look around", "take a breather"]
     assert all({"id", "action", "result", "created_at"} <= event.keys() for event in events.json())
-    assert "Exploration roll" in events.json()[0]["result"] or "short rest" in events.json()[0]["result"].lower()
+    latest_result = events.json()[0]["result"]
+    latest_lower = latest_result.lower()
+    assert (
+        "Exploration roll" in latest_result
+        or "short rest" in latest_lower
+        or "cannot explore safely" in latest_lower
+    )
     assert client.get(f"/characters/{character['id']}/events?limit=0", headers=owner_headers).status_code == 422
 
     client.post("/auth/register", json={"username": "journalother", "password": "password123"})

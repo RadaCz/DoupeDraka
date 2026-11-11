@@ -49,6 +49,19 @@ export interface Character {
   arcane_recovery_available?: boolean;
   arcane_recovery_ready?: boolean;
   combat_flags?: Record<string, boolean>;
+  race_features?: {
+    race: string;
+    darkvision_ft: number | null;
+    traits: Array<{ id: string; name: string; modeled: boolean; deferred: boolean }>;
+  };
+}
+
+export interface RaceTraitReference {
+  name: string;
+  text: string;
+  trait_id?: string;
+  modeled?: boolean;
+  deferred?: boolean;
 }
 
 export type ItemKind = 'weapon' | 'armor' | 'shield' | 'gear';
@@ -78,7 +91,7 @@ export interface RaceReference {
   speed: number;
   ability_increase: Record<string, number>;
   subraces: string[];
-  traits: Array<{ name: string; text: string }>;
+  traits: RaceTraitReference[];
   mvp_playable?: boolean;
 }
 

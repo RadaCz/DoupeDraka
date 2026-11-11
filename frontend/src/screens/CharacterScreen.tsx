@@ -18,6 +18,7 @@ import {
 } from '../character/characterSheet';
 import { backgroundFeatureFor, backgroundFeatureUsed } from '../character/backgroundFeatures';
 import { classFeatureLines } from '../character/classFeatures';
+import { characterRaceFeatureRows } from '../character/raceTraits';
 import { heroSpellRows } from '../spells/spellbook';
 
 export function CharacterScreen({
@@ -61,7 +62,14 @@ export function CharacterScreen({
   const spellRows = useMemo(() => heroSpellRows(character, spells), [character, spells]);
   const features = useMemo(() => classFeatureLines(character, t), [character, t]);
   const backgroundFeature = useMemo(() => backgroundFeatureFor(character), [character]);
+  const raceTraits = useMemo(() => characterRaceFeatureRows(character), [character]);
   const hasSpellcasting = Object.values(character.max_spell_slots ?? {}).some(count => count > 0);
+
+  const engineTraitStatus = (trait: { modeled: boolean; deferred: boolean }) => {
+    if (trait.deferred) return t('Deferred in MVP');
+    if (trait.modeled) return t('Active in engine');
+    return t('Reference only');
+  };
 
   return (
     <section className="screen character-screen character-v2" aria-busy={busy || undefined}>
@@ -209,6 +217,29 @@ export function CharacterScreen({
                 {t('Usable at')}: {displayLocation(backgroundFeature.location, locale)}
               </p>
             </li>
+          </ul>
+        </section>
+      )}
+
+      {raceTraits.length > 0 && (
+        <section className="char-v2-section" aria-labelledby="char-race-heading">
+          <h2 id="char-race-heading" className="char-v2-section-title">{t('Racial traits')}</h2>
+          {character.race_features?.darkvision_ft != null && (
+            <p className="char-v2-section-lead">
+              {t('Darkvision')}: <strong className="tabular-nums">{character.race_features.darkvision_ft} {t('ft.')}</strong>
+              {' — '}
+              <span className="char-v2-muted-hint">{t('Used when the engine models light and vision.')}</span>
+            </p>
+          )}
+          <ul className="char-v2-spell-list">
+            {raceTraits.map(trait => (
+              <li key={trait.id} className="char-v2-spell-row">
+                <div className="char-v2-spell-head">
+                  <strong>{t(trait.name)}</strong>
+                  <small>{engineTraitStatus(trait)}</small>
+                </div>
+              </li>
+            ))}
           </ul>
         </section>
       )}

@@ -1,8 +1,16 @@
 # Roadmap
 
-Updated 2026-11-11 (`53a6fed` on `clean-main`; Sprint 25 in working tree). Chapter one is a gated six-location slice. ActionIntent routes player commands; **Pro NOT AVAILABLE** until OpenRouter exists.
+Updated 2026-11-11 (`3573362` on `clean-main`; Sprint 26 in working tree). Chapter one is a gated six-location slice. ActionIntent routes player commands; **Pro NOT AVAILABLE** until OpenRouter exists.
 
-## Priority 0g — Combat action economy (Sprint 25, local)
+## Priority 0h — Racial traits V1 (Sprint 26, local)
+- [x] `app/engine/race_features.py` — MVP Human / Elf / Dwarf / Halfling
+- [x] Lucky unified pipeline; tagged saves (poison, charm, fear); poison resistance; Stonecunning flag
+- [x] Wizard + Character Sheet UI; `/reference` modeled vs deferred
+- [x] `tests/test_sprint26_racial_traits.py` + E2E wizard badges
+- [ ] Darkvision as exploration mechanic — backlog
+- [ ] Trance / Halfling Nimbleness — deferred
+
+## Priority 0g — Combat action economy (Sprint 25, committed `3573362`)
 - [x] `app/engine/combat_action_economy.py` — action / bonus / reaction flags per player turn
 - [x] Healing Word, Second Wind, Hide, attacks, defend/flee/potion wired
 - [x] Combat UI economy strip (EN/CS)
@@ -29,8 +37,8 @@ Updated 2026-11-11 (`53a6fed` on `clean-main`; Sprint 25 in working tree). Chapt
 - [x] UI: 9-step `CharacterWizard.tsx` + quick generate with same rules
 - [x] Tests: `tests/test_character_creation_v2.py`; full pytest green on `9e7fbac` baseline (596+)
 - [x] Vitest **161 passed** on baseline CI #64; E2E **31 passed**
-- [ ] Racial traits beyond Lucky/Perception — Sprint 17
-- [ ] Background feature mechanics — Sprint 17
+- [x] Racial traits MVP — Sprint 26 (`docs/SPRINT_26_RACIAL_TRAITS_ACCEPTANCE.md`)
+- [x] Background feature mechanics — Sprint 24
 
 ## Priority 0c — Product UX Redesign V1 (historical audit 2026-11-09; partial implementation since)
 - [x] [`docs/PRODUCT_UX_AUDIT_V1.md`](docs/PRODUCT_UX_AUDIT_V1.md) — **historický** P0–P3 inventář (2026-11-09), ne aktuální backlog

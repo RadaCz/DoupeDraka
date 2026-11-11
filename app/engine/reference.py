@@ -261,6 +261,18 @@ BACKGROUNDS = (
 )
 
 
+def _race_traits_for_api(key: str, spec: RaceSpec) -> list[dict]:
+    from .race_features import public_race_reference_traits
+    from .ruleset_v1 import race_mvp_playable
+
+    if race_mvp_playable(key):
+        return public_race_reference_traits(key)
+    return [
+        {"name": trait.name, "text": trait.text, "trait_id": trait.name.lower().replace(" ", "_"), "modeled": False, "deferred": True}
+        for trait in spec.traits
+    ]
+
+
 def race_list() -> list[dict]:
     from .ruleset_v1 import race_mvp_playable
 
@@ -271,7 +283,7 @@ def race_list() -> list[dict]:
             "speed": spec.speed,
             "ability_increase": spec.ability_increase,
             "subraces": list(spec.subraces),
-            "traits": [{"name": trait.name, "text": trait.text} for trait in spec.traits],
+            "traits": _race_traits_for_api(key, spec),
             "mvp_playable": race_mvp_playable(key),
         }
         for key, spec in RACE_SPECS.items()

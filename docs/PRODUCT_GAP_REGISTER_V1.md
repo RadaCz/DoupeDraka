@@ -31,11 +31,12 @@
 
 | Area | Status | Source / evidence | Player impact | Priority | Next sprint |
 |------|--------|-------------------|---------------|----------|-------------|
-| Character creation wizard | **PARTIAL** | `CharacterWizard.tsx`, `character_creation.py`, E2E `character-creation-wizard.spec.ts`, `character-to-adventure.spec.ts` | 9-step UI + persistence; **4-class** create→play E2E (Sprint 20); quick summary on identity step | P0 | Class features, racial depth |
+| Character creation wizard | **PARTIAL** | `CharacterWizard.tsx`, `character_creation.py`, E2E `character-creation-wizard.spec.ts`, `character-to-adventure.spec.ts` | 9-step UI + persistence; **4-class** create→play E2E (Sprint 20); **racial traits modeled/deferred UI (Sprint 26)** | P0 | Remaining class depth |
 | Races (MVP 4) | **PARTIAL** | `service._d20_check`, `assemble_skill_proficiencies` | ASI + speed; **Lucky** on player d20 checks; Elf Perception | P0 | 17 — Darkvision, Dwarf resilience, Nimbleness |
 | Classes (MVP 4) | **PARTIAL** | `class_features.py`, `tests/test_class_identity_sprint21.py`, E2E `class-identity.spec.ts` | Lvl‑1 identity: Fighting Style, Second Wind, Expertise/Sneak/Hide, Life/Disciple, Wizard spellbook + **Arcane Recovery** (SRD budget); ostatní domény/styly deferred | P0 | Rozšířit featury mimo MVP 4 |
 | Backgrounds | **PARTIAL** | `background_features.py`, `MVP_BACKGROUNDS` | Six chapter-one features modeled; idempotent flags; more locations backlog | P1 | Expand beyond Ch.1 |
 | Abilities (standard array) | **IMPLEMENTED** | `catalog.STANDARD_ARRAY`, wizard step | Validated permutation; racial ASI after assign | P0 | — |
+| Racial traits (4 MVP races) | **PARTIAL** | `race_features.py`, `test_sprint26_racial_traits.py` | Lucky, Brave, Fey, Dwarven Resilience, Stonecunning (tagged), Keen Senses, darkvision data | P0 | Trance, Nimbleness, darkvision gameplay |
 | Skills & proficiency | **PARTIAL** | `skill_challenges.py`, `skill_check()`, Sprint 23 tests | Engine challenges @ Bandit Camp; fail-closed unknown actions; broader routing still backlog | P0 | More locations / inspect challenges |
 | Equipment at creation | **IMPLEMENTED** | `apply_starting_equipment`, `EQUIPMENT_PACKAGES` | Class packages + auto body armor; instances + slots at create | P1 | — |
 | Worn armor / shield AC | **IMPLEMENTED** | `equipment.compute_armor_class`, equip actions | SRD 5.1 MVP armor set; shield +2; proficiency enforced | P0 | Expand armor catalog |

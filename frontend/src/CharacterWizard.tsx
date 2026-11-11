@@ -13,6 +13,7 @@ import {
   STANDARD_ARRAY,
   type AbilityKey,
 } from './character/creation';
+import { raceTraitStatus } from './character/raceTraits';
 
 export interface CharacterDraft {
   name: string;
@@ -349,6 +350,9 @@ export function CharacterWizard({
             t={t}
             abilityText={abilityText}
           />
+          {race && (
+            <RaceTraitsPanel race={race} t={t} abilityText={abilityText} />
+          )}
         </div>
       )}
 
@@ -620,6 +624,41 @@ function AbilityPicker({
         </button>
       ))}
     </div>
+  );
+}
+
+function RaceTraitsPanel({
+  race,
+  t,
+  abilityText,
+}: {
+  race: RaceReference;
+  t: (label: string) => string;
+  abilityText: (values: Record<string, number>) => string;
+}) {
+  return (
+    <section className="wizard-race-traits" aria-labelledby="wizard-race-traits-heading">
+      <h2 id="wizard-race-traits-heading" className="wizard-note">
+        {t('Racial traits')}
+      </h2>
+      <p className="muted-copy">
+        {t('Ability score bonuses from your species are applied at creation. Traits marked “Active in engine” are enforced by the game rules.')}
+      </p>
+      <p className="wizard-note">
+        <strong>{t('Ability increases')}:</strong> {abilityText(race.ability_increase)}
+      </p>
+      <ul className="char-v2-spell-list wizard-trait-list">
+        {race.traits.map(trait => (
+          <li key={trait.trait_id ?? trait.name} className="char-v2-spell-row">
+            <div className="char-v2-spell-head">
+              <strong>{t(trait.name)}</strong>
+              <small>{raceTraitStatus(trait, t)}</small>
+            </div>
+            <p className="char-v2-spell-text">{t(trait.text)}</p>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
