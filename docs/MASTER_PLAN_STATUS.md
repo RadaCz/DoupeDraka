@@ -1,8 +1,8 @@
 # Master plan — stav (sync s DOUPEDRAKA_MASTER_PLAN.md v1.0)
 
-Poslední revize: **2026-11-11 (Sprint 20 — character→adventure audit + sheet/E2E; lokálně, necommitováno)**. Etapy 7–9 záměrně otevřené až po uzavření sólo smyčky.
+Poslední revize: **2026-11-11 (Sprint 21.1 — class identity + E2E stabilizace; lokálně, necommitováno)**. Etapy 7–9 záměrně otevřené až po uzavření sólo smyčky.
 
-**Kódový HEAD (commit):** `3102bf2` na `clean-main` (= origin po Sprint 19.3 push). **Sprint 20:** working tree diff (sheet, tests, E2E).
+**Kódový HEAD (commit):** `8b913cf` na `clean-main` (= `origin/clean-main`). **Sprint 21:** velký working tree diff (engine class features, FE, pytest, E2E, docs) — viz `docs/SPRINT_21_CLASS_IDENTITY_ACCEPTANCE.md`.
 
 **CI:** Poslední push `3102bf2` — GHA **neověřeno lokálně** (bez `gh`); Sprint 20 diff **necommitován**.
 **Staging HTTPS:** **NOT DEPLOYED** — viz `docs/STAGING_DEVICE_VALIDATION_V1.md`.  

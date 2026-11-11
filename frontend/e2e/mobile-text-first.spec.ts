@@ -5,7 +5,15 @@ import {
   assertLocatorInPageViewport,
   simulateMobileKeyboard,
 } from './mobile-helpers.ts';
-import { completeWizardFighter, ensureTelegramHome, mockTelegramWebApp, signedTelegramInitData } from './telegram.ts';
+import {
+  ACTION_TEXTBOX,
+  SEND_ACTION_BTN,
+  completeWizardFighter,
+  ensureTelegramHome,
+  mockTelegramWebApp,
+  signedTelegramInitData,
+  waitForAdventureComposerIdle,
+} from './telegram.ts';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -17,8 +25,8 @@ test.describe('text-first mobile layout', () => {
     await ensureTelegramHome(page);
     await completeWizardFighter(page, 'Mobile Layout E2E');
 
-    const input = page.getByRole('textbox', { name: 'Your action' });
-    const send = page.getByRole('button', { name: 'Send action' });
+    const input = page.getByRole('textbox', { name: ACTION_TEXTBOX });
+    const send = page.getByRole('button', { name: SEND_ACTION_BTN });
 
     await assertComposerAboveBottomNav(page);
     await input.focus();
@@ -44,8 +52,8 @@ test.describe('text-first mobile layout', () => {
     await expect(page.getByRole('heading', { name: /adventure awaits/i })).toBeVisible({ timeout: 20_000 });
     await completeWizardFighter(page, 'Mobile Scroll E2E');
 
-    const input = page.getByRole('textbox', { name: 'Your action' });
-    const journal = page.getByRole('log', { name: 'Adventure journal' });
+    const input = page.getByRole('textbox', { name: ACTION_TEXTBOX });
+    const journal = page.getByRole('log', { name: /Adventure journal|Dobrodružný deník/i });
     const composer = page.locator('.action-composer-text-first');
 
     const actions = [
@@ -57,7 +65,8 @@ test.describe('text-first mobile layout', () => {
     for (const action of actions) {
       await expect(input).toBeEnabled({ timeout: 90_000 });
       await input.fill(action);
-      await page.getByRole('button', { name: 'Send action' }).click();
+      await page.getByRole('button', { name: SEND_ACTION_BTN }).click();
+      await waitForAdventureComposerIdle(page);
       await expect.poll(
         () => journal.locator('.journal-action').filter({ hasText: action }).count(),
         { timeout: 90_000 },

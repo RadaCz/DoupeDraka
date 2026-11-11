@@ -1,7 +1,7 @@
 # Product Gap Register V1
 
 **Repo baseline (audit):** `ebb4cd8ade948540bd97cfd557326b64cfc37236` (`clean-main`)  
-**Last acceptance pass:** Sprint 19.1 — [`SPRINT_19_1_ACCEPTANCE_REPORT.md`](SPRINT_19_1_ACCEPTANCE_REPORT.md) (local, uncommitted)  
+**Last acceptance pass:** Sprint 21.1 — [`SPRINT_21_CLASS_IDENTITY_ACCEPTANCE.md`](SPRINT_21_CLASS_IDENTITY_ACCEPTANCE.md) (local, uncommitted; HEAD `8b913cf`)  
 **Authority:** engine + persisted `CharacterState`; UI must not pretend unmodeled rules apply.  
 **Related audits:** [`GAMEPLAY_COMPLETENESS_AUDIT_V1.md`](GAMEPLAY_COMPLETENESS_AUDIT_V1.md), [`SPRINT_16_CHARACTER_CREATION_V2.md`](SPRINT_16_CHARACTER_CREATION_V2.md)
 
@@ -32,7 +32,7 @@
 |------|--------|-------------------|---------------|----------|-------------|
 | Character creation wizard | **PARTIAL** | `CharacterWizard.tsx`, `character_creation.py`, E2E `character-creation-wizard.spec.ts`, `character-to-adventure.spec.ts` | 9-step UI + persistence; **4-class** create→play E2E (Sprint 20); quick summary on identity step | P0 | Class features, racial depth |
 | Races (MVP 4) | **PARTIAL** | `service._d20_check`, `assemble_skill_proficiencies` | ASI + speed; **Lucky** on player d20 checks; Elf Perception | P0 | 17 — Darkvision, Dwarf resilience, Nimbleness |
-| Classes (MVP 4) | **PARTIAL** | `catalog.py`, `equipment.py`, `spells.py`, `saving_throws.py` | HD, AC, save prof stored **and used** on `perform_saving_throw`; class features still thin | P0 | 19 — class features |
+| Classes (MVP 4) | **PARTIAL** | `class_features.py`, `tests/test_class_identity_sprint21.py`, E2E `class-identity.spec.ts` | Lvl‑1 identity: Fighting Style, Second Wind, Expertise/Sneak/Hide, Life/Disciple, Wizard spellbook + **Arcane Recovery** (SRD budget); ostatní domény/styly deferred | P0 | Rozšířit featury mimo MVP 4 |
 | Backgrounds | **PARTIAL** | `MVP_BACKGROUNDS` (6 SRD), wizard footnote | Skills + gear + gold verified in tests; features **narrative-only** (UI labeled) | P1 | 17 — model 1–2 features |
 | Abilities (standard array) | **IMPLEMENTED** | `catalog.STANDARD_ARRAY`, wizard step | Validated permutation; racial ASI after assign | P0 | — |
 | Skills & proficiency | **PARTIAL** | `skill_proficiencies`, `skill_check()` | Proficiency on skill rolls (explore cues); not all actions | P0 | 17 — broader skill routing |
@@ -48,7 +48,7 @@
 | Level-up | **PARTIAL** | `_level_up`, `spells.learn_level_up_spells` | XP threshold; auto spell picks | P2 | 18 |
 | Lite / Normal / Pro | see above | `economy.py`, `settings.py` | No pay-to-win; no paid rolls | P0 | — |
 | Mobile UX Ch.1 | **PARTIAL** | E2E play-layout + mobile-viewports | 16.2: bilingual helpers + ID bands; 23/23 E2E ~4 min | P0 | Staging deploy |
-| E2E CI stability | **PARTIAL** | `run-tests.mjs` (3 phases, fresh DB/RNG), `ghoul-paralysis-combat.spec.ts` | CI run #57 ghoul fail = shared RNG after chapter; fixed locally; full 26 **25/26** (hub flake); GHA **pending push** | P0 | Push + confirm GHA |
+| E2E CI stability | **PARTIAL** | `run-tests.mjs` (3 phases, fresh DB/RNG) | Lokálně **31/31** E2E po Sprint 21.1; GHA na nepushnutém diff **neověřeno** | P0 | Commit Sprint 21 + GHA |
 | Staging HTTPS | **MISSING** (runtime) | `STAGING_RUNBOOK_V1.md` | No live Telegram test | P0 | Ops |
 
 ---

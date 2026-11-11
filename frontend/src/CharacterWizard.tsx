@@ -27,6 +27,9 @@ export interface CharacterDraft {
   equipment_package?: string;
   cantrips?: string[];
   level_one_spells?: string[];
+  fighting_style?: string;
+  expertise_skills?: string[];
+  divine_domain?: string;
   alignment?: string;
   ideal?: string;
   bond?: string;
@@ -80,6 +83,8 @@ export function CharacterWizard({
   const [backgroundKey, setBackgroundKey] = useState('');
   const [abilityMap, setAbilityMap] = useState(emptyAbilityAssignment);
   const [classSkills, setClassSkills] = useState<string[]>([]);
+  const [expertiseSkills, setExpertiseSkills] = useState<string[]>([]);
+  const [fightingStyle, setFightingStyle] = useState('defense');
   const [equipmentPackage, setEquipmentPackage] = useState('');
   const [cantrips, setCantrips] = useState<string[]>([]);
   const [levelOneSpells, setLevelOneSpells] = useState<string[]>([]);
@@ -130,13 +135,28 @@ export function CharacterWizard({
     });
     setAbilityMap(map);
     setClassSkills(defaultClassSkills(classKey, bg, meta));
+    setExpertiseSkills(defaultClassSkills(classKey, bg, meta).slice(0, 2));
+    setFightingStyle('defense');
     setEquipmentPackage(defaultEquipmentPackage(classKey, meta));
     const limits = meta.spell_pick_limits[classKey];
     const options = meta.spell_options?.[classKey];
     if (limits && options) {
       setCantrips(options.cantrips.slice(0, limits.cantrips));
       const spellKey = classKey === 'wizard' ? 'level_one_known' : 'level_one_prepared';
-      setLevelOneSpells(options.level_one.slice(0, limits[spellKey] ?? 0));
+      const need = limits[spellKey] ?? 0;
+      if (classKey === 'wizard') {
+        const defaults = [
+          'Magic Missile',
+          'Shield',
+          'Burning Hands',
+          'Detect Magic',
+          'Sleep',
+          'Charm Person',
+        ].filter(spell => options.level_one.includes(spell));
+        setLevelOneSpells(defaults.length >= need ? defaults.slice(0, need) : options.level_one.slice(0, need));
+      } else {
+        setLevelOneSpells(options.level_one.slice(0, need));
+      }
     } else {
       setCantrips([]);
       setLevelOneSpells([]);
@@ -161,7 +181,9 @@ export function CharacterWizard({
       case 4:
         return abilityScores !== null;
       case 5:
-        return classSkills.length === (meta?.class_skill_picks[classKey]?.count ?? 0);
+        if (classSkills.length !== (meta?.class_skill_picks[classKey]?.count ?? 0)) return false;
+        if (classKey === 'rogue') return expertiseSkills.length === 2;
+        return true;
       case 6:
         return Boolean(equipmentPackage);
       case 7: {
@@ -213,6 +235,9 @@ export function CharacterWizard({
       equipment_package: equipmentPackage,
       cantrips: spellCaster ? cantrips : undefined,
       level_one_spells: spellCaster ? levelOneSpells : undefined,
+      fighting_style: classKey === 'fighter' ? fightingStyle : undefined,
+      expertise_skills: classKey === 'rogue' ? expertiseSkills : undefined,
+      divine_domain: classKey === 'cleric' ? 'life' : undefined,
       alignment: alignment.trim() || undefined,
       ideal: ideal.trim() || undefined,
       bond: bond.trim() || undefined,
@@ -332,6 +357,11 @@ export function CharacterWizard({
           <p className="eyebrow">{t('STEP 2 · YOUR TRAINING')}</p>
           <h1 id="wizard-title">{t('Choose a class')}</h1>
           <ClassGrid catalog={catalog} classKey={classKey} setClassKey={setClassKey} t={t} />
+          {classKey === 'cleric' && (
+            <p className="wizard-note" role="note">
+              {t('Life Domain (MVP)')}: {t('Disciple of Life bonus on healing spells; Bless and Cure Wounds always prepared.')}
+            </p>
+          )}
         </div>
       )}
 
@@ -399,6 +429,27 @@ export function CharacterWizard({
                 </button>
               ))}
           </div>
+          {classKey === 'rogue' && (
+            <fieldset className="option-fieldset">
+              <legend>{t('Expertise (pick 2)')}</legend>
+              <div className="option-row compact-options">
+                {classSkills.map(skill => (
+                  <button
+                    type="button"
+                    key={skill}
+                    className={`option-pill ${expertiseSkills.includes(skill) ? 'selected' : ''}`}
+                    onClick={() => setExpertiseSkills(current => {
+                      if (current.includes(skill)) return current.filter(item => item !== skill);
+                      if (current.length >= 2) return current;
+                      return [...current, skill];
+                    })}
+                  >
+                    {skill}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+          )}
         </div>
       )}
 
@@ -406,6 +457,23 @@ export function CharacterWizard({
         <div className="wizard-content">
           <p className="eyebrow">{t('STEP 6 · GEAR')}</p>
           <h1 id="wizard-title">{t('Starting equipment')}</h1>
+          {classKey === 'fighter' && (
+            <fieldset className="option-fieldset">
+              <legend>{t('Fighting Style')}</legend>
+              <div className="option-row">
+                {(meta.fighting_styles ?? ['defense', 'dueling']).map(style => (
+                  <button
+                    type="button"
+                    key={style}
+                    className={`option-pill ${fightingStyle === style ? 'selected' : ''}`}
+                    onClick={() => setFightingStyle(style)}
+                  >
+                    {style === 'defense' ? t('Defense (+1 AC)') : t('Dueling (+2 damage)')}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+          )}
           {Object.entries(meta.equipment_packages[classKey] ?? {}).map(([key, items]) => (
             <button
               type="button"

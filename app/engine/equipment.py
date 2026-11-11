@@ -216,7 +216,9 @@ def compute_armor_class(character: CharacterState) -> int:
     if equipped_shield_instance(character) and shield_proficiency(character):
         shield_bonus = SHIELD_AC_BONUS
 
-    return body_ac + shield_bonus
+    from .class_features import defense_style_ac_bonus
+
+    return body_ac + shield_bonus + defense_style_ac_bonus(character)
 
 
 def refresh_armor_class(character: CharacterState) -> int:
@@ -464,7 +466,10 @@ def apply_starting_equipment(character: CharacterState) -> None:
 
 def load_character_state(data: dict) -> CharacterState:
     """Build character from persisted dict, migrate legacy gear, refresh AC."""
+    from .class_features import ensure_class_identity_defaults
+
     character = CharacterState(**data)
+    ensure_class_identity_defaults(character)
     migrate_item_instances(character)
     return character
 

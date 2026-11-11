@@ -23,7 +23,7 @@ test('wizard Burning Hands shows monster saving throw and reduced HP', async ({ 
   for (let round = 0; round < 6; round += 1) {
     const state = await fetchCharacterState(request, token, characterId!);
     if (state.in_combat && (state.combatant?.hp ?? 0) > 0) break;
-    await postGameAction(request, token, characterId!, 'attack kobold');
+    await postGameAction(request, token, characterId!, 'attack goblin scout');
   }
   const before = await fetchCharacterState(request, token, characterId!);
   expect(before.in_combat).toBeTruthy();

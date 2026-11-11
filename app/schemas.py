@@ -31,6 +31,9 @@ class CharacterCreate(BaseModel):
     bond: str | None = Field(default=None, max_length=256)
     flaw: str | None = Field(default=None, max_length=256)
     backstory: str | None = Field(default=None, max_length=2048)
+    fighting_style: str | None = Field(default=None, max_length=16)
+    expertise_skills: list[str] | None = Field(default=None, max_length=4)
+    divine_domain: str | None = Field(default=None, max_length=24)
     # Optional campaign settings applied at creation time.
     difficulty: str | None = None
     tone: str | None = None
@@ -67,6 +70,7 @@ class ActionResponse(BaseModel):
     spell_facts: dict | None = None
     rest_facts: dict | None = None
     level_up_facts: dict | None = None
+    class_facts: dict | None = None
 
 class TopUpRequest(BaseModel):
     package: str = Field(default="starter", max_length=32)

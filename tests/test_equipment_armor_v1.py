@@ -39,17 +39,17 @@ def test_ac_unarmored_uses_dex():
 def test_unequip_shield_via_resolve_action():
     game = GameEngine()
     hero = _fighter()
-    assert hero.armor_class == 16 + SHIELD_AC_BONUS
+    assert hero.armor_class == 16 + SHIELD_AC_BONUS + 1  # Defense fighting style
     assert parse_action_intent("unequip shield").kind == EQUIP
     result, _ = game.resolve_action(hero, "unequip shield", None)
     assert result.state_changed
-    assert hero.armor_class == 16
+    assert hero.armor_class == 16 + 1
 
 
 def test_fighter_starts_chain_and_shield():
     hero = _fighter()
     assert "chain mail" in [i.casefold() for i in hero.inventory]
-    assert hero.armor_class == 16 + SHIELD_AC_BONUS
+    assert hero.armor_class == 16 + SHIELD_AC_BONUS + 1  # Defense fighting style
 
 
 @pytest.mark.parametrize(
@@ -68,17 +68,17 @@ def test_ac_by_armor_category(category, label, base, dex_score, expected_body):
     char.inventory = [label, "shortsword"]
     sync_item_instances(char)
     set_equipped_armor(char, label)
-    assert compute_armor_class(char) == expected_body
+    assert compute_armor_class(char) == expected_body + 1  # Defense fighting style
 
 
 def test_shield_adds_two_and_replaces_prior():
     hero = _fighter()
     unequip_shield(hero)
-    assert hero.armor_class == 16
+    assert hero.armor_class == 16 + 1
     set_equipped_shield(hero, "shield")
-    assert hero.armor_class == 16 + SHIELD_AC_BONUS
+    assert hero.armor_class == 16 + SHIELD_AC_BONUS + 1  # Defense fighting style
     unequip_shield(hero)
-    assert hero.armor_class == 16
+    assert hero.armor_class == 16 + 1
 
 
 def test_wizard_cannot_equip_heavy_armor():

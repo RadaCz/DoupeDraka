@@ -70,9 +70,26 @@ def test_wizard_spell_picks_applied():
         "wizard",
         _scores(intelligence=15, dexterity=14, constitution=13, wisdom=12, charisma=10, strength=8),
         cantrips=["Fire Bolt", "Mage Hand", "Light"],
-        level_one_spells=["Magic Missile", "Shield", "Detect Magic"],
+        level_one_spells=[
+            "Magic Missile",
+            "Shield",
+            "Detect Magic",
+            "Burning Hands",
+            "Sleep",
+            "Charm Person",
+        ],
     )
-    assert set(hero.known_spells) == {"Fire Bolt", "Mage Hand", "Light", "Magic Missile", "Shield", "Detect Magic"}
+    assert set(hero.known_spells) == {
+        "Fire Bolt",
+        "Mage Hand",
+        "Light",
+        "Magic Missile",
+        "Shield",
+        "Detect Magic",
+        "Burning Hands",
+        "Sleep",
+        "Charm Person",
+    }
 
 
 def test_skill_check_uses_proficiency():
@@ -106,7 +123,7 @@ def test_halfling_lucky_rerolls_attack_one():
         return next(rolls, 6)
 
     game.rng.randint = fake_randint
-    events = game.attack(hero, monster)
+    events, _ = game.attack(hero, monster)
     joined = " ".join(events)
     assert "Halfling Lucky" in joined
 

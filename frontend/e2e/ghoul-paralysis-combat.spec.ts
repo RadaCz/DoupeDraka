@@ -67,7 +67,7 @@ test('ghoul paralyzing claws apply paralysis through real combat and UI', async 
   const playMode = await syncCombatOrAdventurePlay(page);
   const beforeTurn = await fetchCharacterState(request, token, characterId!);
   expect(beforeTurn.conditions?.some(c => c.condition_id === 'paralyzed')).toBeTruthy();
-  await expect(page.getByText(/paralyz|paralyzed|Paralyza/i)).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText(/paralyz|paralyzed|Paralyza/i).first()).toBeVisible({ timeout: 30_000 });
 
   const blockedOrSave = /paralyz|cannot act|neschopný|repeat save|end of your turn|konce tvého tahu|saving throw|záchranný hod/i;
 

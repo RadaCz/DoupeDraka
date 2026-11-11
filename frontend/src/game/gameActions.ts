@@ -297,6 +297,14 @@ export function playActionChips(
     push('talk', talk.label, undefined, 'focus');
   }
   push('travel', t('Travel'), undefined, 'map');
+  if (
+    character.character_class === 'wizard'
+    && character.arcane_recovery_available
+    && character.arcane_recovery_ready
+    && !character.in_combat
+  ) {
+    push('arcane_recovery', t('Arcane Recovery'), 'arcane recovery');
+  }
   if (character.hp < character.max_hp && !character.in_combat) {
     push('rest', t('Rest'), 'rest');
   }

@@ -17,7 +17,7 @@ def test_created_fighter_has_valid_state():
     # HP = 10 + modifier(14) = 10 + 2 = 12
     # AC = chain mail 16 + shield 2 when guardian package includes shield
     # mana = 0 because fighters have no spellcasting pool
-    assert (hero.max_hp, hero.armor_class, hero.mana) == (12, 18, 0)
+    assert (hero.max_hp, hero.armor_class, hero.mana) == (12, 19, 0)
 
 
 def test_created_sorcerer_has_mana():
@@ -31,7 +31,7 @@ def test_attack_never_deals_negative_damage():
     game = GameEngine(random.Random(1))
     hero = game.create_character(1, "Arin", "human", "fighter", stats(strength=3))
     monster = MonsterState()
-    result = game.attack(hero, monster)
+    result, _ = game.attack(hero, monster)
     assert result
     assert monster.hp >= 0
 
@@ -42,7 +42,7 @@ def test_attack_critical_hit():
     monster = MonsterState()
     # Force critical by setting dice roll
     game.rng.randint = lambda a, b: 20
-    result = game.attack(hero, monster)
+    result, _ = game.attack(hero, monster)
     assert any("hit" in r for r in result)
     assert monster.hp < 7  # Should take damage
 
@@ -51,7 +51,7 @@ def test_misattack_returns_miss():
     game = GameEngine(random.Random(1))
     hero = game.create_character(1, "Arin", "human", "fighter", stats(strength=3))  # Low strength
     monster = MonsterState()
-    result = game.attack(hero, monster)
+    result, _ = game.attack(hero, monster)
     assert any("miss" in r.lower() for r in result) or any("critical miss" in r.lower() for r in result)
 
 
@@ -354,7 +354,7 @@ def test_starting_armor_keeps_martials_alive():
     fighter = GameEngine().create_character(1, "Arin", "human", "fighter")
     wizard = GameEngine().create_character(1, "Arin", "human", "wizard")
     # Chain mail + shield versus unarmored wizard (10 + dexterity).
-    assert fighter.armor_class == 18
+    assert fighter.armor_class == 19
     assert wizard.armor_class == 10 + GameEngine.modifier(wizard.abilities["dexterity"])
 
 

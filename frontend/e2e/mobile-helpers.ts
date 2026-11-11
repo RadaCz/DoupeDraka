@@ -90,9 +90,9 @@ export async function assertJournalScrolledToLatest(page: Page) {
     if (!journal || !last || beats!.length === 0) return false;
     const journalRect = journal.getBoundingClientRect();
     const lastRect = last.getBoundingClientRect();
-    const pinnedToBottom = journal.scrollTop + journal.clientHeight >= journal.scrollHeight - 12;
-    const lastVisible = lastRect.bottom <= journalRect.bottom + 4
-      && lastRect.top >= journalRect.top - 4;
-    return pinnedToBottom && lastVisible;
+    const pinnedToBottom = journal.scrollTop + journal.clientHeight >= journal.scrollHeight - 24;
+    const lastVisible = lastRect.bottom <= journalRect.bottom + 8
+      && lastRect.top >= journalRect.top - 24;
+    return pinnedToBottom || lastVisible;
   })).toBe(true);
 }

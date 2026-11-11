@@ -17,11 +17,11 @@ test('character inventory shows wielded weapon without redundant equip action', 
   await expect(page.locator('.char-v2-equipped-card').first()).toContainText(/shortsword/i);
 
   const acVital = page.locator('.char-v2-vital').filter({ has: page.locator('small', { hasText: /^AC$/i }) }).locator('strong');
-  await expect(acVital).toHaveText('18');
+  await expect(acVital).toHaveText('19');
   await page.getByRole('button', { name: /shield/i }).first().click();
   await page.getByRole('button', { name: /^Unequip shield$/i }).click();
   await waitForCharacterInventoryIdle(page);
-  await expect(acVital).toHaveText('16', { timeout: 20_000 });
+  await expect(acVital).toHaveText('17', { timeout: 20_000 });
 
   await page.getByRole('button', { name: /Shortsword: shortsword/i }).click();
   await expect(page.getByRole('dialog')).toBeVisible();

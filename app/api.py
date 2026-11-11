@@ -398,6 +398,9 @@ def build_character(
             bond=creation.get("bond") or "",
             flaw=creation.get("flaw") or "",
             backstory=creation.get("backstory") or "",
+            fighting_style=creation.get("fighting_style") or "defense",
+            expertise_skills=list(creation.get("expertise_skills") or []),
+            divine_domain=creation.get("divine_domain") or "life",
         )
         extra = {
             "background": creation.get("background"),
@@ -498,6 +501,9 @@ async def create_character(request: CharacterCreate, user: User = Depends(get_us
                 "bond": request.bond,
                 "flaw": request.flaw,
                 "backstory": request.backstory,
+                "fighting_style": request.fighting_style,
+                "expertise_skills": request.expertise_skills,
+                "divine_domain": request.divine_domain,
             },
         )
     except ValueError as error: 
@@ -1174,6 +1180,7 @@ async def commit_action_turn(
                 spell_facts=result.spell_facts or None,
                 rest_facts=result.rest_facts or None,
                 level_up_facts=result.level_up_facts or None,
+                class_facts=result.class_facts or None,
             )
             # The receipt is written in the same commit as the turn, so a retry
             # arriving a millisecond later finds the turn and cannot repeat it.

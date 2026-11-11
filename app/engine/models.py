@@ -52,6 +52,14 @@ class CharacterState:
     bond: str = ""
     flaw: str = ""
     backstory: str = ""
+    # Sprint 21 — class identity (safe defaults for legacy payloads).
+    fighting_style: str = ""
+    expertise_skills: list[str] = field(default_factory=list)
+    divine_domain: str = ""
+    second_wind_available: bool = False
+    arcane_recovery_available: bool = False
+    arcane_recovery_ready: bool = False
+    combat_flags: dict[str, bool] = field(default_factory=dict)
 
 @dataclass
 class MonsterState:
@@ -74,4 +82,5 @@ class TurnResult:
     rest_facts: dict = field(default_factory=dict)
     level_up_facts: dict = field(default_factory=dict)
     purchase_facts: dict = field(default_factory=dict)
+    class_facts: dict = field(default_factory=dict)
     costs_adventure_mana: bool = True

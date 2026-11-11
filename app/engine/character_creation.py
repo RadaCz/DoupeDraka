@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from .catalog import ABILITY_ORDER, STANDARD_ARRAY, apply_racial_ability_increases, standard_abilities
 from .reference import CLASS_SPECS, RACE_SPECS
 from .ruleset_v1 import class_mvp_playable, race_mvp_playable
+from .class_features import ROGUE_EXPERTISE_PICKS
 from .spells import CLASS_SPELL_LISTS, PREPARED_CASTERS, spell_level
 
 STANDARD_ARRAY_SET = frozenset(STANDARD_ARRAY)
@@ -124,9 +125,20 @@ DEFAULT_EQUIPMENT_PACKAGE: dict[str, str] = {
 }
 
 SPELL_PICK_LIMITS: dict[str, dict[str, int]] = {
-    "wizard": {"cantrips": 3, "level_one_known": 3},
+    "wizard": {"cantrips": 3, "level_one_known": 6},
     "cleric": {"cantrips": 3, "level_one_prepared": 4},
 }
+
+FIGHTING_STYLE_OPTIONS = ("defense", "dueling")
+
+WIZARD_DEFAULT_SPELLBOOK = (
+    "Magic Missile",
+    "Shield",
+    "Burning Hands",
+    "Detect Magic",
+    "Sleep",
+    "Charm Person",
+)
 
 EXPLORE_SKILL_CUES: dict[str, tuple[str, ...]] = {
     "Perception": ("look around", "listen", "spot", "notice", "rozhléd", "poslouch"),
@@ -142,6 +154,9 @@ class CreationChoices:
     equipment_package: str = ""
     cantrips: list[str] = field(default_factory=list)
     level_one_spells: list[str] = field(default_factory=list)
+    fighting_style: str = "defense"
+    expertise_skills: list[str] = field(default_factory=list)
+    divine_domain: str = "life"
     alignment: str = ""
     ideal: str = ""
     bond: str = ""
@@ -244,7 +259,12 @@ def default_spell_picks(character_class: str) -> tuple[list[str], list[str]]:
     limits = SPELL_PICK_LIMITS[character_class]
     cantrips = list(_spell_options(character_class, 0)[: limits["cantrips"]])
     if character_class == "wizard":
-        level_one = list(_spell_options(character_class, 1)[: limits["level_one_known"]])
+        pool = _spell_options(character_class, 1)
+        level_one = [spell for spell in WIZARD_DEFAULT_SPELLBOOK if spell in pool]
+        if len(level_one) < limits["level_one_known"]:
+            level_one.extend(
+                spell for spell in pool if spell not in level_one
+            )[: limits["level_one_known"] - len(level_one)]
     else:
         level_one = list(_spell_options(character_class, 1)[: limits["level_one_prepared"]])
     return cantrips, level_one
@@ -252,12 +272,16 @@ def default_spell_picks(character_class: str) -> tuple[list[str], list[str]]:
 
 def default_creation_choices(character_class: str) -> CreationChoices:
     background = DEFAULT_BACKGROUND_BY_CLASS.get(character_class, "folk_hero")
+    skills = default_class_skills(character_class, background)
     return CreationChoices(
         background=background,
-        class_skills=default_class_skills(character_class, background),
+        class_skills=skills,
         equipment_package=DEFAULT_EQUIPMENT_PACKAGE.get(character_class, ""),
         cantrips=default_spell_picks(character_class)[0],
         level_one_spells=default_spell_picks(character_class)[1],
+        fighting_style="defense",
+        expertise_skills=skills[:2] if character_class == "rogue" else [],
+        divine_domain="life" if character_class == "cleric" else "",
     )
 
 
@@ -343,6 +367,9 @@ def public_creation_reference() -> dict:
             for klass in SPELL_PICK_LIMITS
         },
         "personality_fields": ("alignment", "ideal", "bond", "flaw", "backstory"),
+        "fighting_styles": list(FIGHTING_STYLE_OPTIONS),
+        "cleric_domains_mvp": ["life"],
+        "rogue_expertise_picks": 2,
     }
 
 
@@ -397,17 +424,35 @@ def resolve_creation_options(
     spell_in = level_one_spells if level_one_spells is not None else defaults.level_one_spells
     validated_cantrips, validated_spells = validate_spell_picks(character_class, cantrip_in, spell_in)
 
+    from .class_features import validate_divine_domain, validate_expertise_skills, validate_fighting_style
+
+    style_in = (personality.fighting_style if personality and personality.fighting_style else defaults.fighting_style)
+    domain_in = (personality.divine_domain if personality and personality.divine_domain else defaults.divine_domain)
+    expertise_in = personality.expertise_skills if personality and personality.expertise_skills else []
+    if character_class == "rogue" and not expertise_in:
+        expertise_in = list(picks)[:ROGUE_EXPERTISE_PICKS]
+    fighting_style = validate_fighting_style(style_in) if character_class == "fighter" else ""
+    divine_domain = validate_divine_domain(domain_in) if character_class == "cleric" else ""
+
     choices = CreationChoices(
         background=bg_key,
         class_skills=list(picks),
         equipment_package=package,
         cantrips=validated_cantrips,
         level_one_spells=validated_spells,
+        fighting_style=fighting_style,
+        divine_domain=divine_domain,
         alignment=(personality.alignment if personality else ""),
         ideal=(personality.ideal if personality else ""),
         bond=(personality.bond if personality else ""),
         flaw=(personality.flaw if personality else ""),
         backstory=(personality.backstory if personality else ""),
+    )
+    assemble_skills = assemble_skill_proficiencies(race, character_class, bg_key, choices.class_skills)
+    choices.expertise_skills = (
+        validate_expertise_skills(character_class, assemble_skills, expertise_in)
+        if character_class == "rogue"
+        else []
     )
 
     inventory = merge_inventory(class_inventory, bg["equipment"])

@@ -16,6 +16,7 @@ import {
   proficiencyBonus,
   xpProgress,
 } from '../character/characterSheet';
+import { classFeatureLines } from '../character/classFeatures';
 import { heroSpellRows } from '../spells/spellbook';
 
 export function CharacterScreen({
@@ -57,6 +58,7 @@ export function CharacterScreen({
   const equippedShield = equippedShieldInstance(character.item_instances);
   const xp = xpProgress(character.xp);
   const spellRows = useMemo(() => heroSpellRows(character, spells), [character, spells]);
+  const features = useMemo(() => classFeatureLines(character, t), [character, t]);
   const hasSpellcasting = Object.values(character.max_spell_slots ?? {}).some(count => count > 0);
 
   return (
@@ -185,10 +187,32 @@ export function CharacterScreen({
         </article>
       </section>
 
+      {features.length > 0 && (
+        <section className="char-v2-section" aria-labelledby="char-features-heading">
+          <h2 id="char-features-heading" className="char-v2-section-title">{t('Class features')}</h2>
+          <ul className="char-v2-spell-list">
+            {features.map(row => (
+              <li key={row.key} className="char-v2-spell-row">
+                <div className="char-v2-spell-head">
+                  <strong>{row.label}</strong>
+                  {row.status && <small>{row.status}</small>}
+                </div>
+                {row.detail && <p className="char-v2-spell-text">{row.detail}</p>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {character.skill_proficiencies && character.skill_proficiencies.length > 0 && (
         <section className="char-v2-section" aria-labelledby="char-skills-heading">
           <h2 id="char-skills-heading" className="char-v2-section-title">{t('Skill proficiencies')}</h2>
-          <p className="char-v2-section-lead">{character.skill_proficiencies.join(' · ')}</p>
+          <p className="char-v2-section-lead">
+            {character.skill_proficiencies.map(skill => {
+              const expert = character.expertise_skills?.includes(skill);
+              return expert ? `${skill} (${t('expertise')})` : skill;
+            }).join(' · ')}
+          </p>
         </section>
       )}
 

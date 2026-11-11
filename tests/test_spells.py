@@ -24,9 +24,16 @@ def create_hero(character_class: str, **scores: int) -> CharacterState:
         "charisma": 10,
     }
     abilities.update(scores)
-    return GameEngine(random.Random(1)).create_character(
+    hero = GameEngine(random.Random(1)).create_character(
         1, "Arin", "human", character_class, abilities
     )
+    if character_class == "wizard":
+        for spell in ("Magic Missile", "Shield"):
+            if spell not in hero.known_spells:
+                hero.known_spells.append(spell)
+            if spell not in hero.prepared_spells:
+                hero.prepared_spells.append(spell)
+    return hero
 
 
 def force_high_rolls(game: GameEngine) -> None:
@@ -60,7 +67,9 @@ def test_character_initialization_assigns_class_ability_and_selected_spells():
     wizard = create_hero("wizard", intelligence=16)
     cleric = create_hero("cleric", wisdom=16)
     assert wizard.spellcasting_ability == "int"
-    assert {"Fire Bolt", "Magic Missile"} <= set(wizard.known_spells)
+    assert {"Fire Bolt", "Mage Hand", "Light"} <= set(wizard.known_spells)
+    leveled = [s for s in wizard.known_spells if s not in {"Fire Bolt", "Mage Hand", "Light"}]
+    assert len(leveled) >= 6
     assert {"Sacred Flame", "Cure Wounds"} <= set(cleric.prepared_spells)
     assert cleric.known_spells == []
 
@@ -179,8 +188,9 @@ def test_healing_spell_restores_hp_but_never_exceeds_maximum():
     result, _ = game.resolve_action(hero, "cast Cure   Wounds", None)
     assert hero.hp == hero.max_hp
     assert result.spell_facts["effect"]["healing"] == 2
-    assert result.spell_facts["effect"]["dice_result"]["modifier"] == 3
-    assert result.spell_facts["effect"]["dice_result"]["total"] == 11
+    assert result.spell_facts["effect"]["dice_result"]["modifier"] == 6
+    assert result.spell_facts["effect"]["disciple_of_life"] == 3
+    assert result.spell_facts["effect"]["dice_result"]["total"] == 14
     assert result.spell_facts["target_hp_after"] == hero.max_hp
     assert hero.spell_slots == {1: 1}
 

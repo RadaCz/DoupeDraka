@@ -19,10 +19,18 @@ SHOP = "shop"
 USE_ITEM = "use_item"
 EQUIP = "equip"
 QUEST = "quest"
+CLASS_FEATURE = "class_feature"
+
+SECOND_WIND_PATTERN = re.compile(r"\b(?:second wind|druh[yý]\s+dech)\b", re.IGNORECASE)
+ARCANE_RECOVERY_PATTERN = re.compile(r"\b(?:arcane recovery|arcan\w*\s+obnov)\b", re.IGNORECASE)
+HIDE_COMBAT_PATTERN = re.compile(r"\b(?:hide|schovej|ukry)\b", re.IGNORECASE)
 
 CAST_PATTERN = re.compile(r"\b(cast|kouzl)\b", re.IGNORECASE)
 ATTACK_PATTERN = re.compile(r"\b(attack|strike|hit|útok|zaútoč|zaútočit)\b", re.IGNORECASE)
-REST_PATTERN = re.compile(r"\b(rest|sleep|odpočí|odpocin)\b", re.IGNORECASE)
+REST_PATTERN = re.compile(
+    r"\b(?:short\s+rest|brief\s+rest|take\s+a\s+breather|rest|sleep|odpočí|odpocin|kratky\s+odpocinek|kratky\s+oddech)\b",
+    re.IGNORECASE,
+)
 FLEE_PATTERN = re.compile(r"\b(flee|retreat|run away|utek|útěk)\b", re.IGNORECASE)
 EXPLORE_PATTERN = re.compile(
     r"\b(look around|explore|search|investigate|prozkoumej|prohledej|rozhléd)\b",
@@ -82,6 +90,7 @@ _KIND_ORDER = (
     CAST,
     FLEE,
     DEFEND,
+    CLASS_FEATURE,
     REST,
     TRAVEL,
     EXPLORE,
@@ -107,7 +116,18 @@ _NEGATION_BY_KIND: dict[str, tuple[str, ...]] = {
     ATTACK: ("attack", "strike", "hit", "útok", "zaútoč", "zaútočit"),
     CAST: ("cast", "kouzl"),
     FLEE: ("flee", "retreat", "utek", "útěk"),
-    REST: ("rest", "sleep", "odpočí", "odpocin", "odpočin"),
+    REST: (
+        "rest",
+        "sleep",
+        "odpočí",
+        "odpocin",
+        "odpočin",
+        "breather",
+        "brief rest",
+        "short rest",
+        "kratky odpocinek",
+        "kratky oddech",
+    ),
     DEFEND: ("dodge", "defend", "brace", "uhni", "bran"),
     TRAVEL: ("travel", "cestuj", "jdi", "vydej"),
     TALK: ("talk", "speak", "ask", "mluv", "mluvit", "zeptej", "promluv"),
@@ -133,6 +153,7 @@ class ActionIntent:
     skill_hint: str = ""
     target_hint: str = ""
     quest_step: str = ""
+    class_feature: str = ""
 
 
 def _clause_negates(clause: str, escaped_term: str) -> bool:
@@ -189,6 +210,8 @@ def _matched_kinds(text: str) -> set[str]:
         found.add(EQUIP)
     if TRAVEL_EXPLORE_PATTERN.search(text):
         found.add(EXPLORE)
+    if SECOND_WIND_PATTERN.search(text) or ARCANE_RECOVERY_PATTERN.search(text) or HIDE_COMBAT_PATTERN.search(text):
+        found.add(CLASS_FEATURE)
     return found
 
 
@@ -244,7 +267,15 @@ def parse_action_intent(action: str) -> ActionIntent:
         if kind in kinds:
             confidence = 0.9 if kind in (CAST, ATTACK, TRAVEL, QUEST) else 0.8
             step = quest_step if kind == QUEST else ""
-            return ActionIntent(kind, text, confidence=confidence, quest_step=step)
+            feature = ""
+            if kind == CLASS_FEATURE:
+                if SECOND_WIND_PATTERN.search(text):
+                    feature = "second_wind"
+                elif ARCANE_RECOVERY_PATTERN.search(text):
+                    feature = "arcane_recovery"
+                else:
+                    feature = "hide"
+            return ActionIntent(kind, text, confidence=confidence, quest_step=step, class_feature=feature)
 
     if quest_negated:
         return ActionIntent(REJECTED, text, confidence=0.85, needs_clarification=True)

@@ -2,7 +2,7 @@ import type { Locale } from '../i18n';
 import { castSpellAction, modeledCombatSpells as modeledSpellsFromBook } from '../spells/spellbook';
 import type { Character, JournalEvent, Spell } from '../types';
 
-export type CombatActionKind = 'attack' | 'defend' | 'flee' | 'spell' | 'potion';
+export type CombatActionKind = 'attack' | 'defend' | 'flee' | 'spell' | 'potion' | 'class_feature';
 
 export interface CombatActionItem {
   id: CombatActionKind;
@@ -58,7 +58,34 @@ export function buildCombatActions(
     return { ...item, disabled, disabledReason };
   };
 
+  const featureActions: CombatActionItem[] = [];
+  if (character.character_class === 'fighter' && character.second_wind_available && playerTurn) {
+    featureActions.push(
+      wrap({
+        id: 'second_wind',
+        kind: 'class_feature',
+        label: t('Second Wind'),
+        description: t('Bonus action: recover 1d10 + level HP (once per rest).'),
+        glyph: '♥',
+        action: 'second wind',
+      }),
+    );
+  }
+  if (character.character_class === 'rogue' && playerTurn) {
+    featureActions.push(
+      wrap({
+        id: 'hide',
+        kind: 'class_feature',
+        label: t('Hide'),
+        description: t('Stealth to gain advantage for Sneak Attack.'),
+        glyph: '◌',
+        action: 'hide',
+      }),
+    );
+  }
+
   return [
+    ...featureActions,
     wrap(
       {
         id: 'attack',

@@ -225,7 +225,7 @@ def test_advantage_style_player_crit_uses_natural_twenty():
     })
     monster = MonsterState(name="Goblin scout", hp=50, max_hp=50, armor_class=25, attack_bonus=0, damage="1d4")
     game.rng.randint = lambda a, b: 20 if a == 1 and b == 20 else 1
-    events = game.attack(hero, monster)
+    events, _ = game.attack(hero, monster)
     assert any("hit" in event.casefold() for event in events)
 
 

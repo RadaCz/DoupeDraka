@@ -7,6 +7,7 @@ const E2E_API_BASE = 'http://127.0.0.1:8001';
 export type CharacterSnapshot = {
   level: number;
   hp?: number;
+  max_hp?: number;
   quest_flags?: Record<string, boolean>;
   location: string;
   in_combat?: boolean;
@@ -14,6 +15,14 @@ export type CharacterSnapshot = {
   combatant?: { name?: string } | null;
   combat_turn?: string;
   conditions?: Array<{ condition_id: string }>;
+  fighting_style?: string;
+  divine_domain?: string;
+  second_wind_available?: boolean;
+  arcane_recovery_available?: boolean;
+  arcane_recovery_ready?: boolean;
+  known_spells?: string[];
+  prepared_spells?: string[];
+  spell_slots?: Record<string, number>;
 };
 
 export async function reviveIfFallen(

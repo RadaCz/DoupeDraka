@@ -50,6 +50,7 @@ from .intent import (
     AMBIGUOUS,
     ATTACK,
     CAST,
+    CLASS_FEATURE,
     DEFEND,
     EXPLORE,
     FLEE,
@@ -148,9 +149,23 @@ class GameEngine:
         cantrips: list[str] | None = None,
         level_one_spells: list[str] | None = None,
         personality: CreationChoices | None = None,
+        fighting_style: str | None = None,
+        expertise_skills: list[str] | None = None,
+        divine_domain: str | None = None,
     ) -> CharacterState:
         if race not in RACES or character_class not in CLASSES:
             raise ValueError("Unknown race or class")
+
+        from .character_creation import default_creation_choices
+
+        defaults = default_creation_choices(character_class)
+        if personality is None and any(x is not None for x in (fighting_style, expertise_skills, divine_domain)):
+            personality = CreationChoices(
+                background=background or defaults.background,
+                fighting_style=fighting_style or defaults.fighting_style,
+                expertise_skills=expertise_skills or defaults.expertise_skills,
+                divine_domain=divine_domain or defaults.divine_domain,
+            )
 
         base_scores, choices, inventory, gold = resolve_creation_options(
             race,
@@ -202,6 +217,21 @@ class GameEngine:
         initialize_spellcasting(character)
         if cantrips is not None or level_one_spells is not None:
             apply_creation_spell_choices(character, choices.cantrips, choices.level_one_spells)
+        from .class_features import (
+            apply_life_domain_prepared_spells,
+            rebuild_wizard_spellbook,
+        )
+
+        character.fighting_style = choices.fighting_style
+        character.expertise_skills = list(choices.expertise_skills)
+        character.divine_domain = choices.divine_domain
+        character.second_wind_available = character.character_class == "fighter"
+        character.arcane_recovery_available = character.character_class == "wizard"
+        if character.character_class == "wizard":
+            rebuild_wizard_spellbook(character, choices.level_one_spells)
+        if character.character_class == "cleric":
+            apply_life_domain_prepared_spells(character)
+        refresh_armor_class(character)
         return character
 
     def roll(self, dice: str, modifier: int = 0, critical: bool = False) -> RollResult:
@@ -403,6 +433,9 @@ class GameEngine:
         if character.in_combat:
             character.combat_turn = "player"
             character.combat_round += 1
+            from .class_features import mark_player_turn_start
+
+            mark_player_turn_start(character)
 
     def _enemy_turn(
         self,
@@ -747,14 +780,19 @@ class GameEngine:
 
         if kind == "heal":
             extra_dice = upcast
+            from .class_features import disciple_of_life_bonus
+
+            life_bonus = disciple_of_life_bonus(character, selected, slot_level or level)
             healing = self.roll(
                 f"{1 + extra_dice}d{dice.split('d', 1)[1]}",
-                self._spellcasting_modifier(character),
+                self._spellcasting_modifier(character) + life_bonus,
             )
             before = character.hp
             character.hp = min(character.max_hp, character.hp + max(0, healing.total))
             amount = character.hp - before
             effect_facts.update({"dice_result": self._roll_facts(healing), "healing": amount})
+            if life_bonus:
+                effect_facts["disciple_of_life"] = life_bonus
             if selected == "Healing Word":
                 effect_facts["bonus_action_not_applied"] = True
                 events.append(
@@ -1115,12 +1153,11 @@ class GameEngine:
         }
 
     def skill_modifier(self, character: CharacterState, skill: str) -> int:
+        from .class_features import skill_proficiency_multiplier
+
         ability = SKILL_ABILITIES.get(skill, "dexterity")
         base = self.modifier(character.abilities.get(ability, 10))
-        prof = 2 + max(0, (character.level - 1) // 4)
-        if skill in character.skill_proficiencies:
-            return base + prof
-        return base
+        return base + skill_proficiency_multiplier(character, skill)
 
     def skill_check(self, character: CharacterState, skill: str, dc: int) -> tuple[RollResult, bool, str]:
         result, note = self._d20_check(character, self.skill_modifier(character, skill))
@@ -1152,28 +1189,116 @@ class GameEngine:
         else:
             character.combat_turn = "player"
             order = "You act first"
+            from .class_features import mark_player_turn_start
+
+            mark_player_turn_start(character)
         return [
             f"Initiative: you {player.total} (DEX), {monster.name} {enemy.total} (DEX). {order}.",
         ]
 
-    def attack(self, character: CharacterState, monster: MonsterState) -> list[str]:
+    def attack(self, character: CharacterState, monster: MonsterState) -> tuple[list[str], dict]:
+        from .class_features import (
+            apply_sneak_attack,
+            attack_advantage_roll,
+            dueling_style_damage_bonus,
+            sneak_attack_eligible,
+        )
+
         weapon = equipped_weapon(character)
         bonus = attack_modifier(character, weapon) + item_attack_bonus(character)
-        attack_roll, lucky_note = self._d20_check(character, bonus)
-        natural = attack_roll.values[0]
+        attack_roll, natural, lucky_note = attack_advantage_roll(self, character, bonus)
         weapon_label = weapon.name if weapon.key != "unarmed" else "your weapon"
+        class_facts: dict = {}
         if natural == 1:
-            return [f"Attack with {weapon_label}: {attack_roll.total} (d20 +{bonus}) — critical miss.{lucky_note}"]
-        if natural != 20 and attack_roll.total < monster.armor_class:
+            character.combat_flags["hidden"] = False
+            character.combat_flags["attack_advantage"] = False
+            return [
+                f"Attack with {weapon_label}: {attack_roll.total} (d20 +{bonus}) — critical miss.{lucky_note}"
+            ], class_facts
+        hit = natural == 20 or attack_roll.total >= monster.armor_class
+        if not hit:
+            character.combat_flags["hidden"] = False
+            character.combat_flags["attack_advantage"] = False
             return [
                 f"Attack with {weapon_label}: {attack_roll.total} (d20 +{bonus}) vs AC {monster.armor_class} — miss.{lucky_note}",
-            ]
-        damage = self.roll(weapon.damage, damage_modifier(character, weapon), natural == 20)
+            ], class_facts
+        dmg_mod = damage_modifier(character, weapon) + dueling_style_damage_bonus(character, weapon)
+        if dueling_style_damage_bonus(character, weapon):
+            class_facts["dueling_bonus"] = 2
+        damage = self.roll(weapon.damage, dmg_mod, natural == 20)
         monster.hp = max(0, monster.hp - max(1, damage.total))
-        return [
+        events = [
             f"Attack with {weapon_label}: {attack_roll.total} (d20 +{bonus}) — hit.{lucky_note}",
             f"Damage {damage.total} ({weapon.damage} + modifier); {monster.name} has {monster.hp}/{monster.max_hp} HP.",
         ]
+        eligible, reason = sneak_attack_eligible(character, weapon, hit=True)
+        if eligible:
+            extra, sneak_facts = apply_sneak_attack(self, character, weapon, critical=natural == 20)
+            monster.hp = max(0, monster.hp - extra)
+            class_facts["sneak_attack"] = sneak_facts
+            events.append(
+                f"Sneak Attack +{extra} ({sneak_facts['dice']}). {monster.name} has {monster.hp}/{monster.max_hp} HP."
+            )
+        elif reason == "no_advantage" and character.character_class == "rogue":
+            events.append("Sneak Attack unavailable — you need advantage on the attack (try Hide first).")
+        character.combat_flags["hidden"] = False
+        character.combat_flags["attack_advantage"] = False
+        return events, class_facts
+
+    def _resolve_class_feature(
+        self,
+        character: CharacterState,
+        action: str,
+        feature: str,
+        monster: MonsterState | None,
+    ) -> tuple[TurnResult, MonsterState | None]:
+        from .class_features import try_hide_in_combat, use_arcane_recovery, use_second_wind
+        from .intent import ARCANE_RECOVERY_PATTERN, HIDE_COMBAT_PATTERN, SECOND_WIND_PATTERN
+
+        text = action.casefold()
+        if monster and character.in_combat:
+            blocked = self._require_player_combat_turn(character, action)
+            if blocked:
+                return blocked, monster
+            blocked_turn = self._begin_player_combat_action(character, action)[1]
+            if blocked_turn:
+                return self._finish_paralyzed_player_turn(character, action, monster)
+
+        class_facts: dict = {}
+        events: list[str] = []
+        changed = False
+
+        if feature == "second_wind" or SECOND_WIND_PATTERN.search(text):
+            ok, lines, class_facts = use_second_wind(self, character)
+            events.extend(lines)
+            changed = ok
+            if ok:
+                return TurnResult(action, events, changed, class_facts=class_facts, costs_adventure_mana=False), monster
+
+        if feature == "arcane_recovery" or ARCANE_RECOVERY_PATTERN.search(text):
+            ok, lines, class_facts = use_arcane_recovery(character)
+            events.extend(lines)
+            changed = ok
+            return TurnResult(action, events, changed, class_facts=class_facts, costs_adventure_mana=False), monster
+
+        if feature == "hide" or HIDE_COMBAT_PATTERN.search(text):
+            ok, lines, class_facts = try_hide_in_combat(self, character)
+            events.extend(lines)
+            changed = ok
+            if ok and character.in_combat and monster:
+                events.extend(self._close_player_combat_turn(character))
+                enemy_events, enemy_save = self._enemy_turn(character, monster)
+                events.extend(enemy_events)
+                return TurnResult(
+                    action,
+                    events,
+                    changed,
+                    class_facts=class_facts,
+                    save_facts=enemy_save,
+                ), monster if character.in_combat else None
+            return TurnResult(action, events, changed, class_facts=class_facts), monster
+
+        return TurnResult(action, ["That class feature cannot be used here."], False), monster
 
     def _resolve_attack_turn(
         self,
@@ -1235,7 +1360,9 @@ class GameEngine:
         blocked_turn = self._begin_player_combat_action(character, action)[1]
         if blocked_turn:
             return self._finish_paralyzed_player_turn(character, action, monster)
-        events.extend(self.attack(character, monster))
+        attack_events, attack_facts = self.attack(character, monster)
+        events.extend(attack_events)
+        attack_class_facts = attack_facts
         if monster.hp == 0:
             character.in_combat = False
             reward = monster.reward_xp
@@ -1257,13 +1384,26 @@ class GameEngine:
             if story_facts:
                 level_up_facts = {**level_up_facts, **story_facts}
             events.extend(level_events)
-            return TurnResult(action, events, True, True, level_up_facts=level_up_facts), None
+            return TurnResult(
+                action,
+                events,
+                True,
+                True,
+                level_up_facts=level_up_facts,
+                class_facts=attack_class_facts,
+            ), None
         events.extend(self._close_player_combat_turn(character))
         enemy_events, enemy_save = self._enemy_turn(character, monster)
         events.extend(enemy_events)
         self._regenerate_mana(character)
         return (
-            TurnResult(action, events, True, save_facts=enemy_save),
+            TurnResult(
+                action,
+                events,
+                True,
+                save_facts=enemy_save,
+                class_facts=attack_class_facts,
+            ),
             None if not character.in_combat else monster,
         )
 
@@ -1304,6 +1444,14 @@ class GameEngine:
 
         if intent.kind == EQUIP:
             return self._equip_item(character, action, monster)
+
+        if intent.kind == CLASS_FEATURE:
+            return self._resolve_class_feature(
+                character,
+                action,
+                intent.class_feature,
+                monster,
+            )
 
         if intent.kind == DEFEND:
             if monster is None or not character.in_combat:
@@ -1346,6 +1494,18 @@ class GameEngine:
                 healing = self.roll("1d6", self.modifier(character.abilities.get("constitution", 10)))
                 restored = min(character.max_hp - character.hp, max(0, healing.total))
                 if restored <= 0:
+                    from .class_features import on_short_rest_class_features
+
+                    feature_notes = on_short_rest_class_features(character)
+                    if feature_notes:
+                        mark_short_rest(character)
+                        return TurnResult(
+                            action,
+                            ["You catch your breath. " + " ".join(feature_notes)],
+                            True,
+                            costs_adventure_mana=False,
+                            rest_facts={"kind": "short", "hp_restored": 0},
+                        ), monster
                     return TurnResult(
                         action,
                         ["You are already at full health — a short rest changes nothing."],
@@ -1354,9 +1514,16 @@ class GameEngine:
                     ), monster
                 character.hp += restored
                 mark_short_rest(character)
+                from .class_features import on_short_rest_class_features
+
+                feature_notes = on_short_rest_class_features(character)
+                lines = [
+                    f"You take a short rest and recover {restored} HP. Your HP: {character.hp}/{character.max_hp}."
+                ]
+                lines.extend(feature_notes)
                 return TurnResult(
                     action,
-                    [f"You take a short rest and recover {restored} HP. Your HP: {character.hp}/{character.max_hp}."],
+                    lines,
                     True,
                     costs_adventure_mana=False,
                     rest_facts={"kind": "short", "hp_restored": restored},
@@ -1393,12 +1560,15 @@ class GameEngine:
                 int(level): count for level, count in character.max_spell_slots.items() if count > 0
             }
             clear_short_rest_gate(character)
+            from .class_features import on_long_rest_class_features
+
             slot_total = sum(slots_restored.values())
             events = [
                 f"You take a long rest and recover {hp_restored} HP; all spell slots are restored."
                 if slot_total
                 else f"You take a long rest and recover {hp_restored} HP."
             ]
+            events.extend(on_long_rest_class_features(character))
             return TurnResult(
                 action,
                 events,

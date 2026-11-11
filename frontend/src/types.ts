@@ -42,6 +42,13 @@ export interface Character {
   bond?: string;
   flaw?: string;
   backstory?: string;
+  fighting_style?: string;
+  expertise_skills?: string[];
+  divine_domain?: string;
+  second_wind_available?: boolean;
+  arcane_recovery_available?: boolean;
+  arcane_recovery_ready?: boolean;
+  combat_flags?: Record<string, boolean>;
 }
 
 export type ItemKind = 'weapon' | 'armor' | 'shield' | 'gear';
@@ -139,6 +146,9 @@ export interface CharacterCreationReference {
   spell_pick_limits: Record<string, Record<string, number>>;
   spell_options?: Record<string, { cantrips: string[]; level_one: string[] }>;
   personality_fields: string[];
+  fighting_styles?: string[];
+  cleric_domains_mvp?: string[];
+  rogue_expertise_picks?: number;
 }
 
 export interface ReferenceCatalog {
