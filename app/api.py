@@ -17,6 +17,7 @@ import bcrypt
 from .auth.telegram import InitDataError, TelegramUser, verify_init_data
 from .db import ActionReceipt, AnalyticsEvent, CharacterRecord, EventRecord, EnergyTransaction, User, ApiKey, Session, decode_character_state, decode_state, encode_character_state, encode_state, init_db
 from .engine import economy, reference, tools
+from .engine.equipment import load_character_state
 from .engine.models import CharacterState, MonsterState
 from .engine.locations import LOCATIONS
 from .engine.service import GameEngine
@@ -627,7 +628,7 @@ async def list_characters(user: User = Depends(get_user_by_token)) -> list[dict]
             .where(CharacterRecord.owner_id == user.id)
             .order_by(CharacterRecord.updated_at.desc(), CharacterRecord.id.desc())
         )
-        return [decode_character_state(record.payload) for record in records]
+        return [asdict(load_character_state(decode_character_state(record.payload))) for record in records]
 
 @app.get("/characters/{character_id}/events")
 async def list_character_events(
@@ -667,7 +668,7 @@ async def get_character(character_id: str, user: User = Depends(get_user_by_toke
         if not record or record.owner_id != user.id: 
             logger.warning(f"Character not found for user {user.username}: {character_id}")
             raise HTTPException(404, "Character not found")
-        return decode_character_state(record.payload)
+        return asdict(load_character_state(decode_character_state(record.payload)))
 
 IDEMPOTENCY_HEADER = "Idempotency-Key"
 IDEMPOTENCY_KEY_LIMIT = 64
@@ -802,7 +803,7 @@ async def update_settings(character_id: str, request: CharacterSettings, user: U
         if not record or record.owner_id != user.id:
             raise HTTPException(404, "Character not found")
         base_version = record.version
-        character = CharacterState(**decode_character_state(record.payload))
+        character = load_character_state(decode_character_state(record.payload))
         try: game.apply_settings(character, **request.model_dump(exclude_none=True))
         except ValueError as error: raise HTTPException(422, str(error)) from error
         # Settings are state too: a turn that read the old payload must not put
@@ -1074,7 +1075,7 @@ async def commit_action_turn(
                 logger.warning(f"Character not found for user {user.username}: {character_id}")
                 raise HTTPException(404, "Character not found")
             base_version = record.version
-            character = CharacterState(**decode_character_state(record.payload))
+            character = load_character_state(decode_character_state(record.payload))
             if character.hp <= 0:
                 logger.warning(f"Action attempted by dead character {character_id}")
                 raise HTTPException(409, "Character has fallen and can no longer act")
@@ -1222,7 +1223,7 @@ async def e2e_force_fallen(character_id: str, user: User = Depends(get_user_by_t
         record = await session.get(CharacterRecord, character_id)
         if not record or record.owner_id != user.id:
             raise HTTPException(404, "Character not found")
-        character = CharacterState(**decode_character_state(record.payload))
+        character = load_character_state(decode_character_state(record.payload))
         character.hp = 0
         character.in_combat = False
         character.combatant = None
@@ -1245,7 +1246,7 @@ async def revive_character(character_id: str, user: User = Depends(get_user_by_t
         record = await session.get(CharacterRecord, character_id)
         if not record or record.owner_id != user.id:
             raise HTTPException(404, "Character not found")
-        character = CharacterState(**decode_character_state(record.payload))
+        character = load_character_state(decode_character_state(record.payload))
         if character.hp > 0:
             raise HTTPException(409, "Character has not fallen")
         lost = min(character.gold, max(1, character.gold // 10)) if character.gold else 0

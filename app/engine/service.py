@@ -11,13 +11,18 @@ from .encounters import (
 )
 from .equipment import (
     STARTING_INVENTORY_BY_CLASS,
+    apply_starting_equipment,
     attack_modifier,
     damage_modifier,
     default_item_instances,
+    equip_item_from_query,
     equipped_weapon,
     item_attack_bonus,
+    migrate_item_instances,
+    refresh_armor_class,
     set_equipped_weapon,
     sync_item_instances,
+    unequip_item,
 )
 from .character_creation import (
     CreationChoices,
@@ -150,8 +155,6 @@ class GameEngine:
         spec = CLASSES[character_class]
         hp = max(1, spec.hit_die + self.modifier(scores["constitution"]))
         mana = spec.mana + max(0, self.modifier(scores[spec.primary])) if spec.mana else 0
-        dexterity = self.modifier(scores["dexterity"])
-        armor_class = spec.armor[0] + (dexterity if spec.armor[1] is None else min(dexterity, spec.armor[1]))
         if not inventory:
             inventory = list(STARTING_INVENTORY_BY_CLASS.get(character_class, ["traveler's clothes"]))
 
@@ -164,7 +167,7 @@ class GameEngine:
             abilities=scores,
             max_hp=hp,
             hp=hp,
-            armor_class=armor_class,
+            armor_class=10,
             mana=mana,
             max_mana=mana,
             inventory=inventory,
@@ -183,7 +186,7 @@ class GameEngine:
             backstory=choices.backstory[:2048],
         )
         character.visited_locations = [character.location]
-        character.item_instances = default_item_instances(character.inventory, character)
+        apply_starting_equipment(character)
         initialize_spellcasting(character)
         if cantrips is not None or level_one_spells is not None:
             apply_creation_spell_choices(character, choices.cantrips, choices.level_one_spells)
@@ -401,11 +404,15 @@ class GameEngine:
             blocked = self._require_player_combat_turn(character, action)
             if blocked:
                 return blocked, monster
-        from .intent import EQUIP_PATTERN
+        from .intent import EQUIP_PATTERN, UNEQUIP_PATTERN
 
-        match = EQUIP_PATTERN.search(action)
-        query = match.group(1).strip() if match else action
-        ok, message = set_equipped_weapon(character, query)
+        unequip_match = UNEQUIP_PATTERN.search(action)
+        if unequip_match:
+            ok, message = unequip_item(character, unequip_match.group(1).strip())
+        else:
+            match = EQUIP_PATTERN.search(action)
+            query = match.group(1).strip() if match else action
+            ok, message = equip_item_from_query(character, query)
         if not ok:
             return TurnResult(action, [message], False, costs_adventure_mana=False), monster
         return TurnResult(action, [message], True, costs_adventure_mana=False), monster

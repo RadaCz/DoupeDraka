@@ -3,13 +3,14 @@ import type { Character } from '../types';
 import { useI18n } from '../i18n';
 import { displayInventoryLabel } from '../i18n/gameDisplay';
 import { inventoryItemCategory, inventoryItemMeta } from '../game/inventoryCatalog';
+import { armorImpactHint, equipBlockReason, gearKind, isEquippableGear } from '../game/equipmentRules';
 import {
   canWieldInventoryItem,
   describeItemType,
   equipBlocked,
   inventoryCounts,
   itemDetailDescription,
-  itemEquipped,
+  itemEquippedSlot,
   potionUseBlocked,
 } from './characterSheet';
 
@@ -32,16 +33,17 @@ export function CharacterInventoryPanel({ character, busy = false, onInventoryAc
 
   const grouped = useMemo(() => {
     const weapons: typeof rows = [];
+    const armorShields: typeof rows = [];
     const consumables: typeof rows = [];
     const gear: typeof rows = [];
     for (const row of rows) {
-      const key = row.label.toLowerCase();
-      if (key.includes('potion')) consumables.push(row);
-      else if (key.includes('sword') || key.includes('dagger') || key.includes('mace') || key.includes('rapier') || key.includes('bow')) {
-        weapons.push(row);
-      } else gear.push(row);
+      const kind = gearKind(row.label);
+      if (kind === 'weapon') weapons.push(row);
+      else if (kind === 'armor' || kind === 'shield') armorShields.push(row);
+      else if (row.label.toLowerCase().includes('potion')) consumables.push(row);
+      else gear.push(row);
     }
-    return { weapons, consumables, gear };
+    return { weapons, armorShields, consumables, gear };
   }, [rows]);
 
   if (!rows.length) {
@@ -50,11 +52,14 @@ export function CharacterInventoryPanel({ character, busy = false, onInventoryAc
 
   const activeLabel = selected;
   const meta = activeLabel ? inventoryItemMeta(activeLabel) : null;
-  const isEquipped = activeLabel ? itemEquipped(instances, activeLabel) : false;
+  const equippedSlot = activeLabel ? itemEquippedSlot(instances, activeLabel) : null;
   const wieldable = activeLabel ? canWieldInventoryItem(activeLabel) : false;
+  const equippable = activeLabel ? isEquippableGear(activeLabel) : false;
   const potionBlock = potionUseBlocked(character);
   const equipTurnBlock = equipBlocked(character);
+  const proficiencyBlock = activeLabel ? equipBlockReason(character, activeLabel) : null;
   const isPotion = activeLabel?.toLowerCase().includes('potion');
+  const acHint = activeLabel ? armorImpactHint(character, activeLabel) : null;
 
   const fire = (action: string) => {
     if (busy || !onInventoryAction || !action.trim()) return;
@@ -72,19 +77,19 @@ export function CharacterInventoryPanel({ character, busy = false, onInventoryAc
         <div className="inventory-grid char-v2-inventory-grid">
           {items.map(({ label, count }) => {
             const itemMeta = inventoryItemMeta(label);
-            const equipped = itemEquipped(instances, label);
+            const slot = itemEquippedSlot(instances, label);
             return (
               <button
                 type="button"
                 key={label}
-                className={`inventory-item-card${equipped ? ' equipped' : ''}`}
+                className={`inventory-item-card${slot ? ' equipped' : ''}`}
                 onClick={() => setSelected(label)}
                 aria-label={`${t(itemMeta.nameKey)}: ${label}`}
               >
                 <span className="inventory-item-icon" aria-hidden="true">{itemMeta.icon}</span>
                 <span className="inventory-item-label">{displayInventoryLabel(label, locale)}</span>
                 {count > 1 && <span className="char-v2-item-qty">×{count}</span>}
-                {equipped && <span className="inventory-equipped-tag">{t('Equipped')}</span>}
+                {slot && <span className="inventory-equipped-tag">{t('Equipped')}</span>}
               </button>
             );
           })}
@@ -96,6 +101,7 @@ export function CharacterInventoryPanel({ character, busy = false, onInventoryAc
   return (
     <>
       {renderGrid(t('Weapons'), grouped.weapons)}
+      {renderGrid(t('Armor & shields'), grouped.armorShields)}
       {renderGrid(t('Consumables'), grouped.consumables)}
       {renderGrid(t('Other gear'), grouped.gear)}
 
@@ -112,23 +118,56 @@ export function CharacterInventoryPanel({ character, busy = false, onInventoryAc
             <h3 id="inventory-detail-title">{displayInventoryLabel(activeLabel, locale)}</h3>
             <p className="char-v2-item-type">{describeItemType(activeLabel, t)}</p>
             <p>{itemDetailDescription(activeLabel, t)}</p>
-            {isEquipped && wieldable && (
+            {acHint && <p className="inventory-stat-line">{t(acHint)}</p>}
+            <p className="inventory-stat-line">
+              {t('Armor class')}: <strong>{character.armor_class}</strong>
+            </p>
+            {equippedSlot === 'weapon' && wieldable && (
               <p className="inventory-stat-line">{t('This weapon is currently wielded.')}</p>
             )}
-            {!wieldable && inventoryItemCategory(activeLabel) === 'weapon' && (
+            {equippedSlot === 'armor' && (
+              <p className="inventory-stat-line">{t('This armor is currently worn.')}</p>
+            )}
+            {equippedSlot === 'shield' && (
+              <p className="inventory-stat-line">{t('This shield is currently equipped.')}</p>
+            )}
+            {proficiencyBlock && (
+              <p className="char-v2-item-note" role="note">{t(proficiencyBlock)}</p>
+            )}
+            {!wieldable && inventoryItemCategory(activeLabel) === 'weapon' && gearKind(activeLabel) !== 'weapon' && (
               <p className="char-v2-item-note">{t('This item cannot be wielded as a weapon.')}</p>
             )}
             <div className="inventory-detail-actions">
-              {wieldable && onInventoryAction && !isEquipped && (
+              {equippable && onInventoryAction && !equippedSlot && (
                 <button
                   type="button"
                   className="primary"
-                  disabled={busy || Boolean(equipTurnBlock)}
+                  disabled={busy || Boolean(equipTurnBlock) || Boolean(proficiencyBlock)}
                   aria-busy={busy && lastSent === `equip ${activeLabel}` ? true : undefined}
-                  title={equipTurnBlock ?? undefined}
+                  title={equipTurnBlock ?? proficiencyBlock ?? undefined}
                   onClick={() => fire(`equip ${activeLabel}`)}
                 >
                   {t('Equip')}
+                </button>
+              )}
+              {equippedSlot === 'armor' && onInventoryAction && (
+                <button
+                  type="button"
+                  className="ghost"
+                  disabled={busy || Boolean(equipTurnBlock)}
+                  onClick={() => fire('unequip armor')}
+                >
+                  {t('Unequip armor')}
+                </button>
+              )}
+              {equippedSlot === 'shield' && onInventoryAction && (
+                <button
+                  type="button"
+                  className="ghost"
+                  disabled={busy || Boolean(equipTurnBlock)}
+                  onClick={() => fire('unequip shield')}
+                >
+                  {t('Unequip shield')}
                 </button>
               )}
               {isPotion && onInventoryAction && (

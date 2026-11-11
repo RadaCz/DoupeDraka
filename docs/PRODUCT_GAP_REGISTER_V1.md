@@ -1,7 +1,7 @@
 # Product Gap Register V1
 
-**Repo baseline (audit):** `50a88900756792d72284b40fb162f5639a5c29e9` (`clean-main`)  
-**Last acceptance pass:** Sprint 16.1 — [`SPRINT_16_1_CHARACTER_CREATION_ACCEPTANCE.md`](SPRINT_16_1_CHARACTER_CREATION_ACCEPTANCE.md)  
+**Repo baseline (audit):** `ebb4cd8ade948540bd97cfd557326b64cfc37236` (`clean-main`)  
+**Last acceptance pass:** Sprint 17 — [`SPRINT_17_EQUIPMENT_ARMOR_V1.md`](SPRINT_17_EQUIPMENT_ARMOR_V1.md) (local, uncommitted)  
 **Authority:** engine + persisted `CharacterState`; UI must not pretend unmodeled rules apply.  
 **Related audits:** [`GAMEPLAY_COMPLETENESS_AUDIT_V1.md`](GAMEPLAY_COMPLETENESS_AUDIT_V1.md), [`SPRINT_16_CHARACTER_CREATION_V2.md`](SPRINT_16_CHARACTER_CREATION_V2.md)
 
@@ -36,10 +36,11 @@
 | Backgrounds | **PARTIAL** | `MVP_BACKGROUNDS` (6 SRD), wizard footnote | Skills + gear + gold verified in tests; features **narrative-only** (UI labeled) | P1 | 17 — model 1–2 features |
 | Abilities (standard array) | **IMPLEMENTED** | `catalog.STANDARD_ARRAY`, wizard step | Validated permutation; racial ASI after assign | P0 | — |
 | Skills & proficiency | **PARTIAL** | `skill_proficiencies`, `skill_check()` | Proficiency on skill rolls (explore cues); not all actions | P0 | 17 — broader skill routing |
-| Equipment at creation | **PARTIAL** | `EQUIPMENT_PACKAGES` | Class packages + background items; some labels non-wieldable | P1 | 17 — armor AC from worn armor |
+| Equipment at creation | **IMPLEMENTED** | `apply_starting_equipment`, `EQUIPMENT_PACKAGES` | Class packages + auto body armor; instances + slots at create | P1 | — |
+| Worn armor / shield AC | **IMPLEMENTED** | `equipment.compute_armor_class`, equip actions | SRD 5.1 MVP armor set; shield +2; proficiency enforced | P0 | Expand armor catalog |
 | Spells at creation | **PARTIAL** | `validate_spell_picks`, wizard/cleric only | Player picks; unmodeled spells flagged in UI | P1 | 17 — expand `MODELED_SPELL_EFFECTS` |
 | Combat | **PARTIAL** | `service.py`, `equipment.py` | Attack, AC, slots, subset of spells | P0 | Ongoing |
-| Inventory | **PARTIAL** | `equipment.py`, `CharacterInventoryPanel` | Weapons/consumables; limited gear types | P1 | 17 |
+| Inventory | **PARTIAL** | `equipment.py`, `CharacterInventoryPanel` | Weapon + armor + shield equip; bows/accessories not modeled | P1 | 18 — ranged weapons |
 | Exploration / checks | **PARTIAL** | `EXPLORE_SKILL_CUES`, `ability_check` | Skill mapping for some verbs | P1 | 17 |
 | NPC / quests Ch.1 | **IMPLEMENTED** | `chapter_one_progression.py`, quests | Playable chapter 1 | P0 | — |
 | Level-up | **PARTIAL** | `_level_up`, `spells.learn_level_up_spells` | XP threshold; auto spell picks | P2 | 18 |

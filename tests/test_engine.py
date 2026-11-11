@@ -15,9 +15,9 @@ def test_created_fighter_has_valid_state():
     hero = GameEngine(random.Random(7)).create_character(1, "Arin", "human", "fighter", stats(strength=16, dexterity=14, constitution=14))
     # Fighter: hit_die=10, primary=strength, mana=0
     # HP = 10 + modifier(14) = 10 + 2 = 12
-    # AC = chain mail 16 (heavy armor ignores the dexterity bonus)
+    # AC = chain mail 16 + shield 2 when guardian package includes shield
     # mana = 0 because fighters have no spellcasting pool
-    assert (hero.max_hp, hero.armor_class, hero.mana) == (12, 16, 0)
+    assert (hero.max_hp, hero.armor_class, hero.mana) == (12, 18, 0)
 
 
 def test_created_sorcerer_has_mana():
@@ -353,8 +353,8 @@ def test_starting_armor_keeps_martials_alive():
     """Armor proficiencies in the catalog must actually set armor class."""
     fighter = GameEngine().create_character(1, "Arin", "human", "fighter")
     wizard = GameEngine().create_character(1, "Arin", "human", "wizard")
-    # Chain mail (16, no dexterity) versus unarmored wizard (10 + dexterity).
-    assert fighter.armor_class == 16
+    # Chain mail + shield versus unarmored wizard (10 + dexterity).
+    assert fighter.armor_class == 18
     assert wizard.armor_class == 10 + GameEngine.modifier(wizard.abilities["dexterity"])
 
 

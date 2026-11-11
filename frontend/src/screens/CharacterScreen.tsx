@@ -8,6 +8,8 @@ import {
   ABILITY_HINT_KEYS,
   ABILITY_KEYS,
   ABILITY_LABEL_KEYS,
+  equippedArmorInstance,
+  equippedShieldInstance,
   equippedWeaponInstance,
   formatModifier,
   xpProgress,
@@ -48,7 +50,9 @@ export function CharacterScreen({
     );
   }
 
-  const equipped = equippedWeaponInstance(character.item_instances);
+  const equippedWeapon = equippedWeaponInstance(character.item_instances);
+  const equippedArmor = equippedArmorInstance(character.item_instances);
+  const equippedShield = equippedShieldInstance(character.item_instances);
   const xp = xpProgress(character.xp);
   const spellRows = useMemo(() => heroSpellRows(character, spells), [character, spells]);
   const hasSpellcasting = Object.values(character.max_spell_slots ?? {}).some(count => count > 0);
@@ -99,20 +103,45 @@ export function CharacterScreen({
 
       <section className="char-v2-section" aria-labelledby="char-equipment-heading">
         <h2 id="char-equipment-heading" className="char-v2-section-title">{t('Equipped gear')}</h2>
-        <p className="char-v2-section-lead">{t('Only weapons can be wielded in the current chapter. Equipping another blade swaps your active weapon.')}</p>
-        {equipped ? (
-          <article className="char-v2-equipped-card">
-            <span className="char-v2-equipped-icon" aria-hidden="true">⚔</span>
-            <div>
-              <strong>{displayInventoryLabel(equipped.name, locale)}</strong>
-              {equipped.attack_bonus > 0 && (
-                <p className="char-v2-equipped-bonus">{t('Attack bonus')}: +{equipped.attack_bonus}</p>
-              )}
-            </div>
-          </article>
-        ) : (
-          <p className="empty-note">{t('No weapon is actively wielded. Choose a weapon in your inventory.')}</p>
-        )}
+        <p className="char-v2-section-lead">
+          {t('Equipped items set your armor class and attack. Armor and shields follow SRD 5.1 rules.')}
+        </p>
+        <div className="char-v2-equipped-row">
+          {equippedWeapon ? (
+            <article className="char-v2-equipped-card">
+              <span className="char-v2-equipped-icon" aria-hidden="true">⚔</span>
+              <div>
+                <small>{t('Weapon')}</small>
+                <strong>{displayInventoryLabel(equippedWeapon.name, locale)}</strong>
+                {equippedWeapon.attack_bonus > 0 && (
+                  <p className="char-v2-equipped-bonus">{t('Attack bonus')}: +{equippedWeapon.attack_bonus}</p>
+                )}
+              </div>
+            </article>
+          ) : (
+            <p className="empty-note">{t('No weapon wielded.')}</p>
+          )}
+          {equippedArmor ? (
+            <article className="char-v2-equipped-card">
+              <span className="char-v2-equipped-icon" aria-hidden="true">🛡</span>
+              <div>
+                <small>{t('Armor')}</small>
+                <strong>{displayInventoryLabel(equippedArmor.name, locale)}</strong>
+              </div>
+            </article>
+          ) : (
+            <p className="empty-note">{t('No armor worn (unarmored defense).')}</p>
+          )}
+          {equippedShield ? (
+            <article className="char-v2-equipped-card">
+              <span className="char-v2-equipped-icon" aria-hidden="true">🛡</span>
+              <div>
+                <small>{t('Shield')}</small>
+                <strong>{displayInventoryLabel(equippedShield.name, locale)}</strong>
+              </div>
+            </article>
+          ) : null}
+        </div>
       </section>
 
       <section className="char-v2-section" aria-labelledby="char-inventory-heading">

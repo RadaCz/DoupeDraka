@@ -54,11 +54,43 @@ const RULES: Array<{ match: (key: string) => boolean; meta: InventoryItemMeta }>
     },
   },
   {
-    match: key => key.includes('armor') || key.includes('clothes') || key.includes('leather'),
+    match: key => key.includes('chain mail'),
     meta: {
       icon: '🛡️',
-      nameKey: 'Adventuring gear',
-      descriptionKey: 'Worn gear that shapes your look in the story. Armor class comes from class and stats.',
+      nameKey: 'Chain mail',
+      descriptionKey: 'Heavy armor. AC 16 when worn (Strength 13). No Dexterity bonus.',
+    },
+  },
+  {
+    match: key => key.includes('scale mail'),
+    meta: {
+      icon: '🛡️',
+      nameKey: 'Scale mail',
+      descriptionKey: 'Medium armor. AC 14 + Dexterity modifier (max +2).',
+    },
+  },
+  {
+    match: key => key.includes('studded'),
+    meta: {
+      icon: '🛡️',
+      nameKey: 'Studded leather',
+      descriptionKey: 'Light armor. AC 12 + full Dexterity modifier.',
+    },
+  },
+  {
+    match: key => key.includes('leather armor'),
+    meta: {
+      icon: '🛡️',
+      nameKey: 'Leather armor',
+      descriptionKey: 'Light armor. AC 11 + full Dexterity modifier.',
+    },
+  },
+  {
+    match: key => key.includes('clothes'),
+    meta: {
+      icon: '🎽',
+      nameKey: 'Travel gear',
+      descriptionKey: 'Adventuring clothes. No armor bonus.',
     },
   },
   {

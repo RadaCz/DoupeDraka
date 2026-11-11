@@ -43,12 +43,17 @@ export interface Character {
   backstory?: string;
 }
 
+export type ItemKind = 'weapon' | 'armor' | 'shield' | 'gear';
+export type EquippedSlot = 'weapon' | 'armor' | 'shield';
+
 export interface ItemInstance {
   instance_id: string;
   definition_id: string;
   name: string;
   equipped: boolean;
   attack_bonus: number;
+  item_kind?: ItemKind;
+  equipped_slot?: EquippedSlot | null;
 }
 
 export interface Combatant {

@@ -195,6 +195,20 @@
   color: var(--text-soft);
 }
 
+.char-v2-equipped-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+@media (min-width: 480px) {
+  .char-v2-equipped-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+}
+
 .char-v2-equipped-card {
   display: flex;
   gap: 12px;

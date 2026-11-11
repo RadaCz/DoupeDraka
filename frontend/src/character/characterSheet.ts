@@ -1,4 +1,5 @@
 import type { Character, ItemInstance } from '../types';
+import { gearKind } from '../game/equipmentRules';
 import { inventoryItemMeta, inventoryItemCategory } from '../game/inventoryCatalog';
 
 /** Mirrors app/engine/service.py XP_THRESHOLD — display only. */
@@ -57,9 +58,26 @@ export function canWieldInventoryItem(label: string): boolean {
   return WIELDABLE_INVENTORY_KEYS.has(label.toLowerCase().trim());
 }
 
+function slotForEntry(entry: ItemInstance): 'weapon' | 'armor' | 'shield' | null {
+  if (entry.equipped_slot === 'weapon' || entry.equipped_slot === 'armor' || entry.equipped_slot === 'shield') {
+    return entry.equipped_slot;
+  }
+  return entry.equipped ? 'weapon' : null;
+}
+
 export function equippedWeaponInstance(instances: ItemInstance[] | undefined): ItemInstance | null {
   if (!instances?.length) return null;
-  return instances.find(entry => entry.equipped && entry.attack_bonus >= 0) ?? instances.find(entry => entry.equipped) ?? null;
+  return instances.find(entry => slotForEntry(entry) === 'weapon') ?? null;
+}
+
+export function equippedArmorInstance(instances: ItemInstance[] | undefined): ItemInstance | null {
+  if (!instances?.length) return null;
+  return instances.find(entry => slotForEntry(entry) === 'armor') ?? null;
+}
+
+export function equippedShieldInstance(instances: ItemInstance[] | undefined): ItemInstance | null {
+  if (!instances?.length) return null;
+  return instances.find(entry => slotForEntry(entry) === 'shield') ?? null;
 }
 
 export function inventoryCounts(inventory: string[]): Array<{ label: string; count: number }> {
@@ -93,19 +111,31 @@ export function potionUseBlocked(character: Character): string | null {
 
 export function equipBlocked(character: Character): string | null {
   if (character.in_combat && character.combat_turn === 'enemy') {
-    return 'Wait for your turn in combat before changing weapons.';
+    return 'Wait for your turn in combat before changing equipment.';
   }
   return null;
 }
 
-export function itemEquipped(instances: ItemInstance[] | undefined, label: string): boolean {
+export function itemEquippedSlot(
+  instances: ItemInstance[] | undefined,
+  label: string,
+): 'weapon' | 'armor' | 'shield' | null {
   const key = label.toLowerCase().trim();
-  return Boolean(instances?.find(entry => entry.name.toLowerCase().trim() === key && entry.equipped));
+  const entry = instances?.find(row => row.name.toLowerCase().trim() === key);
+  if (!entry) return null;
+  return slotForEntry(entry);
+}
+
+export function itemEquipped(instances: ItemInstance[] | undefined, label: string): boolean {
+  return itemEquippedSlot(instances, label) !== null;
 }
 
 export function describeItemType(label: string, t: (s: string) => string): string {
+  const kind = gearKind(label);
+  if (kind === 'weapon') return t('Weapon');
+  if (kind === 'armor') return t('Armor');
+  if (kind === 'shield') return t('Shield');
   const category = inventoryItemCategory(label);
-  if (category === 'weapon') return t('Weapon');
   if (category === 'consumable') return t('Consumable');
   return t('Gear');
 }
