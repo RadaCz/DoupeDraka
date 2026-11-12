@@ -20,9 +20,23 @@ export function classFeatureLines(character: Character, t: (value: string) => st
       label: t('Second Wind'),
       status: character.second_wind_available ? t('Ready') : t('Spent until rest'),
     });
+    if ((character.level ?? 1) >= 2) {
+      lines.push({
+        key: 'action_surge',
+        label: t('Action Surge'),
+        status: character.action_surge_available ? t('Ready') : t('Spent until short rest'),
+      });
+    }
   }
 
   if (klass === 'rogue') {
+    if ((character.level ?? 1) >= 2) {
+      lines.push({
+        key: 'cunning_action',
+        label: t('Cunning Action'),
+        detail: t('Hide (bonus action). Dash and bonus Disengage are not modeled yet.'),
+      });
+    }
     if (character.expertise_skills?.length) {
       lines.push({
         key: 'expertise',

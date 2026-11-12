@@ -157,6 +157,7 @@ def test_attack_then_second_wind_same_player_round():
 def test_rogue_hide_then_attack_same_round():
     game = GameEngine(random.Random(3))
     rogue = create_hero("rogue", dexterity=16)
+    rogue.level = 2
     rogue.hp = 40
     rogue.max_hp = 40
     monster = _player_combat(rogue, _durable_monster())

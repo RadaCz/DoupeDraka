@@ -251,22 +251,27 @@ class GameEngine:
         return RollResult(dice, values, modifier, sum(values) + modifier, critical)
 
     def _level_up(self, character: CharacterState) -> tuple[list[str], dict]:
+        from .class_features import apply_level_up_class_features
+        from .level_progression import hp_gain_on_level_up
+
         if character.level >= MAX_MVP_LEVEL or character.xp < XP_THRESHOLD:
             if character.level >= MAX_MVP_LEVEL:
                 character.xp = min(character.xp, XP_THRESHOLD - 1)
+            return [], {}
+        if character.hp <= 0:
             return [], {}
         ensure_spellcasting(character)
         character.xp -= XP_THRESHOLD
         character.level += 1
         spec = CLASSES[character.character_class]
-        hp_roll = self.roll(f"1d{spec.hit_die}", self.modifier(character.abilities["constitution"]))
-        hp_gained = max(1, hp_roll.total)
+        hp_gained = hp_gain_on_level_up(character)
         character.max_hp += hp_gained
         character.hp = min(character.max_hp, character.hp + hp_gained)
         character.mana += spec.mana
         character.max_mana = character.mana
         advance_spellcasting(character)
         new_spells = learn_level_up_spells(character, self.rng)
+        class_features_gained, class_features_deferred = apply_level_up_class_features(character)
         facts = {
             "new_level": character.level,
             "hp_gained": hp_gained,
@@ -275,10 +280,20 @@ class GameEngine:
             "spell_slots": dict(character.spell_slots),
             "max_spell_slots": dict(character.max_spell_slots),
             "new_spells": new_spells,
+            "class_features_gained": class_features_gained,
+            "class_features_deferred": class_features_deferred,
         }
         events = [
             f"LEVEL UP! You are now level {character.level}. Your maximum and current HP increase by {hp_gained}."
         ]
+        if class_features_gained:
+            events.append(f"New class features: {', '.join(class_features_gained)}.")
+        if class_features_deferred:
+            events.append(
+                "Future progression (not yet available in combat): "
+                + ", ".join(class_features_deferred)
+                + "."
+            )
         if new_spells:
             events.append(f"New spells learned or prepared: {', '.join(new_spells)}.")
         return events, facts
@@ -1948,8 +1963,18 @@ class GameEngine:
         feature: str,
         monster: MonsterState | None,
     ) -> tuple[TurnResult, MonsterState | None]:
-        from .class_features import try_hide_in_combat, use_arcane_recovery, use_second_wind
-        from .intent import ARCANE_RECOVERY_PATTERN, HIDE_COMBAT_PATTERN, SECOND_WIND_PATTERN
+        from .class_features import (
+            try_hide_in_combat,
+            use_action_surge,
+            use_arcane_recovery,
+            use_second_wind,
+        )
+        from .intent import (
+            ACTION_SURGE_PATTERN,
+            ARCANE_RECOVERY_PATTERN,
+            HIDE_COMBAT_PATTERN,
+            SECOND_WIND_PATTERN,
+        )
 
         text = action.casefold()
         if monster and character.in_combat:
@@ -1976,6 +2001,13 @@ class GameEngine:
             events.extend(lines)
             changed = ok
             return TurnResult(action, events, changed, class_facts=class_facts, costs_adventure_mana=False), monster
+
+        if feature == "action_surge" or ACTION_SURGE_PATTERN.search(text):
+            ok, lines, class_facts = use_action_surge(character)
+            events.extend(lines)
+            changed = ok
+            if ok:
+                return TurnResult(action, events, changed, class_facts=class_facts, costs_adventure_mana=False), monster
 
         if feature == "hide" or HIDE_COMBAT_PATTERN.search(text):
             ok, lines, class_facts = try_hide_in_combat(self, character)

@@ -25,6 +25,21 @@ export function LevelUpModal({
         <p className="turn-moment-body">
           {t('Maximum HP increased by {amount}.').replace('{amount}', String(notice.hpGained))}
         </p>
+        {notice.classFeatures?.length ? (
+          <p className="turn-moment-body">
+            {t('New abilities: {list}.').replace('{list}', notice.classFeatures.join(', '))}
+          </p>
+        ) : null}
+        {notice.classFeaturesDeferred?.length ? (
+          <p className="turn-moment-body turn-moment-muted">
+            {t('Coming later: {list}.').replace('{list}', notice.classFeaturesDeferred.join(', '))}
+          </p>
+        ) : null}
+        {notice.spellSlotSummary ? (
+          <p className="turn-moment-body">
+            {t('Spell slots: {summary}.').replace('{summary}', notice.spellSlotSummary)}
+          </p>
+        ) : null}
         <p className="turn-moment-share">
           <ShareButton message={shareMessage} className="share-chip share-chip-gold" />
         </p>

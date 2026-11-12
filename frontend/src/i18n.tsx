@@ -453,6 +453,17 @@ const cs: Record<string, string> = {
   'You have been defeated': 'Byl jsi poren',
   'You blacked out and woke at the last safe refuge.': 'Upadl jsi do tmy a probudil ses v poslednim bezpecnem ukrytu.',
   'Maximum HP increased by {amount}.': 'Maximální životy se zvýšily o {amount}.',
+  'New abilities: {list}.': 'Nové schopnosti: {list}.',
+  'Coming later: {list}.': 'Připravuje se: {list}.',
+  'Hide (bonus action). Dash and bonus Disengage are not modeled yet.':
+    'Schovat se (bonusová akce). Dash a bonusové Disengage zatím nejsou v engine.',
+  'Spell slots: {summary}.': 'Kouzelné sloty: {summary}.',
+  'Action Surge': 'Příval akce',
+  'Take one additional action this turn (once per short rest).':
+    'Proveď jednu další akci v tomto tahu (jednou za krátký odpočinek).',
+  'Cunning Action': 'Lestný tah',
+  'Bonus action: Hide (combat)': 'Bonusová akce: Schovat se (v boji)',
+  'Spent until short rest': 'Vyčerpáno do krátkého odpočinku',
   Share: 'Sdilet',
   'Copied to clipboard': 'Zkopirovano do schranky',
   'Sharing is not available in this browser': 'Sdileni v tomto prohlizeci není k dispozici',

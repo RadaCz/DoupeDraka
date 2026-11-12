@@ -111,6 +111,21 @@ See [`SPRINT_13_CZECH_NARRATION_QA.md`](SPRINT_13_CZECH_NARRATION_QA.md).
 | `narration_language` drift vs UI | **FIXED** | Auto-sync on character load |
 | Play-surface provider meta (Lite) | **UNCHANGED OK** | Hidden on play; economy copy remains in Settings |
 
+### Sprint 35 / 35.1 — Level-up L1–L3 (2026-11-12, local uncommitted)
+
+See [`SPRINT_35_LEVEL_PROGRESSION_ACCEPTANCE.md`](SPRINT_35_LEVEL_PROGRESSION_ACCEPTANCE.md).
+
+| Area | Status |
+|------|--------|
+| MVP XP 100 vs SRD table | **INTENTIONAL** — documented |
+| Combat vs story multi-level | **VERIFIED** (`test_sprint35_1_*`) |
+| HP average hit die | **IMPLEMENTED** |
+| No level-up at 0 HP | **IMPLEMENTED** (35.1) |
+| Action Surge | **IMPLEMENTED** |
+| Cunning Action | **PARTIAL** — Hide only |
+| Channel Divinity / Arcane Tradition | **DEFERRED** — modal “Coming later” |
+| E2E level path | **`level-progression.spec.ts`** |
+
 ### Sprint 15 — Story-paced progression & first descent V1 (2026-11-10, local)
 
 See [`SPRINT_15_PROGRESSION_FIRST_DESCENT.md`](SPRINT_15_PROGRESSION_FIRST_DESCENT.md). Main path **200 XP** (30+50+35+85) → L3 without mandatory `search` grind; first Vault entry = kobold encounter + story flags.

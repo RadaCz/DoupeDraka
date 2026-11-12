@@ -127,6 +127,25 @@ export function buildCombatActions(
   };
 
   const featureActions: CombatActionItem[] = [];
+  const actionSpent = Boolean(character.combat_flags?.action_used);
+  if (
+    character.character_class === 'fighter'
+    && (character.level ?? 1) >= 2
+    && character.action_surge_available
+    && actionSpent
+    && playerTurn
+  ) {
+    featureActions.push(
+      wrap({
+        id: 'action_surge',
+        kind: 'class_feature',
+        label: t('Action Surge'),
+        description: t('Take one additional action this turn (once per short rest).'),
+        glyph: '⚡',
+        action: 'action surge',
+      }),
+    );
+  }
   if (character.character_class === 'fighter' && character.second_wind_available && playerTurn) {
     featureActions.push(
       wrap({
@@ -140,7 +159,11 @@ export function buildCombatActions(
       }),
     );
   }
-  if (character.character_class === 'rogue' && playerTurn) {
+  if (
+    character.character_class === 'rogue'
+    && (character.level ?? 1) >= 2
+    && playerTurn
+  ) {
     featureActions.push(
       wrap({
         id: 'hide',

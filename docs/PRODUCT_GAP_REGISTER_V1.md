@@ -47,7 +47,7 @@
 | Inventory | **PARTIAL** | `equipment.py`, `CharacterInventoryPanel` | Weapon + armor + shield equip; bows/accessories not modeled | P1 | 18 — ranged weapons |
 | Exploration / checks | **PARTIAL** | `EXPLORE_SKILL_CUES`, `ability_check` | Skill mapping for some verbs | P1 | 17 |
 | NPC / quests Ch.1 | **IMPLEMENTED** | `quests.py`, `chapter-one-quest.spec.ts`, Sprint 22 tests | Full main arc + boss completion; NPC hints engine-gated | P0 | Optional location arcs |
-| Level-up | **PARTIAL** | `_level_up`, `spells.learn_level_up_spells` | XP threshold; auto spell picks | P2 | 18 |
+| Level-up L1–L3 | **PARTIAL** | `level_progression.py`, Sprint 35/35.1 tests + E2E | MVP **100 XP/level**; avg HP; Action Surge; Rogue Hide; **CD / Tradition deferred**; Cunning Dash/bonus Disengage deferred | P0 | Channel Divinity, L4+ |
 | Lite / Normal / Pro | see above | `economy.py`, `settings.py` | No pay-to-win; no paid rolls | P0 | — |
 | Mobile UX Ch.1 | **PARTIAL** | E2E play-layout + mobile-viewports | 16.2: bilingual helpers + ID bands; 23/23 E2E ~4 min | P0 | Staging deploy |
 | E2E CI stability | **PARTIAL** | `run-tests.mjs` (3 phases, fresh DB/RNG) | Lokálně **31/31** E2E po Sprint 21.1; GHA na nepushnutém diff **neověřeno** | P0 | Commit Sprint 21 + GHA |

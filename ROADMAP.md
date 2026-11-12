@@ -1,6 +1,16 @@
 # Roadmap
 
-Updated 2026-11-12 (`36fb99c` on `clean-main`; Sprint 32 in working tree). Chapter one is a gated six-location slice. ActionIntent routes player commands; **Pro NOT AVAILABLE** until OpenRouter exists.
+Updated 2026-11-12 (`c731670` baseline + **Sprint 35–35.3 uncommitted, READY FOR REVIEW**). Chapter one is a gated six-location slice. ActionIntent routes player commands; **Pro NOT AVAILABLE** until OpenRouter exists.
+
+## Priority 0j.5 — Level-up L1–L3 (Sprint 35 / 35.3, local)
+- [x] MVP XP 100/level (not SRD table); combat vs story XP contracts
+- [x] Average hit-die HP; no level-up at 0 HP
+- [x] Fighter Action Surge L2; Rogue Cunning Action (Hide only)
+- [x] LevelUpModal + deferred Channel Divinity / Arcane Tradition labeling
+- [x] `test_sprint35_*`, `test_sprint35_1_*`, `e2e/level-progression.spec.ts`
+- [ ] Cunning Action Dash / bonus Disengage
+- [ ] Channel Divinity mechanics
+- [ ] Push / CI after user commit
 
 ## Priority 0j.3 — Spellcasting gameplay (Sprint 32, local)
 - [x] Concentration system + CON saves on damage

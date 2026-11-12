@@ -1,8 +1,8 @@
 # Master plan — stav (sync s DOUPEDRAKA_MASTER_PLAN.md v1.0)
 
-Poslední revize: **2026-11-12 (Sprint 32 — spellcasting gameplay; working tree uncommitted)**. Etapy 7–9 záměrně otevřené až po uzavření sólo smyčky.
+Poslední revize: **2026-11-12 (Sprint 35.3 — inventory E2E + full Playwright matrix; working tree uncommitted)**. Etapy 7–9 záměrně otevřené až po uzavření sólo smyčky.
 
-**Kódový HEAD (committed):** `36fb99c` = `origin/clean-main` (Sprint 31). **Sprint 32 (local):** concentration, Bless / SoF / Mage Armor — viz `docs/SPRINT_32_SPELLCASTING_GAMEPLAY_ACCEPTANCE.md`.
+**Kódový HEAD (committed):** `c731670` = `origin/clean-main` (Sprint 34.1). **Sprint 35–35.3 (local):** L1–L3 progression, Action Surge, partial Cunning Action, **`earnChapterOneShopGold`**, inventory E2E green, Playwright **42/42** — viz `docs/SPRINT_35_LEVEL_PROGRESSION_ACCEPTANCE.md` (**READY FOR REVIEW**).
 
 **CI (baseline `53a6fed`):** GREEN #66 po Sprintu 24; po Sprintu 25 znovu ověřit před pushem.
 **Staging HTTPS:** **NOT DEPLOYED** — viz `docs/STAGING_DEVICE_VALIDATION_V1.md`.  

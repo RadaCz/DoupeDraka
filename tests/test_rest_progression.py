@@ -123,8 +123,8 @@ def test_wizard_level_up_adds_hp_slot_and_two_new_spells():
     events, facts = game._level_up(hero)
 
     assert hero.level == 2
-    assert hero.max_hp == old_max_hp + 8
-    assert hero.hp == 9
+    assert hero.max_hp == old_max_hp + 6
+    assert hero.hp == 7
     assert hero.max_spell_slots == {1: 3}
     assert hero.spell_slots == {1: 3}
     assert len(facts["new_spells"]) == 2

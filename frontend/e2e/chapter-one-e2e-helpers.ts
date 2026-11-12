@@ -21,8 +21,12 @@ function movementRemainingFt(state: CharacterSnapshot): number {
   );
 }
 
-function reactionPending(state: CharacterSnapshot): boolean {
+export function isCombatReactionPending(state: CharacterSnapshot): boolean {
   return Boolean(state.combat_reaction_pending && (state.combat_reaction_pending as { kind?: string }).kind);
+}
+
+function reactionPending(state: CharacterSnapshot): boolean {
+  return isCombatReactionPending(state);
 }
 
 /** Test/E2E default: clear Shield window without casting (production leaves choice to the player). */
@@ -97,14 +101,18 @@ export async function postCombatAttack(
 
 export type CharacterSnapshot = {
   level: number;
+  xp?: number;
+  gold?: number;
   hp?: number;
   max_hp?: number;
+  inventory?: string[];
+  armor_class?: number;
   quest_flags?: Record<string, boolean>;
   location: string;
   in_combat?: boolean;
-  gold?: number;
   combatant?: { name?: string } | null;
   combat_turn?: string;
+  combat_round?: number;
   combat_distance_ft?: number;
   combat_movement_remaining_ft?: number;
   combat_tactics?: {
@@ -118,6 +126,7 @@ export type CharacterSnapshot = {
   fighting_style?: string;
   divine_domain?: string;
   second_wind_available?: boolean;
+  action_surge_available?: boolean;
   arcane_recovery_available?: boolean;
   arcane_recovery_ready?: boolean;
   known_spells?: string[];
@@ -197,6 +206,336 @@ export async function waitForQuestFlag(
     const state = await fetchCharacterState(request, token, characterId);
     return Boolean(state.quest_flags?.[flag]) === expected;
   }, { timeout: timeoutMs, intervals: [250, 500, 1000] }).toBe(true);
+}
+
+/** Match engine location names in snapshots (EN labels from API). */
+const LOCATION_WAIT: Record<string, RegExp> = {
+  'The Whispering Cellar': /Whispering Cellar|Šeptající sklepení/i,
+  'The Sunken Corridor': /Sunken Corridor|Potopená chodba/i,
+  'The Shrine of the Forgotten': /Shrine of the Forgotten|Chrám zapomenutých/i,
+  'The Goblin Market': /Goblin Market|Gobliní tržiště/i,
+  'The Vault of Echoes': /Vault of Echoes|Krypt echa/i,
+  'The Forgotten Crypt': /Forgotten Crypt|Zapomenutá krypta/i,
+  'The Bandit Camp': /Bandit Camp|Tábor banditů/i,
+  'The Underground River': /Underground River|Podzemní řeka/i,
+};
+
+export async function travelToLocation(
+  request: APIRequestContext,
+  token: string,
+  characterId: string,
+  destination: string,
+) {
+  const pattern = LOCATION_WAIT[destination];
+  expect(pattern, `Unknown E2E travel destination: ${destination}`).toBeTruthy();
+  await postGameAction(request, token, characterId, `travel to ${destination}`);
+  await expect.poll(async () => {
+    const probe = await fetchCharacterState(request, token, characterId);
+    return pattern!.test(probe.location);
+  }, { timeout: 30_000 }).toBe(true);
+}
+
+/** Chapter One bell arc — same stream actions a player uses (no test endpoints). */
+export async function completeBellQuestViaEngine(
+  request: APIRequestContext,
+  token: string,
+  characterId: string,
+) {
+  let state = await fetchCharacterState(request, token, characterId);
+  if (state.quest_flags?.bell_quest_complete) {
+    return state;
+  }
+
+  if (!LOCATION_WAIT['The Shrine of the Forgotten']!.test(state.location)) {
+    if (!LOCATION_WAIT['The Sunken Corridor']!.test(state.location)) {
+      await travelToLocation(request, token, characterId, 'The Sunken Corridor');
+    }
+    await travelToLocation(request, token, characterId, 'The Shrine of the Forgotten');
+  }
+
+  if (!state.quest_flags?.bell_quest_accepted) {
+    await postGameAction(request, token, characterId, 'talk to Caldus about the shrine bell');
+    await waitForQuestFlag(request, token, characterId, 'bell_quest_accepted');
+  }
+
+  state = await fetchCharacterState(request, token, characterId);
+  if (!state.quest_flags?.bell_acquired) {
+    await travelToLocation(request, token, characterId, 'The Goblin Market');
+    await postGameAction(request, token, characterId, 'ask Nib about the shrine bell');
+    await waitForQuestFlag(request, token, characterId, 'bell_acquired');
+  }
+
+  state = await fetchCharacterState(request, token, characterId);
+  if (!state.quest_flags?.bell_quest_complete) {
+    await travelToLocation(request, token, characterId, 'The Shrine of the Forgotten');
+    await postGameAction(request, token, characterId, 'return the shrine bell to Caldus');
+    await waitForQuestFlag(request, token, characterId, 'bell_quest_complete');
+  }
+
+  return fetchCharacterState(request, token, characterId);
+}
+
+/** After bell return, Caldus reveals the vault route (`vault_unlocked`). */
+export async function unlockVaultViaCaldusAfterBell(
+  request: APIRequestContext,
+  token: string,
+  characterId: string,
+) {
+  let state = await fetchCharacterState(request, token, characterId);
+  if (state.quest_flags?.vault_unlocked) {
+    return state;
+  }
+  expect(state.quest_flags?.bell_quest_complete, 'Bell quest must finish before vault unlock').toBe(true);
+  if (!LOCATION_WAIT['The Shrine of the Forgotten']!.test(state.location)) {
+    await travelToLocation(request, token, characterId, 'The Shrine of the Forgotten');
+  }
+  await postGameAction(request, token, characterId, 'talk to Caldus about the shrine bell');
+  await waitForQuestFlag(request, token, characterId, 'vault_unlocked');
+  return fetchCharacterState(request, token, characterId);
+}
+
+/** One-time +15 gp crypt relic (`CRYPT_RELIC_GOLD_GP`) via Forgotten Crypt search. */
+export async function claimCryptRelicViaEngine(
+  request: APIRequestContext,
+  token: string,
+  characterId: string,
+) {
+  let state = await fetchCharacterState(request, token, characterId);
+  if (state.quest_flags?.crypt_relic_claimed) {
+    return state;
+  }
+
+  if (!LOCATION_WAIT['The Forgotten Crypt']!.test(state.location)) {
+    if (!LOCATION_WAIT['The Underground River']!.test(state.location)) {
+      if (!LOCATION_WAIT['The Sunken Corridor']!.test(state.location)) {
+        if (LOCATION_WAIT['The Goblin Market']!.test(state.location)) {
+          await travelToLocation(request, token, characterId, 'The Shrine of the Forgotten');
+        } else if (LOCATION_WAIT['The Shrine of the Forgotten']!.test(state.location)) {
+          /* already adjacent to Sunken */
+        } else if (LOCATION_WAIT['The Bandit Camp']!.test(state.location)) {
+          await travelToLocation(request, token, characterId, 'The Goblin Market');
+          await travelToLocation(request, token, characterId, 'The Shrine of the Forgotten');
+        } else if (LOCATION_WAIT['The Whispering Cellar']!.test(state.location)) {
+          /* Cellar → Sunken only */
+        } else if (LOCATION_WAIT['The Vault of Echoes']!.test(state.location)) {
+          await travelToLocation(request, token, characterId, 'The Forgotten Crypt');
+          state = await fetchCharacterState(request, token, characterId);
+          if (LOCATION_WAIT['The Forgotten Crypt']!.test(state.location)) {
+            await postGameAction(request, token, characterId, 'search the crypt');
+            await waitForQuestFlag(request, token, characterId, 'crypt_relic_claimed');
+            return fetchCharacterState(request, token, characterId);
+          }
+        }
+        await travelToLocation(request, token, characterId, 'The Sunken Corridor');
+      }
+      await travelToLocation(request, token, characterId, 'The Underground River');
+    }
+    await travelToLocation(request, token, characterId, 'The Forgotten Crypt');
+  }
+
+  await postGameAction(request, token, characterId, 'search the crypt');
+  await waitForQuestFlag(request, token, characterId, 'crypt_relic_claimed');
+  state = await fetchCharacterState(request, token, characterId);
+  expect((state.gold ?? 0), 'Crypt relic should grant gold').toBeGreaterThan(0);
+  return state;
+}
+
+async function travelTowardGoblinMarket(
+  request: APIRequestContext,
+  token: string,
+  characterId: string,
+) {
+  let state = await fetchCharacterState(request, token, characterId);
+  if (LOCATION_WAIT['The Goblin Market']!.test(state.location)) {
+    return;
+  }
+  if (LOCATION_WAIT['The Forgotten Crypt']!.test(state.location)) {
+    await travelToLocation(request, token, characterId, 'The Underground River');
+    await travelToLocation(request, token, characterId, 'The Sunken Corridor');
+  } else if (LOCATION_WAIT['The Underground River']!.test(state.location)) {
+    await travelToLocation(request, token, characterId, 'The Sunken Corridor');
+  } else if (LOCATION_WAIT['The Vault of Echoes']!.test(state.location)) {
+    await travelToLocation(request, token, characterId, 'The Sunken Corridor');
+  } else if (LOCATION_WAIT['The Bandit Camp']!.test(state.location)) {
+    await travelToLocation(request, token, characterId, 'The Goblin Market');
+    return;
+  } else if (LOCATION_WAIT['The Whispering Cellar']!.test(state.location)) {
+    await travelToLocation(request, token, characterId, 'The Sunken Corridor');
+  }
+  state = await fetchCharacterState(request, token, characterId);
+  if (!LOCATION_WAIT['The Shrine of the Forgotten']!.test(state.location)) {
+    if (LOCATION_WAIT['The Sunken Corridor']!.test(state.location)) {
+      await travelToLocation(request, token, characterId, 'The Shrine of the Forgotten');
+    }
+  }
+  if (!LOCATION_WAIT['The Goblin Market']!.test(state.location)) {
+    await travelToLocation(request, token, characterId, 'The Goblin Market');
+  }
+}
+
+/** +20 gp shrine evidence at Bandit Camp (stealth, social, or captain combat). */
+export async function earnBanditEvidenceViaEngine(
+  request: APIRequestContext,
+  token: string,
+  characterId: string,
+) {
+  let state = await fetchCharacterState(request, token, characterId);
+  if (state.quest_flags?.bandit_shrine_evidence) {
+    return state;
+  }
+
+  if (!LOCATION_WAIT['The Bandit Camp']!.test(state.location)) {
+    await travelTowardGoblinMarket(request, token, characterId);
+    await travelToLocation(request, token, characterId, 'The Bandit Camp');
+  }
+
+  await postGameAction(request, token, characterId, 'inspect the bounty notice');
+  await postGameAction(request, token, characterId, 'sneak past the bandit sentries');
+  await postGameAction(request, token, characterId, 'bluff the bandit captain');
+
+  for (let step = 0; step < 200; step += 1) {
+    state = await fetchCharacterState(request, token, characterId);
+    if (state.quest_flags?.bandit_shrine_evidence) {
+      return state;
+    }
+    if ((state.hp ?? 1) <= 0) {
+      await reviveIfFallen(request, token, characterId);
+      await travelToLocation(request, token, characterId, 'The Bandit Camp');
+      continue;
+    }
+
+    if (state.in_combat) {
+      const foe = state.combatant?.name ?? 'Bandit captain';
+      await postCombatAttack(request, token, characterId, foe);
+      continue;
+    }
+
+    await postGameAction(request, token, characterId, 'attack the bandit captain');
+    const after = await fetchCharacterState(request, token, characterId);
+    if (!after.in_combat && !after.quest_flags?.bandit_shrine_evidence) {
+      await postGameAction(request, token, characterId, 'attack');
+    }
+  }
+
+  return fetchCharacterState(request, token, characterId);
+}
+
+/**
+ * Deterministic Chapter One shop budget (Folk Hero Fighter ≈10 gp start):
+ * bell return +10, crypt relic +15, bandit evidence +20 → ≥45 gp healing potion (engine authority).
+ */
+/** Optional top-up: engine 1d4 scavenge on explore d6=3 (one-time per location). */
+export async function scavengeExplorationGoldUntil(
+  request: APIRequestContext,
+  token: string,
+  characterId: string,
+  minGoldGp: number,
+  maxExplores: number,
+) {
+  let state = await fetchCharacterState(request, token, characterId);
+  await leaveCombatIfNeeded(request, token, characterId);
+  for (let attempt = 0; attempt < maxExplores && (state.gold ?? 0) < minGoldGp; attempt += 1) {
+    state = await fetchCharacterState(request, token, characterId);
+    if ((state.hp ?? 1) <= 0) {
+      await reviveIfFallen(request, token, characterId);
+    }
+    if (state.in_combat) {
+      const foe = state.combatant?.name ?? 'goblin';
+      await postCombatAttack(request, token, characterId, foe);
+    } else {
+      await postGameAction(request, token, characterId, 'explore');
+    }
+    state = await fetchCharacterState(request, token, characterId);
+  }
+  return state;
+}
+
+export async function leaveCombatIfNeeded(
+  request: APIRequestContext,
+  token: string,
+  characterId: string,
+  maxRounds = 80,
+) {
+  for (let round = 0; round < maxRounds; round += 1) {
+    const state = await fetchCharacterState(request, token, characterId);
+    if (!state.in_combat) {
+      return state;
+    }
+    if (state.combatant?.name) {
+      await postCombatAttack(request, token, characterId, state.combatant.name);
+    } else {
+      await postGameAction(request, token, characterId, 'defend');
+      await closeCombatTurnIfStalled(request, token, characterId);
+    }
+  }
+  const final = await fetchCharacterState(request, token, characterId);
+  expect(final.in_combat, 'Expected to leave combat before UI reload').toBeFalsy();
+  return final;
+}
+
+/** Engine refuses potions at full HP — explore/defend until wounded (real combat rolls). */
+export async function ensureHpBelowMaxForPotionUse(
+  request: APIRequestContext,
+  token: string,
+  characterId: string,
+  maxRounds = 40,
+) {
+  let state = await fetchCharacterState(request, token, characterId);
+  const maxHp = state.max_hp ?? 12;
+  if ((state.hp ?? maxHp) < maxHp) {
+    return state;
+  }
+  for (let round = 0; round < maxRounds; round += 1) {
+    state = await fetchCharacterState(request, token, characterId);
+    if ((state.hp ?? 0) < maxHp) {
+      return state;
+    }
+    if (state.in_combat) {
+      await postGameAction(request, token, characterId, 'defend');
+      await closeCombatTurnIfStalled(request, token, characterId);
+      continue;
+    }
+    await postGameAction(request, token, characterId, 'explore');
+  }
+  state = await fetchCharacterState(request, token, characterId);
+  expect((state.hp ?? 0), 'Expected damage from explore/combat before potion use').toBeLessThan(maxHp);
+  return state;
+}
+
+export async function earnChapterOneShopGold(
+  request: APIRequestContext,
+  token: string,
+  characterId: string,
+  minGoldGp: number,
+) {
+  let state = await completeBellQuestViaEngine(request, token, characterId);
+  state = await unlockVaultViaCaldusAfterBell(request, token, characterId);
+
+  if ((state.gold ?? 0) < minGoldGp && !state.quest_flags?.crypt_relic_claimed) {
+    state = await claimCryptRelicViaEngine(request, token, characterId);
+  }
+  state = await fetchCharacterState(request, token, characterId);
+  if ((state.gold ?? 0) < minGoldGp && !state.quest_flags?.bandit_shrine_evidence) {
+    state = await earnBanditEvidenceViaEngine(request, token, characterId);
+  }
+
+  state = await fetchCharacterState(request, token, characterId);
+  if ((state.gold ?? 0) < minGoldGp) {
+    state = await scavengeExplorationGoldUntil(
+      request,
+      token,
+      characterId,
+      minGoldGp,
+      36,
+    );
+  }
+
+  state = await fetchCharacterState(request, token, characterId);
+  expect(
+    state.gold ?? 0,
+    `Need ${minGoldGp} gp (bell +10, crypt +15, bandit +20, optional 1d4 scavenge); have ${state.gold ?? 0}`,
+  ).toBeGreaterThanOrEqual(minGoldGp);
+  return state;
 }
 
 const ADVENTURE_JOURNAL = /adventure journal|deník dobrodružství/i;

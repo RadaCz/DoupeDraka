@@ -26,8 +26,14 @@ describe('turnMoments', () => {
     expect(noticeFromLevelUp(before, after, { new_level: 2, hp_gained: 8 })).toEqual({
       level: 2,
       hpGained: 8,
+      classFeatures: undefined,
+      spellSlotSummary: undefined,
     });
-    expect(noticeFromLevelUp(before, after)).toEqual({ level: 2, hpGained: 8 });
+    expect(noticeFromLevelUp(before, after)).toEqual({
+      level: 2,
+      hpGained: 8,
+      spellSlotSummary: undefined,
+    });
     expect(noticeFromLevelUp(before, before)).toBeNull();
   });
 });

@@ -52,6 +52,7 @@ export interface Character {
   expertise_skills?: string[];
   divine_domain?: string;
   second_wind_available?: boolean;
+  action_surge_available?: boolean;
   arcane_recovery_available?: boolean;
   arcane_recovery_ready?: boolean;
   combat_flags?: Record<string, boolean>;

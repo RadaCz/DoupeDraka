@@ -42,6 +42,8 @@ def apply_xp_with_level_ups(
         events.append(reason_line)
     while character.level < MAX_MVP_LEVEL and character.xp >= XP_PER_LEVEL:
         level_events, level_facts = level_up(character)
+        if not level_events and not level_facts:
+            break
         events.extend(level_events)
         if level_facts:
             facts = level_facts

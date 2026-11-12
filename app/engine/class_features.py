@@ -52,6 +52,7 @@ def ensure_class_identity_defaults(character: CharacterState) -> None:
         if character.character_class == "cleric":
             character.divine_domain = character.divine_domain or DOMAIN_LABEL
         character.quest_flags["s21_class_identity_v1"] = True
+    reconcile_level_gated_features(character)
 
 
 def validate_fighting_style(style: str) -> str:
@@ -206,11 +207,61 @@ def use_second_wind(engine: GameEngine, character: CharacterState) -> tuple[bool
     ], facts
 
 
+def apply_level_up_class_features(character: CharacterState) -> tuple[list[str], list[str]]:
+    """Grant level-gated MVP class features exactly once per level increase."""
+    mechanical: list[str] = []
+    deferred: list[str] = []
+    level = character.level
+    klass = character.character_class
+    if level == 2:
+        if klass == "fighter":
+            character.action_surge_available = True
+            mechanical.append("Action Surge")
+        elif klass == "rogue":
+            mechanical.append("Cunning Action (Hide)")
+            deferred.append("Cunning Action: Dash")
+            deferred.append("Cunning Action: Disengage (bonus)")
+        elif klass == "cleric":
+            deferred.append("Channel Divinity")
+        elif klass == "wizard":
+            deferred.append("Arcane Tradition")
+    return mechanical, deferred
+
+
+def reconcile_level_gated_features(character: CharacterState) -> None:
+    """Backfill Sprint 35 fields on legacy saves without duplicating level-up grants."""
+    if character.character_class == "fighter" and character.level >= 2:
+        if not character.quest_flags.get("s35_action_surge_sync"):
+            if not character.action_surge_available and not character.in_combat:
+                character.action_surge_available = True
+            character.quest_flags["s35_action_surge_sync"] = True
+
+
+def use_action_surge(character: CharacterState) -> tuple[bool, list[str], dict]:
+    from .combat_action_economy import FLAG_ACTION_USED, _flag
+
+    if character.character_class != "fighter" or character.level < 2:
+        return False, ["Only a level 2+ fighter can use Action Surge."], {}
+    if not character.in_combat:
+        return False, ["Action Surge can only be used during combat."], {}
+    if not character.action_surge_available:
+        return False, ["Action Surge is spent until you finish a short rest."], {}
+    if not _flag(character, FLAG_ACTION_USED):
+        return False, ["Take an action first, then use Action Surge for another action this turn."], {}
+    character.combat_flags[FLAG_ACTION_USED] = False
+    character.action_surge_available = False
+    facts = {"kind": "action_surge", "extra_action": True}
+    return True, ["Action Surge! You can take another action this turn."], facts
+
+
 def on_short_rest_class_features(character: CharacterState) -> list[str]:
     notes: list[str] = []
     if character.character_class == "fighter" and not character.second_wind_available:
         character.second_wind_available = True
         notes.append("Second Wind is available again.")
+    if character.character_class == "fighter" and character.level >= 2 and not character.action_surge_available:
+        character.action_surge_available = True
+        notes.append("Action Surge is available again.")
     if character.character_class == "wizard":
         character.arcane_recovery_ready = True
         notes.append("Arcane Recovery is ready.")
@@ -318,6 +369,8 @@ def rebuild_wizard_spellbook(character: CharacterState, level_one_spells: list[s
 def try_hide_in_combat(engine: GameEngine, character: CharacterState) -> tuple[bool, list[str], dict]:
     from .combat_action_economy import spend_bonus_action
 
+    if character.character_class != "rogue" or character.level < 2:
+        return False, ["Cunning Action (Hide) requires rogue level 2."], {}
     if not character.in_combat:
         return False, ["You can only Hide during combat."], {}
     ok, reason = spend_bonus_action(character)
@@ -389,6 +442,7 @@ def public_class_feature_summary(character: CharacterState) -> dict:
         "expertise_skills": list(character.expertise_skills),
         "divine_domain": character.divine_domain or None,
         "second_wind_available": character.second_wind_available,
+        "action_surge_available": character.action_surge_available,
         "arcane_recovery_available": character.arcane_recovery_available,
         "arcane_recovery_ready": character.arcane_recovery_ready,
         "sneak_attack_dice": sneak_attack_dice(character.level) if character.character_class == "rogue" else None,

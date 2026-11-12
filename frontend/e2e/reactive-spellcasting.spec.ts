@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { fetchCharacterState, postGameAction } from './chapter-one-e2e-helpers.ts';
+import { fetchCharacterState } from './chapter-one-e2e-helpers.ts';
 import { apiTelegramToken, signedTelegramInitData } from './telegram.ts';
 import { E2E_TELEGRAM_ID } from './test-config.ts';
 
@@ -17,7 +17,14 @@ test('wizard Shield is reaction-only outside combat window', async ({ request },
         race: 'human',
         character_class: 'wizard',
         cantrips: ['Fire Bolt', 'Mage Hand', 'Light'],
-        level_one_spells: ['Magic Missile', 'Mage Armor', 'Shield', 'Sleep'],
+        level_one_spells: [
+          'Magic Missile',
+          'Mage Armor',
+          'Shield',
+          'Sleep',
+          'Detect Magic',
+          'Comprehend Languages',
+        ],
         abilities: { strength: 8, dexterity: 14, constitution: 12, intelligence: 15, wisdom: 10, charisma: 8 },
       },
     })
@@ -28,11 +35,17 @@ test('wizard Shield is reaction-only outside combat window', async ({ request },
 
   const before = await fetchCharacterState(request, token, wizard.id);
   const slotsBefore = (before.spell_slots?.['1'] ?? before.spell_slots?.[1] ?? 0) as number;
-  const cast = await postGameAction(request, token, wizard.id, 'cast Shield');
+  const cast = await request.post(`${API}/characters/${wizard.id}/actions/stream`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'Idempotency-Key': `shield-ooc-${testInfo.testId}`,
+    },
+    data: { action: 'cast Shield' },
+  });
   expect(cast.ok()).toBeTruthy();
-  const body = (await cast.json()) as { events?: string[] };
-  const blob = (body.events ?? []).join(' ').toLowerCase();
-  expect(blob).toContain('reaction');
+  const castText = (await cast.text()).toLowerCase();
+  expect(castText).toContain('reaction');
   const after = await fetchCharacterState(request, token, wizard.id);
   const slotsAfter = (after.spell_slots?.['1'] ?? after.spell_slots?.[1] ?? 0) as number;
   expect(slotsAfter).toBe(slotsBefore);
