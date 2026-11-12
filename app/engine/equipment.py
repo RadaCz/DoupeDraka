@@ -593,6 +593,7 @@ def default_item_instances(
     preserve_slots: dict[str, str] | None = None,
     preserve_attack: dict[str, int] | None = None,
     preserve_equipped: dict[str, int] | None = None,
+    preserve_instance_ids: dict[str, str] | None = None,
 ) -> list[dict]:
     instances: list[dict] = []
     equipped_weapon_set = False
@@ -615,8 +616,9 @@ def default_item_instances(
                 slot = "weapon"
                 equipped_weapon_set = True
 
+        instance_id = (preserve_instance_ids or {}).get(key, f"gear-{index}")
         instances.append({
-            "instance_id": f"gear-{index}",
+            "instance_id": instance_id,
             "definition_id": def_key or key.replace(" ", "_"),
             "name": label,
             "item_kind": kind,
@@ -630,6 +632,8 @@ def default_item_instances(
 def sync_item_instances(character: CharacterState) -> None:
     preserve_slots: dict[str, str] = {}
     preserve_attack: dict[str, int] = {}
+    preserve_instance_ids: dict[str, str] = {}
+    seen_names: dict[str, int] = {}
     for entry in character.item_instances:
         name = entry.get("name", "").casefold().strip()
         slot = _equipped_slot(entry)
@@ -637,10 +641,14 @@ def sync_item_instances(character: CharacterState) -> None:
             preserve_slots[name] = slot
             if slot == "weapon":
                 preserve_attack[name] = int(entry.get("attack_bonus", 0))
+        if name and name not in preserve_instance_ids:
+            preserve_instance_ids[name] = str(entry.get("instance_id") or f"gear-{len(preserve_instance_ids)}")
+            seen_names[name] = seen_names.get(name, 0) + 1
     character.item_instances = default_item_instances(
         character.inventory,
         character,
         preserve_slots=preserve_slots or None,
         preserve_attack=preserve_attack or None,
+        preserve_instance_ids=preserve_instance_ids or None,
     )
     refresh_armor_class(character)

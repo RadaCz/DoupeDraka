@@ -128,12 +128,24 @@ export function potionUseBlocked(character: Character): string | null {
   if (character.in_combat && character.combat_turn === 'enemy') {
     return 'Wait for your turn in combat before drinking a potion.';
   }
+  if (character.combat_reaction_pending?.kind) {
+    return 'Resolve the incoming attack before using items.';
+  }
+  if (character.combat_turn === 'reaction') {
+    return 'Resolve the incoming attack before using items.';
+  }
   return null;
 }
 
 export function equipBlocked(character: Character): string | null {
   if (character.in_combat && character.combat_turn === 'enemy') {
     return 'Wait for your turn in combat before changing equipment.';
+  }
+  if (character.combat_reaction_pending?.kind) {
+    return 'Resolve the incoming attack before changing equipment.';
+  }
+  if (character.combat_turn === 'reaction') {
+    return 'Resolve the incoming attack before changing equipment.';
   }
   return null;
 }

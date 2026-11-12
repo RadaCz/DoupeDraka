@@ -1030,7 +1030,7 @@ class GameEngine:
             return TurnResult(action, ["You have no usable potion."], False), monster
         if character.hp >= character.max_hp:
             return TurnResult(action, ["You are already at full health."], False), monster
-        healing = self.roll("2d4", self.modifier(character.abilities.get("constitution", 10)) + 2)
+        healing = self.roll("2d4", 2)
         amount = min(character.max_hp - character.hp, max(1, healing.total))
         character.hp += amount
         character.inventory.remove(potion)

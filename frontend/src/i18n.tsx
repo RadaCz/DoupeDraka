@@ -237,6 +237,9 @@ const cs: Record<string, string> = {
   'This shield is currently equipped.': 'Tento štít máš právě vybavený.',
   'Unequip armor': 'Sundat zbroj',
   'Unequip shield': 'Sundat štít',
+  'Resolve the incoming attack before using items.': 'Nejdřív vyřeš příchozí útok, než použiješ předmět.',
+  'Resolve the incoming attack before changing equipment.':
+    'Nejdřív vyřeš příchozí útok, než změníš výbavu.',
   'Wait for your turn in combat before changing equipment.':
     'Před změnou vybavení počkej na svůj tah v boji.',
   'Light armor: base AC + full Dexterity modifier.': 'Lehká zbroj: základ AC + plný modifikátor Obratnosti.',

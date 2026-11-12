@@ -76,6 +76,7 @@ _INTEGRATION_MODULES = frozenset(
         "test_sprint31_spellcasting_integrity",
         "test_sprint32_spellcasting_gameplay",
         "test_sprint33_reactive_spellcasting",
+        "test_sprint34_inventory_gameplay",
         "test_api_systems",
         "test_auth",
         "test_engine",
