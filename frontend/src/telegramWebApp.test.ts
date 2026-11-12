@@ -98,8 +98,7 @@ describe('telegramWebApp', () => {
     applyTelegramViewport();
     expect(document.documentElement.style.getPropertyValue('--app-safe-top')).toBe('30px');
 
-    // @ts-expect-error test hook
-    delete window.Telegram;
+    window.Telegram = undefined;
     applyTelegramViewport();
     expect(document.documentElement.style.getPropertyValue('--app-safe-top')).toBe('');
     expect(document.documentElement.style.getPropertyValue('--tg-content-safe-top')).toBe('');

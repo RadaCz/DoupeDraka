@@ -2,6 +2,7 @@ import type { ReferenceCatalog } from '../types';
 import { abilityModifier, formatModifier, ABILITY_KEYS, type AbilityKey } from './characterSheet';
 
 export { ABILITY_KEYS };
+export type { AbilityKey } from './characterSheet';
 
 export const STANDARD_ARRAY = [15, 14, 13, 12, 10, 8] as const;
 

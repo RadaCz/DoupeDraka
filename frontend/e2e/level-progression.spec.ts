@@ -47,7 +47,7 @@ test('fighter levels through real combat, uses Action Surge, persists after relo
     expect(state.xp).toBeLessThan(100);
   }
 
-  if (state.hp <= 0) await reviveIfFallen(request, token, characterId!);
+  if ((state.hp ?? 1) <= 0) await reviveIfFallen(request, token, characterId!);
   await postCombatAttack(request, token, characterId!, 'goblin');
   state = await fetchCharacterState(request, token, characterId!);
   if (state.in_combat && state.combat_flags?.action_used && state.action_surge_available) {

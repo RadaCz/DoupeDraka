@@ -209,13 +209,15 @@ export interface JournalEvent {
   action: string;
   result: string;
   created_at: string;
+  /** Present on some API payloads and legacy test fixtures. */
+  character_id?: string;
 }
 
 export interface Spell {
   name: string;
   level: number;
   school: string;
-  range: string;
+  range?: string;
   text: string;
   effect_modeled: boolean;
   concentration?: boolean;

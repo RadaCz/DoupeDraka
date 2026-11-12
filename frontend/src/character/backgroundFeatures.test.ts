@@ -1,22 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { backgroundFeatureAvailable, backgroundFeatureFor } from './backgroundFeatures';
-import type { Character } from '../types';
+import { characterStub } from '../test/characterStub';
 
-const base: Character = {
+const base = characterStub({
   id: '1',
   name: 'T',
-  race: 'human',
   character_class: 'cleric',
   background: 'acolyte',
-  level: 1,
   hp: 10,
   max_hp: 10,
-  gold: 0,
-  xp: 0,
   location: 'The Shrine of the Forgotten',
-  inventory: [],
   quest_flags: {},
-};
+});
 
 describe('backgroundFeatures', () => {
   it('offers acolyte chip at shrine before use', () => {

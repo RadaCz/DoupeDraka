@@ -33,6 +33,10 @@ const base: Character = {
   known_spells: [],
   prepared_spells: [],
   spellcasting_ability: '',
+  difficulty: 'normal',
+  tone: 'balanced',
+  humor: 'rare',
+  verbose: false,
 };
 
 describe('Talk quick action', () => {

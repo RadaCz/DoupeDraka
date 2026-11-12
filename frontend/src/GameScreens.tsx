@@ -375,6 +375,10 @@ export function SettingsScreen({
   onLanguageChange,
   onUpdateCampaign,
   onOpenTools,
+  showTelegramLink,
+  telegramLinkBusy,
+  telegramLinkNotice,
+  onLinkTelegram,
 }: {
   character: Character | null;
   economy: Economy | null;
@@ -384,11 +388,30 @@ export function SettingsScreen({
   onLanguageChange?: (language: 'en' | 'cs') => void;
   onUpdateCampaign?: (settings: Record<string, string | boolean>) => void;
   onOpenTools?: () => void;
+  showTelegramLink?: boolean;
+  telegramLinkBusy?: boolean;
+  telegramLinkNotice?: string | null;
+  onLinkTelegram?: () => void;
 }) {
   const { t, locale, setLocale } = useI18n();
   return (
     <section className="screen settings-screen">
       <div className="page-title"><p className="eyebrow">{t('YOUR PREFERENCES')}</p><h1>{t('Settings')}</h1><p>{t('Manage how each adventure turn is narrated.')}</p></div>
+      {showTelegramLink && onLinkTelegram && (
+        <section className="section-block telegram-link-block" aria-labelledby="telegram-link-heading">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">{t('ACCOUNT')}</p>
+              <h2 id="telegram-link-heading">{t('Link Telegram')}</h2>
+            </div>
+          </div>
+          <p>{t('Connect this browser account to your Telegram identity so both entry points share the same heroes.')}</p>
+          <button type="button" className="primary" disabled={busy || telegramLinkBusy} onClick={onLinkTelegram}>
+            {telegramLinkBusy ? t('Linking…') : t('Link Telegram now')}
+          </button>
+          {telegramLinkNotice && <p className="notice" role="status">{telegramLinkNotice}</p>}
+        </section>
+      )}
       <section className="section-block locale-setting">
         <label className="field-label" htmlFor="app-language">
           <span className="settings-section-icon" aria-hidden="true">🌍</span>

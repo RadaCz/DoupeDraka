@@ -58,3 +58,18 @@ export function resetTelegramAuthSession(): void {
   telegramAuthInFlight = null;
   cachedTelegramAuth = null;
 }
+
+export async function linkTelegramAccount(initData: string, accessToken: string): Promise<void> {
+  const response = await fetch(`${API_URL}/auth/link-telegram`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ init_data: initData }),
+  });
+  const body = (await response.json().catch(() => ({}))) as { detail?: string };
+  if (!response.ok) {
+    throw new Error(typeof body.detail === 'string' ? body.detail : `Link failed (${response.status}).`);
+  }
+}

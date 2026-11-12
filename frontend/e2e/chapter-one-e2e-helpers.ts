@@ -123,6 +123,7 @@ export type CharacterSnapshot = {
   combat_tactics?: {
     distance_ft?: number;
     movement_remaining_ft?: number;
+    speed_ft?: number;
     weapon_range?: { allowed?: boolean; weapon_type?: string };
   };
   combat_flags?: Record<string, boolean>;
@@ -138,6 +139,9 @@ export type CharacterSnapshot = {
   known_spells?: string[];
   prepared_spells?: string[];
   spell_slots?: Record<string, number>;
+  expertise_skills?: string[];
+  concentration_spell?: string;
+  mage_armor_active?: boolean;
 };
 
 export async function reviveIfFallen(
@@ -146,7 +150,7 @@ export async function reviveIfFallen(
   characterId: string,
 ) {
   const state = await fetchCharacterState(request, token, characterId);
-  if (state.hp > 0) return;
+  if ((state.hp ?? 1) > 0) return;
   const response = await request.post(`${E2E_API_BASE}/characters/${characterId}/revive`, {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -864,7 +868,7 @@ export async function ensureLevelAtLeast(
     const state = await fetchCharacterState(request, token, characterId);
     if (state.level >= minLevel) return;
 
-    if (state.hp <= 0) {
+    if ((state.hp ?? 1) <= 0) {
       await reviveIfFallen(request, token, characterId);
       continue;
     }
@@ -937,7 +941,7 @@ export async function completeVaultDescentViaEngine(
   for (let round = 0; round < 40; round += 1) {
     const state = await fetchCharacterState(request, token, characterId);
     if (state.quest_flags?.vault_first_descent_story_awarded) break;
-    if (state.hp <= 0) {
+    if ((state.hp ?? 1) <= 0) {
       await reviveIfFallen(request, token, characterId);
       continue;
     }

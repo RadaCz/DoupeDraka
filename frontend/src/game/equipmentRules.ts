@@ -75,7 +75,7 @@ export function isEquippableGear(label: string): boolean {
 export function gearKind(label: string): 'weapon' | 'armor' | 'shield' | 'other' {
   const rule = armorRuleForLabel(label);
   if (rule?.category === 'shield') return 'shield';
-  if (rule && rule.category !== 'shield') return 'armor';
+  if (rule) return 'armor';
   const key = label.toLowerCase().trim();
   if (['shortsword +1', 'shortsword', 'longsword', 'rapier', 'mace', 'dagger'].some(w => key.includes(w))) {
     return 'weapon';

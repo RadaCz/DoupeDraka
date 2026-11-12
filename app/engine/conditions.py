@@ -12,6 +12,7 @@ if TYPE_CHECKING:
 from .saving_throws import SavingThrowRequest, format_saving_throw_lines, perform_saving_throw
 
 PARALYZED_ID = "paralyzed"
+TURNED_ID = "turned"
 DISADVANTAGE_NEXT_ATTACK = "disadvantage_next_attack"
 
 REPEAT_SAVE_END_OF_TURN = frozenset({PARALYZED_ID})
@@ -109,6 +110,19 @@ def attacks_against_player_have_advantage(character: CharacterState) -> bool:
 
 def monster_next_attack_disadvantage(monster: MonsterState) -> bool:
     return monster_has_condition(monster, DISADVANTAGE_NEXT_ATTACK)
+
+
+def monster_is_turned(monster: MonsterState) -> bool:
+    return monster_has_condition(monster, TURNED_ID)
+
+
+def clear_monster_turned(monster: MonsterState) -> bool:
+    if not monster_is_turned(monster):
+        return False
+    monster.conditions = [
+        c for c in monster_conditions(monster) if c.get("condition_id") != TURNED_ID
+    ]
+    return True
 
 
 def consume_monster_disadvantage(monster: MonsterState) -> bool:

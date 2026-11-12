@@ -783,7 +783,14 @@ class GameEngine:
         if character.hp <= 0:
             return [], {}
         from .combat_reactions import reset_enemy_reaction_for_new_enemy_turn
+        from .conditions import clear_monster_turned, monster_is_turned
 
+        if monster_is_turned(monster):
+            clear_monster_turned(monster)
+            return (
+                [f"{monster.name} is turned and cannot bring itself to attack this round."],
+                {},
+            )
         reset_enemy_reaction_for_new_enemy_turn(character)
         events: list[str] = []
         save_facts: dict = {}
@@ -1370,6 +1377,10 @@ class GameEngine:
                 costs_adventure_mana=False,
             ), monster
 
+        opening_events: list[str] = []
+        if damage_kind and monster and not character.in_combat:
+            opening_events = self._open_combat_encounter(character, monster)
+
         if character.in_combat:
             from .combat_action_economy import reserve_combat_cost, spell_combat_cost
 
@@ -1392,15 +1403,12 @@ class GameEngine:
                     costs_adventure_mana=False,
                 ), monster
 
-        if monster and damage_kind:
-            character.in_combat = True
-
         ability_bonus = self._spell_attack_bonus(character)
         upcast = max(0, (slot_level or level) - level)
         effect_facts: dict = {"type": kind}
         save_result = None
         merged_save_facts: dict = {}
-        events: list[str] = []
+        events: list[str] = list(opening_events)
         damage = 0
 
         if kind == "heal":
@@ -1870,6 +1878,27 @@ class GameEngine:
                 return ability
         return "dexterity"
 
+    def _open_combat_encounter(
+        self,
+        character: CharacterState,
+        monster: MonsterState,
+    ) -> list[str]:
+        """Start combat with initiative when an attack spell (or similar) opens a fight."""
+        if character.in_combat:
+            return []
+        character.in_combat = True
+        from .combat_positioning import ensure_encounter_distance
+        from .encounters import monster_template_key
+
+        lines = list(ensure_encounter_distance(character, monster_template_key(monster)))
+        lines.extend(self._roll_initiative(character, monster))
+        if character.combat_turn == "enemy" and character.in_combat and monster.hp > 0:
+            enemy_events, _ = self._enemy_turn(character, monster)
+            lines.extend(enemy_events)
+            if not character.in_combat:
+                return lines
+        return lines
+
     def _roll_initiative(self, character: CharacterState, monster: MonsterState) -> list[str]:
         player = self.roll("1d20", self.modifier(character.abilities.get("dexterity", 10)))
         enemy_initiative = monster.saving_throws.get("dexterity", 0)
@@ -2227,11 +2256,12 @@ class GameEngine:
         if not text:
             return TurnResult(action, ["Say what your character attempts."], False), monster
         intent = parse_action_intent(action)
-        from .reactive_spells import has_pending_reaction, pending_blocks_unrelated_action
+        from .reactive_spells import pending_blocks_unrelated_action
 
-        if has_pending_reaction(character) and intent.kind not in (CAST, DECLINE_REACTION):
-            _, msg = pending_blocks_unrelated_action(character)
-            return TurnResult(action, [msg], False, costs_adventure_mana=False), monster
+        if intent.kind not in (CAST, DECLINE_REACTION):
+            blocked, msg = pending_blocks_unrelated_action(character)
+            if blocked:
+                return TurnResult(action, [msg], False, costs_adventure_mana=False), monster
 
         if intent.kind == DECLINE_REACTION:
             return self._resolve_decline_reaction(character, action, monster)

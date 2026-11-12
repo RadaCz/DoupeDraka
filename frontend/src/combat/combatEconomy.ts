@@ -44,7 +44,7 @@ export function economyDenialReason(
   t: (key: string) => string,
   character?: { combat_turn?: string },
 ): string | undefined {
-  if (!economy.inPlayerTurn && character.combat_turn !== 'reaction') {
+  if (!economy.inPlayerTurn && character?.combat_turn !== 'reaction') {
     return t('Wait for the enemy to act.');
   }
   if (slot === 'action' && !economy.actionAvailable) {

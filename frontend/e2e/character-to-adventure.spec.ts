@@ -30,13 +30,15 @@ for (const build of CLASS_BUILDS) {
 
     if ('useElfWizardPath' in build && build.useElfWizardPath) {
       await completeWizardWizardCaster(page, build.name);
-    } else {
+    } else if ('race' in build && 'characterClass' in build && 'background' in build) {
       await completeCharacterWizard(page, {
         name: build.name,
-        race: build.race!,
-        characterClass: build.characterClass!,
-        background: build.background!,
+        race: build.race,
+        characterClass: build.characterClass,
+        background: build.background,
       });
+    } else {
+      throw new Error(`Unknown character build: ${build.label}`);
     }
 
     await expect(page.getByRole('heading', { name: CELLAR_HEADING })).toBeVisible({ timeout: 30_000 });

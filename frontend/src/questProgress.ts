@@ -65,7 +65,7 @@ const CHAPTER_ONE_STEPS: QuestStep[] = [
   },
 ];
 
-function stepDone(id: QuestStepId, flags: Record<string, boolean>) {
+function stepDone(id: QuestStepId | string, flags: Record<string, boolean>) {
   if (flags.chapter_one_complete) return true;
   if (id === 'bell_acquired') return Boolean(flags.bell_acquired || flags.bell_found);
   if (id === 'vault_hint_given') {

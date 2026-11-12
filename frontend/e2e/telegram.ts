@@ -52,7 +52,7 @@ export async function forceCharacterFallen(request: APIRequestContext, token: st
 function homeDiagnostics(page: Page) {
   return page.evaluate(() => {
     const heading = document.querySelector('h1')?.textContent?.trim() ?? '(no h1)';
-    const buttons = [...document.querySelectorAll('button')]
+    const buttons = Array.from(document.querySelectorAll('button'))
       .map(btn => btn.textContent?.replace(/\s+/g, ' ').trim())
       .filter(Boolean)
       .slice(0, 24);

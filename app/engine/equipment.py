@@ -7,8 +7,15 @@ from dataclasses import dataclass
 from .models import CharacterState
 from .reference import CLASS_SPECS
 
-MARTIAL_WEAPON_KEYS = frozenset({"shortsword", "longsword", "rapier"})
-SIMPLE_WEAPON_KEYS = frozenset({"mace", "dagger", "unarmed"})
+MARTIAL_WEAPON_KEYS = frozenset({
+    "shortsword", "longsword", "rapier", "longbow", "shortbow",
+    "light_crossbow", "heavy_crossbow", "handaxe", "battleaxe", "greatsword",
+    "warhammer", "glaive", "halberd", "pike", "morningstar", "war pick",
+})
+SIMPLE_WEAPON_KEYS = frozenset({
+    "mace", "dagger", "unarmed", "quarterstaff", "javelin", "spear",
+    "handaxe", "light_crossbow", "sling", "club", "greatclub",
+})
 
 STARTING_INVENTORY_BY_CLASS: dict[str, list[str]] = {
     "fighter": ["traveler's clothes", "shortsword"],

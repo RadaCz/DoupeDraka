@@ -262,11 +262,10 @@ describe('Telegram Mini App', () => {
     window.Telegram = { WebApp: { initData: 'signed-init-data' } };
   });
 
-  it('requires Telegram initData and does not call the API outside Telegram', async () => {
-    delete window.Telegram;
+  it('shows browser sign-in when Telegram initData is absent', async () => {
+    window.Telegram = undefined;
     render(<App />);
-    expect(await screen.findByRole('heading', { name: /your story begins in telegram/i })).toBeInTheDocument();
-    expect(screen.getByRole('alert')).toHaveTextContent('Open this app from Telegram');
+    expect(await screen.findByRole('heading', { name: /sign in to continue/i })).toBeInTheDocument();
     expect(fetch).not.toHaveBeenCalled();
   });
 
@@ -579,6 +578,6 @@ describe('Telegram Mini App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Přehled' }));
     fireEvent.click(screen.getByRole('button', { name: 'Více' }));
     fireEvent.click(await screen.findByRole('button', { name: /dalsiho dobrodruha|dalšího dobrodruha/i }));
-    expect(await screen.findByRole('heading', { id: 'wizard-title' })).toHaveTextContent(/begin|zacit|začít/i);
+    expect(document.getElementById('wizard-title')).toHaveTextContent(/begin|zacit|začít/i);
   });
 });

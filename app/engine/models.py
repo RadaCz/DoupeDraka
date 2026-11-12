@@ -70,6 +70,8 @@ class CharacterState:
     combat_flags: dict[str, bool] = field(default_factory=dict)
     combat_distance_ft: int = 0
     combat_movement_remaining_ft: int = 0
+    # Serialized random.Random state — one stream per character (Sprint 37.2).
+    rng_state: dict | None = None
 
 @dataclass
 class MonsterState:

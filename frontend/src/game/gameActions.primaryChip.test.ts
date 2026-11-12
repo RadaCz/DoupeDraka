@@ -1,24 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { primaryPlayChipKey, playActionChips } from './gameActions';
-import type { Character, JournalEvent } from '../types';
+import type { JournalEvent } from '../types';
+import { characterStub } from '../test/characterStub';
 
 const t = (s: string) => s;
-const base: Character = {
+const base = characterStub({
   id: '1',
   name: 'A',
-  race: 'human',
   character_class: 'fighter',
-  level: 1,
-  hp: 10,
-  max_hp: 10,
   armor_class: 14,
   location: 'The Shrine of the Forgotten',
-  xp: 0,
-  gold: 0,
-  inventory: [],
   quest_flags: { bell_quest_accepted: false },
-  in_combat: false,
-};
+});
 
 describe('primaryPlayChipKey', () => {
   it('prefers NPC talk at shrine when bell quest is open', () => {

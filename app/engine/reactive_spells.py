@@ -59,6 +59,9 @@ def has_pending_reaction(character: CharacterState) -> bool:
 def pending_blocks_unrelated_action(character: CharacterState) -> tuple[bool, str]:
     if not has_pending_reaction(character):
         return False, ""
+    if not character.in_combat:
+        clear_combat_reaction_pending(character)
+        return False, ""
     return True, "Resolve the incoming attack first — cast Shield or decline the reaction."
 
 

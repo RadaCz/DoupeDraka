@@ -5,6 +5,8 @@ Revises: auth001
 Create Date: 2026-11-05 00:00:00.000000
 
 """
+import hashlib
+
 from alembic import op
 import sqlalchemy as sa
 
@@ -16,11 +18,11 @@ branch_labels = None
 depends_on = None
 
 
+def _hash_token(token: str) -> str:
+    return hashlib.sha256(token.encode()).hexdigest()
+
+
 def upgrade() -> None:
-    # SQLite doesn't support dropping PRIMARY KEY columns directly
-    # We need to recreate the table with the new schema
-    
-    # Create new table with token_hash as primary key
     op.create_table(
         "api_keys_new",
         sa.Column("token_hash", sa.String(length=64), nullable=False),
@@ -29,19 +31,26 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("token_hash"),
         sa.ForeignKeyConstraint(["user_id"], ["users.id"]),
     )
-    
-    # Copy data from old table (copy token to token_hash for backward compatibility)
-    op.execute("INSERT INTO api_keys_new (token_hash, user_id, created_at) SELECT token, user_id, created_at FROM api_keys")
-    
-    # Drop old table
+
+    conn = op.get_bind()
+    rows = conn.execute(sa.text("SELECT token, user_id, created_at FROM api_keys")).fetchall()
+    for token, user_id, created_at in rows:
+        if not token or not isinstance(token, str):
+            continue
+        token_hash = _hash_token(token.strip())
+        conn.execute(
+            sa.text(
+                "INSERT INTO api_keys_new (token_hash, user_id, created_at) "
+                "VALUES (:token_hash, :user_id, :created_at)"
+            ),
+            {"token_hash": token_hash, "user_id": user_id, "created_at": created_at},
+        )
+
     op.drop_table("api_keys")
-    
-    # Rename new table
     op.rename_table("api_keys_new", "api_keys")
 
 
 def downgrade() -> None:
-    # Recreate old table
     op.create_table(
         "api_keys_old",
         sa.Column("token", sa.String(length=64), nullable=False),
@@ -50,12 +59,17 @@ def downgrade() -> None:
         sa.PrimaryKeyConstraint("token"),
         sa.ForeignKeyConstraint(["user_id"], ["users.id"]),
     )
-    
-    # Copy data back
-    op.execute("INSERT INTO api_keys_old (token, user_id, created_at) SELECT token_hash, user_id, created_at FROM api_keys")
-    
-    # Drop new table
+
+    conn = op.get_bind()
+    rows = conn.execute(sa.text("SELECT token_hash, user_id, created_at FROM api_keys")).fetchall()
+    for token_hash, user_id, created_at in rows:
+        conn.execute(
+            sa.text(
+                "INSERT INTO api_keys_old (token, user_id, created_at) "
+                "VALUES (:token, :user_id, :created_at)"
+            ),
+            {"token": token_hash, "user_id": user_id, "created_at": created_at},
+        )
+
     op.drop_table("api_keys")
-    
-    # Rename old table
     op.rename_table("api_keys_old", "api_keys")

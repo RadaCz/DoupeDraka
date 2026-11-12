@@ -16,6 +16,7 @@ const fighter: Character = {
   name: 'A',
   race: 'human',
   character_class: 'fighter',
+  abilities: { strength: 16, dexterity: 12, constitution: 14, intelligence: 10, wisdom: 10, charisma: 10 },
   level: 1,
   hp: 10,
   max_hp: 12,

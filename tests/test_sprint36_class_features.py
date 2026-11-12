@@ -89,8 +89,8 @@ def test_cleric_preserve_life_spends_channel_and_heals():
     cleric.max_hp = 20
     ok, lines, facts = use_preserve_life(game, cleric)
     assert ok
-    assert cleric.hp == 15
-    assert facts["healing"] == 10
+    assert cleric.hp == 10  # half max (10), not full pool to 15
+    assert facts["healing"] == 5
     assert not cleric.channel_divinity_available
     assert not use_preserve_life(game, cleric)[0]
 
@@ -102,24 +102,24 @@ def test_cleric_turn_undead_on_skeleton():
     game.rng.randint = lambda _a, _b: 20
     ok, lines, facts = use_turn_undead(game, cleric, skel)
     assert ok
-    assert facts["success"]
-    assert skel.hp == 0
+    assert facts["save_succeeded"]
+    assert skel.hp == 12
     assert not cleric.channel_divinity_available
-    assert "Turn Undead" in lines[0]
+    assert "resists" in lines[0]
 
 
 def test_cleric_turn_undead_kill_via_resolve_action():
     game, cleric = _hero("cleric")
     cleric.in_combat = True
     cleric.channel_divinity_available = True
-    skel = MonsterState(name="Rattling skeleton", hp=13, max_hp=13, saving_throws={"wisdom": -1})
-    game.rng.randint = lambda _a, _b: 20
+    skel = MonsterState(name="Skeleton", hp=13, max_hp=13, saving_throws={"wisdom": -1}, template_key="skeleton")
+    game.rng.randint = lambda _a, _b: 1
     result, monster = game.resolve_action(cleric, "turn undead", skel)
     assert result.state_changed
-    assert not cleric.in_combat
     assert not cleric.channel_divinity_available
-    assert monster is None
+    assert monster is not None
     assert any("Turn Undead" in line for line in result.events)
+    assert any("turned" in line.lower() for line in result.events)
 
 
 def test_cleric_channel_recharges_on_short_rest():

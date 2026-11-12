@@ -37,7 +37,14 @@ import {
   syncTelegramMainButton,
   teardownTelegramMainButton,
 } from './telegramWebApp';
-import { loginWithTelegramInitData } from './telegramAuth';
+import { linkTelegramAccount, loginWithTelegramInitData } from './telegramAuth';
+import {
+  clearBrowserSessionToken,
+  loginWithPassword,
+  readBrowserSessionToken,
+  registerBrowserAccount,
+  writeBrowserSessionToken,
+} from './browserSession';
 import { LocaleProvider, useI18n } from './i18n';
 import { presentPlayerFacingError } from './i18n/playerFacingErrors';
 import {
@@ -47,49 +54,6 @@ import {
   type TurnPhase,
 } from './pendingTurn';
 import './styles.css';
-
-declare global {
-  interface Window {
-    Telegram?: {
-      WebApp?: {
-        initData?: string;
-        initDataUnsafe?: { user?: { first_name?: string } };
-        ready?: () => void;
-        expand?: () => void;
-        setHeaderColor?: (color: string) => void;
-        setBackgroundColor?: (color: string) => void;
-        themeParams?: {
-          bg_color?: string;
-          secondary_bg_color?: string;
-          text_color?: string;
-          hint_color?: string;
-          button_color?: string;
-        };
-        BackButton?: {
-          show: () => void;
-          hide: () => void;
-          onClick: (handler: () => void) => void;
-          offClick: (handler: () => void) => void;
-        };
-        HapticFeedback?: {
-          impactOccurred: (style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft') => void;
-          notificationOccurred: (type: 'error' | 'success' | 'warning') => void;
-        };
-        MainButton?: {
-          setText: (text: string) => void;
-          color: (color: string) => void;
-          show: () => void;
-          hide: () => void;
-          enable: () => void;
-          onClick: (handler: () => void) => void;
-          offClick: (handler: () => void) => void;
-        };
-        onEvent?: (event: string, handler: () => void) => void;
-        offEvent?: (event: string, handler: () => void) => void;
-      };
-    };
-  }
-}
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 const ACTIVE_CHARACTER_KEY = 'active_character_id';
@@ -226,6 +190,9 @@ function AppContent() {
   const [screen, setScreen] = useState<AppScreen>('home');
   const [loading, setLoading] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
+  const [authViaBrowser, setAuthViaBrowser] = useState(false);
+  const [telegramLinkNotice, setTelegramLinkNotice] = useState<string | null>(null);
+  const [telegramLinkBusy, setTelegramLinkBusy] = useState(false);
   const [busy, setBusy] = useState(false);
   const [turnPhase, setTurnPhase] = useState<TurnPhase>('idle');
   const [calculating, setCalculating] = useState(false);
@@ -304,25 +271,10 @@ function AppContent() {
     };
   }, [screen, character?.id, character?.hp, busy]);
 
-  useEffect(() => {
-    const telegram = window.Telegram?.WebApp;
-    telegram?.ready?.();
-    const unbindChrome = bindTelegramChrome();
-
-    const initData = telegram?.initData;
-    if (!initData) {
-      setError('Open this app from Telegram to sign in.');
-      setLoading(false);
-      return () => {
-        unbindChrome();
-        teardownTelegramMainButton();
-      };
-    }
-
-    void (async () => {
-      try {
-        sessionToken = await loginWithTelegramInitData(initData);
-        setAuthenticated(true);
+  const bootstrapSession = useCallback(async (token: string, viaBrowser = false) => {
+    sessionToken = token;
+    setAuthenticated(true);
+    setAuthViaBrowser(viaBrowser);
 
         const [characterList, presetList, referenceData, economyData, spellList] = await Promise.all([
           request<Character[]>('/characters'),
@@ -338,10 +290,28 @@ function AppContent() {
         setSpells(spellList);
         const storedId = localStorage.getItem(ACTIVE_CHARACTER_KEY);
         const active = characterList.find(item => item.id === storedId) ?? characterList[0] ?? null;
-        if (active) {
-          setCharacter(active);
-          localStorage.setItem(ACTIVE_CHARACTER_KEY, active.id);
-          setEvents(await request<JournalEvent[]>(`/characters/${active.id}/events`));
+    if (active) {
+      setCharacter(active);
+      localStorage.setItem(ACTIVE_CHARACTER_KEY, active.id);
+      setEvents(await request<JournalEvent[]>(`/characters/${active.id}/events`));
+    }
+  }, []);
+
+  useEffect(() => {
+    const telegram = window.Telegram?.WebApp;
+    telegram?.ready?.();
+    const unbindChrome = bindTelegramChrome();
+
+    const initData = telegram?.initData;
+    const browserToken = readBrowserSessionToken();
+
+    void (async () => {
+      try {
+        if (browserToken) {
+          await bootstrapSession(browserToken, true);
+        } else if (initData) {
+          const token = await loginWithTelegramInitData(initData);
+          await bootstrapSession(token, false);
         }
       } catch (reason) {
         setError(reason instanceof Error ? presentError(reason.message) : t('Could not sign in or load your adventure.'));
@@ -354,7 +324,47 @@ function AppContent() {
       unbindChrome();
       teardownTelegramMainButton();
     };
-  }, []);
+  }, [bootstrapSession]);
+
+  const [browserUsername, setBrowserUsername] = useState('');
+  const [browserPassword, setBrowserPassword] = useState('');
+  const [browserBusy, setBrowserBusy] = useState(false);
+
+  const linkTelegramFromSettings = async () => {
+    const initData = window.Telegram?.WebApp?.initData;
+    if (!initData || !sessionToken) {
+      setTelegramLinkNotice(t('Open the Mini App from Telegram to confirm your identity.'));
+      return;
+    }
+    setTelegramLinkBusy(true);
+    setTelegramLinkNotice(null);
+    try {
+      await linkTelegramAccount(initData, sessionToken);
+      setAuthViaBrowser(false);
+      setTelegramLinkNotice(t('Telegram account linked. You can open the same heroes from Telegram or the browser.'));
+      haptic('success');
+    } catch (reason) {
+      setTelegramLinkNotice(reason instanceof Error ? presentError(reason.message) : t('Could not link Telegram.'));
+    } finally {
+      setTelegramLinkBusy(false);
+    }
+  };
+
+  const submitBrowserAuth = async (mode: 'login' | 'register') => {
+    setBrowserBusy(true);
+    setError(null);
+    try {
+      const token = mode === 'login'
+        ? await loginWithPassword(browserUsername.trim(), browserPassword)
+        : await registerBrowserAccount(browserUsername.trim(), browserPassword);
+      writeBrowserSessionToken(token);
+      await bootstrapSession(token, true);
+    } catch (reason) {
+      setError(reason instanceof Error ? presentError(reason.message) : t('Could not sign in.'));
+    } finally {
+      setBrowserBusy(false);
+    }
+  };
 
   const updateCharacter = (updated: Character) => {
     setCharacter(updated);
@@ -518,11 +528,13 @@ function AppContent() {
           if (typeof event.data.narration === 'string') streamedNarration = event.data.narration;
           updatePendingNarration(streamedNarration, resolvedFacts);
           setNarrationStatus(event.data.narration_status === 'narrated' ? 'narrated' : 'fallback');
-          if (typeof event.data.energy === 'number' && typeof event.data.energy_tenths === 'number') {
+          const energy = event.data.energy;
+          const energyTenths = event.data.energy_tenths;
+          if (typeof energy === 'number' && typeof energyTenths === 'number') {
             setEconomy(previous => previous ? {
               ...previous,
-              balance: event.data.energy,
-              balance_tenths: event.data.energy_tenths,
+              balance: energy,
+              balance_tenths: energyTenths,
             } : previous);
           }
           if (pendingDefeatOverlay) setShowDefeatOverlay(true);
@@ -661,12 +673,86 @@ function AppContent() {
 
   if (loading) return <LoadingScreen message={t('Opening your adventure…')} />;
   if (!authenticated) {
+    const inTelegram = Boolean(window.Telegram?.WebApp?.initData);
     return (
       <main className="login-screen">
         <span className="loading-sigil" aria-hidden="true">✦</span>
         <p className="eyebrow">{t('THE WHISPERING CELLAR')}</p>
-        <h1>{t('Your story begins in Telegram')}</h1>
-        <p>{t('Open this Mini App from your bot to sign in and continue your adventure.')}</p>
+        <h1>{inTelegram ? t('Your story begins in Telegram') : t('Sign in to continue')}</h1>
+        {inTelegram ? (
+          <>
+            <p>{t('Sign in with your browser account to link Telegram in Settings, or wait for automatic Telegram sign-in.')}</p>
+            <form
+              className="browser-auth-form"
+              onSubmit={event => {
+                event.preventDefault();
+                void submitBrowserAuth('login');
+              }}
+            >
+              <label>
+                {t('Username')}
+                <input
+                  autoComplete="username"
+                  value={browserUsername}
+                  onChange={event => setBrowserUsername(event.target.value)}
+                />
+              </label>
+              <label>
+                {t('Password')}
+                <input
+                  type="password"
+                  autoComplete="current-password"
+                  value={browserPassword}
+                  onChange={event => setBrowserPassword(event.target.value)}
+                />
+              </label>
+              <div className="browser-auth-actions">
+                <button type="submit" disabled={browserBusy || !browserUsername.trim() || browserPassword.length < 6}>
+                  {t('Sign in')}
+                </button>
+              </div>
+            </form>
+          </>
+        ) : (
+          <form
+            className="browser-auth-form"
+            onSubmit={event => {
+              event.preventDefault();
+              void submitBrowserAuth('login');
+            }}
+          >
+            <label>
+              {t('Username')}
+              <input
+                autoComplete="username"
+                value={browserUsername}
+                onChange={event => setBrowserUsername(event.target.value)}
+              />
+            </label>
+            <label>
+              {t('Password')}
+              <input
+                type="password"
+                autoComplete="current-password"
+                value={browserPassword}
+                onChange={event => setBrowserPassword(event.target.value)}
+              />
+            </label>
+            <div className="browser-auth-actions">
+              <button type="submit" disabled={browserBusy || !browserUsername.trim() || browserPassword.length < 6}>
+                {t('Sign in')}
+              </button>
+              <button
+                type="button"
+                disabled={browserBusy || !browserUsername.trim() || browserPassword.length < 6}
+                onClick={() => void submitBrowserAuth('register')}
+              >
+                {t('Create account')}
+              </button>
+            </div>
+            <p>{t('Link Telegram later from the same account once you open the Mini App.')}</p>
+          </form>
+        )}
         {error && <p className="error" role="alert">{error}</p>}
       </main>
     );
@@ -820,6 +906,10 @@ function AppContent() {
             onLanguageChange={syncNarrationLanguage}
             onUpdateCampaign={updateCampaign}
             onOpenTools={() => navigate('tools')}
+            showTelegramLink={authViaBrowser && Boolean(window.Telegram?.WebApp?.initData)}
+            telegramLinkBusy={telegramLinkBusy}
+            telegramLinkNotice={telegramLinkNotice}
+            onLinkTelegram={() => void linkTelegramFromSettings()}
           />
         )}
         {screen === 'game' && !character && <div className="empty-screen"><p role="alert">{t('Choose or create an adventurer before beginning the story.')}</p><button className="primary" onClick={() => navigate('home')}>{t('Back to home')}</button></div>}

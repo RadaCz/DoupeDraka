@@ -30,6 +30,11 @@ PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("telegram_bot_token", re.compile(r"\b\d{8,12}:[A-Za-z0-9_-]{20,}\b")),
     ("aws_access_key", re.compile(r"\bAKIA[0-9A-Z]{16}\b")),
     ("private_key_block", re.compile(r"-----BEGIN (?:RSA |OPENSSH )?PRIVATE KEY-----")),
+    ("openai_api_key", re.compile(r"\bsk-[A-Za-z0-9]{20,}\b")),
+    ("openrouter_api_key", re.compile(r"\bsk-or-v1-[A-Za-z0-9_-]{20,}\b")),
+    ("groq_api_key", re.compile(r"\bgsk_[A-Za-z0-9]{20,}\b")),
+    ("nvidia_api_key", re.compile(r"\bnvapi-[A-Za-z0-9_-]{20,}\b")),
+    ("cerebras_api_key", re.compile(r"\bcsk-[A-Za-z0-9]{20,}\b")),
 ]
 
 

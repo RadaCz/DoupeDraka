@@ -9,8 +9,8 @@ test('requires Telegram initData outside Telegram', async ({ page }) => {
 
   await page.goto('/');
 
-  await expect(page.getByRole('heading', { name: 'Your story begins in Telegram' })).toBeVisible();
-  await expect(page.getByRole('alert')).toContainText('Open this app from Telegram');
+  await expect(page.getByRole('heading', { name: 'Sign in to continue' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Sign in' })).toBeVisible();
   expect(apiRequests).toEqual([]);
 });
 

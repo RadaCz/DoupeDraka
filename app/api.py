@@ -22,6 +22,8 @@ from .engine.models import CharacterState, MonsterState
 from .engine.locations import LOCATIONS
 from .engine.service import GameEngine
 from .engine.race_features import enrich_character_dict
+from .engine.rng_state import bind_engine_rng, capture_engine_rng
+from .billing_policy import narration_charge_applies
 
 
 def character_api_payload(character: CharacterState) -> dict:
@@ -489,6 +491,41 @@ async def telegram_login(request: Request, payload: TelegramAuthRequest) -> Toke
         await prune_api_keys(session, user.id)
         await session.commit()
     return Token(access_token=token)
+
+
+@app.post("/auth/link-telegram", response_model=UserResponse)
+@limiter.limit(get_settings().auth_rate_limit)
+async def link_telegram_account(
+    request: Request,
+    payload: TelegramAuthRequest,
+    user: User = Depends(get_user_by_token),
+) -> User:
+    """Attach a verified Telegram identity to an existing password account."""
+    try:
+        tg_user = verify_init_data(payload.init_data, get_settings().bot_token)
+    except InitDataError as error:
+        logger.warning(f"Rejected link-telegram initData: {error}")
+        raise HTTPException(401, f"Invalid Telegram credentials: {error}") from error
+
+    async with Session() as session:
+        db_user = await session.get(User, user.id)
+        if db_user is None:
+            raise HTTPException(401, "User not found")
+        occupied = await session.scalar(select(User).where(User.telegram_id == tg_user.id))
+        if occupied is not None and occupied.id != db_user.id:
+            raise HTTPException(
+                409,
+                "This Telegram account is already linked to another player.",
+            )
+        if db_user.telegram_id is not None and db_user.telegram_id != tg_user.id:
+            raise HTTPException(409, "This account already has a different Telegram identity.")
+        db_user.telegram_id = tg_user.id
+        if not db_user.username or db_user.username.startswith("E2E "):
+            db_user.username = tg_user.display_name
+        await session.commit()
+        await session.refresh(db_user)
+        logger.info("Linked Telegram %s to user id %s", tg_user.id, db_user.id)
+        return UserResponse(id=db_user.id, username=db_user.username)
 
 @app.post("/characters", status_code=201)
 async def create_character(request: CharacterCreate, user: User = Depends(get_user_by_token)) -> dict:
@@ -1116,12 +1153,16 @@ async def commit_action_turn(
 
             turn_location = character.location
             active_monster = MonsterState(**character.combatant) if character.combatant else None
+            bind_engine_rng(character, game)
             result, monster = game.resolve_action(character, text, active_monster)
-            account = (
-                await require_energy(session, user.id, billing_tier)
-                if result.state_changed and result.costs_adventure_mana
-                else await session.get(User, user.id)
+            bill_narration = narration_charge_applies(
+                billing_tier=billing_tier,
+                state_changed=result.state_changed,
             )
+            if bill_narration:
+                account = await require_energy(session, user.id, billing_tier)
+            else:
+                account = await session.get(User, user.id)
             if account is None:
                 raise HTTPException(401, "User not found")
             character.combatant = asdict(monster) if monster else None
@@ -1159,7 +1200,7 @@ async def commit_action_turn(
 
             charged_tenths = 0
             try:
-                if result.state_changed and result.costs_adventure_mana and economy.turn_cost(billing_tier) > 0:
+                if bill_narration and economy.turn_cost(billing_tier) > 0:
                     balance = await atomic_debit_energy(session, user.id, billing_tier, text)
                     charged_tenths = economy.turn_cost(billing_tier)
                 else:
@@ -1177,6 +1218,7 @@ async def commit_action_turn(
             await session.flush()
             event_id = event.id
             character.turn_count += 1
+            capture_engine_rng(character, game)
             character = await maybe_archive_journal(session, character_id, character)
             record.payload = encode_character_state(asdict(character))
             append_analytics(

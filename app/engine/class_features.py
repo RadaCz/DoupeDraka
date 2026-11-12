@@ -436,8 +436,20 @@ def use_preserve_life(engine: GameEngine, character: CharacterState) -> tuple[bo
     if character.hp >= character.max_hp:
         return False, ["You are already at full health — nothing to preserve."], {}
     pool = 5 * character.level
+    half_cap = max(1, character.max_hp // 2)
+    if character.hp >= half_cap:
+        return (
+            False,
+            [
+                "Preserve Life only restores HP up to half your maximum "
+                f"({half_cap}/{character.max_hp})."
+            ],
+            {},
+        )
     before = character.hp
-    character.hp = min(character.max_hp, character.hp + pool)
+    room = half_cap - character.hp
+    heal = min(pool, room)
+    character.hp = before + heal
     gained = character.hp - before
     character.channel_divinity_available = False
     facts = {
@@ -476,25 +488,33 @@ def use_turn_undead(
     dc = _channel_divinity_dc(character)
     wis_mod = int(monster.saving_throws.get("wisdom", 0))
     roll = engine.roll("1d20", wis_mod)
-    success = roll.total >= dc
+    save_succeeded = roll.total >= dc
     character.channel_divinity_available = False
     facts = {
         "kind": "turn_undead",
         "dc": dc,
         "roll_total": roll.total,
-        "success": success,
+        "save_succeeded": save_succeeded,
         "target": monster.name,
     }
-    if success:
-        monster.hp = 0
-        lines = [
-            f"Channel Divinity: Turn Undead — {monster.name} fails Wisdom save "
-            f"({roll.total} vs DC {dc}) and is destroyed by radiant repulsion."
-        ]
-    else:
+    if save_succeeded:
         lines = [
             f"Channel Divinity: Turn Undead — {monster.name} resists "
-            f"({roll.total} vs DC {dc}) and keeps fighting."
+            f"Wisdom save ({roll.total} vs DC {dc}) and keeps fighting."
+        ]
+    else:
+        from .conditions import TURNED_ID, apply_monster_condition
+
+        apply_monster_condition(
+            monster,
+            TURNED_ID,
+            "turn_undead",
+            applied_at_round=character.combat_round,
+        )
+        facts["turned"] = True
+        lines = [
+            f"Channel Divinity: Turn Undead — {monster.name} fails Wisdom save "
+            f"({roll.total} vs DC {dc}) and is turned, unable to press the attack."
         ]
     return True, lines, facts
 
