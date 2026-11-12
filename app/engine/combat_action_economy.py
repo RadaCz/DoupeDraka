@@ -14,6 +14,7 @@ FLAG_BONUS_USED = "bonus_action_used"
 FLAG_REACTION_USED = "reaction_used"
 
 BONUS_ACTION_SPELLS = frozenset({"Healing Word", "Shield of Faith"})
+REACTION_SPELLS = frozenset({"Shield"})
 
 FLAG_CAST_BONUS_SPELL = "cast_bonus_spell_turn"
 FLAG_CAST_LEVELED_ACTION_SPELL = "cast_leveled_action_spell_turn"
@@ -31,7 +32,9 @@ def _set(character: CharacterState, key: str, value: bool) -> None:
 def reset_player_turn_economy(character: CharacterState) -> None:
     """Called at the start of each player combat turn."""
     from .combat_reactions import FLAG_DISENGAGED
+    from .reactive_spells import clear_shield_buff
 
+    clear_shield_buff(character)
     hidden = bool(character.combat_flags.get("hidden"))
     character.combat_flags = {
         **character.combat_flags,
@@ -50,12 +53,13 @@ def reset_player_turn_economy(character: CharacterState) -> None:
 
 def economy_snapshot(character: CharacterState) -> dict[str, bool | int]:
     player_turn = character.in_combat and character.combat_turn == "player"
+    in_combat = character.in_combat
     return {
         "round": character.combat_round,
         "player_turn": player_turn,
         "action_available": player_turn and not _flag(character, FLAG_ACTION_USED),
         "bonus_available": player_turn and not _flag(character, FLAG_BONUS_USED),
-        "reaction_available": player_turn and not _flag(character, FLAG_REACTION_USED),
+        "reaction_available": in_combat and not _flag(character, FLAG_REACTION_USED),
         "action_used": _flag(character, FLAG_ACTION_USED),
         "bonus_used": _flag(character, FLAG_BONUS_USED),
         "reaction_used": _flag(character, FLAG_REACTION_USED),
@@ -128,6 +132,8 @@ def should_advance_enemy_after_player_activity(character: CharacterState) -> boo
 
 
 def spell_combat_cost(spell_name: str) -> ActionCost:
+    if spell_name in REACTION_SPELLS:
+        return "reaction"
     if spell_name in BONUS_ACTION_SPELLS:
         return "bonus"
     if spell_name in MODELED_SPELL_EFFECTS:

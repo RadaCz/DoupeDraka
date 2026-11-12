@@ -66,6 +66,12 @@ const cs: Record<string, string> = {
   'Action': 'Akce',
   'Bonus action': 'Bonusová akce',
   'Reaction': 'Reakce',
+  'Cast Shield': 'Seslat Shield',
+  'Decline reaction': 'Odmítnout reakci',
+  'Reaction — choose Shield or decline.': 'Reakce — zvol Shield nebo odmítni.',
+  'Reaction: +5 AC until your next turn; spends a level 1+ slot and your reaction.':
+    'Reakce: +5 k AC do začátku tvého příštího tahu; spotřebuje slot 1+ a reakci.',
+  'Let the attack resolve without casting Shield.': 'Nech útok proběhnout bez kouzla Shield.',
   spent: 'spotřebováno',
   'You already used your action this turn.': 'V tomto kole jsi už použil hlavní akci.',
   'You already used your bonus action this turn.': 'V tomto kole jsi už použil bonusovou akci.',

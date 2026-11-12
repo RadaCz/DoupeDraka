@@ -31,8 +31,51 @@ export interface CombatActionItem {
   economySlot?: EconomySlot;
 }
 
+export function isReactionWindow(character: Character): boolean {
+  return character.combat_turn === 'reaction' || Boolean(character.combat_reaction_pending?.kind);
+}
+
 export function isPlayerCombatTurn(character: Character): boolean {
   return character.combat_turn !== 'enemy';
+}
+
+export function buildReactionCombatActions(
+  character: Character,
+  t: (value: string) => string,
+): CombatActionItem[] {
+  if (!isReactionWindow(character)) return [];
+  const pending = character.combat_reaction_pending;
+  const offerShield = pending?.kind === 'shield_vs_attack';
+  const slots = character.spell_slots ?? {};
+  const hasSlot = Object.entries(slots).some(([level, count]) => Number(level) >= 1 && Number(count) > 0);
+  const knowsShield = [...(character.known_spells ?? []), ...(character.prepared_spells ?? [])].some(
+    s => s.toLowerCase() === 'shield',
+  );
+  const reactionSpent = Boolean(character.combat_flags?.reaction_used);
+  const canShield = offerShield && knowsShield && hasSlot && !reactionSpent;
+  const actions: CombatActionItem[] = [];
+  if (canShield) {
+    actions.push({
+      id: 'cast_shield',
+      kind: 'spell',
+      label: t('Cast Shield'),
+      description: t('Reaction: +5 AC until your next turn; spends a level 1+ slot and your reaction.'),
+      glyph: '✦',
+      action: 'cast Shield',
+      disabled: false,
+      economySlot: 'reaction',
+    });
+  }
+  actions.push({
+    id: 'decline_reaction',
+    kind: 'defend',
+    label: t('Decline reaction'),
+    description: t('Let the attack resolve without casting Shield.'),
+    glyph: '✕',
+    action: 'decline reaction',
+    disabled: false,
+  });
+  return actions;
 }
 
 export function modeledCombatSpells(character: Character, spells: Spell[]): Spell[] {
@@ -73,7 +116,7 @@ export function buildCombatActions(
     extraReason?: string,
   ): CombatActionItem => {
     const economyReason = item.economySlot
-      ? economyDenialReason(economy, item.economySlot, t)
+      ? economyDenialReason(economy, item.economySlot, t, character)
       : undefined;
     const disabled = !playerTurn || extraDisabled === true || Boolean(economyReason);
     let disabledReason: string | undefined;

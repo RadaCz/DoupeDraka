@@ -32,7 +32,7 @@ def validate_spell_turn_pairing(character: CharacterState, spell_name: str) -> t
 
 
 def record_spell_cast_turn_flags(character: CharacterState, spell_name: str) -> None:
-    if not character.in_combat:
+    if not character.in_combat or spell_name == "Shield":
         return
     level = spell_level(spell_name) or 0
     if spell_name in BONUS_ACTION_SPELLS:

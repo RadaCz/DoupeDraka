@@ -31,6 +31,8 @@ class CharacterState:
     concentration_effect: str = ""
     concentration_bonus: int = 0
     mage_armor_active: bool = False
+    shield_active: bool = False
+    combat_reaction_pending: dict = field(default_factory=dict)
     # Explicit life cycle for UX and API. Existing payloads default to alive.
     # defeated = knocked out in combat and moved to a safe hub (MVP auto-recover).
     # fallen = 0 HP and cannot act until revived.

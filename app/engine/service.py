@@ -51,6 +51,7 @@ from .intent import (
     ATTACK,
     CAST,
     CLASS_FEATURE,
+    DECLINE_REACTION,
     DEFEND,
     END_TURN,
     COMBAT_MOVE,
@@ -418,8 +419,11 @@ class GameEngine:
     def _exit_combat(self, character: CharacterState) -> None:
         character.in_combat = False
         from .combat_positioning import clear_combat_positioning
+        from .reactive_spells import clear_combat_reaction_pending, clear_shield_buff
 
         clear_combat_positioning(character)
+        clear_combat_reaction_pending(character)
+        clear_shield_buff(character)
 
     def _close_player_combat_turn(self, character: CharacterState) -> list[str]:
         if not character.in_combat:
@@ -497,6 +501,79 @@ class GameEngine:
 
             mark_player_turn_start(character)
 
+    def _enemy_strike_roll(
+        self,
+        monster: MonsterState,
+        *,
+        attack_advantage: bool,
+        attack_disadvantage: bool,
+    ) -> tuple[int, int]:
+        if attack_advantage:
+            enemy = self.roll("2d20", monster.attack_bonus)
+            chosen = max(enemy.values[0], enemy.values[1])
+            return chosen, chosen + enemy.modifier
+        if attack_disadvantage:
+            enemy = self.roll("2d20", monster.attack_bonus)
+            chosen = min(enemy.values[0], enemy.values[1])
+            return chosen, chosen + enemy.modifier
+        enemy = self.roll("1d20", monster.attack_bonus)
+        return enemy.values[0], enemy.total
+
+    def _resolve_enemy_hit_on_player(
+        self,
+        character: CharacterState,
+        monster: MonsterState,
+        key: str,
+        *,
+        label: str,
+        melee: bool,
+        natural: int,
+        attack_total: int,
+        attack_advantage: bool,
+        attack_disadvantage: bool,
+        range_disadv: bool = False,
+    ) -> list[str]:
+        from .equipment import refresh_armor_class
+        from .reactive_spells import (
+            apply_pending_attack_damage,
+            attack_roll_hits,
+            build_pending_attack_payload,
+            open_shield_reaction_window,
+            shield_reaction_offer_available,
+        )
+
+        refresh_armor_class(character)
+        ac = character.armor_class
+        if not attack_roll_hits(ac, natural=natural, attack_total=attack_total):
+            if label == "ranged attack":
+                adv_note = " (long range)" if range_disadv and not attack_disadvantage else ""
+                return [f"{monster.name}'s {label} misses{adv_note}."]
+            if attack_disadvantage and natural != 1:
+                return [f"{monster.name}'s disadvantaged attack misses. You keep your guard."]
+            if attack_advantage:
+                return [f"{monster.name}'s attack misses despite advantage against you."]
+            return [f"{monster.name}'s attack misses."]
+
+        dice, _, bonus = monster.damage.partition("+")
+        damage_bonus = int(bonus) if bonus else 0
+        critical = natural == 20
+        if melee and player_paralyzed(character) and natural not in (1, 20):
+            critical = True
+        pending = build_pending_attack_payload(
+            monster=monster,
+            monster_key=key,
+            label=label,
+            melee=melee,
+            natural=natural,
+            attack_total=attack_total,
+            critical=critical,
+            damage_dice=dice,
+            damage_bonus=damage_bonus,
+        )
+        if shield_reaction_offer_available(character):
+            return open_shield_reaction_window(character, pending)
+        return apply_pending_attack_damage(self, character, monster, pending)
+
     def _enemy_ranged_strike(
         self,
         character: CharacterState,
@@ -510,38 +587,24 @@ class GameEngine:
         range_disadv = distance > profile.ranged_normal_ft
         if range_disadv:
             attack_disadvantage = True
-        events: list[str] = []
-        label = "ranged attack"
-        if attack_advantage:
-            enemy = self.roll("2d20", monster.attack_bonus)
-            chosen = max(enemy.values[0], enemy.values[1])
-            attack_total = chosen + enemy.modifier
-            natural = chosen
-        elif attack_disadvantage:
-            enemy = self.roll("2d20", monster.attack_bonus)
-            chosen = min(enemy.values[0], enemy.values[1])
-            attack_total = chosen + enemy.modifier
-            natural = chosen
-        else:
-            enemy = self.roll("1d20", monster.attack_bonus)
-            attack_total = enemy.total
-            natural = enemy.values[0]
-        if natural == 1 or attack_total < character.armor_class:
-            adv_note = " (long range)" if range_disadv and not attack_disadvantage else ""
-            events.append(f"{monster.name}'s {label} misses{adv_note}.")
-            return events
-        dice, _, bonus = monster.damage.partition("+")
-        damage = self.roll(dice, int(bonus) if bonus else 0, natural == 20)
-        character.hp = max(0, character.hp - damage.total)
-        events.append(
-            f"{monster.name}'s {label} from {distance} ft hits you for {damage.total}. "
-            f"Your HP: {character.hp}/{character.max_hp}."
+        natural, attack_total = self._enemy_strike_roll(
+            monster,
+            attack_advantage=attack_advantage,
+            attack_disadvantage=attack_disadvantage,
         )
-        from .concentration import concentration_save_after_damage, end_concentration_if_incapacitated
-
-        events.extend(concentration_save_after_damage(self, character, damage.total))
-        events.extend(end_concentration_if_incapacitated(character))
-        return events
+        key = monster_template_key(monster)
+        return self._resolve_enemy_hit_on_player(
+            character,
+            monster,
+            key,
+            label="ranged attack",
+            melee=False,
+            natural=natural,
+            attack_total=attack_total,
+            attack_advantage=attack_advantage,
+            attack_disadvantage=attack_disadvantage,
+            range_disadv=range_disadv,
+        )
 
     def _enemy_melee_strike(
         self,
@@ -552,43 +615,141 @@ class GameEngine:
         attack_advantage: bool,
         attack_disadvantage: bool,
     ) -> list[str]:
-        if attack_advantage:
-            enemy = self.roll("2d20", monster.attack_bonus)
-            chosen = max(enemy.values[0], enemy.values[1])
-            attack_total = chosen + enemy.modifier
-            natural = chosen
-        elif attack_disadvantage:
-            enemy = self.roll("2d20", monster.attack_bonus)
-            chosen = min(enemy.values[0], enemy.values[1])
-            attack_total = chosen + enemy.modifier
-            natural = chosen
-        else:
-            enemy = self.roll("1d20", monster.attack_bonus)
-            attack_total = enemy.total
-            natural = enemy.values[0]
-        if natural == 1 or attack_total < character.armor_class:
-            miss = [f"{monster.name}'s attack misses."]
-            if attack_disadvantage and natural != 1:
-                miss = [f"{monster.name}'s disadvantaged attack misses. You keep your guard."]
-            elif attack_advantage:
-                miss = [f"{monster.name}'s attack misses despite advantage against you."]
-            return miss
-        dice, _, bonus = monster.damage.partition("+")
-        melee = enemy_attack_is_melee(key)
-        critical = natural == 20
-        events: list[str] = []
-        if melee and player_paralyzed(character) and natural != 1:
-            if natural != 20:
-                critical = True
-            events.append("Melee hit against a paralyzed foe — critical damage.")
-        damage = self.roll(dice, int(bonus) if bonus else 0, critical)
-        character.hp = max(0, character.hp - damage.total)
-        events.append(f"{monster.name} hits you for {damage.total}. Your HP: {character.hp}/{character.max_hp}.")
-        from .concentration import concentration_save_after_damage, end_concentration_if_incapacitated
+        natural, attack_total = self._enemy_strike_roll(
+            monster,
+            attack_advantage=attack_advantage,
+            attack_disadvantage=attack_disadvantage,
+        )
+        return self._resolve_enemy_hit_on_player(
+            character,
+            monster,
+            key,
+            label="attack",
+            melee=enemy_attack_is_melee(key),
+            natural=natural,
+            attack_total=attack_total,
+            attack_advantage=attack_advantage,
+            attack_disadvantage=attack_disadvantage,
+        )
 
-        events.extend(concentration_save_after_damage(self, character, damage.total))
-        events.extend(end_concentration_if_incapacitated(character))
-        return events
+    def _complete_enemy_turn_after_strike(
+        self,
+        character: CharacterState,
+        monster: MonsterState,
+        key: str,
+        events: list[str],
+        save_facts: dict,
+    ) -> tuple[list[str], dict]:
+        if character.hp > 0:
+            post_save, post_facts = self._enemy_save_ability(character, key, "on_hit")
+            events.extend(post_save)
+            if post_facts:
+                save_facts = {**save_facts, **post_facts}
+        if character.hp == 0:
+            events.extend(self._recover_from_combat_defeat(character))
+            return events, save_facts
+        self._finish_player_combat_round(character)
+        return events, save_facts
+
+    def _resolve_decline_reaction(
+        self,
+        character: CharacterState,
+        action: str,
+        monster: MonsterState | None,
+    ) -> tuple[TurnResult, MonsterState | None]:
+        from .reactive_spells import (
+            apply_pending_attack_damage,
+            clear_combat_reaction_pending,
+            has_pending_reaction,
+        )
+
+        if not has_pending_reaction(character) or monster is None:
+            return (
+                TurnResult(action, ["There is no reaction window open."], False, costs_adventure_mana=False),
+                monster,
+            )
+        pending = dict(character.combat_reaction_pending)
+        clear_combat_reaction_pending(character)
+        events = ["You decline the reaction."]
+        events.extend(apply_pending_attack_damage(self, character, monster, pending))
+        key = monster_template_key(monster)
+        save_facts: dict = {}
+        events, save_facts = self._complete_enemy_turn_after_strike(
+            character, monster, key, events, save_facts,
+        )
+        return (
+            TurnResult(
+                action,
+                events,
+                True,
+                save_facts=save_facts,
+                class_facts={"reaction_shield": {"declined": True}},
+                costs_adventure_mana=False,
+            ),
+            monster if character.in_combat else None,
+        )
+
+    def _resolve_shield_reaction_cast(
+        self,
+        character: CharacterState,
+        action: str,
+        monster: MonsterState | None,
+    ) -> tuple[TurnResult, MonsterState | None]:
+        from .combat_action_economy import spend_reaction
+        from .reactive_spells import (
+            SHIELD_SPELL_NAME,
+            activate_shield_buff,
+            apply_pending_attack_damage,
+            clear_combat_reaction_pending,
+            has_pending_reaction,
+            spend_shield_slot,
+        )
+
+        if not has_pending_reaction(character) or monster is None:
+            return (
+                TurnResult(
+                    action,
+                    ["Shield can only be cast as a reaction when an attack triggers the window."],
+                    False,
+                    costs_adventure_mana=False,
+                ),
+                monster,
+            )
+        slot_level, slot_lines = spend_shield_slot(character)
+        if slot_level is None:
+            return TurnResult(action, slot_lines, False, costs_adventure_mana=False), monster
+        ok, reason = spend_reaction(character)
+        if not ok:
+            character.spell_slots[slot_level] = character.spell_slots.get(slot_level, 0) + 1
+            return TurnResult(action, [reason], False, costs_adventure_mana=False), monster
+        events = list(slot_lines)
+        events.extend(activate_shield_buff(character))
+        pending = dict(character.combat_reaction_pending)
+        clear_combat_reaction_pending(character)
+        events.extend(apply_pending_attack_damage(self, character, monster, pending))
+        key = monster_template_key(monster)
+        save_facts: dict = {}
+        events, save_facts = self._complete_enemy_turn_after_strike(
+            character, monster, key, events, save_facts,
+        )
+        return (
+            TurnResult(
+                action,
+                events,
+                True,
+                save_facts=save_facts,
+                spell_facts={
+                    "spell_name": SHIELD_SPELL_NAME,
+                    "spell_level": 1,
+                    "slot_level": slot_level,
+                    "slot_consumed": True,
+                    "effect": {"type": "reaction_shield", "ac": character.armor_class},
+                },
+                class_facts={"reaction_shield": {"cast": True, "ac": character.armor_class}},
+                costs_adventure_mana=False,
+            ),
+            monster if character.in_combat else None,
+        )
 
     def _enemy_turn(
         self,
@@ -668,15 +829,13 @@ class GameEngine:
             self._finish_player_combat_round(character)
             return events, save_facts
 
-        if character.hp > 0:
-            post_save, post_facts = self._enemy_save_ability(character, key, "on_hit")
-            events.extend(post_save)
-            if post_facts:
-                save_facts = {**save_facts, **post_facts}
-        if character.hp == 0:
-            events.extend(self._recover_from_combat_defeat(character))
+        from .reactive_spells import has_pending_reaction
+
+        if has_pending_reaction(character):
             return events, save_facts
-        self._finish_player_combat_round(character)
+        events, save_facts = self._complete_enemy_turn_after_strike(
+            character, monster, key, events, save_facts,
+        )
         return events, save_facts
 
     def _on_monster_killed_in_combat(
@@ -934,6 +1093,22 @@ class GameEngine:
     def _cast_spell(
         self, character: CharacterState, action: str, monster: MonsterState | None
     ) -> tuple[TurnResult, MonsterState | None]:
+        from .reactive_spells import REACTION_TURN, has_pending_reaction
+
+        spell_name, target_name = self._spell_action_parts(action)
+        normalized_early = re.sub(r"\s+", " ", (spell_name or "").strip()).casefold()
+        if character.in_combat and character.combat_turn == REACTION_TURN:
+            if normalized_early != "shield":
+                return (
+                    TurnResult(
+                        action,
+                        ["During a reaction window you may only cast Shield or decline the reaction."],
+                        False,
+                        costs_adventure_mana=False,
+                    ),
+                    monster,
+                )
+            return self._resolve_shield_reaction_cast(character, action, monster)
         if character.in_combat:
             blocked = self._require_player_combat_turn(character, action)
             if blocked:
@@ -941,7 +1116,6 @@ class GameEngine:
             blocked_turn = self._begin_player_combat_action(character, action)[1]
             if blocked_turn:
                 return self._finish_paralyzed_player_turn(character, action, monster)
-        spell_name, target_name = self._spell_action_parts(action)
         if not spell_name:
             return TurnResult(action, ["Name a spell to cast. No spell slot was spent."], False), monster
 
@@ -1028,6 +1202,25 @@ class GameEngine:
             ), monster
 
         kind, dice, save_ability, save_on_success = modeled
+        if selected == "Shield":
+            return (
+                TurnResult(
+                    action,
+                    ["Shield is a reaction spell — cast it when an enemy attack opens the reaction window."],
+                    False,
+                    spell_facts={
+                        "spell_name": selected,
+                        "spell_level": level,
+                        "slot_level": None,
+                        "slot_consumed": False,
+                        "effect": {"type": "reaction_only"},
+                        "target_hp_after": monster.hp if monster else None,
+                        "save_result": None,
+                    },
+                    costs_adventure_mana=False,
+                ),
+                monster,
+            )
         if kind == "escape" and monster is None and not character.in_combat:
             facts = {
                 "spell_name": selected,
@@ -1947,6 +2140,15 @@ class GameEngine:
         if not text:
             return TurnResult(action, ["Say what your character attempts."], False), monster
         intent = parse_action_intent(action)
+        from .reactive_spells import has_pending_reaction, pending_blocks_unrelated_action
+
+        if has_pending_reaction(character) and intent.kind not in (CAST, DECLINE_REACTION):
+            _, msg = pending_blocks_unrelated_action(character)
+            return TurnResult(action, [msg], False, costs_adventure_mana=False), monster
+
+        if intent.kind == DECLINE_REACTION:
+            return self._resolve_decline_reaction(character, action, monster)
+
         if intent.kind == AMBIGUOUS:
             return TurnResult(
                 action,

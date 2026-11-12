@@ -274,6 +274,7 @@ def equipped_shield_instance(character: CharacterState) -> dict | None:
 def compute_armor_class(character: CharacterState) -> int:
     """Single authority for player AC (SRD 5.1)."""
     from .concentration import mage_armor_applies, mage_armor_base_ac, shield_of_faith_ac_bonus
+    from .reactive_spells import shield_ac_bonus
 
     dex_mod = _ability_mod(character.abilities.get("dexterity", 10))
     body_ac = 10 + dex_mod
@@ -302,7 +303,13 @@ def compute_armor_class(character: CharacterState) -> int:
 
     from .class_features import defense_style_ac_bonus
 
-    return body_ac + shield_bonus + defense_style_ac_bonus(character) + shield_of_faith_ac_bonus(character)
+    return (
+        body_ac
+        + shield_bonus
+        + defense_style_ac_bonus(character)
+        + shield_of_faith_ac_bonus(character)
+        + shield_ac_bonus(character)
+    )
 
 
 def refresh_armor_class(character: CharacterState) -> int:

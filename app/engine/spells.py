@@ -89,6 +89,7 @@ MODELED_SPELL_EFFECTS = {
     "Bless": ("concentration_buff", "bless", None, None),
     "Shield of Faith": ("concentration_buff", "shield_of_faith", None, None),
     "Mage Armor": ("mage_armor", "", None, None),
+    "Shield": ("reaction_shield", "", None, None),
     "Burning Hands": ("save_damage", "3d6", "dexterity", "half"),
     "Cure Wounds": ("heal", "1d8", None, None),
     "Eldritch Blast": ("spell_attack", "1d10", None, None),
@@ -106,6 +107,7 @@ SPELL_CASTING_META: dict[str, dict[str, bool | str]] = {
     "Bless": {"concentration": True, "casting_time": "action"},
     "Shield of Faith": {"concentration": True, "casting_time": "bonus"},
     "Mage Armor": {"concentration": False, "casting_time": "action"},
+    "Shield": {"concentration": False, "casting_time": "reaction"},
     "Healing Word": {"concentration": False, "casting_time": "bonus"},
     "Invisibility": {"concentration": True, "casting_time": "action"},
 }

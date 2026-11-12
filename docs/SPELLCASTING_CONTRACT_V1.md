@@ -67,7 +67,11 @@ Other SRD classes exist in reference data but are out of Chapter One MVP player 
 - **Invisibility:** concentration + `invisible` flag; attack ends concentration.
 - **Long rest** clears concentration and Mage Armor.
 
-**Deferred:** multi-target Bless, Shield reaction spell, full 8-hour duration tracking outside long rest.
+## Reactive spells (Sprint 33)
+
+- **Shield:** reaction only when `combat_reaction_pending` is set by an enemy hit line; `cast Shield` or `decline reaction`; +5 AC in `compute_armor_class` until start of your next turn; same stored attack roll is re-checked (no second roll).
+- Slot and `reaction_used` spent only on successful Shield cast; decline spends neither.
+- **Deferred:** Magic Missile negation vs player; auto-decline on timeout; enemy spell reactions beyond melee/ranged weapon attacks.
 
 ## Forced movement / range
 

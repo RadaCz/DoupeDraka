@@ -18,7 +18,7 @@ export function readCombatEconomy(character: Character): CombatEconomyState {
     inPlayerTurn,
     actionAvailable: inPlayerTurn && !flag(character, 'action_used'),
     bonusAvailable: inPlayerTurn && !flag(character, 'bonus_action_used'),
-    reactionAvailable: inPlayerTurn && !flag(character, 'reaction_used'),
+    reactionAvailable: inCombat && !flag(character, 'reaction_used'),
   };
 }
 
@@ -42,8 +42,11 @@ export function economyDenialReason(
   economy: CombatEconomyState,
   slot: EconomySlot,
   t: (key: string) => string,
+  character?: { combat_turn?: string },
 ): string | undefined {
-  if (!economy.inPlayerTurn) return t('Wait for the enemy to act.');
+  if (!economy.inPlayerTurn && character.combat_turn !== 'reaction') {
+    return t('Wait for the enemy to act.');
+  }
   if (slot === 'action' && !economy.actionAvailable) {
     return t('You already used your action this turn.');
   }

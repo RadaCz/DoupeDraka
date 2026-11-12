@@ -30,6 +30,8 @@ export interface Character {
   concentration_effect?: string;
   concentration_bonus?: number;
   mage_armor_active?: boolean;
+  shield_active?: boolean;
+  combat_reaction_pending?: Record<string, unknown>;
   conditions?: Array<Record<string, unknown>>;
   difficulty: string;
   tone: string;

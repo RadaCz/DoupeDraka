@@ -259,7 +259,9 @@ def test_unmodeled_known_spell_is_honest_and_does_not_spend_a_slot():
     game = GameEngine(random.Random(1))
     hero = create_hero("wizard")
     before = dict(hero.spell_slots)
-    result, monster = game.resolve_action(hero, "cast Shield", None)
+    if "Detect Magic" not in hero.known_spells:
+        hero.known_spells.append("Detect Magic")
+    result, monster = game.resolve_action(hero, "cast Detect Magic", None)
     assert monster is None
     assert not result.state_changed
     assert hero.spell_slots == before

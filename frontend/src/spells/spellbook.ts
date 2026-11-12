@@ -78,6 +78,7 @@ const ENGINE_KIND: Record<string, SpellEngineKind> = {
   Invisibility: 'utility',
   'Scorching Ray': 'attack',
   'Shield of Faith': 'utility',
+  Shield: 'utility',
   'Sacred Flame': 'save',
   'Vicious Mockery': 'save',
 };
@@ -157,8 +158,10 @@ export function buildCastAction(character: Character, spellName: string): string
 /** Spells the combat deck can fire — same filter as combatActions.modeledCombatSpells */
 export function modeledCombatSpells(character: Character, spells: Spell[]): Spell[] {
   const names = accessibleSpellNames(character);
+  const reactionOnly = character.combat_turn !== 'reaction' && !character.combat_reaction_pending?.kind;
   return spells
     .filter(spell => names.has(spell.name) && spell.effect_modeled)
+    .filter(spell => !(spell.name === 'Shield' && reactionOnly))
     .sort((a, b) => a.level - b.level || a.name.localeCompare(b.name));
 }
 

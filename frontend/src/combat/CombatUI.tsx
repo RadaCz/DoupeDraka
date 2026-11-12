@@ -6,9 +6,11 @@ import { SpellSlots } from '../components/characterVitals';
 import { splitJournalResult, splitNarrationAndFacts } from '../components/journalBlocks';
 import {
   buildCombatActions,
+  buildReactionCombatActions,
   castSpellAction,
   enemyPortraitGlyph,
   isPlayerCombatTurn,
+  isReactionWindow,
   lastCombatBeat,
   modeledCombatSpells,
 } from './combatActions';
@@ -59,7 +61,7 @@ export function CombatTacticsStrip({ character }: { character: Character }) {
 export function CombatActionEconomyStrip({ character }: { character: Character }) {
   const { t } = useI18n();
   const economy = readCombatEconomy(character);
-  if (!economy.inPlayerTurn && character.combat_turn === 'enemy') {
+  if (!economy.inPlayerTurn && character.combat_turn === 'enemy' && !character.combat_reaction_pending?.kind) {
     return null;
   }
   return (
@@ -116,7 +118,11 @@ export function CombatArena({
           </div>
         </div>
         <p className={`combat-turn-pill ${playerTurn ? 'player' : 'enemy'}`} role="status">
-          {playerTurn ? t('Your turn — choose an action.') : t('Enemy turn — wait for the outcome.')}
+          {isReactionWindow(character)
+            ? t('Reaction — choose Shield or decline.')
+            : playerTurn
+              ? t('Your turn — choose an action.')
+              : t('Enemy turn — wait for the outcome.')}
         </p>
           {character.in_combat && (
             <>
@@ -254,12 +260,15 @@ export function CombatActionDeck({
   const [spellPick, setSpellPick] = useState('');
   const [lastSent, setLastSent] = useState('');
   const [pendingId, setPendingId] = useState('');
-  const actions = buildCombatActions(character, spells, t, locale);
+  const reactionActions = buildReactionCombatActions(character, t);
+  const actions = reactionActions.length
+    ? reactionActions
+    : buildCombatActions(character, spells, t, locale);
   const modeled = modeledCombatSpells(character, spells);
   const economy = readCombatEconomy(character);
   const enemy = character.combatant?.name;
   const spellCastBlocked = spellPick
-    ? economyDenialReason(economy, spellEconomySlot(spellPick), t)
+    ? economyDenialReason(economy, spellEconomySlot(spellPick), t, character)
     : undefined;
 
   useEffect(() => {
