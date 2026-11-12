@@ -64,6 +64,7 @@ class CharacterState:
     divine_domain: str = ""
     second_wind_available: bool = False
     action_surge_available: bool = False
+    channel_divinity_available: bool = False
     arcane_recovery_available: bool = False
     arcane_recovery_ready: bool = False
     combat_flags: dict[str, bool] = field(default_factory=dict)

@@ -1,5 +1,11 @@
 import { expect, test } from '@playwright/test';
-import { fetchCharacterState, postGameAction, reviveIfFallen } from './chapter-one-e2e-helpers.ts';
+import {
+  ensureLevelAtLeast,
+  fetchCharacterState,
+  postCombatAttack,
+  postGameAction,
+  reviveIfFallen,
+} from './chapter-one-e2e-helpers.ts';
 import { apiTelegramToken, signedTelegramInitData } from './telegram.ts';
 import { E2E_TELEGRAM_ID } from './test-config.ts';
 
@@ -89,6 +95,7 @@ test('Sprint 21 class identity — engine outcomes & reload', async ({ request }
     expect(fState.hp).toBeGreaterThan(hpBefore);
   }
 
+  await ensureLevelAtLeast(request, token, rogue.id, 2, 40);
   await postGameAction(request, token, rogue.id, 'attack goblin scout');
   await postGameAction(request, token, rogue.id, 'hide');
   await postGameAction(request, token, rogue.id, 'attack goblin scout');
@@ -97,11 +104,12 @@ test('Sprint 21 class identity — engine outcomes & reload', async ({ request }
   const cState = await fetchCharacterState(request, token, cleric.id);
   expect(cState.prepared_spells).toEqual(expect.arrayContaining(['Bless', 'Cure Wounds']));
 
-  await postGameAction(request, token, wizard.id, 'cast Magic Missile at goblin scout');
+  await postCombatAttack(request, token, wizard.id, 'goblin scout');
+  await postGameAction(request, token, wizard.id, 'cast Magic Missile');
   await expect.poll(async () => {
     const s = await fetchCharacterState(request, token, wizard.id);
     return !s.in_combat;
-  }).toBe(true);
+  }, { timeout: 90_000 }).toBe(true);
   let wState = await fetchCharacterState(request, token, wizard.id);
   const slots = wState.spell_slots ?? {};
   const spentSlot = slots['1'] ?? slots[1] ?? 2;

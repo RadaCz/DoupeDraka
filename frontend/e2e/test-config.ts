@@ -23,4 +23,6 @@ export const E2E_TELEGRAM_ID = {
   classIdentity: 776_000_000,
   banditCamp: 777_000_000,
   backgroundFeatures: 778_000_000,
+  rogueCunning: 779_000_000,
+  clericChannel: 779_100_000,
 } as const;

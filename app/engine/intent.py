@@ -32,6 +32,12 @@ END_TURN_PATTERN = re.compile(
 )
 ARCANE_RECOVERY_PATTERN = re.compile(r"\b(?:arcane recovery|arcan\w*\s+obnov)\b", re.IGNORECASE)
 HIDE_COMBAT_PATTERN = re.compile(r"\b(?:hide|schovej|ukry)\b", re.IGNORECASE)
+DASH_COMBAT_PATTERN = re.compile(r"\b(?:\bdash\b|cunning action dash|sprint|výpad)\b", re.IGNORECASE)
+PRESERVE_LIFE_PATTERN = re.compile(
+    r"\b(?:preserve life|channel divinity preserve|channel divinity)\b",
+    re.IGNORECASE,
+)
+TURN_UNDEAD_PATTERN = re.compile(r"\b(?:turn undead|zahnat nemrtv)\b", re.IGNORECASE)
 ACTION_SURGE_PATTERN = re.compile(r"\b(?:action surge|p?ř?íval akce)\b", re.IGNORECASE)
 DISENGAGE_PATTERN = re.compile(
     r"\b(?:disengage|disengaging|vykroč\s+bez\s+útoku|odstup\s+bez\s+útoku)\b",
@@ -236,6 +242,9 @@ def _matched_kinds(text: str) -> set[str]:
         SECOND_WIND_PATTERN.search(text)
         or ARCANE_RECOVERY_PATTERN.search(text)
         or HIDE_COMBAT_PATTERN.search(text)
+        or DASH_COMBAT_PATTERN.search(text)
+        or PRESERVE_LIFE_PATTERN.search(text)
+        or TURN_UNDEAD_PATTERN.search(text)
         or ACTION_SURGE_PATTERN.search(text)
     ):
         found.add(CLASS_FEATURE)
@@ -313,6 +322,12 @@ def parse_action_intent(action: str) -> ActionIntent:
                     feature = "arcane_recovery"
                 elif ACTION_SURGE_PATTERN.search(text):
                     feature = "action_surge"
+                elif DASH_COMBAT_PATTERN.search(text):
+                    feature = "cunning_dash"
+                elif TURN_UNDEAD_PATTERN.search(text):
+                    feature = "turn_undead"
+                elif PRESERVE_LIFE_PATTERN.search(text):
+                    feature = "preserve_life"
                 else:
                     feature = "hide"
             if kind == COMBAT_MOVE:

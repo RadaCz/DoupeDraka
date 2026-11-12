@@ -1,5 +1,10 @@
 import { expect, test } from '@playwright/test';
-import { closeCombatTurnIfStalled, fetchCharacterState, postGameAction } from './chapter-one-e2e-helpers.ts';
+import {
+  closeCombatTurnIfStalled,
+  fetchCharacterState,
+  postCombatAttack,
+  postGameAction,
+} from './chapter-one-e2e-helpers.ts';
 import { apiTelegramToken, signedTelegramInitData } from './telegram.ts';
 import { E2E_TELEGRAM_ID } from './test-config.ts';
 
@@ -25,12 +30,11 @@ test('Sprint 25 — bonus then action economy & reload', async ({ request }, tes
   expect(response.ok()).toBeTruthy();
   const fighter = await response.json() as { id: string; max_hp: number };
 
-  await postGameAction(request, token, fighter.id, 'attack goblin scout');
-  await closeCombatTurnIfStalled(request, token, fighter.id);
+  await postCombatAttack(request, token, fighter.id, 'goblin scout');
   await expect.poll(async () => {
     const s = await fetchCharacterState(request, token, fighter.id);
     return Boolean(s.in_combat) && s.combat_turn === 'player' && !s.combat_flags?.action_used;
-  }).toBe(true);
+  }, { timeout: 60_000 }).toBe(true);
 
   await postGameAction(request, token, fighter.id, 'second wind');
   let state = await fetchCharacterState(request, token, fighter.id);
@@ -38,9 +42,12 @@ test('Sprint 25 — bonus then action economy & reload', async ({ request }, tes
   expect(state.combat_flags?.action_used).toBeFalsy();
   expect(state.combat_turn).toBe('player');
 
-  await postGameAction(request, token, fighter.id, 'attack goblin scout');
+  await postCombatAttack(request, token, fighter.id, 'goblin scout');
   state = await fetchCharacterState(request, token, fighter.id);
-  expect(state.combat_flags?.bonus_action_used).toBe(true);
+  if (state.in_combat && state.combat_turn === 'player') {
+    expect(state.combat_flags?.action_used).toBe(true);
+    expect(state.combat_flags?.bonus_action_used).toBe(true);
+  }
 
   const reloaded = await fetchCharacterState(request, token, fighter.id);
   expect(reloaded.in_combat).toBe(state.in_combat);

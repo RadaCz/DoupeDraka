@@ -973,6 +973,18 @@ class GameEngine:
 
         if not character.in_combat or monster is None:
             return TurnResult(action, ["You can only Disengage during a fight."], False, costs_adventure_mana=False), monster
+        from .combat_action_economy import FLAG_ACTION_USED, FLAG_BONUS_USED, _flag
+        from .class_features import use_cunning_disengage
+
+        if character.character_class == "rogue" and character.level >= 2 and not _flag(character, FLAG_BONUS_USED):
+            ok, lines, class_facts = use_cunning_disengage(character)
+            if ok:
+                return (
+                    TurnResult(action, lines, True, class_facts=class_facts, costs_adventure_mana=False),
+                    monster,
+                )
+            if _flag(character, FLAG_ACTION_USED):
+                return TurnResult(action, lines, False, costs_adventure_mana=False), monster
         blocked = self._require_player_combat_turn(character, action)
         if blocked:
             return blocked, monster
@@ -1967,13 +1979,20 @@ class GameEngine:
             try_hide_in_combat,
             use_action_surge,
             use_arcane_recovery,
+            use_cunning_dash,
+            use_preserve_life,
             use_second_wind,
+            use_turn_undead,
         )
+        from .combat_action_economy import reserve_combat_cost
         from .intent import (
             ACTION_SURGE_PATTERN,
             ARCANE_RECOVERY_PATTERN,
+            DASH_COMBAT_PATTERN,
             HIDE_COMBAT_PATTERN,
+            PRESERVE_LIFE_PATTERN,
             SECOND_WIND_PATTERN,
+            TURN_UNDEAD_PATTERN,
         )
 
         text = action.casefold()
@@ -2008,6 +2027,42 @@ class GameEngine:
             changed = ok
             if ok:
                 return TurnResult(action, events, changed, class_facts=class_facts, costs_adventure_mana=False), monster
+
+        if feature == "cunning_dash" or DASH_COMBAT_PATTERN.search(text):
+            ok, lines, class_facts = use_cunning_dash(character)
+            events.extend(lines)
+            changed = ok
+            if ok:
+                return TurnResult(action, events, changed, class_facts=class_facts, costs_adventure_mana=False), monster
+
+        channel_feature = feature in ("preserve_life", "turn_undead") or (
+            PRESERVE_LIFE_PATTERN.search(text) and feature != "turn_undead"
+        ) or TURN_UNDEAD_PATTERN.search(text)
+        if channel_feature:
+            if character.in_combat and monster:
+                cost_ok, cost_reason = reserve_combat_cost(character, "action")
+                if not cost_ok:
+                    return TurnResult(action, [cost_reason], False, costs_adventure_mana=False), monster
+            if feature == "turn_undead" or TURN_UNDEAD_PATTERN.search(text):
+                ok, lines, class_facts = use_turn_undead(self, character, monster)
+            else:
+                ok, lines, class_facts = use_preserve_life(self, character)
+            events.extend(lines)
+            changed = ok
+            if ok and monster and character.in_combat:
+                if monster.hp <= 0:
+                    level_facts = self._on_monster_killed_in_combat(character, monster, events)
+                    return TurnResult(
+                        action, events, True, True, level_up_facts=level_facts, class_facts=class_facts,
+                    ), None
+                events, enemy_save = self._maybe_advance_enemy_after_player_action(character, monster, events)
+                if enemy_save:
+                    return TurnResult(
+                        action, events, changed, class_facts=class_facts, save_facts=enemy_save,
+                    ), monster if character.in_combat else None
+            return TurnResult(action, events, changed, class_facts=class_facts, costs_adventure_mana=False), (
+                None if not character.in_combat or (monster and monster.hp <= 0) else monster
+            )
 
         if feature == "hide" or HIDE_COMBAT_PATTERN.search(text):
             ok, lines, class_facts = try_hide_in_combat(self, character)

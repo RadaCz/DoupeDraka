@@ -34,7 +34,7 @@ export function classFeatureLines(character: Character, t: (value: string) => st
       lines.push({
         key: 'cunning_action',
         label: t('Cunning Action'),
-        detail: t('Hide (bonus action). Dash and bonus Disengage are not modeled yet.'),
+        detail: t('Bonus action: Dash, Disengage, or Hide in combat.'),
       });
     }
     if (character.expertise_skills?.length) {
@@ -64,6 +64,14 @@ export function classFeatureLines(character: Character, t: (value: string) => st
       label: t('Disciple of Life'),
       detail: t('+2 + spell level on Cure Wounds / Healing Word'),
     });
+    if ((character.level ?? 1) >= 2) {
+      lines.push({
+        key: 'channel_divinity',
+        label: t('Channel Divinity'),
+        status: character.channel_divinity_available ? t('Ready') : t('Spent until short rest'),
+        detail: t('Preserve Life (heal) or Turn Undead (undead foes).'),
+      });
+    }
   }
 
   if (klass === 'wizard') {

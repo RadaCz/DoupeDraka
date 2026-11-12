@@ -18,7 +18,7 @@ REACTION_SPELLS = frozenset({"Shield"})
 
 FLAG_CAST_BONUS_SPELL = "cast_bonus_spell_turn"
 FLAG_CAST_LEVELED_ACTION_SPELL = "cast_leveled_action_spell_turn"
-BONUS_ACTION_CLASS = frozenset({"second_wind", "hide"})
+BONUS_ACTION_CLASS = frozenset({"second_wind", "hide", "cunning_dash", "cunning_disengage"})
 
 
 def _flag(character: CharacterState, key: str, default: bool = False) -> bool:
@@ -106,7 +106,7 @@ def has_legitimate_bonus_action(character: CharacterState) -> bool:
         return False
     if character.character_class == "fighter" and character.second_wind_available:
         return True
-    if character.character_class == "rogue":
+    if character.character_class == "rogue" and character.level >= 2:
         return True
     if character.hp < character.max_hp:
         spells = {s.casefold() for s in character.prepared_spells + character.known_spells}

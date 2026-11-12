@@ -127,6 +127,8 @@ export function buildCombatActions(
   };
 
   const featureActions: CombatActionItem[] = [];
+  const enemyName = character.combatant?.name?.toLowerCase() ?? '';
+  const undeadFoe = /skeleton|ghoul|zombie|undead/i.test(enemyName);
   const actionSpent = Boolean(character.combat_flags?.action_used);
   if (
     character.character_class === 'fighter'
@@ -145,6 +147,39 @@ export function buildCombatActions(
         action: 'action surge',
       }),
     );
+  }
+  if (
+    character.character_class === 'cleric'
+    && (character.level ?? 1) >= 2
+    && character.channel_divinity_available
+    && playerTurn
+  ) {
+    if (undeadFoe) {
+      featureActions.push(
+        wrap({
+          id: 'turn_undead',
+          kind: 'class_feature',
+          label: t('Turn Undead'),
+          description: t('Channel Divinity: undead foes must resist or be destroyed.'),
+          glyph: '☀',
+          action: 'turn undead',
+          economySlot: 'action',
+        }),
+      );
+    }
+    if ((character.hp ?? 0) < (character.max_hp ?? 0)) {
+      featureActions.push(
+        wrap({
+          id: 'preserve_life',
+          kind: 'class_feature',
+          label: t('Preserve Life'),
+          description: t('Channel Divinity: heal using your Life domain pool (5 × level HP).'),
+          glyph: '✚',
+          action: 'preserve life',
+          economySlot: character.in_combat ? 'action' : undefined,
+        }),
+      );
+    }
   }
   if (character.character_class === 'fighter' && character.second_wind_available && playerTurn) {
     featureActions.push(
@@ -166,10 +201,19 @@ export function buildCombatActions(
   ) {
     featureActions.push(
       wrap({
+        id: 'cunning_dash',
+        kind: 'class_feature',
+        label: t('Dash'),
+        description: t('Cunning Action: gain movement equal to your speed (bonus action).'),
+        glyph: '⇉',
+        action: 'dash',
+        economySlot: 'bonus',
+      }),
+      wrap({
         id: 'hide',
         kind: 'class_feature',
         label: t('Hide'),
-        description: t('Stealth (bonus action) to gain advantage for Sneak Attack.'),
+        description: t('Cunning Action: Stealth to gain advantage for Sneak Attack.'),
         glyph: '◌',
         action: 'hide',
         economySlot: 'bonus',
@@ -230,15 +274,24 @@ export function buildCombatActions(
       action: 'defend',
       economySlot: 'action',
     }),
-    wrap({
-      id: 'disengage',
-      kind: 'defend',
-      label: t('Disengage'),
-      description: t('Action: move without provoking opportunity attacks this turn.'),
-      glyph: '↔',
-      action: 'disengage',
-      economySlot: 'action',
-    }),
+    wrap(
+      {
+        id: 'disengage',
+        kind: 'defend',
+        label:
+          character.character_class === 'rogue' && (character.level ?? 1) >= 2
+            ? t('Disengage (Cunning)')
+            : t('Disengage'),
+        description:
+          character.character_class === 'rogue' && (character.level ?? 1) >= 2
+            ? t('Bonus action: move without provoking opportunity attacks this turn.')
+            : t('Action: move without provoking opportunity attacks this turn.'),
+        glyph: '↔',
+        action: 'disengage',
+        economySlot:
+          character.character_class === 'rogue' && (character.level ?? 1) >= 2 ? 'bonus' : 'action',
+      },
+    ),
     wrap({
       id: 'flee',
       kind: 'flee',

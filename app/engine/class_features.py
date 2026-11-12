@@ -26,6 +26,7 @@ DOMAIN_LABEL = "life"
 
 SECOND_WIND_DICE = "1d10"
 SNEAK_ATTACK_BASE_DICE = "1d6"
+UNDEAD_MONSTER_KEYS = frozenset({"skeleton", "ghoul", "zombie"})
 
 
 def ensure_class_identity_defaults(character: CharacterState) -> None:
@@ -218,11 +219,10 @@ def apply_level_up_class_features(character: CharacterState) -> tuple[list[str],
             character.action_surge_available = True
             mechanical.append("Action Surge")
         elif klass == "rogue":
-            mechanical.append("Cunning Action (Hide)")
-            deferred.append("Cunning Action: Dash")
-            deferred.append("Cunning Action: Disengage (bonus)")
+            mechanical.append("Cunning Action")
         elif klass == "cleric":
-            deferred.append("Channel Divinity")
+            mechanical.append("Channel Divinity")
+            character.channel_divinity_available = True
         elif klass == "wizard":
             deferred.append("Arcane Tradition")
     return mechanical, deferred
@@ -235,6 +235,11 @@ def reconcile_level_gated_features(character: CharacterState) -> None:
             if not character.action_surge_available and not character.in_combat:
                 character.action_surge_available = True
             character.quest_flags["s35_action_surge_sync"] = True
+    if character.character_class == "cleric" and character.level >= 2:
+        if not character.quest_flags.get("s36_channel_divinity_sync"):
+            if not character.channel_divinity_available and not character.in_combat:
+                character.channel_divinity_available = True
+            character.quest_flags["s36_channel_divinity_sync"] = True
 
 
 def use_action_surge(character: CharacterState) -> tuple[bool, list[str], dict]:
@@ -262,6 +267,9 @@ def on_short_rest_class_features(character: CharacterState) -> list[str]:
     if character.character_class == "fighter" and character.level >= 2 and not character.action_surge_available:
         character.action_surge_available = True
         notes.append("Action Surge is available again.")
+    if character.character_class == "cleric" and character.level >= 2 and not character.channel_divinity_available:
+        character.channel_divinity_available = True
+        notes.append("Channel Divinity is available again.")
     if character.character_class == "wizard":
         character.arcane_recovery_ready = True
         notes.append("Arcane Recovery is ready.")
@@ -366,6 +374,131 @@ def rebuild_wizard_spellbook(character: CharacterState, level_one_spells: list[s
     character.prepared_spells = leveled[:limit]
 
 
+def use_cunning_dash(character: CharacterState) -> tuple[bool, list[str], dict]:
+    from .combat_action_economy import spend_bonus_action
+
+    if character.character_class != "rogue" or character.level < 2:
+        return False, ["Cunning Action (Dash) requires rogue level 2."], {}
+    if not character.in_combat:
+        return False, ["You can only Dash during combat."], {}
+    ok, reason = spend_bonus_action(character)
+    if not ok:
+        return False, [reason], {}
+    bonus_ft = max(0, int(character.speed or 30))
+    character.combat_movement_remaining_ft = max(
+        0, int(character.combat_movement_remaining_ft or 0)
+    ) + bonus_ft
+    facts = {"kind": "cunning_dash", "movement_granted_ft": bonus_ft}
+    return (
+        True,
+        [
+            f"Cunning Action: Dash grants {bonus_ft} ft of movement this turn "
+            f"({character.combat_movement_remaining_ft} ft remaining)."
+        ],
+        facts,
+    )
+
+
+def use_cunning_disengage(character: CharacterState) -> tuple[bool, list[str], dict]:
+    from .combat_action_economy import spend_bonus_action
+    from .combat_reactions import set_disengaged
+
+    if character.character_class != "rogue" or character.level < 2:
+        return False, ["Cunning Action (Disengage) requires rogue level 2."], {}
+    if not character.in_combat:
+        return False, ["You can only Disengage during combat."], {}
+    ok, reason = spend_bonus_action(character)
+    if not ok:
+        return False, [reason], {}
+    set_disengaged(character, True)
+    facts = {"kind": "cunning_disengage", "disengaged": True}
+    return (
+        True,
+        ["Cunning Action: Disengage — movement this turn will not provoke opportunity attacks."],
+        facts,
+    )
+
+
+def _channel_divinity_dc(character: CharacterState) -> int:
+    from .equipment import proficiency_bonus
+
+    wis_mod = (character.abilities.get("wisdom", 10) - 10) // 2
+    return 8 + proficiency_bonus(character.level) + wis_mod
+
+
+def use_preserve_life(engine: GameEngine, character: CharacterState) -> tuple[bool, list[str], dict]:
+    if character.character_class != "cleric" or character.level < 2:
+        return False, ["Preserve Life requires a level 2+ Life cleric with Channel Divinity."], {}
+    if character.divine_domain != DOMAIN_LABEL:
+        return False, ["Preserve Life is a Life Domain Channel Divinity option."], {}
+    if not character.channel_divinity_available:
+        return False, ["Channel Divinity is spent until you finish a short or long rest."], {}
+    if character.hp >= character.max_hp:
+        return False, ["You are already at full health — nothing to preserve."], {}
+    pool = 5 * character.level
+    before = character.hp
+    character.hp = min(character.max_hp, character.hp + pool)
+    gained = character.hp - before
+    character.channel_divinity_available = False
+    facts = {
+        "kind": "preserve_life",
+        "healing": gained,
+        "pool_hp": pool,
+        "hp_after": character.hp,
+    }
+    return (
+        True,
+        [
+            f"Channel Divinity: Preserve Life restores {gained} HP "
+            f"({pool} HP pool at cleric level {character.level}). "
+            f"Your HP: {character.hp}/{character.max_hp}."
+        ],
+        facts,
+    )
+
+
+def use_turn_undead(
+    engine: GameEngine,
+    character: CharacterState,
+    monster,
+) -> tuple[bool, list[str], dict]:
+    from .encounters import monster_template_key
+
+    if character.character_class != "cleric" or character.level < 2:
+        return False, ["Turn Undead requires a level 2+ cleric with Channel Divinity."], {}
+    if not character.in_combat or monster is None:
+        return False, ["Turn Undead requires undead foes in combat."], {}
+    if not character.channel_divinity_available:
+        return False, ["Channel Divinity is spent until you finish a short or long rest."], {}
+    key = monster_template_key(monster)
+    if key not in UNDEAD_MONSTER_KEYS:
+        return False, [f"Turn Undead affects undead only — {monster.name} is unaffected."], {}
+    dc = _channel_divinity_dc(character)
+    wis_mod = int(monster.saving_throws.get("wisdom", 0))
+    roll = engine.roll("1d20", wis_mod)
+    success = roll.total >= dc
+    character.channel_divinity_available = False
+    facts = {
+        "kind": "turn_undead",
+        "dc": dc,
+        "roll_total": roll.total,
+        "success": success,
+        "target": monster.name,
+    }
+    if success:
+        monster.hp = 0
+        lines = [
+            f"Channel Divinity: Turn Undead — {monster.name} fails Wisdom save "
+            f"({roll.total} vs DC {dc}) and is destroyed by radiant repulsion."
+        ]
+    else:
+        lines = [
+            f"Channel Divinity: Turn Undead — {monster.name} resists "
+            f"({roll.total} vs DC {dc}) and keeps fighting."
+        ]
+    return True, lines, facts
+
+
 def try_hide_in_combat(engine: GameEngine, character: CharacterState) -> tuple[bool, list[str], dict]:
     from .combat_action_economy import spend_bonus_action
 
@@ -443,6 +576,7 @@ def public_class_feature_summary(character: CharacterState) -> dict:
         "divine_domain": character.divine_domain or None,
         "second_wind_available": character.second_wind_available,
         "action_surge_available": character.action_surge_available,
+        "channel_divinity_available": character.channel_divinity_available,
         "arcane_recovery_available": character.arcane_recovery_available,
         "arcane_recovery_ready": character.arcane_recovery_ready,
         "sneak_attack_dice": sneak_attack_dice(character.level) if character.character_class == "rogue" else None,

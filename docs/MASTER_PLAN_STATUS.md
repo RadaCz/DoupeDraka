@@ -1,8 +1,8 @@
 # Master plan — stav (sync s DOUPEDRAKA_MASTER_PLAN.md v1.0)
 
-Poslední revize: **2026-11-12 (Sprint 35.3 — inventory E2E + full Playwright matrix; working tree uncommitted)**. Etapy 7–9 záměrně otevřené až po uzavření sólo smyčky.
+Poslední revize: **2026-11-12 (Sprint 36.1 — class features E2E closure; local WIP, uncommitted atop `354e510`)**. Etapy 7–9 záměrně otevřené až po uzavření sólo smyčky.
 
-**Kódový HEAD (committed):** `c731670` = `origin/clean-main` (Sprint 34.1). **Sprint 35–35.3 (local):** L1–L3 progression, Action Surge, partial Cunning Action, **`earnChapterOneShopGold`**, inventory E2E green, Playwright **42/42** — viz `docs/SPRINT_35_LEVEL_PROGRESSION_ACCEPTANCE.md` (**READY FOR REVIEW**).
+**Kódový HEAD (committed):** `354e510` = `origin/clean-main` (Sprint 35.3). **Sprint 36 / 36.1 (local):** full Cunning Action + Channel Divinity (Preserve Life, Turn Undead), `channel_divinity_available`, idempotent Preserve Life, E2E **45/45**, pytest fast **763** — viz `docs/SPRINT_36_CLASS_FEATURES_ACCEPTANCE.md` (**READY FOR REVIEW** local; CI po push).
 
 **CI (baseline `53a6fed`):** GREEN #66 po Sprintu 24; po Sprintu 25 znovu ověřit před pushem.
 **Staging HTTPS:** **NOT DEPLOYED** — viz `docs/STAGING_DEVICE_VALIDATION_V1.md`.  

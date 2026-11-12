@@ -127,6 +127,7 @@ export type CharacterSnapshot = {
   divine_domain?: string;
   second_wind_available?: boolean;
   action_surge_available?: boolean;
+  channel_divinity_available?: boolean;
   arcane_recovery_available?: boolean;
   arcane_recovery_ready?: boolean;
   known_spells?: string[];
@@ -153,15 +154,88 @@ export async function postGameAction(
   characterId: string,
   action: string,
 ) {
+  await postGameActionWithIdempotencyKey(request, token, characterId, action, randomUUID());
+}
+
+export async function postGameActionWithIdempotencyKey(
+  request: APIRequestContext,
+  token: string,
+  characterId: string,
+  action: string,
+  idempotencyKey: string,
+) {
   const response = await request.post(`${E2E_API_BASE}/characters/${characterId}/actions/stream`, {
     headers: {
       Authorization: `Bearer ${token}`,
-      'Idempotency-Key': randomUUID(),
+      'Idempotency-Key': idempotencyKey,
     },
     data: { action },
   });
   expect(response.ok()).toBeTruthy();
   await response.body();
+}
+
+export async function waitForPlayerCombatTurn(
+  request: APIRequestContext,
+  token: string,
+  characterId: string,
+  timeoutMs = 60_000,
+) {
+  await expect.poll(async () => {
+    await resolvePendingReactionForE2E(request, token, characterId);
+    const state = await fetchCharacterState(request, token, characterId);
+    if (reactionPending(state)) return false;
+    return Boolean(state.in_combat) && state.combat_turn === 'player';
+  }, { timeout: timeoutMs }).toBe(true);
+}
+
+export async function startCellarCombat(
+  request: APIRequestContext,
+  token: string,
+  characterId: string,
+  foePhrase = 'goblin scout',
+) {
+  await resolvePendingReactionForE2E(request, token, characterId);
+  await reviveIfFallen(request, token, characterId);
+  let state = await fetchCharacterState(request, token, characterId);
+
+  if (state.in_combat) {
+    await leaveCombatIfNeeded(request, token, characterId, 60);
+  }
+
+  if (!/Cellar|sklep/i.test(state.location ?? '')) {
+    await postGameAction(request, token, characterId, 'travel to The Whispering Cellar');
+  }
+
+  const wantSkeleton = /skeleton/i.test(foePhrase);
+  if (wantSkeleton) {
+    for (let attempt = 0; attempt < 16; attempt += 1) {
+      state = await fetchCharacterState(request, token, characterId);
+      if (state.in_combat && /skeleton/i.test(state.combatant?.name ?? '')) {
+        break;
+      }
+      if (state.in_combat) {
+        await leaveCombatIfNeeded(request, token, characterId, 50);
+      }
+      await postCombatAttack(request, token, characterId, 'skeleton');
+    }
+    state = await fetchCharacterState(request, token, characterId);
+    expect(state.in_combat, 'Expected combat with an undead skeleton foe').toBeTruthy();
+    expect(state.combatant?.name ?? '', 'Expected skeleton in encounter pool').toMatch(/skeleton/i);
+  } else {
+    for (let round = 0; round < 8; round += 1) {
+      state = await fetchCharacterState(request, token, characterId);
+      if (state.in_combat) break;
+      await postCombatAttack(request, token, characterId, foePhrase);
+    }
+    await expect.poll(async () => {
+      const probe = await fetchCharacterState(request, token, characterId);
+      return Boolean(probe.in_combat);
+    }, { timeout: 45_000 }).toBe(true);
+  }
+
+  await resolvePendingReactionForE2E(request, token, characterId);
+  await waitForPlayerCombatTurn(request, token, characterId);
 }
 
 export async function fetchCharacterState(
