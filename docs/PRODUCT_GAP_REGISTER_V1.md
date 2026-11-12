@@ -1,6 +1,7 @@
 # Product Gap Register V1
 
-**Repo baseline (commit):** `b124063` (`clean-main` = `origin/clean-main` po Sprintu 30)  
+**Repo baseline (commit):** `580494e` (`clean-main` = `origin/clean-main` po Sprintu 36)  
+**Sprint 37 closed beta audit:** [`SPRINT_37_CLOSED_BETA_READINESS.md`](SPRINT_37_CLOSED_BETA_READINESS.md) — **NOT READY** (playtest + device pending)  
 **Last acceptance pass (committed):** Sprint 30 — [`SPRINT_30_COMBAT_REACTIONS_HARDENING_ACCEPTANCE.md`](SPRINT_30_COMBAT_REACTIONS_HARDENING_ACCEPTANCE.md)  
 **In progress (local):** Sprint 31 — spellcasting — [`SPRINT_31_SPELLCASTING_RULES_INTEGRITY_ACCEPTANCE.md`](SPRINT_31_SPELLCASTING_RULES_INTEGRITY_ACCEPTANCE.md), [`SPELLCASTING_CONTRACT_V1.md`](SPELLCASTING_CONTRACT_V1.md)  
 **Authority:** engine + persisted `CharacterState`; UI must not pretend unmodeled rules apply.  
@@ -33,7 +34,7 @@
 |------|--------|-------------------|---------------|----------|-------------|
 | Character creation wizard | **PARTIAL** | `CharacterWizard.tsx`, `character_creation.py`, E2E `character-creation-wizard.spec.ts`, `character-to-adventure.spec.ts` | 9-step UI + persistence; **4-class** create→play E2E (Sprint 20); **racial traits modeled/deferred UI (Sprint 26)** | P0 | Remaining class depth |
 | Races (MVP 4) | **PARTIAL** | `service._d20_check`, `assemble_skill_proficiencies` | ASI + speed; **Lucky** on player d20 checks; Elf Perception | P0 | 17 — Darkvision, Dwarf resilience, Nimbleness |
-| Classes (MVP 4) | **PARTIAL** | `class_features.py`, `tests/test_class_identity_sprint21.py`, E2E `class-identity.spec.ts` | Lvl‑1 identity: Fighting Style, Second Wind, Expertise/Sneak/Hide, Life/Disciple, Wizard spellbook + **Arcane Recovery** (SRD budget); ostatní domény/styly deferred | P0 | Rozšířit featury mimo MVP 4 |
+| Classes (MVP 4) | **PARTIAL** | `class_features.py`, Sprint 36 tests + E2E | L1 identity + **L2:** Action Surge, Cunning Action (dash/disengage/hide), Channel Divinity, Arcane Recovery; **Wizard Tradition COMING LATER** | P0 | Domény/styly mimo MVP |
 | Backgrounds | **PARTIAL** | `background_features.py`, `MVP_BACKGROUNDS` | Six chapter-one features modeled; idempotent flags; more locations backlog | P1 | Expand beyond Ch.1 |
 | Abilities (standard array) | **IMPLEMENTED** | `catalog.STANDARD_ARRAY`, wizard step | Validated permutation; racial ASI after assign | P0 | — |
 | Racial traits (4 MVP races) | **PARTIAL** | `race_features.py`, `test_sprint26_racial_traits.py` | Lucky, Brave, Fey, Dwarven Resilience, Stonecunning (tagged), Keen Senses, darkvision data | P0 | Trance, Nimbleness, darkvision gameplay |
@@ -47,10 +48,10 @@
 | Inventory | **PARTIAL** | `equipment.py`, `CharacterInventoryPanel` | Weapon + armor + shield equip; bows/accessories not modeled | P1 | 18 — ranged weapons |
 | Exploration / checks | **PARTIAL** | `EXPLORE_SKILL_CUES`, `ability_check` | Skill mapping for some verbs | P1 | 17 |
 | NPC / quests Ch.1 | **IMPLEMENTED** | `quests.py`, `chapter-one-quest.spec.ts`, Sprint 22 tests | Full main arc + boss completion; NPC hints engine-gated | P0 | Optional location arcs |
-| Level-up L1–L3 | **PARTIAL** | `level_progression.py`, Sprint 35/35.1 tests + E2E | MVP **100 XP/level**; avg HP; Action Surge; Rogue Hide; **CD / Tradition deferred**; Cunning Dash/bonus Disengage deferred | P0 | Channel Divinity, L4+ |
+| Level-up L1–L3 | **PARTIAL** | `level_progression.py`, Sprint 35–36 | MVP **100 XP/level**; Action Surge; full **Cunning Action** + **Channel Divinity** (Sprint 36); Tradition still **COMING LATER** | P0 | L4+ |
 | Lite / Normal / Pro | see above | `economy.py`, `settings.py` | No pay-to-win; no paid rolls | P0 | — |
 | Mobile UX Ch.1 | **PARTIAL** | E2E play-layout + mobile-viewports | 16.2: bilingual helpers + ID bands; 23/23 E2E ~4 min | P0 | Staging deploy |
-| E2E CI stability | **PARTIAL** | `run-tests.mjs` (3 phases, fresh DB/RNG) | Lokálně **31/31** E2E po Sprint 21.1; GHA na nepushnutém diff **neověřeno** | P0 | Commit Sprint 21 + GHA |
+| E2E CI stability | **PARTIAL** | `run-tests.mjs` | Lokálně **45/45** @ Sprint 37; GHA po `580494e` — uživatel hlásil green; **neověřeno v Sprint 37 auditu** | P0 | Potvrdit GHA run |
 | Staging HTTPS | **MISSING** (runtime) | `STAGING_RUNBOOK_V1.md` | No live Telegram test | P0 | Ops |
 
 ---

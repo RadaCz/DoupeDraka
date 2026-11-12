@@ -1,6 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import { expect, type APIRequestContext, type Page } from '@playwright/test';
-import { apiTelegramToken, waitForAdventureComposerReady } from './telegram.ts';
+import {
+  apiTelegramToken,
+  playStreamResponse,
+  waitForAdventureComposerReady,
+  waitForGameScreenIdle,
+} from './telegram.ts';
 
 const E2E_API_BASE = 'http://127.0.0.1:8001';
 const MELEE_REACH_FT = 5;
@@ -110,7 +115,7 @@ export type CharacterSnapshot = {
   quest_flags?: Record<string, boolean>;
   location: string;
   in_combat?: boolean;
-  combatant?: { name?: string } | null;
+  combatant?: { name?: string; hp?: number; max_hp?: number } | null;
   combat_turn?: string;
   combat_round?: number;
   combat_distance_ft?: number;
@@ -624,17 +629,40 @@ export async function waitForActionRound(page: Page) {
 export async function clickQuestChip(page: Page, pattern: RegExp) {
   const chip = page.locator('.suggested-actions-row button').filter({ hasText: pattern });
   await expect(chip.first()).toBeVisible({ timeout: 20_000 });
+  const streamDone = playStreamResponse(page);
   await chip.first().click();
-  const inCombat = await page.getByText(/Your turn|Tvůj tah/i).waitFor({ state: 'visible', timeout: 25_000 })
+  await streamDone;
+  const inCombat = await page.getByText(PLAYER_TURN).waitFor({ state: 'visible', timeout: 25_000 })
     .then(() => true)
     .catch(() => false);
-  if (!inCombat) await waitForActionRound(page);
+  const combatDeck = page.getByRole('group', { name: COMBAT_DECK });
+  if (inCombat || await combatDeck.isVisible().catch(() => false)) {
+    await waitForGameScreenIdle(page);
+    return;
+  }
+  await waitForActionRound(page);
 }
 
 export async function mapTravelTo(page: Page, place: RegExp) {
-  await page.getByRole('button', { name: place }).first().click();
-  await page.getByRole('button', { name: /Set out|Vyrazit/i }).click();
+  const destination = page.getByRole('button', { name: place }).first();
+  await expect(destination).toBeVisible({ timeout: 45_000 });
+  await destination.click();
+  const setOut = page.getByRole('button', { name: /Set out|Vyrazit/i });
+  await expect(setOut).toBeVisible({ timeout: 45_000 });
+  await setOut.click();
   await waitForActionRound(page);
+}
+
+/** Map hops after vault unlock (Vault of Echoes → Bell Warden's Pit). */
+export async function travelToBellWardenPitViaMap(page: Page) {
+  await openMap(page);
+  const vaultBtn = page.getByRole('button', { name: /Vault of Echoes|Krypt echa/i }).first();
+  if (await vaultBtn.isVisible().catch(() => false)) {
+    await mapTravelTo(page, /Vault of Echoes|Krypt echa/i);
+    await openMap(page);
+  }
+  await mapTravelTo(page, /Bell Warden|Jáma strážce|Pit/i);
+  await backToAdventure(page);
 }
 
 export async function openMap(page: Page) {
@@ -654,35 +682,174 @@ export async function backToAdventure(page: Page) {
   await expect(page.getByRole('log', { name: ADVENTURE_JOURNAL })).toBeVisible();
 }
 
+const COMBAT_DECK = /combat actions|bojové akce/i;
+const PLAYER_TURN = /Your turn|Tvůj tah/i;
+const ATTACK_BTN = /^Attack$|^Útok$/i;
+const END_TURN_BTN = /^End turn$|^Konec tahu$/i;
+const DEFEND_BTN = /^Defend$|^Bránit se$/i;
+const POTION_BTN = /healing potion|léčivý lektvar/i;
+const DECLINE_REACTION = /decline reaction|odmítnout reakci/i;
+
+async function clickCombatDeckButton(page: Page, name: RegExp) {
+  const deck = page.getByRole('group', { name: COMBAT_DECK });
+  await expect(deck).toBeVisible({ timeout: 45_000 });
+  const button = deck.getByRole('button', { name }).first();
+  await expect(button).toBeEnabled({ timeout: 15_000 });
+  const streamDone = playStreamResponse(page);
+  await button.click();
+  await streamDone;
+  await waitForGameScreenIdle(page);
+}
+
+/** Legacy helper — UI attack loop without stream waits (prefer completeBellWardenBossViaUI). */
 export async function resolveCombat(page: Page, maxTurns = 48) {
   const defeatPattern = /You have fallen|You have been defeated|Padl jsi|You blacked out/i;
   const victoryPattern = /Chapter complete|bells fall silent|Warden.*defeated/i;
-  const arena = page.locator('.combat-arena');
   for (let turn = 0; turn < maxTurns; turn += 1) {
     if (await page.getByText(defeatPattern).first().isVisible().catch(() => false)) return;
     if (await page.getByText(victoryPattern).first().isVisible().catch(() => false)) return;
-    if (!(await page.getByText(/Your turn|Tvůj tah/i).isVisible().catch(() => false))) {
+    if (!(await page.getByText(PLAYER_TURN).isVisible().catch(() => false))) {
       await page.waitForTimeout(350);
       continue;
     }
-    const attack = page.getByRole('button', { name: /^Attack$|^Útok$|^Zaútoč/i }).first();
-    if (!(await attack.isVisible().catch(() => false))) break;
-    await attack.click();
-    const endTurn = page.getByRole('button', { name: /^End turn$|^Konec tahu$/i });
+    try {
+      await clickCombatDeckButton(page, ATTACK_BTN);
+    } catch {
+      break;
+    }
+    const endTurn = page.getByRole('group', { name: COMBAT_DECK }).getByRole('button', { name: END_TURN_BTN });
     if (await endTurn.isVisible().catch(() => false)) {
-      await endTurn.click();
+      await clickCombatDeckButton(page, END_TURN_BTN);
     }
-    if (await page.getByText(defeatPattern).first().isVisible().catch(() => false)) return;
-    if (await page.getByText(victoryPattern).first().isVisible().catch(() => false)) return;
-    if (await arena.isVisible().catch(() => false)) {
-      try {
-        await expect(arena).not.toHaveAttribute('data-busy', 'true', { timeout: 60_000 });
-      } catch {
-        // Narration can lag; if defeat or victory surfaced, exit below.
-      }
-    }
-    if (!(await arena.isVisible().catch(() => false))) return;
   }
+}
+
+/**
+ * Sprint 37.1 — defeat Bell Warden using combat deck + quest chips only (no API attack loops).
+ */
+export async function completeBellWardenBossViaUI(
+  page: Page,
+  request: APIRequestContext,
+  token: string,
+  characterId: string,
+  initData: string,
+  maxRounds = 220,
+): Promise<string> {
+  let activeToken = token;
+  const defeatPattern = /You have fallen|You have been defeated|Padl jsi|You blacked out/i;
+  const victoryPattern = /Chapter complete|bells fall silent|Warden.*defeated|kapitol/i;
+
+  await syncPlayScreen(page);
+  const before = await fetchCharacterState(request, activeToken, characterId);
+  const goldBefore = before.gold ?? 0;
+  const xpBefore = before.xp ?? 0;
+
+  await clickQuestChip(page, /Face the Bell Warden|Bell Warden|Strážce zvonu|Postav se/i);
+  await expect.poll(async () => {
+    const probe = await fetchCharacterState(request, activeToken, characterId);
+    return Boolean(probe.in_combat);
+  }, { timeout: 90_000 }).toBe(true);
+
+  let sawDamage = false;
+  let priorFoeHp: number | undefined;
+
+  for (let round = 0; round < maxRounds; round += 1) {
+    const state = await fetchCharacterState(request, activeToken, characterId);
+    if (state.quest_flags?.chapter_one_complete) {
+      break;
+    }
+    if ((state.hp ?? 1) <= 0) {
+      throw new Error(`Hero fallen during Bell Warden UI fight (round ${round}).`);
+    }
+
+    if (await page.getByText(defeatPattern).first().isVisible().catch(() => false)) {
+      throw new Error('Defeat banner visible before chapter completion.');
+    }
+    if (await page.getByText(victoryPattern).first().isVisible().catch(() => false)) {
+      break;
+    }
+
+    const deck = page.getByRole('group', { name: COMBAT_DECK });
+    const decline = deck.getByRole('button', { name: DECLINE_REACTION });
+    if (await decline.isVisible().catch(() => false)) {
+      await clickCombatDeckButton(page, DECLINE_REACTION);
+      continue;
+    }
+
+    if (state.in_combat && state.combatant?.hp != null) {
+      const foeHp = state.combatant.hp;
+      if (priorFoeHp !== undefined && foeHp < priorFoeHp) {
+        sawDamage = true;
+      }
+      priorFoeHp = foeHp;
+    }
+
+    const playerTurn = state.combat_turn === 'player' || (await page.getByText(PLAYER_TURN).isVisible().catch(() => false));
+    if (!playerTurn) {
+      await page.waitForTimeout(400);
+      continue;
+    }
+
+    const maxHp = state.max_hp ?? 12;
+    const lowHp = (state.hp ?? maxHp) < Math.max(6, Math.floor(maxHp * 0.35));
+    const potionBtn = deck.getByRole('button', { name: POTION_BTN });
+    if (lowHp && await potionBtn.isEnabled().catch(() => false)) {
+      await clickCombatDeckButton(page, POTION_BTN);
+      continue;
+    }
+
+    const attackBtn = deck.getByRole('button', { name: ATTACK_BTN });
+    if (await attackBtn.isEnabled().catch(() => false)) {
+      await clickCombatDeckButton(page, ATTACK_BTN);
+      sawDamage = true;
+    } else if (await deck.getByRole('button', { name: DEFEND_BTN }).isEnabled().catch(() => false)) {
+      await clickCombatDeckButton(page, DEFEND_BTN);
+    }
+
+    const afterAction = await fetchCharacterState(request, activeToken, characterId);
+    if (afterAction.quest_flags?.chapter_one_complete) {
+      break;
+    }
+    const endBtn = deck.getByRole('button', { name: END_TURN_BTN });
+    if (
+      afterAction.in_combat
+      && afterAction.combat_turn === 'player'
+      && await endBtn.isEnabled().catch(() => false)
+      && (afterAction.combat_flags?.action_used || !afterAction.combat_flags?.bonus_action_used)
+    ) {
+      await clickCombatDeckButton(page, END_TURN_BTN);
+    }
+  }
+
+  if (!(await fetchCharacterState(request, activeToken, characterId)).quest_flags?.chapter_one_complete) {
+    throw new Error(`Bell Warden UI fight exceeded ${maxRounds} rounds without chapter_one_complete.`);
+  }
+
+  const final = await fetchCharacterState(request, activeToken, characterId);
+  expect(final.quest_flags?.chapter_one_complete, 'Bell Warden UI fight must set chapter_one_complete').toBe(true);
+  expect(final.in_combat, 'Chapter completion should leave combat').toBeFalsy();
+  expect(sawDamage, 'Expected at least one attack exchange with foe HP or combat damage').toBeTruthy();
+  expect(final.gold ?? 0).toBeGreaterThanOrEqual(goldBefore);
+  expect((final.xp ?? 0)).toBeGreaterThanOrEqual(xpBefore);
+
+  await syncPlayScreen(page);
+  await expect(page.getByRole('log', { name: ADVENTURE_JOURNAL })).toContainText(victoryPattern, { timeout: 60_000 });
+
+  await page.reload();
+  const continueBtn = page.getByRole('button', { name: /Continue adventure|Pokračovat/i });
+  if (await continueBtn.isVisible({ timeout: 45_000 }).catch(() => false)) {
+    await continueBtn.click();
+  } else {
+    const nav = page.getByRole('navigation', { name: /Main navigation|Hlavní navigace/i });
+    await nav.getByRole('button', { name: /^Adventure$|^Hra$/i }).click();
+  }
+  await expect(page.getByRole('log', { name: ADVENTURE_JOURNAL })).toBeVisible({ timeout: 60_000 });
+  await waitForGameScreenIdle(page);
+  activeToken = await apiTelegramToken(request, initData);
+  const reloaded = await fetchCharacterState(request, activeToken, characterId);
+  expect(reloaded.quest_flags?.chapter_one_complete).toBe(true);
+  expect(reloaded.gold).toBe(final.gold);
+  return activeToken;
 }
 
 /** Real engine turns via the same stream endpoint the UI uses (for level grind before tier-3 boss). */

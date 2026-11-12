@@ -26,7 +26,7 @@ export default defineConfig({
         // Chapter journey must run on a fresh E2E_RNG_SEED stream (Bell Warden finish is seed-sensitive).
         {
           name: 'chapter-journey',
-          testMatch: ['**/chapter-one-quest.spec.ts'],
+          testMatch: ['**/chapter-one-quest.spec.ts', '**/bell-warden-ui.spec.ts'],
           timeout: 900_000,
         },
         {

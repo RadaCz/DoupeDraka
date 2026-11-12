@@ -1,5 +1,7 @@
 # Engine dependency map V1 (Sprint 28)
 
+**Sprint 37 note:** Closed-beta journey touches **all chains below**; minimum gate before beta invite = `run_tests.ps1 full` + `npm run test:e2e` + playtest guide P0 clear. See [`SPRINT_37_CLOSED_BETA_READINESS.md`](SPRINT_37_CLOSED_BETA_READINESS.md).
+
 When a **shared module** changes, run the listed regression tests (not only tests colocated with the file).
 
 ## Flow chains
@@ -22,7 +24,7 @@ flowchart LR
 | Intent → resolution | `intent.py`, `service.py`, `combat_action_economy.py` | `test_intent`, `test_intent_negation`, `test_sprint25_combat_action_economy`, `test_gameplay_integrity` |
 | Combat positioning & range | `combat_positioning.py`, `combat_range.py`, `combat_move.py`, enemy AI in `service.py` | `test_sprint27_ranged_combat`, `test_sprint27_1_combat_integration`, `test_sprint28_gameplay_journey_smoke`, `test_sprint15_story_progression` (slow) |
 | Combat reactions & OA | `combat_reactions.py`, `combat_action_economy.py`, movement hooks in `service.py` | `test_sprint29_combat_reactions`, `test_sprint30_combat_reactions_hardening`, `test_sprint25_combat_action_economy`, `test_sprint27_*`, Playwright `combat-reactions.spec.ts` |
-| Quests → XP → chapter | `quests.py`, `chapter_one_progression.py`, `level_progression.py`, `economy_balance.py` | `test_sprint15_story_progression`, `test_sprint22_chapter_one_completion`, `test_chapter_one_journey`, `test_sprint35_level_progression`, `test_sprint35_1_progression_validation` |
+| Quests → XP → chapter | `quests.py`, `chapter_one_progression.py`, `level_progression.py`, `economy_balance.py`, `class_features.py` | `test_sprint15_story_progression`, `test_sprint22_chapter_one_completion`, `test_chapter_one_journey`, `test_sprint35_level_progression`, `test_sprint35_1_progression_validation`, `test_sprint36_*`, Playwright `chapter-one-quest.spec.ts` |
 | Saves & conditions | `saving_throws.py`, combat effect helpers | `test_saving_throws_v1`, `test_sprint19_unified_combat` |
 | Spellcasting | `spells.py`, `concentration.py`, `spell_cast_rules.py`, `spell_saves.py`, `_cast_spell` in `service.py`, `equipment.compute_armor_class` | `test_spells`, `test_sprint31_*`, `test_sprint32_spellcasting_gameplay`, `test_sprint25_combat_action_economy` |
 | Skills | `skill_challenges.py` | `test_sprint23_skill_challenges` |

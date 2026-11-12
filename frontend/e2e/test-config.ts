@@ -3,6 +3,7 @@ export const E2E_BOT_TOKEN = '123456:e2e-test-token';
 /** Telegram user ID bands (must not overlap between spec files in one run). */
 export const E2E_TELEGRAM_ID = {
   chapterOne: 755_000_000,
+  bellWardenUI: 755_500_000,
   adventure: 700_000_000,
   fallen: 710_000_000,
   locale: 720_000_000,

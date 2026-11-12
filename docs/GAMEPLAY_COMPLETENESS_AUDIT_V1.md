@@ -1,5 +1,18 @@
 # Gameplay Completeness Audit V1 — Chapter 1 RPG MVP
 
+### Sprint 37 — Closed beta readiness (2026-11-12, audit only)
+
+See [`SPRINT_37_CLOSED_BETA_READINESS.md`](SPRINT_37_CLOSED_BETA_READINESS.md) and [`CLOSED_BETA_PLAYTEST_GUIDE.md`](CLOSED_BETA_PLAYTEST_GUIDE.md).
+
+| Finding | Status |
+|---------|--------|
+| Automated gates @ `580494e` | **VERIFIED** (pytest 784, Playwright 45/45) |
+| Full player journey map (engine + UI) | **VERIFIED** dokumentačně; Bell Warden boss UI **PARTIAL** |
+| Real human playtest (3–5 testers) | **PENDING** |
+| Physical Telegram (Android/iOS) | **NOT VERIFIED** |
+| Staging HTTPS | **NOT DEPLOYED** |
+| Closed beta product verdict | **NOT READY** |
+
 **Sprint:** 11 (audit only — no gameplay code changes)  
 **Repository baseline:** `aa8faea` on `clean-main` · CI run `42824720654` (4/4 SUCCESS, user-reported)  
 **Audit date:** 2026-11-10  

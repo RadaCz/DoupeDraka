@@ -46,7 +46,9 @@ const FULL_SUITE_PHASES = expandCombatSavesPhases(
   visualMode
     ? [['--project=visual']]
     : [
-      ['--project=chapter-journey'],
+      // Each chapter spec needs its own API DB + E2E_RNG_SEED stream (see playwright.config.ts).
+      ['--project=chapter-journey', 'e2e/chapter-one-quest.spec.ts'],
+      ['--project=chapter-journey', 'e2e/bell-warden-ui.spec.ts'],
       ['--project=combat-saves'],
       ['--project=e2e-smoke'],
     ],

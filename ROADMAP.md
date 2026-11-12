@@ -1,6 +1,17 @@
 # Roadmap
 
-Updated 2026-11-12 (`354e510` committed + **Sprint 36.1 uncommitted, READY FOR REVIEW** local). Chapter one is a gated six-location slice. ActionIntent routes player commands; **Pro NOT AVAILABLE** until OpenRouter exists.
+Updated 2026-11-12 (`580494e` committed; **Sprint 37.1 E2E uncommitted**). Chapter one is a gated six-location slice. ActionIntent routes player commands; **Pro NOT AVAILABLE** until OpenRouter exists.
+
+## Priority 0k — Closed beta readiness (Sprint 37 / 37.1)
+
+- [x] Player journey map + risk E2E inventory (`SPRINT_37_CLOSED_BETA_READINESS.md`)
+- [x] Bell Warden defeat via UI combat deck — `e2e/bell-warden-ui.spec.ts` (**VERIFIED** local)
+- [x] Local gates (37.1): pytest 784 full, fast 763, regress 295, slow 21, Playwright **46/46**, Vitest 171, build, secret scan
+- [x] `CLOSED_BETA_PLAYTEST_GUIDE.md` v1.1
+- [ ] Execute 3–5 tester playtest — **PENDING**
+- [ ] Staging HTTPS + Normal provider smoke — **BLOCKED**
+- [ ] Physical Telegram QA — **PENDING** (`TELEGRAM_MOBILE_QA_V1.md`)
+- [ ] Confirm GitHub Actions (`gh` lokálně chybí; po pushi nového SHA)
 
 ## Priority 0j.5 — Level-up L1–L3 (Sprint 35 / 35.3, local)
 - [x] MVP XP 100/level (not SRD table); combat vs story XP contracts
