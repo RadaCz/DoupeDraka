@@ -81,6 +81,7 @@ from .models import (
     TurnResult,
 )
 from .spells import (
+    CASTER_CLASSES,
     CLASS_SPELL_LISTS,
     MODELED_SPELL_EFFECTS,
     SPELLCASTING_ABILITIES,
@@ -933,6 +934,22 @@ class GameEngine:
         spell_name, target_name = self._spell_action_parts(action)
         if not spell_name:
             return TurnResult(action, ["Name a spell to cast. No spell slot was spent."], False), monster
+
+        if character.character_class not in CASTER_CLASSES:
+            return TurnResult(
+                action,
+                [f"{character.character_class.title()}s cannot cast spells in this MVP. No spell slot was spent."],
+                False,
+                spell_facts={
+                    "spell_name": spell_name,
+                    "spell_level": spell_level(spell_name),
+                    "slot_level": None,
+                    "slot_consumed": False,
+                    "effect": {"type": "unavailable"},
+                    "target_hp_after": monster.hp if monster else None,
+                    "save_result": None,
+                },
+            ), monster
 
         if (
             character.character_class in {"paladin", "ranger"}

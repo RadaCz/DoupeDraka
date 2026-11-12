@@ -1,8 +1,8 @@
 # Product Gap Register V1
 
-**Repo baseline (commit):** `44066e3` (`clean-main` = `origin/clean-main` po Sprintu 29)  
-**Last acceptance pass (committed):** Sprint 29 — combat reactions / OA — [`SPRINT_29_COMBAT_REACTIONS_ACCEPTANCE.md`](SPRINT_29_COMBAT_REACTIONS_ACCEPTANCE.md)  
-**In progress (local):** Sprint 30 — hardening — [`SPRINT_30_COMBAT_REACTIONS_HARDENING_ACCEPTANCE.md`](SPRINT_30_COMBAT_REACTIONS_HARDENING_ACCEPTANCE.md)  
+**Repo baseline (commit):** `b124063` (`clean-main` = `origin/clean-main` po Sprintu 30)  
+**Last acceptance pass (committed):** Sprint 30 — [`SPRINT_30_COMBAT_REACTIONS_HARDENING_ACCEPTANCE.md`](SPRINT_30_COMBAT_REACTIONS_HARDENING_ACCEPTANCE.md)  
+**In progress (local):** Sprint 31 — spellcasting — [`SPRINT_31_SPELLCASTING_RULES_INTEGRITY_ACCEPTANCE.md`](SPRINT_31_SPELLCASTING_RULES_INTEGRITY_ACCEPTANCE.md), [`SPELLCASTING_CONTRACT_V1.md`](SPELLCASTING_CONTRACT_V1.md)  
 **Authority:** engine + persisted `CharacterState`; UI must not pretend unmodeled rules apply.  
 **Related audits:** [`GAMEPLAY_COMPLETENESS_AUDIT_V1.md`](GAMEPLAY_COMPLETENESS_AUDIT_V1.md), [`SPRINT_16_CHARACTER_CREATION_V2.md`](SPRINT_16_CHARACTER_CREATION_V2.md)
 

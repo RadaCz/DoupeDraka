@@ -9,6 +9,7 @@ export const E2E_TELEGRAM_ID = {
   inventory: 730_000_000,
   savingThrow: 733_000_000,
   spellSave: 734_000_000,
+  spellIntegrity: 736_000_000,
   ghoulParalysis: 735_000_000,
   mobileTextFirst: 740_000_000,
   mobileViewports: 750_000_000,

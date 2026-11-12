@@ -1,8 +1,15 @@
 # Roadmap
 
-Updated 2026-11-12 (`44066e3` on `clean-main`; Sprint 30 hardening in working tree). Chapter one is a gated six-location slice. ActionIntent routes player commands; **Pro NOT AVAILABLE** until OpenRouter exists.
+Updated 2026-11-12 (`b124063` on `clean-main`; Sprint 31 spellcasting in working tree). Chapter one is a gated six-location slice. ActionIntent routes player commands; **Pro NOT AVAILABLE** until OpenRouter exists.
 
-## Priority 0j.1 — Combat reactions hardening (Sprint 30, local)
+## Priority 0j.2 — Spellcasting rules integrity (Sprint 31, local)
+- [x] `docs/SPELLCASTING_CONTRACT_V1.md`
+- [x] Non-caster cast rejection (Fighter / Rogue)
+- [x] `tests/test_sprint31_spellcasting_integrity.py` + `e2e/spellcasting-integrity.spec.ts`
+- [ ] Concentration MVP — backlog
+- [ ] Modeled spell count expansion — backlog
+
+## Priority 0j.1 — Combat reactions hardening (Sprint 30, committed `b124063`)
 - [x] E2E phasing: 4 isolated `combat-saves` API/DB phases (RNG seed 27)
 - [x] OA guards vs dead / out-of-combat; idempotency integration test
 - [x] `tests/test_sprint30_combat_reactions_hardening.py`

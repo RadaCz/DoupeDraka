@@ -7,7 +7,11 @@
 
 **Deployment / human fun:** HTTPS staging **NOT DEPLOYED** · Android/iOS playtest **NOT TESTED** · Claimed “fun” **NOT VERIFIED** by this audit.
 
-### Sprint 30 — Combat reactions hardening (2026-11-12, local uncommitted)
+### Sprint 31 — Spellcasting integrity (2026-11-12, local)
+
+11 modeled spells; contract doc; Fighter/Rogue cast blocked. Concentration and most class-list spells remain catalog-only. See [`SPRINT_31_SPELLCASTING_RULES_INTEGRITY_ACCEPTANCE.md`](SPRINT_31_SPELLCASTING_RULES_INTEGRITY_ACCEPTANCE.md).
+
+### Sprint 30 — Combat reactions hardening (2026-11-12, committed `b124063`)
 
 OA integrity guards, idempotency test, E2E `combat-saves` RNG isolation (6-phase runner). See [`SPRINT_30_COMBAT_REACTIONS_HARDENING_ACCEPTANCE.md`](SPRINT_30_COMBAT_REACTIONS_HARDENING_ACCEPTANCE.md).
 
