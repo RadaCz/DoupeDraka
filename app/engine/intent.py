@@ -22,6 +22,7 @@ QUEST = "quest"
 CLASS_FEATURE = "class_feature"
 END_TURN = "end_turn"
 COMBAT_MOVE = "combat_move"
+DISENGAGE = "disengage"
 
 SECOND_WIND_PATTERN = re.compile(r"\b(?:second wind|druh[yý]\s+dech)\b", re.IGNORECASE)
 END_TURN_PATTERN = re.compile(
@@ -30,6 +31,10 @@ END_TURN_PATTERN = re.compile(
 )
 ARCANE_RECOVERY_PATTERN = re.compile(r"\b(?:arcane recovery|arcan\w*\s+obnov)\b", re.IGNORECASE)
 HIDE_COMBAT_PATTERN = re.compile(r"\b(?:hide|schovej|ukry)\b", re.IGNORECASE)
+DISENGAGE_PATTERN = re.compile(
+    r"\b(?:disengage|disengaging|vykroč\s+bez\s+útoku|odstup\s+bez\s+útoku)\b",
+    re.IGNORECASE,
+)
 
 CAST_PATTERN = re.compile(r"\b(cast|kouzl)\b", re.IGNORECASE)
 ATTACK_PATTERN = re.compile(r"\b(attack|strike|hit|útok|zaútoč|zaútočit)\b", re.IGNORECASE)
@@ -95,6 +100,7 @@ _KIND_ORDER = (
     EQUIP,
     END_TURN,
     COMBAT_MOVE,
+    DISENGAGE,
     CAST,
     FLEE,
     DEFEND,
@@ -227,6 +233,8 @@ def _matched_kinds(text: str) -> set[str]:
 
     if is_combat_move_command(text):
         found.add(COMBAT_MOVE)
+    if DISENGAGE_PATTERN.search(text):
+        found.add(DISENGAGE)
     return found
 
 

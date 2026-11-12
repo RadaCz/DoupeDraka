@@ -54,6 +54,7 @@ from .intent import (
     DEFEND,
     END_TURN,
     COMBAT_MOVE,
+    DISENGAGE,
     EXPLORE,
     FLEE,
     QUEST,
@@ -594,6 +595,9 @@ class GameEngine:
 
         if character.hp <= 0:
             return [], {}
+        from .combat_reactions import reset_enemy_reaction_for_new_enemy_turn
+
+        reset_enemy_reaction_for_new_enemy_turn(character)
         events: list[str] = []
         save_facts: dict = {}
         key = monster_template_key(monster)
@@ -615,8 +619,16 @@ class GameEngine:
         ranged_ok = enemy_can_ranged_attack(character, profile)
 
         if not melee_ok and not ranged_ok:
+            from .combat_reactions import movement_left_melee_reach
+
+            before_ft = max(0, int(character.combat_distance_ft or 0))
             if not profile.preferred_melee and profile.ranged_long_ft > 0:
                 events.extend(enemy_retreat_from_melee(character, profile, target_ft=min(60, profile.ranged_normal_ft)))
+                if movement_left_melee_reach(before_ft, character.combat_distance_ft):
+                    oa_events, oa_facts = self._player_opportunity_attack_on_enemy(character, monster)
+                    events.extend(oa_events)
+                    if oa_facts:
+                        save_facts = {**save_facts, **{"level_up_facts": oa_facts}}
             else:
                 events.extend(enemy_movement_toward(character, profile))
             melee_ok = enemy_can_melee_attack(character)
@@ -656,6 +668,142 @@ class GameEngine:
         self._finish_player_combat_round(character)
         return events, save_facts
 
+    def _on_monster_killed_in_combat(
+        self,
+        character: CharacterState,
+        monster: MonsterState,
+        events: list[str],
+    ) -> dict:
+        """Shared defeat resolution (attacks, opportunity attacks)."""
+        self._exit_combat(character)
+        defeated_key = monster_template_key(monster)
+        character.exploration_cooldown = 1
+        level_events, level_up_facts = self._grant_xp(character, monster.reward_xp)
+        events.append(f"{monster.name} is defeated. You gain {monster.reward_xp} XP.")
+        events.extend(self._chapter_one_boss_rewards(character, defeated_key))
+        from .skill_challenges import bandit_captain_defeat_rewards
+
+        events.extend(bandit_captain_defeat_rewards(character))
+        from .chapter_one_progression import (
+            award_vault_first_descent_story_xp,
+            on_vault_descent_victory,
+        )
+
+        on_vault_descent_victory(character)
+        story_events, story_facts, _ = award_vault_first_descent_story_xp(
+            character, self._level_up,
+        )
+        events.extend(story_events)
+        if story_facts:
+            level_up_facts = {**level_up_facts, **story_facts}
+        events.extend(level_events)
+        return level_up_facts
+
+    def _enemy_opportunity_attack_on_player(
+        self,
+        character: CharacterState,
+        monster: MonsterState,
+    ) -> list[str]:
+        from .combat_reactions import (
+            opportunity_attack_preamble,
+            spend_enemy_reaction,
+        )
+
+        ok, reason = spend_enemy_reaction(character)
+        if not ok:
+            return [reason]
+        key = monster_template_key(monster)
+        events = [
+            opportunity_attack_preamble(attacker_is_player=False, defender_name=monster.name),
+        ]
+        events.extend(
+            self._enemy_melee_strike(
+                character,
+                monster,
+                key,
+                attack_advantage=False,
+                attack_disadvantage=False,
+            )
+        )
+        if character.hp <= 0:
+            events.extend(self._recover_from_combat_defeat(character))
+        return events
+
+    def _player_opportunity_attack_on_enemy(
+        self,
+        character: CharacterState,
+        monster: MonsterState,
+    ) -> tuple[list[str], dict]:
+        from .combat_action_economy import spend_reaction
+        from .combat_reactions import opportunity_attack_preamble, sync_monster_to_combatant
+
+        ok, reason = spend_reaction(character)
+        if not ok:
+            return [reason], {}
+        events = [
+            opportunity_attack_preamble(attacker_is_player=True, defender_name=monster.name),
+        ]
+        attack_events, class_facts = self.attack(character, monster, opportunity=True)
+        events.extend(attack_events)
+        sync_monster_to_combatant(character, monster)
+        level_facts: dict = {}
+        if monster.hp == 0:
+            level_facts = self._on_monster_killed_in_combat(character, monster, events)
+        return events, level_facts
+
+    def _maybe_opportunity_after_player_move(
+        self,
+        character: CharacterState,
+        monster: MonsterState,
+        *,
+        before_ft: int,
+        delta_ft: int,
+    ) -> list[str]:
+        from .combat_reactions import is_disengaged, movement_left_melee_reach
+
+        if delta_ft <= 0:
+            return []
+        if not movement_left_melee_reach(before_ft, max(0, int(character.combat_distance_ft or 0))):
+            return []
+        if is_disengaged(character):
+            return ["You slip away — Disengage prevents an opportunity attack."]
+        if character.hp <= 0 or monster.hp <= 0:
+            return []
+        return self._enemy_opportunity_attack_on_player(character, monster)
+
+    def _resolve_disengage(
+        self,
+        character: CharacterState,
+        action: str,
+        monster: MonsterState | None,
+    ) -> tuple[TurnResult, MonsterState | None]:
+        from .combat_action_economy import reserve_combat_cost
+        from .combat_reactions import set_disengaged
+
+        if not character.in_combat or monster is None:
+            return TurnResult(action, ["You can only Disengage during a fight."], False, costs_adventure_mana=False), monster
+        blocked = self._require_player_combat_turn(character, action)
+        if blocked:
+            return blocked, monster
+        blocked_turn = self._begin_player_combat_action(character, action)[1]
+        if blocked_turn:
+            return self._finish_paralyzed_player_turn(character, action, monster)
+        ok, reason = reserve_combat_cost(character, "action")
+        if not ok:
+            return TurnResult(action, [reason], False, costs_adventure_mana=False), monster
+        set_disengaged(character, True)
+        return (
+            TurnResult(
+                action,
+                [
+                    "You take the Disengage action — movement this turn will not provoke opportunity attacks.",
+                ],
+                True,
+                costs_adventure_mana=False,
+            ),
+            monster,
+        )
+
     def _resolve_combat_move(
         self,
         character: CharacterState,
@@ -675,8 +823,18 @@ class GameEngine:
             return self._finish_paralyzed_player_turn(character, action, monster)
         if delta_ft == 0:
             return TurnResult(action, ["Specify a positive distance in feet."], False, costs_adventure_mana=False), monster
+        before_ft = max(0, int(character.combat_distance_ft or 0))
         ok, lines = apply_player_movement(character, delta_ft)
-        return TurnResult(action, lines, ok, costs_adventure_mana=False), monster
+        if not ok:
+            return TurnResult(action, lines, False, costs_adventure_mana=False), monster
+        oa_events = self._maybe_opportunity_after_player_move(
+            character, monster, before_ft=before_ft, delta_ft=delta_ft,
+        )
+        lines.extend(oa_events)
+        combat_over = character.hp <= 0 or not character.in_combat
+        return TurnResult(action, lines, True, combat_over, costs_adventure_mana=False), (
+            None if combat_over else monster
+        )
 
     def _use_item(self, character: CharacterState, action: str, monster: MonsterState | None) -> tuple[TurnResult, MonsterState | None]:
         if monster is not None and character.in_combat:
@@ -1418,7 +1576,14 @@ class GameEngine:
             f"Initiative: you {player.total} (DEX), {monster.name} {enemy.total} (DEX). {order}.",
         ]
 
-    def attack(self, character: CharacterState, monster: MonsterState, *, thrown: bool = False) -> tuple[list[str], dict]:
+    def attack(
+        self,
+        character: CharacterState,
+        monster: MonsterState,
+        *,
+        thrown: bool = False,
+        opportunity: bool = False,
+    ) -> tuple[list[str], dict]:
         from .class_features import (
             apply_sneak_attack,
             attack_advantage_roll,
@@ -1430,6 +1595,11 @@ class GameEngine:
 
         weapon = equipped_weapon(character)
         range_ctx = evaluate_player_attack_range(character, weapon, thrown=thrown)
+        if opportunity:
+            if thrown or weapon.weapon_type != "melee":
+                return ["Opportunity attacks require a melee weapon in reach."], {}
+        elif not range_ctx.allowed:
+            return [range_ctx.denial], {}
         bonus = attack_modifier(character, weapon) + item_attack_bonus(character)
         ammo_note = ""
         if weapon.weapon_type == "ranged" or (thrown and weapon.ammunition):
@@ -1720,6 +1890,9 @@ class GameEngine:
 
         if intent.kind == COMBAT_MOVE:
             return self._resolve_combat_move(character, action, monster, intent.move_delta_ft)
+
+        if intent.kind == DISENGAGE:
+            return self._resolve_disengage(character, action, monster)
 
         if intent.kind == DEFEND:
             if monster is None or not character.in_combat:

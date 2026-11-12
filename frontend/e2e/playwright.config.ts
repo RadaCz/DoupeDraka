@@ -35,6 +35,7 @@ export default defineConfig({
             '**/ghoul-paralysis-combat.spec.ts',
             '**/spell-save-combat.spec.ts',
             '**/saving-throw-combat.spec.ts',
+            '**/combat-reactions.spec.ts',
           ],
         },
         {

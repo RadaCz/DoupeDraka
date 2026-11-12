@@ -165,6 +165,15 @@ export function buildCombatActions(
       economySlot: 'action',
     }),
     wrap({
+      id: 'disengage',
+      kind: 'defend',
+      label: t('Disengage'),
+      description: t('Action: move without provoking opportunity attacks this turn.'),
+      glyph: '↔',
+      action: 'disengage',
+      economySlot: 'action',
+    }),
+    wrap({
       id: 'flee',
       kind: 'flee',
       label: t('Flee'),

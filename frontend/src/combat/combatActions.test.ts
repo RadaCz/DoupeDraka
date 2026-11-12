@@ -60,7 +60,8 @@ describe('combatActions', () => {
 
   it('builds combat actions with movement and potion when in pack', () => {
     const actions = buildCombatActions(fighter, spells, t);
-    expect(actions).toHaveLength(7);
+    expect(actions).toHaveLength(8);
+    expect(actions.find(a => a.id === 'disengage')?.action).toBe('disengage');
     expect(actions.find(a => a.id === 'advance')?.action).toBe('advance 15 ft');
     expect(actions.find(a => a.id === 'potion')?.disabled).toBe(false);
     expect(hasHealingPotion({ ...fighter, inventory: [] })).toBe(false);

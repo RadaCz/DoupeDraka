@@ -27,12 +27,15 @@ def _set(character: CharacterState, key: str, value: bool) -> None:
 
 def reset_player_turn_economy(character: CharacterState) -> None:
     """Called at the start of each player combat turn."""
+    from .combat_reactions import FLAG_DISENGAGED
+
     hidden = bool(character.combat_flags.get("hidden"))
     character.combat_flags = {
         **character.combat_flags,
         FLAG_ACTION_USED: False,
         FLAG_BONUS_USED: False,
         FLAG_REACTION_USED: False,
+        FLAG_DISENGAGED: False,
         "hidden": hidden,
         "sneak_attack_used": False,
         "attack_advantage": hidden,

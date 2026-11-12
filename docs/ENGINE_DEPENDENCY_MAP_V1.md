@@ -21,6 +21,7 @@ flowchart LR
 | Character creation → play | `character_creation.py`, `service.create_character`, `equipment.py`, `api.py` `/characters` | `test_character_creation_v2`, `test_character_creation_mvp_matrix`, `test_integration` (create flow), `test_sprint26_racial_traits` |
 | Intent → resolution | `intent.py`, `service.py`, `combat_action_economy.py` | `test_intent`, `test_intent_negation`, `test_sprint25_combat_action_economy`, `test_gameplay_integrity` |
 | Combat positioning & range | `combat_positioning.py`, `combat_range.py`, `combat_move.py`, enemy AI in `service.py` | `test_sprint27_ranged_combat`, `test_sprint27_1_combat_integration`, `test_sprint28_gameplay_journey_smoke`, `test_sprint15_story_progression` (slow) |
+| Combat reactions & OA | `combat_reactions.py`, `combat_action_economy.py`, movement hooks in `service.py` | `test_sprint29_combat_reactions`, `test_sprint25_combat_action_economy`, `test_sprint27_*`, Playwright `combat-reactions.spec.ts` |
 | Quests → XP → chapter | `quests.py`, `chapter_one_progression.py`, `economy_balance.py` | `test_sprint15_story_progression`, `test_sprint22_chapter_one_completion`, `test_chapter_one_journey` |
 | Saves & conditions | `saving_throws.py`, combat effect helpers | `test_saving_throws_v1`, `test_sprint19_unified_combat` |
 | Skills | `skill_challenges.py` | `test_sprint23_skill_challenges` |

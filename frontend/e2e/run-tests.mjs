@@ -21,7 +21,7 @@ const FULL_SUITE_PHASES = visualMode
   ? [['--project=visual']]
   : [
     ['--project=chapter-journey'],
-    ['--project=combat-saves'],
+    ['--project=combat-saves'], // includes combat-reactions.spec.ts
     ['--project=e2e-smoke'],
   ];
 

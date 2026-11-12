@@ -7,6 +7,10 @@
 
 **Deployment / human fun:** HTTPS staging **NOT DEPLOYED** · Android/iOS playtest **NOT TESTED** · Claimed “fun” **NOT VERIFIED** by this audit.
 
+### Sprint 29 — Combat reactions (2026-11-12, local)
+
+Opportunity attacks on leaving 5 ft melee reach; Disengage action; enemy `enemy_reaction_used`. See [`SPRINT_29_COMBAT_REACTIONS_ACCEPTANCE.md`](SPRINT_29_COMBAT_REACTIONS_ACCEPTANCE.md). Shield / reaction spells remain backlog.
+
 ### Sprint 28 — Engineering reliability (2026-11-11, local)
 
 Regression registry and test layers only — no new player rules. See [`GAMEPLAY_CONTRACTS_V1.md`](GAMEPLAY_CONTRACTS_V1.md), [`ENGINE_DEPENDENCY_MAP_V1.md`](ENGINE_DEPENDENCY_MAP_V1.md), [`SPRINT_28_ENGINEERING_RELIABILITY_ACCEPTANCE.md`](SPRINT_28_ENGINEERING_RELIABILITY_ACCEPTANCE.md).

@@ -70,6 +70,10 @@ const cs: Record<string, string> = {
   'You already used your action this turn.': 'V tomto kole jsi už použil hlavní akci.',
   'You already used your bonus action this turn.': 'V tomto kole jsi už použil bonusovou akci.',
   'You already used your reaction this round.': 'V tomto kole jsi už použil reakci.',
+  'Disengage': 'Ustoupit',
+  'Action: move without provoking opportunity attacks this turn.':
+    'Akce: pohyb do konce tahu nevyvolá útoky příležitosti.',
+  'Opportunity attack': 'Útok příležitosti',
   'Healing Word uses your bonus action in combat.': 'Healing Word v boji spotřebuje bonusovou akci.',
   'Stealth (bonus action) to gain advantage for Sneak Attack.': 'Stealth (bonusová akce) pro výhodu ke Sneak Attack.',
   'End turn': 'Konec tahu',

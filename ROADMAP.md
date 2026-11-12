@@ -2,7 +2,13 @@
 
 Updated 2026-11-11 (`4f9f5bc` on `clean-main`; Sprint 28 reliability in working tree). Chapter one is a gated six-location slice. ActionIntent routes player commands; **Pro NOT AVAILABLE** until OpenRouter exists.
 
-## Priority 0i — Engineering reliability (Sprint 28, local)
+## Priority 0j — Combat reactions & OA (Sprint 29, local)
+- [x] Opportunity attacks on leave melee reach (player + enemy)
+- [x] Disengage action (EN/CS UI)
+- [x] `tests/test_sprint29_combat_reactions.py` + `combat-reactions.spec.ts`
+- [ ] Shield / reaction spells — backlog
+
+## Priority 0i — Engineering reliability (Sprint 28, committed `29745eb`)
 - [x] pytest layers + `scripts/run_tests.ps1` (fast / diagnose / regress / full / slow)
 - [x] `docs/GAMEPLAY_CONTRACTS_V1.md`, `ENGINE_DEPENDENCY_MAP_V1.md`, `DEVELOPMENT_WORKFLOW_V1.md`
 - [x] CI JUnit + slow job split (workflow; GH run after push)

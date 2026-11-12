@@ -1,8 +1,8 @@
 # Master plan — stav (sync s DOUPEDRAKA_MASTER_PLAN.md v1.0)
 
-Poslední revize: **2026-11-11 (Sprint 28 — engineering reliability; working tree, nepushováno)**. Etapy 7–9 záměrně otevřené až po uzavření sólo smyčky.
+Poslední revize: **2026-11-12 (Sprint 29 — combat reactions; working tree, nepushováno)**. Etapy 7–9 záměrně otevřené až po uzavření sólo smyčky.
 
-**Kódový HEAD (baseline gameplay):** `4f9f5bc` na `clean-main` (= `origin/clean-main` po Sprintu 27.1). **Sprint 28:** test vrstvy, runners, kontrakty — viz `docs/SPRINT_28_ENGINEERING_RELIABILITY_ACCEPTANCE.md`.
+**Kódový HEAD (committed):** `29745eb` (Sprint 28.1). **Sprint 29 (local):** combat reactions / OA — viz `docs/SPRINT_29_COMBAT_REACTIONS_ACCEPTANCE.md`.
 
 **CI (baseline `53a6fed`):** GREEN #66 po Sprintu 24; po Sprintu 25 znovu ověřit před pushem.
 **Staging HTTPS:** **NOT DEPLOYED** — viz `docs/STAGING_DEVICE_VALIDATION_V1.md`.  
