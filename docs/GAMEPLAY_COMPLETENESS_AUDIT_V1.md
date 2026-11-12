@@ -7,7 +7,11 @@
 
 **Deployment / human fun:** HTTPS staging **NOT DEPLOYED** · Android/iOS playtest **NOT TESTED** · Claimed “fun” **NOT VERIFIED** by this audit.
 
-### Sprint 29 — Combat reactions (2026-11-12, local)
+### Sprint 30 — Combat reactions hardening (2026-11-12, local uncommitted)
+
+OA integrity guards, idempotency test, E2E `combat-saves` RNG isolation (6-phase runner). See [`SPRINT_30_COMBAT_REACTIONS_HARDENING_ACCEPTANCE.md`](SPRINT_30_COMBAT_REACTIONS_HARDENING_ACCEPTANCE.md).
+
+### Sprint 29 — Combat reactions (2026-11-12, committed `44066e3`)
 
 Opportunity attacks on leaving 5 ft melee reach; Disengage action; enemy `enemy_reaction_used`. See [`SPRINT_29_COMBAT_REACTIONS_ACCEPTANCE.md`](SPRINT_29_COMBAT_REACTIONS_ACCEPTANCE.md). Shield / reaction spells remain backlog.
 

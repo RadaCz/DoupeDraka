@@ -1,8 +1,14 @@
 # Roadmap
 
-Updated 2026-11-11 (`4f9f5bc` on `clean-main`; Sprint 28 reliability in working tree). Chapter one is a gated six-location slice. ActionIntent routes player commands; **Pro NOT AVAILABLE** until OpenRouter exists.
+Updated 2026-11-12 (`44066e3` on `clean-main`; Sprint 30 hardening in working tree). Chapter one is a gated six-location slice. ActionIntent routes player commands; **Pro NOT AVAILABLE** until OpenRouter exists.
 
-## Priority 0j — Combat reactions & OA (Sprint 29, local)
+## Priority 0j.1 — Combat reactions hardening (Sprint 30, local)
+- [x] E2E phasing: 4 isolated `combat-saves` API/DB phases (RNG seed 27)
+- [x] OA guards vs dead / out-of-combat; idempotency integration test
+- [x] `tests/test_sprint30_combat_reactions_hardening.py`
+- [ ] Push + GitHub CI PostgreSQL — pending user
+
+## Priority 0j — Combat reactions & OA (Sprint 29, committed `44066e3`)
 - [x] Opportunity attacks on leave melee reach (player + enemy)
 - [x] Disengage action (EN/CS UI)
 - [x] `tests/test_sprint29_combat_reactions.py` + `combat-reactions.spec.ts`
@@ -28,7 +34,8 @@ Updated 2026-11-11 (`4f9f5bc` on `clean-main`; Sprint 28 reliability in working 
 - [x] Healing Word, Second Wind, Hide, attacks, defend/flee/potion wired
 - [x] Combat UI economy strip (EN/CS)
 - [x] Tests + E2E spec `combat-action-economy.spec.ts`
-- [ ] Reaction abilities (Shield, OA, …) — backlog
+- [x] Opportunity attacks (Sprint 29)
+- [ ] Reaction spells (Shield, …) — backlog
 
 ## Priority 0f — Background features (Sprint 24, committed `53a6fed`)
 - [x] `app/engine/background_features.py` — six one-shot chapter gifts

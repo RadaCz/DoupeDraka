@@ -1,6 +1,6 @@
 # Sprint 29 — Combat reactions & opportunity attacks V1
 
-**Baseline:** `29745eb` (Sprint 28.1) on `clean-main`.
+**Baseline:** `29745eb` (Sprint 28.1). **Committed:** `44066e3` on `clean-main` (= `origin/clean-main`).
 
 ## Audit (pre-implementation)
 
@@ -31,20 +31,18 @@
 | Shield / Hellish Rebuke reactions | NOT MODELED |
 | Teleport / forced movement OA rules | Deferred until mechanics exist |
 
-## Validation (local, 2026-11-12)
+## Validation
 
-| Suite | Result |
-|-------|--------|
-| `test_sprint29_combat_reactions.py` | 11 passed |
-| Fast pytest | 654 passed, 2 skipped |
-| Regress | 186 passed |
-| Full pytest | 675 passed, 2 skipped |
-| Slow | 21 passed |
-| Vitest | 171 passed |
-| Build | OK |
-| Secret scan | OK |
-| Playwright full | **31+ passed**; isolated `combat-reactions` OK; occasional `ghoul`/`spell-save` flake in phased run (investigate) |
-| GitHub CI | NOT RUN (no push) |
-| PostgreSQL | CI job only |
+| Suite | S29 commit (`44066e3`) | After Sprint 30 hardening (local) |
+|-------|------------------------|-----------------------------------|
+| `test_sprint29_combat_reactions.py` | 11 passed | 11 passed |
+| `test_sprint30_combat_reactions_hardening.py` | — | 4 passed |
+| Fast pytest | 654 passed, 2 skipped | 658 passed, 2 skipped |
+| Regress | 186 passed | 190 passed |
+| Full pytest | 675 passed, 2 skipped | 679 passed, 2 skipped |
+| Playwright full (6 phases) | occasional `ghoul`/`spell-save` flake | **40 passed** (see Sprint 30 acceptance) |
+| GitHub CI | run on push of `44066e3` | Sprint 30 CI **pending** push |
 
-**Status:** **READY FOR REVIEW** (pytest + regress + Sprint 29 green; verify full Playwright matrix before push).
+**Hardening:** [`SPRINT_30_COMBAT_REACTIONS_HARDENING_ACCEPTANCE.md`](SPRINT_30_COMBAT_REACTIONS_HARDENING_ACCEPTANCE.md).
+
+**Status:** **IMPLEMENTED & COMMITTED** (S29). Sprint 30 hardening **READY FOR REVIEW** in working tree (uncommitted).

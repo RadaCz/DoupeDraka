@@ -1,8 +1,8 @@
 # Master plan — stav (sync s DOUPEDRAKA_MASTER_PLAN.md v1.0)
 
-Poslední revize: **2026-11-12 (Sprint 29 — combat reactions; working tree, nepushováno)**. Etapy 7–9 záměrně otevřené až po uzavření sólo smyčky.
+Poslední revize: **2026-11-12 (Sprint 30 — combat reactions hardening; working tree uncommitted)**. Etapy 7–9 záměrně otevřené až po uzavření sólo smyčky.
 
-**Kódový HEAD (committed):** `29745eb` (Sprint 28.1). **Sprint 29 (local):** combat reactions / OA — viz `docs/SPRINT_29_COMBAT_REACTIONS_ACCEPTANCE.md`.
+**Kódový HEAD (committed):** `44066e3` = `origin/clean-main` (Sprint 29). **Sprint 30 (local):** OA guards, E2E phasing, hardening tests — viz `docs/SPRINT_30_COMBAT_REACTIONS_HARDENING_ACCEPTANCE.md`.
 
 **CI (baseline `53a6fed`):** GREEN #66 po Sprintu 24; po Sprintu 25 znovu ověřit před pushem.
 **Staging HTTPS:** **NOT DEPLOYED** — viz `docs/STAGING_DEVICE_VALIDATION_V1.md`.  
@@ -14,7 +14,7 @@ Poslední revize: **2026-11-12 (Sprint 29 — combat reactions; working tree, ne
 | 0 | Security & clean package | Hotovo (uživatel) | Secret scan v CI, clean export script; token rotován |
 | 1 | P0 correctness | Hotovo v kódu | Idempotence, atomická energie, pending klíč ve frontendu; spell testy sjednocené s kontraktem `resolve_action` |
 | 2 | Deploy & DB lifecycle | Hotovo v kódu | Alembic v003, Docker, health 503, PG job v CI |
-| 3 | Ruleset v1 | Průběžně | SRD 5.1 AC + saving throws; **Action / Bonus (Sprint 25)**; **rasové vlastnosti 4 MVP ras (Sprint 26)**; Reaction backlog |
+| 3 | Ruleset v1 | Průběžně | SRD 5.1 AC + saving throws; **Action / Bonus (Sprint 25)**; **rasové vlastnosti 4 MVP ras (Sprint 26)**; **OA + Disengage (Sprint 29–30)**; reaction spells backlog |
 | 4 | First campaign slice | Průběžně | `quests.py` + `/reference` katalog; side quest Crypt; hlavní quest refaktor |
 | 5 | AI DM CZ | **P2 + P2.1 + P3 (WT)** | Paměť, online `scene_kind`, offline fallbacky (`offline_variety`), journal UX stream order + CZ mechaniky |
 | 6 | Mini App & Telegram QA | **Kód připraven; fyzicky NOT TESTED** | Sprint 5: BackButton lifecycle, viewport E2E; `TELEGRAM_MOBILE_QA_V1.md` + `PHYSICAL_TELEGRAM_QA_V2.md` |

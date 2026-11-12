@@ -72,6 +72,7 @@ _INTEGRATION_MODULES = frozenset(
         "test_sprint28_gameplay_journey_smoke",
         "test_sprint28_1_vault_e2e_combat_parity",
         "test_sprint29_combat_reactions",
+        "test_sprint30_combat_reactions_hardening",
         "test_api_systems",
         "test_auth",
         "test_engine",

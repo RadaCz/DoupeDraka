@@ -1,4 +1,9 @@
-"""Opportunity attacks, Disengage, and reaction pacing (Sprint 29, SRD 5.1 2014 slice)."""
+"""Opportunity attacks, Disengage, and reaction pacing (Sprint 29–30, SRD 5.1 2014 slice).
+
+MVP constraints:
+- Single active ``combatant`` per fight; ``enemy_reaction_used`` applies to that foe only.
+- Forced movement and teleport are not modeled; they must not trigger OA (no fake hooks).
+"""
 
 from __future__ import annotations
 
@@ -12,6 +17,8 @@ if TYPE_CHECKING:
 
 FLAG_DISENGAGED = "disengaged"
 FLAG_ENEMY_REACTION_USED = "enemy_reaction_used"
+# Documented contract for future forced-movement / teleport hooks (Sprint 30).
+VOLUNTARY_MOVEMENT_OA = True
 
 
 def movement_left_melee_reach(before_ft: int, after_ft: int) -> bool:

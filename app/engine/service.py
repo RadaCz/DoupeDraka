@@ -709,6 +709,8 @@ class GameEngine:
             spend_enemy_reaction,
         )
 
+        if monster.hp <= 0:
+            return []
         ok, reason = spend_enemy_reaction(character)
         if not ok:
             return [reason]
@@ -737,6 +739,8 @@ class GameEngine:
         from .combat_action_economy import spend_reaction
         from .combat_reactions import opportunity_attack_preamble, sync_monster_to_combatant
 
+        if monster.hp <= 0 or not character.in_combat:
+            return [], {}
         ok, reason = spend_reaction(character)
         if not ok:
             return [reason], {}
@@ -767,7 +771,9 @@ class GameEngine:
             return []
         if is_disengaged(character):
             return ["You slip away — Disengage prevents an opportunity attack."]
-        if character.hp <= 0 or monster.hp <= 0:
+        if character.hp <= 0 or not character.in_combat:
+            return []
+        if monster.hp <= 0:
             return []
         return self._enemy_opportunity_attack_on_player(character, monster)
 

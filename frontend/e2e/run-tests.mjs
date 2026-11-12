@@ -16,14 +16,41 @@ const isScopedRun = forwardedArgs.some(
     || arg === '--project=combat-saves' || arg === '--project=e2e-smoke' || arg.startsWith('--project='),
 );
 
+/** Each combat-saves spec gets its own API process so global E2E_RNG_SEED=27 rewinds (Sprint 30). */
+const COMBAT_SAVES_SPECS = [
+  'e2e/combat-reactions.spec.ts',
+  'e2e/ghoul-paralysis-combat.spec.ts',
+  'e2e/saving-throw-combat.spec.ts',
+  'e2e/spell-save-combat.spec.ts',
+];
+
+function expandCombatSavesPhases(phases) {
+  const out = [];
+  for (const phase of phases) {
+    const isWholeCombatSaves =
+      phase.includes('--project=combat-saves')
+      && !phase.some(arg => arg.includes('.spec.'));
+    if (isWholeCombatSaves) {
+      for (const spec of COMBAT_SAVES_SPECS) {
+        out.push(['--project=combat-saves', spec]);
+      }
+    } else {
+      out.push(phase);
+    }
+  }
+  return out;
+}
+
 /** Full matrix: one Playwright process per project so each gets a fresh API DB and E2E_RNG_SEED stream. */
-const FULL_SUITE_PHASES = visualMode
-  ? [['--project=visual']]
-  : [
-    ['--project=chapter-journey'],
-    ['--project=combat-saves'], // includes combat-reactions.spec.ts
-    ['--project=e2e-smoke'],
-  ];
+const FULL_SUITE_PHASES = expandCombatSavesPhases(
+  visualMode
+    ? [['--project=visual']]
+    : [
+      ['--project=chapter-journey'],
+      ['--project=combat-saves'],
+      ['--project=e2e-smoke'],
+    ],
+);
 
 function rmDatabaseDir(dir) {
   const resolved = resolve(dir);
@@ -56,9 +83,10 @@ function runPlaywright(extraArgs, databaseDirectory) {
 }
 
 async function main() {
-  const phases = isScopedRun
+  const rawPhases = isScopedRun
     ? [forwardedArgs]
     : FULL_SUITE_PHASES.map(phase => [...phase, ...forwardedArgs.filter(a => !a.startsWith('--project='))]);
+  const phases = expandCombatSavesPhases(rawPhases);
 
   let exitCode = 0;
   for (let index = 0; index < phases.length; index += 1) {
