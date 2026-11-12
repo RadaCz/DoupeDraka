@@ -6,6 +6,7 @@ from app.engine.combat_positioning import MELEE_REACH_FT, movement_remaining
 from app.engine.combat_range import evaluate_player_attack_range
 from app.engine.equipment import equipped_weapon
 from app.engine.models import CharacterState, MonsterState
+from app.engine.reactive_spells import has_pending_reaction
 from app.engine.service import GameEngine
 
 
@@ -15,6 +16,20 @@ def monster_from_hero(hero: CharacterState) -> MonsterState | None:
     return MonsterState(**hero.combatant)
 
 
+def resolve_pending_reaction_for_simulation(
+    game: GameEngine,
+    hero: CharacterState,
+    monster: MonsterState | None = None,
+):
+    """Test-only: auto-decline Shield window so automated loops are not stuck on reaction turn."""
+    active = monster if monster is not None else monster_from_hero(hero)
+    if not has_pending_reaction(hero):
+        return active
+    _, active = game.resolve_action(hero, "decline reaction", active)
+    sync_combatant(hero, active)
+    return active
+
+
 def resolve_combat_action(
     game: GameEngine,
     hero: CharacterState,
@@ -22,7 +37,10 @@ def resolve_combat_action(
     monster: MonsterState | None = None,
 ):
     active = monster if monster is not None else monster_from_hero(hero)
-    return game.resolve_action(hero, action, active)
+    result, active = game.resolve_action(hero, action, active)
+    sync_combatant(hero, active)
+    active = resolve_pending_reaction_for_simulation(game, hero, active)
+    return result, active
 
 
 def _attack_in_range(hero: CharacterState, *, thrown: bool = False) -> bool:
@@ -32,6 +50,7 @@ def _attack_in_range(hero: CharacterState, *, thrown: bool = False) -> bool:
 
 def _advance_via_engine(game: GameEngine, hero: CharacterState, monster: MonsterState | None) -> None:
     """Use COMBAT_MOVE intent — same path as the UI chips."""
+    monster = resolve_pending_reaction_for_simulation(game, hero, monster)
     if not hero.in_combat or hero.combat_turn != "player":
         return
     weapon = equipped_weapon(hero)
@@ -44,7 +63,7 @@ def _advance_via_engine(game: GameEngine, hero: CharacterState, monster: Monster
         step = min(movement_remaining(hero), distance - MELEE_REACH_FT)
         if step <= 0:
             break
-        resolve_combat_action(game, hero, f"advance {step} ft", monster)
+        _, monster = resolve_combat_action(game, hero, f"advance {step} ft", monster)
 
 
 def resolve_combat_action_for_simulation(
@@ -58,6 +77,9 @@ def resolve_combat_action_for_simulation(
         _advance_via_engine(game, hero, monster)
     result, active = resolve_combat_action(game, hero, action, monster)
     flags = hero.combat_flags or {}
+    active = resolve_pending_reaction_for_simulation(game, hero, active)
+    sync_combatant(hero, active)
+    flags = hero.combat_flags or {}
     if (
         hero.in_combat
         and active is not None
@@ -66,6 +88,8 @@ def resolve_combat_action_for_simulation(
         and not flags.get("bonus_action_used")
     ):
         result, active = game.resolve_action(hero, "end turn", active)
+        sync_combatant(hero, active)
+        active = resolve_pending_reaction_for_simulation(game, hero, active)
     elif (
         hero.in_combat
         and active is not None
@@ -76,6 +100,8 @@ def resolve_combat_action_for_simulation(
         and movement_remaining(hero) == 0
     ):
         result, active = game.resolve_action(hero, "end turn", active)
+        sync_combatant(hero, active)
+        active = resolve_pending_reaction_for_simulation(game, hero, active)
     return result, active
 
 
@@ -88,6 +114,8 @@ def resolve_combat_action_and_end_turn(
     result, active = resolve_combat_action(game, hero, action, monster)
     if hero.in_combat and active is not None and hero.combat_turn == "player":
         result, active = game.resolve_action(hero, "end turn", active)
+        sync_combatant(hero, active)
+        active = resolve_pending_reaction_for_simulation(game, hero, active)
     return result, active
 
 

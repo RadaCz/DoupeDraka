@@ -21,12 +21,33 @@ function movementRemainingFt(state: CharacterSnapshot): number {
   );
 }
 
+function reactionPending(state: CharacterSnapshot): boolean {
+  return Boolean(state.combat_reaction_pending && (state.combat_reaction_pending as { kind?: string }).kind);
+}
+
+/** Test/E2E default: clear Shield window without casting (production leaves choice to the player). */
+export async function resolvePendingReactionForE2E(
+  request: APIRequestContext,
+  token: string,
+  characterId: string,
+  options?: { autoDecline?: boolean },
+) {
+  const autoDecline = options?.autoDecline !== false;
+  if (!autoDecline) return;
+  let state = await fetchCharacterState(request, token, characterId);
+  if (!reactionPending(state)) return;
+  await postGameAction(request, token, characterId, 'decline reaction');
+  state = await fetchCharacterState(request, token, characterId);
+  expect(reactionPending(state)).toBeFalsy();
+}
+
 /** Sprint 27+ vault kobold opens at range — mirror ``resolve_combat_action_for_simulation`` advance loop. */
 export async function advanceIntoMeleeIfNeeded(
   request: APIRequestContext,
   token: string,
   characterId: string,
 ) {
+  await resolvePendingReactionForE2E(request, token, characterId);
   const state = await fetchCharacterState(request, token, characterId);
   if (!state.in_combat || state.combat_turn !== 'player') return;
   let distance = combatDistanceFt(state);
@@ -49,11 +70,16 @@ export async function postCombatAttack(
   foeName: string,
 ) {
   await expect.poll(async () => {
-    const probe = await fetchCharacterState(request, token, characterId);
+    let probe = await fetchCharacterState(request, token, characterId);
+    if (reactionPending(probe)) {
+      await postGameAction(request, token, characterId, 'decline reaction');
+      probe = await fetchCharacterState(request, token, characterId);
+    }
     return !probe.in_combat || probe.combat_turn === 'player';
   }, { timeout: 60_000, intervals: [200, 400, 800] }).toBe(true);
   await advanceIntoMeleeIfNeeded(request, token, characterId);
   await postGameAction(request, token, characterId, `attack ${foeName}`);
+  await resolvePendingReactionForE2E(request, token, characterId);
   const state = await fetchCharacterState(request, token, characterId);
   const flags = state.combat_flags ?? {};
   if (state.in_combat && state.combat_turn === 'player') {
@@ -87,6 +113,7 @@ export type CharacterSnapshot = {
     weapon_range?: { allowed?: boolean; weapon_type?: string };
   };
   combat_flags?: Record<string, boolean>;
+  combat_reaction_pending?: Record<string, unknown>;
   conditions?: Array<{ condition_id: string }>;
   fighting_style?: string;
   divine_domain?: string;
@@ -146,6 +173,7 @@ export async function closeCombatTurnIfStalled(
   token: string,
   characterId: string,
 ) {
+  await resolvePendingReactionForE2E(request, token, characterId);
   const state = await fetchCharacterState(request, token, characterId);
   if (
     state.in_combat

@@ -22,6 +22,7 @@
 | 32 | Spellcasting gameplay | Concentration + core buffs | Bless / Shield of Faith / Mage Armor; CON save on damage; bonus-action spell rule | `concentration_*`, `mage_armor_active` | Party targets; most class-list spells still reference | Reload via character payload | `tests/test_sprint32_spellcasting_gameplay.py`, `e2e/spellcasting-gameplay.spec.ts` |
 | 33 | Reactive spellcasting | Enemy attack would hit | Shield reaction window; decline path; +5 AC re-check same roll | `combat_reaction_pending`, `shield_active`, `combat_turn=reaction` | Magic Missile negation; auto-timeout stale window | Pending payload in character state | `tests/test_sprint33_reactive_spellcasting.py`, `e2e/reactive-spellcasting.spec.ts` |
 | 34 | Inventory gameplay | Character sheet / combat | Equip, unequip, potion 2d4+2, instance sync; block gear/potion during reaction window | `inventory`, `item_instances` | Crafting, encumbrance, RNG loot | Persisted character payload | `tests/test_sprint34_inventory_gameplay.py`, `e2e/inventory-gameplay.spec.ts` |
+| 34.1 | Reaction sim repair | Automated combat / E2E | Test helpers call `decline reaction` when pending; production still requires player choice | `combat_reaction_pending` | Auto-decline in live game | Helpers only | `tests/test_sprint34_1_combat_reaction_simulation.py`, `combat_turn_helpers.py`, `chapter-one-e2e-helpers.ts` |
 
 ## E2E (Playwright) player journeys
 
