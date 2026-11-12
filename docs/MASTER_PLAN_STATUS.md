@@ -1,8 +1,8 @@
 # Master plan — stav (sync s DOUPEDRAKA_MASTER_PLAN.md v1.0)
 
-Poslední revize: **2026-11-12 (Sprint 31 — spellcasting integrity; working tree uncommitted)**. Etapy 7–9 záměrně otevřené až po uzavření sólo smyčky.
+Poslední revize: **2026-11-12 (Sprint 32 — spellcasting gameplay; working tree uncommitted)**. Etapy 7–9 záměrně otevřené až po uzavření sólo smyčky.
 
-**Kódový HEAD (committed):** `b124063` = `origin/clean-main` (Sprint 30). **Sprint 31 (local):** spell contract, non-caster gate, integrity tests — viz `docs/SPRINT_31_SPELLCASTING_RULES_INTEGRITY_ACCEPTANCE.md`.
+**Kódový HEAD (committed):** `36fb99c` = `origin/clean-main` (Sprint 31). **Sprint 32 (local):** concentration, Bless / SoF / Mage Armor — viz `docs/SPRINT_32_SPELLCASTING_GAMEPLAY_ACCEPTANCE.md`.
 
 **CI (baseline `53a6fed`):** GREEN #66 po Sprintu 24; po Sprintu 25 znovu ověřit před pushem.
 **Staging HTTPS:** **NOT DEPLOYED** — viz `docs/STAGING_DEVICE_VALIDATION_V1.md`.  

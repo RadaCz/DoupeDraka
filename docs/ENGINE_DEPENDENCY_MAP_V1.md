@@ -24,7 +24,7 @@ flowchart LR
 | Combat reactions & OA | `combat_reactions.py`, `combat_action_economy.py`, movement hooks in `service.py` | `test_sprint29_combat_reactions`, `test_sprint30_combat_reactions_hardening`, `test_sprint25_combat_action_economy`, `test_sprint27_*`, Playwright `combat-reactions.spec.ts` |
 | Quests → XP → chapter | `quests.py`, `chapter_one_progression.py`, `economy_balance.py` | `test_sprint15_story_progression`, `test_sprint22_chapter_one_completion`, `test_chapter_one_journey` |
 | Saves & conditions | `saving_throws.py`, combat effect helpers | `test_saving_throws_v1`, `test_sprint19_unified_combat` |
-| Spellcasting | `spells.py`, `spell_saves.py`, `_cast_spell` in `service.py`, `combat_action_economy.spell_combat_cost` | `test_spells`, `test_sprint31_spellcasting_integrity`, `test_sprint25_combat_action_economy` |
+| Spellcasting | `spells.py`, `concentration.py`, `spell_cast_rules.py`, `spell_saves.py`, `_cast_spell` in `service.py`, `equipment.compute_armor_class` | `test_spells`, `test_sprint31_*`, `test_sprint32_spellcasting_gameplay`, `test_sprint25_combat_action_economy` |
 | Skills | `skill_challenges.py` | `test_sprint23_skill_challenges` |
 | Backgrounds / race | `background_features.py`, `race_features.py` | `test_sprint24_background_features`, `test_sprint26_racial_traits` |
 | Persistence & concurrency | `app/db/*`, Alembic | `test_integration`, `test_concurrency`, `test_alembic_v005` (Postgres job) |

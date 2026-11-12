@@ -6,7 +6,8 @@ thresholds. Pure functions so the API and CLI share one implementation.
 """
 from .encounters import MONSTERS, resolve_template
 from .reference import SPELLS
-from .spells import MODELED_SPELL_EFFECTS
+from .concentration import CONCENTRATION_SPELLS
+from .spells import MODELED_SPELL_EFFECTS, SPELL_CASTING_META
 
 XP_THRESHOLDS = {
     1: (25, 50, 75, 100),
@@ -85,7 +86,16 @@ def combat_calculator(party_levels: list[int], monsters: list[str]) -> dict:
 
 
 def spell_library() -> list[dict]:
-    return [
-        {**spell, "effect_modeled": spell["name"] in MODELED_SPELL_EFFECTS}
-        for spell in SPELLS
-    ]
+    rows: list[dict] = []
+    for spell in SPELLS:
+        name = spell["name"]
+        meta = SPELL_CASTING_META.get(name, {})
+        rows.append(
+            {
+                **spell,
+                "effect_modeled": name in MODELED_SPELL_EFFECTS,
+                "concentration": name in CONCENTRATION_SPELLS or bool(meta.get("concentration")),
+                "casting_time": str(meta.get("casting_time", "action")),
+            }
+        )
+    return rows

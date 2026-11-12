@@ -150,7 +150,9 @@ def perform_saving_throw(
     ability_mod = _ability_modifier(character, request.ability)
     prof = _proficiency_bonus(character.level)
     proficient = request.ability in character.saving_throw_proficiencies
-    modifier = ability_mod + (prof if proficient else 0)
+    from .concentration import bless_save_bonus
+
+    modifier = ability_mod + (prof if proficient else 0) + bless_save_bonus(character)
 
     from .race_features import halfling_lucky_reroll, saving_throw_racial_advantage
 

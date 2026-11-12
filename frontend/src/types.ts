@@ -26,6 +26,10 @@ export interface Character {
   prepared_spells: string[];
   spellcasting_ability: string;
   invisible?: boolean;
+  concentration_spell?: string;
+  concentration_effect?: string;
+  concentration_bonus?: number;
+  mage_armor_active?: boolean;
   conditions?: Array<Record<string, unknown>>;
   difficulty: string;
   tone: string;
@@ -210,6 +214,8 @@ export interface Spell {
   range: string;
   text: string;
   effect_modeled: boolean;
+  concentration?: boolean;
+  casting_time?: string;
 }
 
 export interface Economy {

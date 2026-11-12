@@ -299,8 +299,10 @@ class GameEngine:
 
     @staticmethod
     def _spell_attack_bonus(character: CharacterState) -> int:
+        from .concentration import bless_attack_bonus
+
         proficiency = 2 + max(0, (character.level - 1) // 4)
-        return proficiency + GameEngine._spellcasting_modifier(character)
+        return proficiency + GameEngine._spellcasting_modifier(character) + bless_attack_bonus(character)
 
     @staticmethod
     def _cantrip_dice_count(level: int) -> int:
@@ -535,6 +537,10 @@ class GameEngine:
             f"{monster.name}'s {label} from {distance} ft hits you for {damage.total}. "
             f"Your HP: {character.hp}/{character.max_hp}."
         )
+        from .concentration import concentration_save_after_damage, end_concentration_if_incapacitated
+
+        events.extend(concentration_save_after_damage(self, character, damage.total))
+        events.extend(end_concentration_if_incapacitated(character))
         return events
 
     def _enemy_melee_strike(
@@ -578,6 +584,10 @@ class GameEngine:
         damage = self.roll(dice, int(bonus) if bonus else 0, critical)
         character.hp = max(0, character.hp - damage.total)
         events.append(f"{monster.name} hits you for {damage.total}. Your HP: {character.hp}/{character.max_hp}.")
+        from .concentration import concentration_save_after_damage, end_concentration_if_incapacitated
+
+        events.extend(concentration_save_after_damage(self, character, damage.total))
+        events.extend(end_concentration_if_incapacitated(character))
         return events
 
     def _enemy_turn(
@@ -1120,6 +1130,26 @@ class GameEngine:
                 },
             ), monster
 
+        from .spell_cast_rules import validate_spell_turn_pairing
+
+        ok_pair, pair_reason = validate_spell_turn_pairing(character, selected)
+        if not ok_pair:
+            return TurnResult(
+                action,
+                [pair_reason],
+                False,
+                spell_facts={
+                    "spell_name": selected,
+                    "spell_level": level,
+                    "slot_level": None,
+                    "slot_consumed": False,
+                    "effect": {"type": "action_denied"},
+                    "target_hp_after": monster.hp if monster else None,
+                    "save_result": None,
+                },
+                costs_adventure_mana=False,
+            ), monster
+
         if character.in_combat:
             from .combat_action_economy import reserve_combat_cost, spell_combat_cost
 
@@ -1141,9 +1171,6 @@ class GameEngine:
                     },
                     costs_adventure_mana=False,
                 ), monster
-
-        if character.invisible and selected != "Invisibility":
-            character.invisible = False
 
         if monster and damage_kind:
             character.in_combat = True
@@ -1234,12 +1261,50 @@ class GameEngine:
                 if escaped else
                 f"{selected} lets you blink to a nearby space; this adventure has no mapped distance to track."
             )
-        elif kind == "condition":
-            character.invisible = True
-            effect_facts.update({"condition": "invisible", "active": True})
-            events.append(
-                "You become invisible. The modeled invisibility ends when you attack or cast another spell."
+        elif kind == "concentration_buff":
+            from .concentration import (
+                EFFECT_BLESS,
+                EFFECT_SHIELD_OF_FAITH,
+                start_concentration,
             )
+
+            if dice == "bless":
+                bless_roll = self.roll("1d4", 0).total
+                events.extend(
+                    start_concentration(
+                        character,
+                        spell_name=selected,
+                        effect=EFFECT_BLESS,
+                        bless_roll=bless_roll,
+                    )
+                )
+                effect_facts.update({"bless_bonus": bless_roll, "concentration": selected})
+            elif dice == "shield_of_faith":
+                events.extend(
+                    start_concentration(
+                        character,
+                        spell_name=selected,
+                        effect=EFFECT_SHIELD_OF_FAITH,
+                    )
+                )
+                effect_facts.update({"ac": character.armor_class, "concentration": selected})
+            elif dice == "invisible":
+                character.invisible = True
+                events.extend(
+                    start_concentration(character, spell_name=selected, effect="invisible")
+                )
+                effect_facts.update({"condition": "invisible", "concentration": selected})
+                events.append(
+                    "You become invisible while you concentrate. Attacking or broken concentration ends the effect."
+                )
+            else:
+                events.append(f"{selected} concentration effect is not configured.")
+        elif kind == "mage_armor":
+            from .concentration import apply_mage_armor
+
+            ma_events, applied = apply_mage_armor(character)
+            events.extend(ma_events)
+            effect_facts.update({"mage_armor": applied, "ac": character.armor_class})
         else:
             damage_count = int(dice.split("d", 1)[0]) + upcast
             if level == 0:
@@ -1270,6 +1335,10 @@ class GameEngine:
             if character.spell_slots[slot_level] == 0:
                 del character.spell_slots[slot_level]
             events.append(f"Spell slot level {slot_level} spent; remaining slots: {character.spell_slots}.")
+
+        from .spell_cast_rules import record_spell_cast_turn_flags
+
+        record_spell_cast_turn_flags(character, selected)
 
         level_up_facts: dict = {}
         combat_over = bool(effect_facts.get("escaped_combat"))
@@ -1623,7 +1692,9 @@ class GameEngine:
                 return ["Opportunity attacks require a melee weapon in reach."], {}
         elif not range_ctx.allowed:
             return [range_ctx.denial], {}
-        bonus = attack_modifier(character, weapon) + item_attack_bonus(character)
+        from .concentration import bless_attack_bonus
+
+        bonus = attack_modifier(character, weapon) + item_attack_bonus(character) + bless_attack_bonus(character)
         ammo_note = ""
         if weapon.weapon_type == "ranged" or (thrown and weapon.ammunition):
             spent, ammo_note = consume_ammunition(character, weapon)
@@ -1636,17 +1707,22 @@ class GameEngine:
         if thrown:
             weapon_label = f"thrown {weapon_label}"
         class_facts: dict = {}
+        from .concentration import clear_concentration, concentration_active
+
+        invis_end: list[str] = []
+        if concentration_active(character) and character.concentration_effect == "invisible":
+            invis_end = clear_concentration(character, reason="you attacked")
         if natural == 1:
             character.combat_flags["hidden"] = False
             character.combat_flags["attack_advantage"] = False
-            return [
+            return invis_end + [
                 f"Attack with {weapon_label}: {attack_roll.total} (d20 +{bonus}) — critical miss.{lucky_note}{ammo_note}"
             ], class_facts
         hit = natural == 20 or attack_roll.total >= monster.armor_class
         if not hit:
             character.combat_flags["hidden"] = False
             character.combat_flags["attack_advantage"] = False
-            return [
+            return invis_end + [
                 f"Attack with {weapon_label}: {attack_roll.total} (d20 +{bonus}) vs AC {monster.armor_class} — miss.{lucky_note}",
             ], class_facts
         dmg_mod = damage_modifier(character, weapon) + dueling_style_damage_bonus(character, weapon)
@@ -1670,7 +1746,7 @@ class GameEngine:
             events.append("Sneak Attack unavailable — you need advantage on the attack (try Hide first).")
         character.combat_flags["hidden"] = False
         character.combat_flags["attack_advantage"] = False
-        return events, class_facts
+        return invis_end + events, class_facts
 
     def _resolve_class_feature(
         self,
@@ -2033,6 +2109,7 @@ class GameEngine:
             }
             clear_short_rest_gate(character)
             from .class_features import on_long_rest_class_features
+            from .concentration import on_long_rest_spell_state
 
             slot_total = sum(slots_restored.values())
             events = [
@@ -2041,6 +2118,7 @@ class GameEngine:
                 else f"You take a long rest and recover {hp_restored} HP."
             ]
             events.extend(on_long_rest_class_features(character))
+            events.extend(on_long_rest_spell_state(character))
             return TurnResult(
                 action,
                 events,

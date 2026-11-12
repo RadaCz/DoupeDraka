@@ -13,7 +13,10 @@ FLAG_ACTION_USED = "action_used"
 FLAG_BONUS_USED = "bonus_action_used"
 FLAG_REACTION_USED = "reaction_used"
 
-BONUS_ACTION_SPELLS = frozenset({"Healing Word"})
+BONUS_ACTION_SPELLS = frozenset({"Healing Word", "Shield of Faith"})
+
+FLAG_CAST_BONUS_SPELL = "cast_bonus_spell_turn"
+FLAG_CAST_LEVELED_ACTION_SPELL = "cast_leveled_action_spell_turn"
 BONUS_ACTION_CLASS = frozenset({"second_wind", "hide"})
 
 
@@ -40,6 +43,8 @@ def reset_player_turn_economy(character: CharacterState) -> None:
         "sneak_attack_used": False,
         "attack_advantage": hidden,
         "attack_disadvantage": False,
+        FLAG_CAST_BONUS_SPELL: False,
+        FLAG_CAST_LEVELED_ACTION_SPELL: False,
     }
 
 

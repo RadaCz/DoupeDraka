@@ -34,7 +34,7 @@ Other SRD classes exist in reference data but are out of Chapter One MVP player 
 - Default leveled/cantrip combat cast: **Action** (`spell_combat_cost`).
 - **Healing Word:** **Bonus action** in combat (`BONUS_ACTION_SPELLS`).
 - Costs use Sprint 25 flags (`action_used`, `bonus_action_used`); denied cast does not spend slots.
-- **Deferred (not enforced):** SRD rule “if you cast a bonus-action spell, your only other spell on that turn is a cantrip with a casting time of 1 action.”
+- **Enforced (Sprint 32):** After a bonus-action spell, only cantrips as Action; after a leveled Action spell, no bonus-action spell that turn (`spell_cast_rules.py`).
 
 ## Validation order (`_cast_spell`)
 
@@ -57,14 +57,17 @@ Other SRD classes exist in reference data but are out of Chapter One MVP player 
 - **Vicious Mockery:** failed save applies mockery disadvantage (conditions module).
 - No automatic crit/fail on natural 20/1 for saves unless a specific effect adds it (player saves use Lucky where modeled).
 
-## Concentration
+## Concentration (Sprint 32)
 
-**Not implemented as a general SRD concentration system.**
+- One active concentration: `concentration_spell`, `concentration_effect`, `concentration_bonus` (Bless die).
+- New concentration ends the previous effect and clears its bonuses.
+- **Constitution save** on damage: DC `max(10, damage // 2)` via `perform_saving_throw`.
+- **Bless:** self, 1d4 to attack rolls and saving throws while concentrating.
+- **Shield of Faith:** bonus action, +2 AC while concentrating.
+- **Invisibility:** concentration + `invisible` flag; attack ends concentration.
+- **Long rest** clears concentration and Mage Armor.
 
-- **Invisibility** uses `character.invisible` and ends when casting another spell or attacking (modeled utility).
-- Spells such as **Bless**, **Shield of Faith** are **catalog / prepared only** — no concentration tracking, no buff engine.
-
-Future work must use explicit concentration flags and damage-based concentration saves; do not imply concentration is live in UI copy beyond listed spells.
+**Deferred:** multi-target Bless, Shield reaction spell, full 8-hour duration tracking outside long rest.
 
 ## Forced movement / range
 

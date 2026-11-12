@@ -27,6 +27,10 @@ class CharacterState:
     prepared_spells: list[str] = field(default_factory=list)
     spellcasting_ability: str = ""
     invisible: bool = False
+    concentration_spell: str = ""
+    concentration_effect: str = ""
+    concentration_bonus: int = 0
+    mage_armor_active: bool = False
     # Explicit life cycle for UX and API. Existing payloads default to alive.
     # defeated = knocked out in combat and moved to a safe hub (MVP auto-recover).
     # fallen = 0 HP and cannot act until revived.

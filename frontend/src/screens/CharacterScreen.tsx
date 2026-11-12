@@ -114,6 +114,17 @@ export function CharacterScreen({
           )}
           <p className="char-v2-section-lead char-v2-muted-hint">{t('Initiative in combat uses your Dexterity modifier on the roll.')}</p>
         </div>
+        {character.concentration_spell ? (
+          <p className="char-v2-condition" role="status">
+            {t('Concentration')}: {t(character.concentration_spell)}
+            {character.concentration_effect === 'bless' && character.concentration_bonus
+              ? ` (+${character.concentration_bonus} ${t('attack & save bonus')})`
+              : ''}
+          </p>
+        ) : null}
+        {character.mage_armor_active ? (
+          <p className="char-v2-condition" role="status">{t('Mage Armor active')}</p>
+        ) : null}
         {character.invisible && (
           <p className="char-v2-condition" role="status">{t('Condition')}: {t('Invisible')}</p>
         )}

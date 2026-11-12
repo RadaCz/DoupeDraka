@@ -54,6 +54,12 @@ export function SpellDetailSheet({
           {spell.level > 0 && (
             <div><dt>{t('Slot cost')}</dt><dd>{t('Level')} {spell.level}</dd></div>
           )}
+          {spell.concentration !== undefined && (
+            <div><dt>{t('Concentration')}</dt><dd>{spell.concentration ? t('Yes') : t('No')}</dd></div>
+          )}
+          {spell.casting_time && (
+            <div><dt>{t('Casting time')}</dt><dd>{t(titleCase(spell.casting_time))}</dd></div>
+          )}
         </dl>
         {blockMessage && <p className="spellbook-block-reason" role="status">{blockMessage}</p>}
         <div className="inventory-detail-actions">

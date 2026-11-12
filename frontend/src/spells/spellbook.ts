@@ -66,15 +66,18 @@ export type SpellEngineKind =
   | 'unsupported';
 
 const ENGINE_KIND: Record<string, SpellEngineKind> = {
+  Bless: 'utility',
   'Burning Hands': 'save',
   'Cure Wounds': 'healing',
   'Eldritch Blast': 'attack',
   'Fire Bolt': 'attack',
   'Healing Word': 'healing',
+  'Mage Armor': 'utility',
   'Magic Missile': 'attack',
   'Misty Step': 'utility',
   Invisibility: 'utility',
   'Scorching Ray': 'attack',
+  'Shield of Faith': 'utility',
   'Sacred Flame': 'save',
   'Vicious Mockery': 'save',
 };

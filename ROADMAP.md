@@ -1,8 +1,14 @@
 # Roadmap
 
-Updated 2026-11-12 (`b124063` on `clean-main`; Sprint 31 spellcasting in working tree). Chapter one is a gated six-location slice. ActionIntent routes player commands; **Pro NOT AVAILABLE** until OpenRouter exists.
+Updated 2026-11-12 (`36fb99c` on `clean-main`; Sprint 32 in working tree). Chapter one is a gated six-location slice. ActionIntent routes player commands; **Pro NOT AVAILABLE** until OpenRouter exists.
 
-## Priority 0j.2 — Spellcasting rules integrity (Sprint 31, local)
+## Priority 0j.3 — Spellcasting gameplay (Sprint 32, local)
+- [x] Concentration system + CON saves on damage
+- [x] Bless, Shield of Faith, Mage Armor modeled
+- [x] Bonus-action spell pairing rule
+- [ ] Shield (reaction) — backlog
+
+## Priority 0j.2 — Spellcasting rules integrity (Sprint 31, committed `36fb99c`)
 - [x] `docs/SPELLCASTING_CONTRACT_V1.md`
 - [x] Non-caster cast rejection (Fighter / Rogue)
 - [x] `tests/test_sprint31_spellcasting_integrity.py` + `e2e/spellcasting-integrity.spec.ts`

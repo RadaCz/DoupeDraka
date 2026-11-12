@@ -273,11 +273,15 @@ def equipped_shield_instance(character: CharacterState) -> dict | None:
 
 def compute_armor_class(character: CharacterState) -> int:
     """Single authority for player AC (SRD 5.1)."""
+    from .concentration import mage_armor_applies, mage_armor_base_ac, shield_of_faith_ac_bonus
+
     dex_mod = _ability_mod(character.abilities.get("dexterity", 10))
     body_ac = 10 + dex_mod
 
     armor_entry = equipped_armor_instance(character)
-    if armor_entry:
+    if mage_armor_applies(character):
+        body_ac = mage_armor_base_ac(character)
+    elif armor_entry:
         armor = armor_for_label(armor_entry.get("name", ""))
         if (
             armor
@@ -298,7 +302,7 @@ def compute_armor_class(character: CharacterState) -> int:
 
     from .class_features import defense_style_ac_bonus
 
-    return body_ac + shield_bonus + defense_style_ac_bonus(character)
+    return body_ac + shield_bonus + defense_style_ac_bonus(character) + shield_of_faith_ac_bonus(character)
 
 
 def refresh_armor_class(character: CharacterState) -> int:

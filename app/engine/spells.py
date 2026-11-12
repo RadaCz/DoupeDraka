@@ -86,6 +86,9 @@ STARTING_SPELLS = {
 }
 
 MODELED_SPELL_EFFECTS = {
+    "Bless": ("concentration_buff", "bless", None, None),
+    "Shield of Faith": ("concentration_buff", "shield_of_faith", None, None),
+    "Mage Armor": ("mage_armor", "", None, None),
     "Burning Hands": ("save_damage", "3d6", "dexterity", "half"),
     "Cure Wounds": ("heal", "1d8", None, None),
     "Eldritch Blast": ("spell_attack", "1d10", None, None),
@@ -93,10 +96,18 @@ MODELED_SPELL_EFFECTS = {
     "Healing Word": ("heal", "1d4", None, None),
     "Magic Missile": ("auto_damage", "1d4", None, None),
     "Misty Step": ("escape", "", None, None),
-    "Invisibility": ("condition", "", None, None),
+    "Invisibility": ("concentration_buff", "invisible", None, None),
     "Scorching Ray": ("multi_attack", "2d6", None, None),
     "Sacred Flame": ("save_damage", "1d8", "dexterity", "none"),
     "Vicious Mockery": ("save_damage", "1d4", "wisdom", "none"),
+}
+
+SPELL_CASTING_META: dict[str, dict[str, bool | str]] = {
+    "Bless": {"concentration": True, "casting_time": "action"},
+    "Shield of Faith": {"concentration": True, "casting_time": "bonus"},
+    "Mage Armor": {"concentration": False, "casting_time": "action"},
+    "Healing Word": {"concentration": False, "casting_time": "bonus"},
+    "Invisibility": {"concentration": True, "casting_time": "action"},
 }
 
 _SPELL_NAMES = {re.sub(r"\s+", " ", spell["name"].strip()).casefold(): spell for spell in SPELLS}

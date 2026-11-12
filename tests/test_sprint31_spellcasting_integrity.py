@@ -79,7 +79,7 @@ def test_denied_combat_cast_does_not_consume_slot():
     assert hero.spell_slots == slots_before
 
 
-@pytest.mark.parametrize("spell", ["Bless", "Shield"])
+@pytest.mark.parametrize("spell", ["Shield"])
 def test_unmodeled_cleric_starter_does_not_spend_slot(spell: str):
     game = GameEngine(random.Random(1))
     hero = create_hero("cleric", wisdom=16)
