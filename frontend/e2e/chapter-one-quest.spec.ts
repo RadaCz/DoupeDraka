@@ -15,7 +15,7 @@ import {
 import { completeWizardFighter, mockTelegramWebApp, signedTelegramInitData } from './telegram.ts';
 
 test.describe.configure({ mode: 'serial' });
-test.setTimeout(900_000);
+test.setTimeout(300_000);
 
 test('completes chapter one through UI chips and map travel', async ({ page, request }, testInfo) => {
   const marks: Record<string, number> = {};

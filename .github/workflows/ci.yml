@@ -168,6 +168,9 @@ jobs:
         run: |
           echo "Playwright cache hit: ${{ steps.playwright-cache.outputs.cache-hit }}"
       - name: Playwright E2E
+        env:
+          # setup-python puts a clean interpreter on PATH; run-tests pins it via E2E_PYTHON.
+          E2E_PYTHON: python
         run: cd frontend && npm run test:e2e
         timeout-minutes: 15
       - name: Upload Playwright report
@@ -175,7 +178,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
-          path: |
-            frontend/test-results/
-            frontend/.playwright-results/
+          path: frontend/.playwright-results/
           if-no-files-found: ignore
