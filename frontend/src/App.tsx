@@ -50,7 +50,11 @@ import {
   syncTelegramMainButton,
   teardownTelegramMainButton,
 } from './telegramWebApp';
-import { linkTelegramAccount, loginWithTelegramInitData } from './telegramAuth';
+import {
+  invalidateTelegramAuthCache,
+  linkTelegramAccount,
+  loginWithTelegramInitData,
+} from './telegramAuth';
 import {
   clearBrowserSessionToken,
   loginWithPassword,
@@ -349,6 +353,7 @@ function AppContent() {
         }
         if (shouldInvalidateSessionToken(kind)) {
           sessionToken = null;
+          invalidateTelegramAuthCache();
         }
         setAuthFailureKind(kind);
         setBootstrapPhase('auth_error');
@@ -370,7 +375,8 @@ function AppContent() {
     setAuthFailureKind(null);
     setBootstrapPhase('authenticating');
     try {
-      const token = await loginWithTelegramInitData(initData);
+      invalidateTelegramAuthCache(initData);
+      const token = await loginWithTelegramInitData(initData, { forceRefresh: true });
       await bootstrapSession(token, false);
     } catch (reason) {
       setAuthFailureKind('telegram_auth');
@@ -400,7 +406,8 @@ function AppContent() {
           const outcome = await bootstrapSession(browserToken, true);
           if (outcome !== 'ok' && outcome === 'session_invalid' && initData) {
             setBootstrapPhase('authenticating');
-            const token = await loginWithTelegramInitData(initData);
+            invalidateTelegramAuthCache(initData);
+            const token = await loginWithTelegramInitData(initData, { forceRefresh: true });
             await bootstrapSession(token, false);
             return;
           }

@@ -1,6 +1,6 @@
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
-let telegramAuthInFlight: Promise<string> | null = null;
+let telegramAuthInFlight: { initData: string; promise: Promise<string> } | null = null;
 let cachedTelegramAuth: { initData: string; token: string } | null = null;
 
 function readErrorDetail(body: unknown, status: number): string {
@@ -26,6 +26,9 @@ async function postTelegramAuth(initData: string, attempt: number): Promise<stri
   const body = (await response.json().catch(() => ({}))) as { access_token?: string };
   if (!response.ok) {
     const detail = readErrorDetail(body, response.status);
+    if (response.status === 401) {
+      invalidateTelegramAuthCache(initData);
+    }
     if (response.status === 409 && attempt < 2) {
       await new Promise(resolve => window.setTimeout(resolve, 80 * (attempt + 1)));
       return postTelegramAuth(initData, attempt + 1);
@@ -36,21 +39,41 @@ async function postTelegramAuth(initData: string, attempt: number): Promise<stri
   return body.access_token;
 }
 
-/** One in-flight Telegram login per page load — survives React StrictMode double effects. */
-export function loginWithTelegramInitData(initData: string): Promise<string> {
-  if (cachedTelegramAuth?.initData === initData) {
+export type LoginWithTelegramOptions = { forceRefresh?: boolean };
+
+/** Drop cached/in-flight Telegram auth after proven token rejection (not transient errors). */
+export function invalidateTelegramAuthCache(initData?: string): void {
+  if (!initData || cachedTelegramAuth?.initData === initData) {
+    cachedTelegramAuth = null;
+  }
+  if (telegramAuthInFlight && (!initData || telegramAuthInFlight.initData === initData)) {
+    telegramAuthInFlight = null;
+  }
+}
+
+/** One in-flight Telegram login per initData — survives React StrictMode double effects. */
+export function loginWithTelegramInitData(
+  initData: string,
+  options?: LoginWithTelegramOptions,
+): Promise<string> {
+  if (!options?.forceRefresh && cachedTelegramAuth?.initData === initData) {
     return Promise.resolve(cachedTelegramAuth.token);
   }
-  if (telegramAuthInFlight) return telegramAuthInFlight;
-  telegramAuthInFlight = postTelegramAuth(initData, 0)
+  if (telegramAuthInFlight?.initData === initData) {
+    return telegramAuthInFlight.promise;
+  }
+  const promise = postTelegramAuth(initData, 0)
     .then(token => {
       cachedTelegramAuth = { initData, token };
       return token;
     })
     .finally(() => {
-      telegramAuthInFlight = null;
+      if (telegramAuthInFlight?.initData === initData) {
+        telegramAuthInFlight = null;
+      }
     });
-  return telegramAuthInFlight;
+  telegramAuthInFlight = { initData, promise };
+  return promise;
 }
 
 /** Test-only: reset module auth state between Vitest cases. */
