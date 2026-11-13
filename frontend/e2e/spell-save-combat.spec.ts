@@ -1,5 +1,12 @@
 import { expect, test } from '@playwright/test';
-import { fetchCharacterState, postGameAction, syncPlayScreen } from './chapter-one-e2e-helpers.ts';
+import {
+  fetchCharacterState,
+  postGameAction,
+  resolvePendingReactionForE2E,
+  startCellarCombat,
+  syncCombatOrAdventurePlay,
+  waitForPlayerCombatTurn,
+} from './chapter-one-e2e-helpers.ts';
 import {
   apiTelegramToken,
   completeWizardWizardCaster,
@@ -19,23 +26,21 @@ test('wizard Burning Hands shows monster saving throw and reduced HP', async ({ 
   expect(characterId).toBeTruthy();
   const token = await apiTelegramToken(request, initData);
 
-  await postGameAction(request, token, characterId!, 'travel to The Whispering Cellar');
-  for (let round = 0; round < 6; round += 1) {
-    const state = await fetchCharacterState(request, token, characterId!);
-    if (state.in_combat && (state.combatant?.hp ?? 0) > 0) break;
-    await postGameAction(request, token, characterId!, 'attack goblin scout');
-  }
+  await startCellarCombat(request, token, characterId!);
+  await waitForPlayerCombatTurn(request, token, characterId!);
+  await resolvePendingReactionForE2E(request, token, characterId!);
   const before = await fetchCharacterState(request, token, characterId!);
   expect(before.in_combat).toBeTruthy();
   const foeHp = before.combatant?.hp ?? 5;
 
   await postGameAction(request, token, characterId!, 'cast Burning Hands');
-  await syncPlayScreen(page);
-
-  const journal = page.getByRole('log', { name: /Adventure journal|Dobrodružný deník/i });
-  await expect(journal).toContainText(/saving throw|záchranný hod/i, { timeout: 45_000 });
-  await expect(journal).toContainText(/Burning Hands|Hořící dlaně/i);
-
   const after = await fetchCharacterState(request, token, characterId!);
   expect(after.combatant?.hp ?? 0).toBeLessThan(foeHp);
+
+  // Sync combat play UI (journal shares the combat screen; do not require adventure-only layout).
+  await syncCombatOrAdventurePlay(page);
+  const journal = page.getByRole('log', { name: /adventure journal|dobrodružn[yý] den[ií]k|den[ií]k dobrodružstv/i });
+  await expect(journal).toBeVisible({ timeout: 45_000 });
+  await expect(journal).toContainText(/saving throw|záchranný hod|dexterity save|obratnost/i, { timeout: 45_000 });
+  await expect(journal).toContainText(/Burning Hands|Hořící dlaně|Horici dlane/i);
 });

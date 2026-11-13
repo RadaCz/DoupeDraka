@@ -10,7 +10,7 @@
 - Minimální conditions: paralýza (ghoul — opakovaný CON save na **konci tahu** postiženého), nevýhoda na další útok (Vicious Mockery, spotřeba při rollu)
 - Melee krit vs paralyzovaný: každý zásah zblízka je krit (`encounters.enemy_attack_is_melee`); výhoda sama o sobě nekrituje na dálku
 - Omezený whitelist kouzel (`MODELED_SPELL_EFFECTS`) se sloty a cantrip škálováním
-- Short/long rest, level 1–5 progression (zjednodušené prahy XP)
+- Short/long rest, level 1–3 progression for chapter 1 closed beta (zjednodušené prahy XP; `MAX_MVP_LEVEL = 3`)
 - Inventář jako seznam řetězců + obchod v Goblin Market
 - Cestování po grafu lokací, quest flags (zvon, vault, kapitola 1)
 - Tahové solo combat bez plné iniciativy roundů (initiative roll existuje, pořadí zjednodušené)
@@ -19,7 +19,7 @@
 
 - **Třídy:** dle `CLASS_SPELL_LISTS` a character wizardu — bojové i casters s reálnými sloty jen kde engine inicializuje spellcasting.
 - **Rasy:** Human, Elf, Dwarf, Halfling (+ další z wizardu označené jako dostupné).
-- **Úrovně:** 1–5 v kampani kapitoly 1; vyšší v kódu pro testy progression.
+- **Úrovně:** 1–3 v closed beta kapitoly 1. Backend odmítá level-up nad 3; UI nestaví progress k úrovni 4. Úrovně nad 3 zůstávají uzamčené, dokud nejsou modelované Extra Attack, Uncanny Dodge, Destroy Undead a kouzla 3. úrovně.
 
 ## Co je záměrně zjednodušené (neslibovat hráči)
 

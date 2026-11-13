@@ -2,6 +2,8 @@
 
 Canonical rules live in [`../design/RULESET_v1.md`](../design/RULESET_v1.md). This file exists so sprint docs can reference `docs/RULESET_v1.md` without duplicating content.
 
+**Chapter 1 closed beta level cap:** `MAX_MVP_LEVEL = 3` in `app/engine/ruleset_v1.py`. Backend refuses level-ups above 3; the character sheet hides further XP progress and explains the lock; catalog `/reference` exposes `ruleset.max_level` and the lock rationale in `notes`.
+
 **Sprint 20 character creation (2026-11-11):**
 
 - MVP playable: **Human, Elf, Dwarf, Halfling** × **Fighter, Rogue, Cleric, Wizard**; six SRD backgrounds; **standard array** validated on create; racial ASI and speed from engine; class saving throw proficiencies persisted.

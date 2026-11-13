@@ -199,26 +199,30 @@ def test_scorching_ray_resolves_three_attacks_and_spends_one_level_two_slot():
     assert result.spell_facts["slot_level"] == 2
 
 
-def test_misty_step_escapes_combat_and_consumes_one_slot():
+def test_misty_step_teleports_in_combat_without_ending_fight():
     game = GameEngine(random.Random(8))
     hero = hero_for("wizard")
     hero.level = 3
     hero.in_combat = True
+    hero.combat_turn = "player"
+    hero.combat_distance_ft = 5
     hero.known_spells.append("Misty Step")
     hero.max_spell_slots = {1: 4, 2: 2}
     hero.spell_slots = {2: 1}
+    foe = MonsterState(hp=10, max_hp=10)
 
-    result, enemy = game.resolve_action(hero, "cast Misty Step", MonsterState())
+    result, enemy = game.resolve_action(hero, "cast Misty Step", foe)
 
-    assert enemy is None
-    assert not hero.in_combat
-    assert result.combat_over
-    assert result.spell_facts["effect"]["escaped_combat"]
+    assert enemy is not None
+    assert hero.in_combat
+    assert not result.combat_over
+    assert result.spell_facts["effect"]["teleport_ft"] == 30
+    assert hero.combat_distance_ft == 35
     assert result.spell_facts["slot_consumed"]
     assert hero.spell_slots == {}
 
 
-def test_misty_step_outside_combat_has_no_effect_and_spends_no_slot():
+def test_misty_step_outside_combat_spends_slot():
     game = GameEngine(random.Random(8))
     hero = hero_for("wizard")
     hero.level = 3
@@ -228,10 +232,10 @@ def test_misty_step_outside_combat_has_no_effect_and_spends_no_slot():
 
     result, _ = game.resolve_action(hero, "cast Misty Step", None)
 
-    assert not result.state_changed
-    assert hero.spell_slots == {2: 1}
-    assert not result.spell_facts["slot_consumed"]
-    assert "no modeled destination" in result.events[0]
+    assert result.state_changed
+    assert hero.spell_slots == {}
+    assert result.spell_facts["slot_consumed"]
+    assert "blink" in result.events[0].casefold()
 
 
 def test_invisibility_sets_condition_and_ends_on_attack():

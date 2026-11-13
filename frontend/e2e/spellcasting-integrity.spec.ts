@@ -48,7 +48,7 @@ test('cleric Sacred Flame consumes no slot on cantrip', async ({ request }, test
         character_class: 'cleric',
         divine_domain: 'life',
         cantrips: ['Sacred Flame', 'Guidance', 'Spare the Dying'],
-        level_one_spells: ['Cure Wounds', 'Bless', 'Healing Word', 'Sanctuary'],
+        level_one_spells: ['Cure Wounds', 'Bless', 'Healing Word', 'Shield of Faith'],
         abilities: { strength: 10, dexterity: 10, constitution: 12, intelligence: 8, wisdom: 15, charisma: 10 },
       },
     })

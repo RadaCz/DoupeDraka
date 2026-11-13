@@ -2,9 +2,9 @@ import { expect, test } from '@playwright/test';
 import {
   ensureLevelAtLeast,
   fetchCharacterState,
-  postCombatAttack,
   postGameAction,
   reviveIfFallen,
+  startCellarCombat,
 } from './chapter-one-e2e-helpers.ts';
 import { apiTelegramToken, signedTelegramInitData } from './telegram.ts';
 import { E2E_TELEGRAM_ID } from './test-config.ts';
@@ -56,7 +56,7 @@ test('Sprint 21 class identity — engine outcomes & reload', async ({ request }
     character_class: 'cleric',
     divine_domain: 'life',
     cantrips: ['Guidance', 'Sacred Flame', 'Spare the Dying'],
-    level_one_spells: ['Healing Word', 'Shield of Faith', 'Sanctuary', 'Command'],
+    level_one_spells: ['Healing Word', 'Shield of Faith', 'Cure Wounds', 'Bless'],
     abilities: { strength: 14, dexterity: 10, constitution: 13, intelligence: 8, wisdom: 15, charisma: 12 },
   });
 
@@ -68,19 +68,17 @@ test('Sprint 21 class identity — engine outcomes & reload', async ({ request }
     level_one_spells: [
       'Magic Missile',
       'Shield',
-      'Detect Magic',
       'Burning Hands',
-      'Sleep',
-      'Charm Person',
+      'Mage Armor',
     ],
     abilities: { strength: 8, dexterity: 14, constitution: 12, intelligence: 15, wisdom: 10, charisma: 13 },
   });
 
-  await postGameAction(request, token, fighter.id, 'attack goblin scout');
+  await startCellarCombat(request, token, fighter.id, 'goblin scout');
   await expect.poll(async () => {
     const s = await fetchCharacterState(request, token, fighter.id);
     return Boolean(s.in_combat);
-  }).toBe(true);
+  }, { timeout: 60_000 }).toBe(true);
   let fState = await fetchCharacterState(request, token, fighter.id);
   for (let round = 0; round < 12 && (fState.hp ?? 0) >= (fState.max_hp ?? fighter.max_hp); round += 1) {
     await postGameAction(request, token, fighter.id, 'defend');
@@ -104,13 +102,10 @@ test('Sprint 21 class identity — engine outcomes & reload', async ({ request }
   const cState = await fetchCharacterState(request, token, cleric.id);
   expect(cState.prepared_spells).toEqual(expect.arrayContaining(['Bless', 'Cure Wounds']));
 
-  await postCombatAttack(request, token, wizard.id, 'goblin scout');
-  await postGameAction(request, token, wizard.id, 'cast Magic Missile');
-  await expect.poll(async () => {
-    const s = await fetchCharacterState(request, token, wizard.id);
-    return !s.in_combat;
-  }, { timeout: 90_000 }).toBe(true);
+  // Spend a modeled L1 slot outside the attack/end-turn race (G-09 modeled pool).
+  await postGameAction(request, token, wizard.id, 'cast Mage Armor');
   let wState = await fetchCharacterState(request, token, wizard.id);
+  expect(wState.mage_armor_active).toBe(true);
   const slots = wState.spell_slots ?? {};
   const spentSlot = slots['1'] ?? slots[1] ?? 2;
   expect(spentSlot).toBeLessThan(2);

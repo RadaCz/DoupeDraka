@@ -168,9 +168,14 @@ def perform_saving_throw(
         return engine.rng.randint(1, 20)
 
     second: int | None = None
+    lucky_note = ""
     if advantage or disadvantage:
         first = pull_natural()
         other = pull_natural()
+        # Halfling Lucky: any natural 1 among the pool is rerolled before adv/disadv pick.
+        first, note_a = halfling_lucky_reroll(character, first, pull_natural)
+        other, note_b = halfling_lucky_reroll(character, other, pull_natural)
+        lucky_note = (note_a + note_b).strip()
         if advantage:
             natural = max(first, other)
             second = min(first, other)
@@ -179,8 +184,7 @@ def perform_saving_throw(
             second = max(first, other)
     else:
         natural = pull_natural()
-
-    natural, lucky_note = halfling_lucky_reroll(character, natural, pull_natural)
+        natural, lucky_note = halfling_lucky_reroll(character, natural, pull_natural)
 
     total = natural + modifier
     success = total >= request.dc

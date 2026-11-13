@@ -126,19 +126,35 @@ DEFAULT_EQUIPMENT_PACKAGE: dict[str, str] = {
 }
 
 SPELL_PICK_LIMITS: dict[str, dict[str, int]] = {
-    "wizard": {"cantrips": 3, "level_one_known": 6},
+    # G-09: counts match modeled level-1 options (closed beta).
+    "wizard": {"cantrips": 3, "level_one_known": 4},
     "cleric": {"cantrips": 3, "level_one_prepared": 4},
 }
 
 FIGHTING_STYLE_OPTIONS = ("defense", "dueling")
 
+# Sheet-legal utility cantrips (no false combat claim). Combat cantrips must be in MODELED_SPELL_EFFECTS.
+UTILITY_SHEET_CANTRIPS: frozenset[str] = frozenset(
+    {
+        "Light",
+        "Mage Hand",
+        "Mending",
+        "Message",
+        "Minor Illusion",
+        "Prestidigitation",
+        "Guidance",
+        "Resistance",
+        "Spare the Dying",
+        "Thaumaturgy",
+        "Dancing Lights",
+    }
+)
+
 WIZARD_DEFAULT_SPELLBOOK = (
     "Magic Missile",
     "Shield",
     "Burning Hands",
-    "Detect Magic",
-    "Sleep",
-    "Charm Person",
+    "Mage Armor",
 )
 
 EXPLORE_SKILL_CUES: dict[str, tuple[str, ...]] = {
@@ -205,7 +221,17 @@ def validate_equipment_package(character_class: str, package: str) -> list[str]:
 
 
 def _spell_options(character_class: str, level: int) -> tuple[str, ...]:
-    return CLASS_SPELL_LISTS.get(character_class, {}).get(level, ())
+    from .spells import MODELED_SPELL_EFFECTS
+
+    pool = CLASS_SPELL_LISTS.get(character_class, {}).get(level, ())
+    if level == 0:
+        return tuple(
+            name
+            for name in pool
+            if name in MODELED_SPELL_EFFECTS or name in UTILITY_SHEET_CANTRIPS
+        )
+    # Level 1+: only engine-modeled picks so creation cannot promise unimplemented combat spells.
+    return tuple(name for name in pool if name in MODELED_SPELL_EFFECTS)
 
 
 def validate_spell_picks(
@@ -263,9 +289,9 @@ def default_spell_picks(character_class: str) -> tuple[list[str], list[str]]:
         pool = _spell_options(character_class, 1)
         level_one = [spell for spell in WIZARD_DEFAULT_SPELLBOOK if spell in pool]
         if len(level_one) < limits["level_one_known"]:
-            level_one.extend(
-                spell for spell in pool if spell not in level_one
-            )[: limits["level_one_known"] - len(level_one)]
+            needed = limits["level_one_known"] - len(level_one)
+            extras = [spell for spell in pool if spell not in level_one][:needed]
+            level_one.extend(extras)
     else:
         level_one = list(_spell_options(character_class, 1)[: limits["level_one_prepared"]])
     return cantrips, level_one

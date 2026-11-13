@@ -2,14 +2,14 @@ import { expect, test } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 import {
   closeCombatTurnIfStalled,
-  ensureHpBelowMaxForPotionUse,
+  ensureHpBelowHalfMax,
   ensureLevelAtLeast,
   fetchCharacterState,
+  leaveCombatIfNeeded,
   postGameAction,
   postGameActionWithIdempotencyKey,
   resolvePendingReactionForE2E,
   startCellarCombat,
-  waitForPlayerCombatTurn,
 } from './chapter-one-e2e-helpers.ts';
 import { apiTelegramToken, signedTelegramInitData } from './telegram.ts';
 import { E2E_TELEGRAM_ID } from './test-config.ts';
@@ -43,8 +43,9 @@ test('Sprint 36 — Cleric Preserve Life, Turn Undead, rest & idempotency', asyn
   expect(state.channel_divinity_available).toBe(true);
 
   await startCellarCombat(request, token, clericId);
-  state = await ensureHpBelowMaxForPotionUse(request, token, clericId, 24);
-  expect((state.hp ?? 0)).toBeLessThan(state.max_hp ?? 20);
+  state = await ensureHpBelowHalfMax(request, token, clericId, 48);
+  const halfCap = Math.max(1, Math.floor((state.max_hp ?? 20) / 2));
+  expect((state.hp ?? 0)).toBeLessThan(halfCap);
 
   for (let guard = 0; guard < 40; guard += 1) {
     await resolvePendingReactionForE2E(request, token, clericId);
@@ -83,14 +84,7 @@ test('Sprint 36 — Cleric Preserve Life, Turn Undead, rest & idempotency', asyn
   expect(denied.hp).toBe(healedOnce);
 
   await postGameAction(request, token, clericId, 'end turn');
-  while ((await fetchCharacterState(request, token, clericId)).in_combat) {
-    const probe = await fetchCharacterState(request, token, clericId);
-    if (probe.combat_turn === 'player' && probe.in_combat) {
-      await postGameAction(request, token, clericId, 'flee');
-    }
-    await waitForPlayerCombatTurn(request, token, clericId).catch(() => undefined);
-    if (!(await fetchCharacterState(request, token, clericId)).in_combat) break;
-  }
+  await leaveCombatIfNeeded(request, token, clericId, 40);
 
   await postGameAction(request, token, clericId, 'short rest');
   state = await fetchCharacterState(request, token, clericId);

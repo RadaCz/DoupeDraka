@@ -24,7 +24,7 @@ export function readCombatEconomy(character: Character): CombatEconomyState {
 
 export type EconomySlot = 'action' | 'bonus' | 'reaction';
 
-export const BONUS_ACTION_SPELLS = new Set(['Healing Word']);
+export const BONUS_ACTION_SPELLS = new Set(['Healing Word', 'Shield of Faith', 'Misty Step']);
 
 export function spellEconomySlot(spellName: string): EconomySlot {
   return BONUS_ACTION_SPELLS.has(spellName) ? 'bonus' : 'action';

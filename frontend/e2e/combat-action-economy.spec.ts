@@ -2,8 +2,8 @@ import { expect, test } from '@playwright/test';
 import {
   closeCombatTurnIfStalled,
   fetchCharacterState,
-  postCombatAttack,
   postGameAction,
+  startCellarCombat,
 } from './chapter-one-e2e-helpers.ts';
 import { apiTelegramToken, signedTelegramInitData } from './telegram.ts';
 import { E2E_TELEGRAM_ID } from './test-config.ts';
@@ -30,26 +30,42 @@ test('Sprint 25 — bonus then action economy & reload', async ({ request }, tes
   expect(response.ok()).toBeTruthy();
   const fighter = await response.json() as { id: string; max_hp: number };
 
-  await postCombatAttack(request, token, fighter.id, 'goblin scout');
+  await startCellarCombat(request, token, fighter.id, 'goblin scout');
+  // Opening engage spends the action (B-04). Advance to a fresh player turn for bonus→action.
+  await expect.poll(async () => {
+    const s = await fetchCharacterState(request, token, fighter.id);
+    return Boolean(s.in_combat);
+  }, { timeout: 60_000 }).toBe(true);
+  for (let guard = 0; guard < 24; guard += 1) {
+    const s = await fetchCharacterState(request, token, fighter.id);
+    if (!s.in_combat) {
+      await startCellarCombat(request, token, fighter.id, 'goblin scout');
+      continue;
+    }
+    if (s.combat_turn === 'player' && !s.combat_flags?.action_used && !s.combat_flags?.bonus_action_used) {
+      break;
+    }
+    if (s.combat_turn === 'player' && s.combat_flags?.action_used) {
+      await postGameAction(request, token, fighter.id, 'end turn');
+      await closeCombatTurnIfStalled(request, token, fighter.id);
+      continue;
+    }
+    await closeCombatTurnIfStalled(request, token, fighter.id);
+  }
   await expect.poll(async () => {
     const s = await fetchCharacterState(request, token, fighter.id);
     return Boolean(s.in_combat) && s.combat_turn === 'player' && !s.combat_flags?.action_used;
   }, { timeout: 60_000 }).toBe(true);
 
   await postGameAction(request, token, fighter.id, 'second wind');
-  let state = await fetchCharacterState(request, token, fighter.id);
-  expect(state.combat_flags?.bonus_action_used).toBe(true);
-  expect(state.combat_flags?.action_used).toBeFalsy();
-  expect(state.combat_turn).toBe('player');
+  const afterBonus = await fetchCharacterState(request, token, fighter.id);
+  expect(afterBonus.combat_flags?.bonus_action_used).toBe(true);
+  expect(afterBonus.combat_flags?.action_used).toBeFalsy();
+  expect(afterBonus.combat_turn).toBe('player');
 
-  await postCombatAttack(request, token, fighter.id, 'goblin scout');
-  state = await fetchCharacterState(request, token, fighter.id);
-  if (state.in_combat && state.combat_turn === 'player') {
-    expect(state.combat_flags?.action_used).toBe(true);
-    expect(state.combat_flags?.bonus_action_used).toBe(true);
-  }
-
+  // Persist mid-turn bonus state (do not take the action yet — defend/attack may auto-cycle the turn).
   const reloaded = await fetchCharacterState(request, token, fighter.id);
-  expect(reloaded.in_combat).toBe(state.in_combat);
-  expect(reloaded.combat_flags?.bonus_action_used).toBe(state.combat_flags?.bonus_action_used);
+  expect(reloaded.in_combat).toBe(true);
+  expect(reloaded.combat_flags?.bonus_action_used).toBe(true);
+  expect(reloaded.combat_flags?.action_used).toBeFalsy();
 });

@@ -96,7 +96,7 @@ MODELED_SPELL_EFFECTS = {
     "Fire Bolt": ("spell_attack", "1d10", None, None),
     "Healing Word": ("heal", "1d4", None, None),
     "Magic Missile": ("auto_damage", "1d4", None, None),
-    "Misty Step": ("escape", "", None, None),
+    "Misty Step": ("teleport", "30", None, None),
     "Invisibility": ("concentration_buff", "invisible", None, None),
     "Scorching Ray": ("multi_attack", "2d6", None, None),
     "Sacred Flame": ("save_damage", "1d8", "dexterity", "none"),
@@ -109,6 +109,7 @@ SPELL_CASTING_META: dict[str, dict[str, bool | str]] = {
     "Mage Armor": {"concentration": False, "casting_time": "action"},
     "Shield": {"concentration": False, "casting_time": "reaction"},
     "Healing Word": {"concentration": False, "casting_time": "bonus"},
+    "Misty Step": {"concentration": False, "casting_time": "bonus"},
     "Invisibility": {"concentration": True, "casting_time": "action"},
 }
 

@@ -1477,18 +1477,32 @@ class GameEngine:
                 events.append(f"{selected} hits {monster.name} for {damage} damage.")
             else:
                 events.append(f"{selected} misses {monster.name}.")
-        elif kind == "escape":
-            escaped = monster is not None or character.in_combat
-            if escaped:
-                character.in_combat = False
-                character.exploration_cooldown = 1
-                monster = None
-            effect_facts.update({"escaped_combat": escaped})
-            events.append(
-                f"{selected} lets you blink to a nearby safe space and escape combat."
-                if escaped else
-                f"{selected} lets you blink to a nearby space; this adventure has no mapped distance to track."
-            )
+        elif kind in ("escape", "teleport"):
+            # SRD Misty Step: bonus-action teleport up to 30 ft — does not end the fight.
+            distance_ft = 30
+            try:
+                distance_ft = int(dice) if dice else 30
+            except (TypeError, ValueError):
+                distance_ft = 30
+            if character.in_combat:
+                before = int(getattr(character, "combat_distance_ft", 0) or 0)
+                character.combat_distance_ft = before + distance_ft
+                effect_facts.update(
+                    {
+                        "teleport_ft": distance_ft,
+                        "combat_distance_ft": character.combat_distance_ft,
+                        "escaped_combat": False,
+                    }
+                )
+                events.append(
+                    f"{selected} blinks you {distance_ft} feet away "
+                    f"(now {character.combat_distance_ft} ft from the foe)."
+                )
+            else:
+                effect_facts.update({"teleport_ft": distance_ft, "escaped_combat": False})
+                events.append(
+                    f"{selected} lets you briefly blink up to {distance_ft} feet through silver mist."
+                )
         elif kind == "concentration_buff":
             from .concentration import (
                 EFFECT_BLESS,

@@ -13,7 +13,7 @@ FLAG_ACTION_USED = "action_used"
 FLAG_BONUS_USED = "bonus_action_used"
 FLAG_REACTION_USED = "reaction_used"
 
-BONUS_ACTION_SPELLS = frozenset({"Healing Word", "Shield of Faith"})
+BONUS_ACTION_SPELLS = frozenset({"Healing Word", "Shield of Faith", "Misty Step"})
 REACTION_SPELLS = frozenset({"Shield"})
 
 FLAG_CAST_BONUS_SPELL = "cast_bonus_spell_turn"
@@ -108,13 +108,21 @@ def has_legitimate_bonus_action(character: CharacterState) -> bool:
         return True
     if character.character_class == "rogue" and character.level >= 2:
         return True
-    if character.hp < character.max_hp:
-        spells = {s.casefold() for s in character.prepared_spells + character.known_spells}
-        if "healing word" in spells:
-            slots = character.spell_slots
-            for key in (1, "1"):
-                if int(slots.get(key, 0)) > 0:
-                    return True
+    spells = {s.casefold() for s in character.prepared_spells + character.known_spells}
+    slots = character.spell_slots
+
+    def _has_slot(min_level: int = 1) -> bool:
+        for key, value in slots.items():
+            if int(key) >= min_level and int(value) > 0:
+                return True
+        return False
+
+    if character.hp < character.max_hp and "healing word" in spells and _has_slot(1):
+        return True
+    if "shield of faith" in spells and _has_slot(1):
+        return True
+    if "misty step" in spells and _has_slot(2):
+        return True
     return False
 
 

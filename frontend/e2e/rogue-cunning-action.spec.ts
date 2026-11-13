@@ -57,6 +57,11 @@ test('Sprint 36 — Rogue Cunning Action Dash, Disengage, Hide', async ({ reques
   ).toBe(moveAfter);
 
   await postGameAction(request, token, rogueId, 'end turn');
+  await closeCombatTurnIfStalled(request, token, rogueId);
+  state = await fetchCharacterState(request, token, rogueId);
+  if (!state.in_combat) {
+    await startCellarCombat(request, token, rogueId);
+  }
   await waitForPlayerCombatTurn(request, token, rogueId);
 
   state = await fetchCharacterState(request, token, rogueId);

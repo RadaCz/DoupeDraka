@@ -73,10 +73,8 @@ def test_wizard_spell_picks_applied():
         level_one_spells=[
             "Magic Missile",
             "Shield",
-            "Detect Magic",
             "Burning Hands",
-            "Sleep",
-            "Charm Person",
+            "Mage Armor",
         ],
     )
     assert set(hero.known_spells) == {
@@ -85,10 +83,8 @@ def test_wizard_spell_picks_applied():
         "Light",
         "Magic Missile",
         "Shield",
-        "Detect Magic",
         "Burning Hands",
-        "Sleep",
-        "Charm Person",
+        "Mage Armor",
     }
 
 

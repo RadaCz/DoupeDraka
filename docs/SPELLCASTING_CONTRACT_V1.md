@@ -92,7 +92,7 @@ Other SRD classes exist in reference data but are out of Chapter One MVP player 
 | Fire Bolt | 0 | spell attack | attack | no | no |
 | Healing Word | 1 | heal (bonus in combat) | — | yes | no |
 | Magic Missile | 1 | auto damage | — | yes | no |
-| Misty Step | 2 | escape combat | — | yes | no |
+| Misty Step | 2 | teleport 30 ft (bonus; does not end combat) | — | yes | no |
 | Invisibility | 2 | self invisible flag | — | yes | yes (MVP: flag only) |
 | Scorching Ray | 2 | multi spell attack | attack | yes | no |
 | Sacred Flame | 0 | save damage DEX none | yes | no | no |
