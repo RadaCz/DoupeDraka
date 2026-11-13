@@ -1,15 +1,14 @@
-import { expect, test, type APIRequestContext } from '@playwright/test';
+import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 import {
-  closeCombatTurnIfStalled,
   ensureLevelAtLeast,
   fetchCharacterState,
   type CharacterSnapshot,
   isCombatReactionPending,
-  postCombatAttack,
-  postGameAction,
+  isMvpCombatDefeatRecovery,
+  recoverForGhoulEncounter,
   resolvePendingReactionForE2E,
   reviveIfFallen,
-  syncCombatOrAdventurePlay,
+  syncPlayScreen,
 } from './chapter-one-e2e-helpers.ts';
 import {
   ACTION_TEXTBOX,
@@ -27,8 +26,10 @@ import { E2E_TELEGRAM_ID } from './test-config.ts';
 const COMBAT_ACTIONS = /combat actions|bojové akce/i;
 const COMBAT_BEAT = /latest combat beat|nejnovější bojový moment/i;
 const ATTACK_BTN = /^Attack$|^Útok$/i;
+const END_TURN_BTN = /^End turn$|^Konec tahu$/i;
+const DECLINE_REACTION = /decline reaction|odmítnout reakci/i;
 
-function formatGhoulCombatDiagnostics(state: CharacterSnapshot, journalTail?: string): string {
+function formatGhoulCombatDiagnostics(state: CharacterSnapshot, extra?: string): string {
   return JSON.stringify(
     {
       location: state.location,
@@ -42,63 +43,72 @@ function formatGhoulCombatDiagnostics(state: CharacterSnapshot, journalTail?: st
       combatant: state.combatant?.name,
       conditions: state.conditions,
       combat_flags: state.combat_flags,
-      journal_tail: journalTail,
+      extra,
     },
     null,
     2,
   );
 }
 
-async function advanceGhoulParalysisCombat(
+async function uiDeclineReactionIfNeeded(page: Page) {
+  const deck = page.getByRole('group', { name: COMBAT_ACTIONS });
+  const decline = deck.getByRole('button', { name: DECLINE_REACTION });
+  if (await decline.isVisible().catch(() => false) && await decline.isEnabled().catch(() => false)) {
+    const streamDone = playStreamResponse(page);
+    await decline.click();
+    await streamDone;
+    await waitForGameScreenIdle(page).catch(() => undefined);
+  }
+}
+
+async function uiEngageGhoulOrThrow(
+  page: Page,
   request: APIRequestContext,
   token: string,
   characterId: string,
-): Promise<'paralyzed' | 'continue'> {
-  let state = await fetchCharacterState(request, token, characterId);
-  await resolvePendingReactionForE2E(request, token, characterId);
-  state = await fetchCharacterState(request, token, characterId);
-
-  if (state.conditions?.some(c => c.condition_id === 'paralyzed')) {
-    return 'paralyzed';
+) {
+  const before = await fetchCharacterState(request, token, characterId);
+  if (before.in_combat) return;
+  if (!/Sunken Corridor|Potopen/i.test(before.location ?? '')) {
+    throw new Error(
+      `Ghoul engage: must be in Sunken Corridor.\n${formatGhoulCombatDiagnostics(before)}`,
+    );
   }
-  if ((state.hp ?? 1) <= 0) {
-    await reviveIfFallen(request, token, characterId);
-    return 'continue';
+  const streamDone = playStreamResponse(page);
+  await page.getByRole('textbox', { name: ACTION_TEXTBOX }).fill('attack ghoul');
+  await page.getByRole('button', { name: SEND_ACTION_BTN }).click();
+  await streamDone;
+  await waitForAdventureComposerIdle(page).catch(() => undefined);
+  const after = await fetchCharacterState(request, token, characterId);
+  if (!after.in_combat) {
+    throw new Error(
+      `Ghoul engage rejected (not in combat after UI attack ghoul).\n${formatGhoulCombatDiagnostics(after)}`,
+    );
   }
+}
 
-  if (isCombatReactionPending(state) || state.combat_turn === 'reaction') {
-    await resolvePendingReactionForE2E(request, token, characterId);
-    return 'continue';
+async function uiPlayerCombatStep(page: Page) {
+  const deck = page.getByRole('group', { name: COMBAT_ACTIONS });
+  await expect(deck).toBeVisible({ timeout: 15_000 });
+  const attack = deck.getByRole('button', { name: ATTACK_BTN }).first();
+  if (await attack.isEnabled().catch(() => false)) {
+    const streamDone = playStreamResponse(page);
+    await attack.click();
+    await streamDone;
+    await waitForGameScreenIdle(page).catch(() => undefined);
   }
-
-  if (!state.in_combat) {
-    await postGameAction(request, token, characterId, 'attack ghoul');
-    await resolvePendingReactionForE2E(request, token, characterId);
-    await closeCombatTurnIfStalled(request, token, characterId);
-    return 'continue';
+  const endTurn = deck.getByRole('button', { name: END_TURN_BTN }).first();
+  if (await endTurn.isEnabled().catch(() => false)) {
+    const streamDone = playStreamResponse(page);
+    await endTurn.click();
+    await streamDone;
+    await waitForGameScreenIdle(page).catch(() => undefined);
   }
-
-  if (state.combat_turn === 'player') {
-    await postCombatAttack(request, token, characterId, 'ghoul');
-    await resolvePendingReactionForE2E(request, token, characterId);
-    return 'continue';
-  }
-
-  if (state.combat_turn === 'enemy') {
-    const afterEnemy = await fetchCharacterState(request, token, characterId);
-    if (!isCombatReactionPending(afterEnemy) && afterEnemy.combat_turn === 'enemy') {
-      await postGameAction(request, token, characterId, 'defend');
-    }
-    return 'continue';
-  }
-
-  await resolvePendingReactionForE2E(request, token, characterId);
-  return 'continue';
 }
 
 /**
- * Requires a fresh E2E_RNG_SEED stream (combat-saves phase / isolated spec run in run-tests.mjs).
- * With seed 27, elf wizard L2 vs ghoul: hit + failed CON save on the second combat exchange.
+ * E2E harness: deterministic per-character RNG when E2E_RNG_SEED is set (see app/e2e_rng.py).
+ * Fixture prep may use API; combat actions use the UI combat deck / composer.
  */
 test('ghoul paralyzing claws apply paralysis through real combat and UI', async ({ page, request }, testInfo) => {
   test.setTimeout(180_000);
@@ -113,55 +123,74 @@ test('ghoul paralyzing claws apply paralysis through real combat and UI', async 
   const token = await apiTelegramToken(request, initData);
 
   await ensureLevelAtLeast(request, token, characterId!, 2, 50);
-  await postGameAction(request, token, characterId!, 'travel to The Sunken Corridor');
+  await recoverForGhoulEncounter(request, token, characterId!, 8);
+  await syncPlayScreen(page);
 
-  for (let attempt = 0; attempt < 12; attempt += 1) {
-    const outcome = await advanceGhoulParalysisCombat(request, token, characterId!);
-    if (outcome === 'paralyzed') break;
+  let paralyzed = false;
+  for (let round = 0; round < 24; round += 1) {
+    let state = await fetchCharacterState(request, token, characterId!);
+    if (state.conditions?.some(c => c.condition_id === 'paralyzed')) {
+      paralyzed = true;
+      break;
+    }
+    if ((state.hp ?? 1) <= 0 || isMvpCombatDefeatRecovery(state)) {
+      await recoverForGhoulEncounter(request, token, characterId!, 8);
+      await syncPlayScreen(page);
+      continue;
+    }
+
+    await uiDeclineReactionIfNeeded(page);
+    state = await fetchCharacterState(request, token, characterId!);
+    if (isCombatReactionPending(state)) {
+      await resolvePendingReactionForE2E(request, token, characterId!);
+      continue;
+    }
+
+    if (!state.in_combat) {
+      await uiEngageGhoulOrThrow(page, request, token, characterId!);
+      continue;
+    }
+
+    if (state.combat_turn === 'player') {
+      await uiPlayerCombatStep(page);
+      continue;
+    }
+
+    await page.waitForTimeout(250);
   }
 
-  try {
-    await expect.poll(async () => {
-      const state = await fetchCharacterState(request, token, characterId!);
-      await resolvePendingReactionForE2E(request, token, characterId!);
-      return state.conditions?.some(c => c.condition_id === 'paralyzed') ?? false;
-    }, { timeout: 45_000, intervals: [250, 500, 1000] }).toBe(true);
-  } catch (error) {
-    await resolvePendingReactionForE2E(request, token, characterId!);
-    const state = await fetchCharacterState(request, token, characterId!);
+  const finalState = await fetchCharacterState(request, token, characterId!);
+  if (!paralyzed && !finalState.conditions?.some(c => c.condition_id === 'paralyzed')) {
     throw new Error(
-      `Ghoul paralysis not applied within 45s.\n${formatGhoulCombatDiagnostics(state)}\n${String(error)}`,
+      `Ghoul paralysis not reached in 24 UI rounds.\n${formatGhoulCombatDiagnostics(finalState)}`,
     );
   }
 
   await reviveIfFallen(request, token, characterId!);
-  const playMode = await syncCombatOrAdventurePlay(page);
+  await syncPlayScreen(page);
   const beforeTurn = await fetchCharacterState(request, token, characterId!);
   expect(beforeTurn.conditions?.some(c => c.condition_id === 'paralyzed')).toBeTruthy();
   await expect(page.getByText(/paralyz|paralyzed|Paralyza/i).first()).toBeVisible({ timeout: 30_000 });
 
   const blockedOrSave = /paralyz|cannot act|neschopný|repeat save|end of your turn|konce tvého tahu|saving throw|záchranný hod/i;
-
-  if (playMode === 'combat') {
-    const combatDeck = page.getByRole('group', { name: COMBAT_ACTIONS });
+  const deck = page.getByRole('group', { name: COMBAT_ACTIONS });
+  if (await deck.isVisible().catch(() => false)) {
     const streamDone = playStreamResponse(page);
-    await combatDeck.getByRole('button', { name: ATTACK_BTN }).click();
+    await deck.getByRole('button', { name: ATTACK_BTN }).click();
     await streamDone;
     await waitForGameScreenIdle(page);
-    const mechanics = page.getByRole('button', { name: /mechanical details|mechanické detaily/i });
-    if (await mechanics.isVisible().catch(() => false)) {
-      await mechanics.click();
-    }
-    const combatBeat = page.getByRole('region', { name: COMBAT_BEAT });
-    const journal = page.getByRole('log', { name: /Adventure journal|Dobrodružný deník/i });
-    await expect(combatBeat.or(journal)).toContainText(blockedOrSave, { timeout: 45_000 });
   } else {
-    const journal = page.getByRole('log', { name: /Adventure journal|Dobrodružný deník/i });
     const streamDone = playStreamResponse(page);
     await page.getByRole('textbox', { name: ACTION_TEXTBOX }).fill('attack ghoul');
     await page.getByRole('button', { name: SEND_ACTION_BTN }).click();
     await streamDone;
     await waitForAdventureComposerIdle(page);
-    await expect(journal).toContainText(blockedOrSave, { timeout: 45_000 });
   }
+  const mechanics = page.getByRole('button', { name: /mechanical details|mechanické detaily/i });
+  if (await mechanics.isVisible().catch(() => false)) {
+    await mechanics.click();
+  }
+  const combatBeat = page.getByRole('region', { name: COMBAT_BEAT });
+  const journal = page.getByRole('log', { name: /Adventure journal|Dobrodružný deník/i });
+  await expect(combatBeat.or(journal)).toContainText(blockedOrSave, { timeout: 30_000 });
 });

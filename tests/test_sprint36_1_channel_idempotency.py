@@ -102,10 +102,31 @@ def test_preserve_life_idempotent_via_action_receipt(setup_db):
 
 
 def test_channel_restored_only_on_short_rest():
-    game, hero = _cleric_l2()
+    game = GameEngine()
+    hero = game.create_character(
+        1,
+        "CD",
+        "dwarf",
+        "cleric",
+        {
+            "strength": 14,
+            "dexterity": 10,
+            "constitution": 13,
+            "intelligence": 8,
+            "wisdom": 16,
+            "charisma": 12,
+        },
+    )
+    hero.level = 2
+    hero.divine_domain = "life"
     hero.channel_divinity_available = False
+    hero.hp = 8
+    hero.max_hp = 24
     hero.location = "The Whispering Cellar"
-    game.resolve_action(hero, "explore", None)
+    hero.exploration_cooldown = 1
+    _, monster = game.resolve_action(hero, "explore", None)
+    assert monster is None
+    assert not hero.in_combat
     assert not hero.channel_divinity_available
     game.resolve_action(hero, "short rest", None)
     assert hero.channel_divinity_available

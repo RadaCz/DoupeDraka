@@ -24,6 +24,7 @@ from .engine.service import GameEngine
 from .engine.race_features import enrich_character_dict
 from .engine.rng_state import bind_engine_rng, capture_engine_rng
 from .billing_policy import narration_charge_applies
+from .e2e_rng import parse_e2e_rng_base
 
 
 def character_api_payload(character: CharacterState) -> dict:
@@ -96,10 +97,10 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PATCH", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "Idempotency-Key"],
 )
-_e2e_rng_seed = os.environ.get("E2E_RNG_SEED")
+_e2e_rng_base = parse_e2e_rng_base()
 game = (
-    GameEngine(_random_module.Random(int(_e2e_rng_seed)))
-    if _e2e_rng_seed is not None and str(_e2e_rng_seed).isdigit()
+    GameEngine(_random_module.Random(_e2e_rng_base))
+    if _e2e_rng_base is not None
     else GameEngine()
 )
 narrator = Narrator()
@@ -1153,7 +1154,7 @@ async def commit_action_turn(
 
             turn_location = character.location
             active_monster = MonsterState(**character.combatant) if character.combatant else None
-            bind_engine_rng(character, game)
+            bind_engine_rng(character, game, _e2e_rng_base)
             result, monster = game.resolve_action(character, text, active_monster)
             bill_narration = narration_charge_applies(
                 billing_tier=billing_tier,

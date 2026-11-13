@@ -144,6 +144,52 @@ export type CharacterSnapshot = {
   mage_armor_active?: boolean;
 };
 
+/**
+ * MVP combat defeat: engine sets location to SAFE_RESPAWN (Whispering Cellar),
+ * hp=1, in_combat=false; death_state remains "alive" (not fallen).
+ */
+export function isMvpCombatDefeatRecovery(state: CharacterSnapshot): boolean {
+  return Boolean(
+    !state.in_combat
+    && state.hp === 1
+    && /Whispering Cellar|Šeptající/i.test(state.location ?? ''),
+  );
+}
+
+/** After defeat or low HP: heal at safe hub, travel to Sunken Corridor, verify min HP. */
+export async function recoverForGhoulEncounter(
+  request: APIRequestContext,
+  token: string,
+  characterId: string,
+  minHp = 8,
+): Promise<CharacterSnapshot> {
+  let state = await fetchCharacterState(request, token, characterId);
+  if ((state.hp ?? 1) <= 0) {
+    await reviveIfFallen(request, token, characterId);
+    state = await fetchCharacterState(request, token, characterId);
+  }
+  if (isMvpCombatDefeatRecovery(state) || (state.hp ?? 1) < minHp) {
+    const safeHub = /Whispering Cellar|Shrine of the Forgotten|Goblin Market/i;
+    if (safeHub.test(state.location ?? '')) {
+      await postGameAction(request, token, characterId, 'long rest');
+      state = await fetchCharacterState(request, token, characterId);
+    }
+  }
+  if (!/Sunken Corridor|Potopená chodba|Potopen/i.test(state.location ?? '')) {
+    await postGameAction(request, token, characterId, 'travel to The Sunken Corridor');
+    state = await fetchCharacterState(request, token, characterId);
+  }
+  if (!/Sunken Corridor|Potopen/i.test(state.location ?? '')) {
+    throw new Error(`Ghoul prep: expected Sunken Corridor, got ${state.location}`);
+  }
+  if ((state.hp ?? 0) < minHp) {
+    await postGameAction(request, token, characterId, 'short rest');
+    state = await fetchCharacterState(request, token, characterId);
+  }
+  expect(state.hp ?? 0).toBeGreaterThanOrEqual(minHp);
+  return state;
+}
+
 export async function reviveIfFallen(
   request: APIRequestContext,
   token: string,
