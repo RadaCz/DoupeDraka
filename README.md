@@ -7,7 +7,7 @@ zranění, HP a mana provádí deterministický Python engine.
 
 - [Project brain](./PROJECT_BRAIN.md) — aktuální stav a invarianty.
 - [Repo status (current)](./docs/REPO_STATUS_CURRENT.md) — `clean-main` vs `main`, CI, staging.
-- **Branches:** aktivní vývoj na **`clean-main`**; **`main`** je release větev (může zaostávat).
+- **Branch:** aktivní vývoj na **`main`** (`clean-main` sloučena 2026-11-13).
 - [Roadmap](./ROADMAP.md) · [Decision log](./DECISIONS.md) · [session history](./CHANGELOG.md).
 - Technické příručky: [architecture](./docs/ARCHITECTURE.md), [engine](./docs/ENGINE.md),
   [campaign content](./docs/CONTENT.md), [deployment](./docs/DEPLOYMENT.md),

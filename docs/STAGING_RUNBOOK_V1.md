@@ -1,6 +1,6 @@
 # Staging deployment runbook V1 — Lite-first
 
-**Repo baseline (remote):** `91a9ac1c509190d5056dd43cf52f7cf55644dd59` na `clean-main` — ověř `git rev-parse HEAD` před nasazením; CI run **#91** (5 jobů včetně e2e). Alembic head **`v005`** (bez v006). Lokální commity po auditu: viz [`REPO_STATUS_CURRENT.md`](REPO_STATUS_CURRENT.md).  
+**Repo baseline (remote):** `2f0669c9a9a12aea9437e5137b007a5551029272` na **`main`** — ověř `git rev-parse HEAD` před nasazením; CI run **#43493374882** (5 jobů). Alembic head **`v005`** (bez v006). Viz [`REPO_STATUS_CURRENT.md`](REPO_STATUS_CURRENT.md).  
 **Poslední nasazený commit (runtime):** **žádný** — HTTPS staging **NOT DEPLOYED** (tento runbook připravuje první deploy; neznamená to, že staging už běží).  
 **Související:** [`DEPLOYMENT.md`](DEPLOYMENT.md), [`STAGING_DEVICE_VALIDATION_V1.md`](STAGING_DEVICE_VALIDATION_V1.md), [`TELEGRAM_MOBILE_QA_V1.md`](TELEGRAM_MOBILE_QA_V1.md), [`SPRINT_15_3_STAGING_AND_PLAYER_VALIDATION.md`](SPRINT_15_3_STAGING_AND_PLAYER_VALIDATION.md), [`SPRINT_15_3_1_DOCUMENTATION_TRUTH_SYNC.md`](SPRINT_15_3_1_DOCUMENTATION_TRUTH_SYNC.md).
 

@@ -2,9 +2,9 @@
 
 Poslední revize: **2026-11-13 (Sprint 39 + repo audit)**. Aktuální pravda: [`REPO_STATUS_CURRENT.md`](REPO_STATUS_CURRENT.md). Etapy 7–9 až po staging + fyzickém QA.
 
-**Kódový HEAD (remote):** `91a9ac1c509190d5056dd43cf52f7cf55644dd59` = `origin/clean-main` (Sprint 39.2 auth/navigation). **Uzavřená beta NOT READY** — staging **NOT DEPLOYED**, Telegram **NOT TESTED**, playtest **NOT TESTED**.
+**Kódový HEAD (remote):** `2f0669c9a9a12aea9437e5137b007a5551029272` = `origin/main`. **Uzavřená beta NOT READY** — staging **NOT DEPLOYED**, Telegram **NOT TESTED**, playtest **NOT TESTED**.
 
-**CI (remote baseline):** GitHub Actions run **#91** @ `91a9ac1` — **5/5 success** (nové lokální commity vyžadují nový CI běh).
+**CI (main):** GitHub Actions run **#43493374882** @ `2f0669c` — **5/5 success**.
 **Staging HTTPS:** **NOT DEPLOYED** — viz `docs/STAGING_DEVICE_VALIDATION_V1.md`.  
 **Fyzický Telegram:** Android / iOS **NOT TESTED** (`docs/TELEGRAM_MOBILE_QA_V1.md`).  
 **Normal debit/refund na stagingu:** **NOT TESTED**.

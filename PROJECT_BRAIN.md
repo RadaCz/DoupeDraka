@@ -3,11 +3,10 @@
 > Current source of truth. Code is authoritative; update this summary when behavior changes.
 
 - **Repository:** [RadaCz/DoupeDraka](https://github.com/RadaCz/DoupeDraka) (`D:\DoupeDraka`)
-- **Development branch:** `clean-main` (merge to `main` after green CI only)
-- **Last updated:** 2026-11-13 (repo audit + Sprint 39 sync — see [`docs/REPO_STATUS_CURRENT.md`](docs/REPO_STATUS_CURRENT.md))
-- **HEAD (remote `clean-main`):** `91a9ac1c509190d5056dd43cf52f7cf55644dd59` — Sprint 39.2 auth/navigation; staging HTTPS **NOT DEPLOYED**.
-- **CI (remote baseline):** GitHub Actions run **#91** @ `91a9ac1` — **5/5 SUCCESS** (new local commits require a fresh CI run).
-- **Active branch:** `clean-main` (not `main`). Merge to `main` only after explicit release approval.
+- **Development branch:** **`main`** only (merged from `clean-main` 2026-11-13).
+- **Last updated:** 2026-11-13 (main branch consolidation — see [`docs/REPO_STATUS_CURRENT.md`](docs/REPO_STATUS_CURRENT.md))
+- **HEAD (remote `main`):** `2f0669c9a9a12aea9437e5137b007a5551029272`; staging HTTPS **NOT DEPLOYED**.
+- **CI (main):** GitHub Actions run **#43493374882** @ `2f0669c` — **5/5 SUCCESS**.
 - **Staging:** **NOT DEPLOYED** — [`docs/SPRINT_38_STAGING_CHECKLIST.md`](docs/SPRINT_38_STAGING_CHECKLIST.md), [`docs/STAGING_RUNBOOK_V1.md`](docs/STAGING_RUNBOOK_V1.md).
 - **Fyzické QA:** Android / iOS **NOT TESTED** — [`docs/SPRINT_38_TELEGRAM_QA_PROTOCOL.md`](docs/SPRINT_38_TELEGRAM_QA_PROTOCOL.md).
 - **Billing Sprint 37.4 / Alembic v006:** **deferred** (working tree only; not on `HEAD`).
@@ -36,7 +35,7 @@ Do not conflate resources:
 
 ## 3. Current implementation
 
-- Python/FastAPI async backend, SQLAlchemy, SQLite development DB, Alembic; PostgreSQL URL support and CI migration job on `clean-main`.
+- Python/FastAPI async backend, SQLAlchemy, SQLite development DB, Alembic; PostgreSQL URL support and CI migration job on `main`.
 - React 18/Vite Telegram Mini App: Adventure, Map, Character, Quests, Journal, Settings, Tools. Character inventory supports grouped items, equip (engine `EQUIP` intent), and healing potion use via the same `/actions` pipeline as combat chips. Telegram chrome: single MainButton handler, `themeChanged`/`viewportChanged`, error panel retry vs dismiss.
 - Version fence and idempotency receipts protect turns; SSE narrates after commit with offline fallback.
 - Narration: `app/narrator.py` + `app/ai/` (Ollama when configured). **Pro tier is disabled** in API/UI until an OpenRouter adapter exists.
@@ -51,7 +50,7 @@ Do not conflate resources:
 2. **Fyzické QA** Android + iOS proti staging URL (`docs/TELEGRAM_MOBILE_QA_V1.md`).
 3. Closed beta playtest (10–15 players, Czech UI, Lite default) po staging + fyzickém PASS.
 4. Veřejný staging deploy s `docker-compose.staging.yml` (loopback frontend) — **NOT DEPLOYED**.
-5. Merge `clean-main` → `main` when ready (CI green on `188f187` + staging + device QA).
+5. Ship from **`main`** (CI green + staging + device QA before closed beta).
 6. Campaign depth after chapter one: general NPC dialogue, longer routes, balance (30+ minutes).
 7. OpenRouter provider and re-enable Pro tier only with a real adapter (**Pro NOT AVAILABLE** in API/UI today).
 8. Real-money payments **NOT ENABLED**; multiplayer and Redis remain deferred.

@@ -4,7 +4,7 @@
 
 | Item | Status |
 |------|--------|
-| **Remote HEAD** | `91a9ac1` (`origin/clean-main`) — 39.2 auth/back stack |
+| **Remote HEAD** | `2f0669c` (`origin/main`) — Sprint 39 + audit fixes |
 | **Recent UI** | `562ba29` coaching · `5979d53` mobile layout · `91a9ac1` auth FSM |
 | **CI (remote)** | Run **#91** @ `91a9ac1` — **5/5 success** |
 | **Truth doc** | [`docs/REPO_STATUS_CURRENT.md`](docs/REPO_STATUS_CURRENT.md) |

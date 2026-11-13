@@ -4,41 +4,41 @@
 
 | Field | Value |
 |-------|--------|
-| **Remote baseline** | `clean-main` @ `91a9ac1c509190d5056dd43cf52f7cf55644dd59` |
-| **CI reference** | GitHub Actions run **#91** — **5/5 SUCCESS** (proves `91a9ac1` only) |
-| **`main`** | `879dbdd` — release branch; active development on **`clean-main`** |
+| **Primary branch** | **`main`** @ `2f0669c9a9a12aea9437e5137b007a5551029272` |
+| **CI (main)** | Run **#43493374882** — **5/5 SUCCESS** (backend, backend-postgres, backend-slow, frontend, e2e) |
+| **Prior CI (clean-main, pre-merge)** | Run **#43489799957** @ `2f0669c` — **5/5 SUCCESS** |
+| **Old `main` (pre-FF)** | `879dbddb7d810f72ed9d44fa32bdbdddea65d0cc` |
 | **Staging HTTPS** | **NOT DEPLOYED** |
 | **Android / iOS Telegram QA** | **NOT TESTED** |
 | **Player playtest** | **NOT TESTED** |
 | **Billing E / Alembic v006** | **DEFERRED** (untracked + local WIP only) |
 
-## Sprint 39 — committed on `origin/clean-main`
+## Branch policy (2026-11-13)
 
-| Sprint | Commit | Subject |
-|--------|--------|---------|
-| 39.1 | `562ba29` | Adventure coaching strip + Bell Warden level hint |
-| 39.1.1 | `5979d53` | Mobile adventure layout + coaching strip in bar |
-| 39.2 | `91a9ac1` | Telegram back stack + auth bootstrap FSM |
+- **`main` is the sole active development branch** (fast-forwarded from `clean-main` @ `2f0669c`).
+- Remote `clean-main` removed after merge to avoid dual-head confusion.
+- Default branch on GitHub should be **`main`**.
 
-## Post-`91a9ac1` local work (this audit)
+## Sprint 39 + audit commits on `main`
 
-Isolated fixes prepared as separate commits (not pushed in this pass):
-
-1. Idempotency receipt binds owner + character + action fingerprint (`409` on mismatch).
-2. Telegram auth cache invalidation / per-`initData` in-flight dedupe.
-3. Trusted-proxy rate-limit client IP + Docker `nginx.conf` `X-Forwarded-For`.
-4. Chapter 1 level cap UI (`MAX_MVP_LEVEL=3` reference + Character screen).
-5. `secret_scan.py` pattern / exclusion updates + CI `permissions: read`.
-6. This document + `PROJECT_BRAIN` / `ROADMAP` / staging doc header sync.
+| Commit | Subject |
+|--------|---------|
+| `562ba29` | Adventure coaching strip + Bell Warden level hint |
+| `5979d53` | Mobile adventure layout fix |
+| `91a9ac1` | Telegram back stack + auth bootstrap FSM |
+| `2e7e6a1` | Idempotency receipt binding |
+| `3902463` | Telegram auth cache invalidation |
+| `d449346` | Level cap UI + proxy rate-limit headers |
+| `37d9c88` | secret_scan hardening |
+| `2f0669c` | Doc sync (pre-merge snapshot) |
 
 ## Deferred (do not ship mixed)
 
 - `app/billing_settlement.py`, `alembic/versions/v006_*`, `tests/test_sprint37_4_*`
-- Mixed billing hunks in `.api_full_working_backup.py` (local backup only)
-- Untracked logs, E2E reports, `data/`, audit artifacts
+- Local backups, logs, `data/`, audit artifacts
 
 ## Next operator actions
 
-1. Push local audit commits when approved; wait for **new** green CI (not #91).
-2. First staging deploy: PostgreSQL **v005**, `LLM_PROVIDER=fallback`, no v006.
-3. Real-device Telegram QA, then closed-beta invite.
+1. Confirm GitHub default branch = `main`.
+2. Staging deploy: PostgreSQL **v005**, Lite-first, no v006.
+3. Device QA + closed-beta playtest.
