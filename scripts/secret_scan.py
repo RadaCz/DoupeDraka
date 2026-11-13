@@ -22,7 +22,9 @@ SKIP_DIRS = {
 
 SKIP_FILES = {
     "scripts/secret_scan.py",
+    "scripts/audit_secret_hygiene.py",
     "tests/test_telegram_auth.py",
+    "tests/test_staging_preflight.py",
     "frontend/e2e/telegram.ts",
 }
 
@@ -35,6 +37,22 @@ PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("groq_api_key", re.compile(r"\bgsk_[A-Za-z0-9]{20,}\b")),
     ("nvidia_api_key", re.compile(r"\bnvapi-[A-Za-z0-9_-]{20,}\b")),
     ("cerebras_api_key", re.compile(r"\bcsk-[A-Za-z0-9]{20,}\b")),
+    ("anthropic_api_key", re.compile(r"\bsk-ant-[A-Za-z0-9_-]{20,}\b")),
+    ("huggingface_token", re.compile(r"\bhf_[A-Za-z0-9]{20,}\b")),
+    # Ignore obvious fixtures (user:pass placeholders / staging-db-secret in tests).
+    (
+        "postgres_url_with_password",
+        re.compile(
+            r"postgres(?:ql)?://(?![^:\s/]+:(?:password|secret|staging-db-secret|doupe)@)"
+            r"[^:\s/]+:[^@\s/]{8,}@"
+        ),
+    ),
+    (
+        "mysql_url_with_password",
+        re.compile(
+            r"mysql(?:\+[^:]+)?://(?![^:\s/]+:(?:password|secret)@)[^:\s/]+:[^@\s/]{8,}@"
+        ),
+    ),
 ]
 
 
