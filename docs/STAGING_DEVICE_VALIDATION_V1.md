@@ -1,6 +1,6 @@
 # Staging & real device validation — Sprint 9
 
-**Repo baseline (audit):** `50a88900756792d72284b40fb162f5639a5c29e9` na `origin/clean-main` — ověř `git rev-parse HEAD` a CI na tomto SHA před deployem.  
+**Repo baseline (deploy):** `37d9c885f2b9a2c76c989e0bdc754ed330b4b04b` na **`main`** — ověř `git rev-parse HEAD` a CI na **tomto** SHA před deployem (CI **#93** @ `2f0669c`).  
 **Poslední nasazený commit:** žádný — **HTTPS staging NOT DEPLOYED** (dokument = příprava před prvním deployem; staging **neběží**, dokud ops nedokončí runbook).  
 **Compose (veřejný staging):** merge `docker-compose.staging.yml` + `python scripts/staging_preflight.py .env.docker --mode staging`; Compose **v2.24+**.  
 **Fyzické QA:** Android **NOT TESTED** · iOS **NOT TESTED** (až po HTTPS `MINI_APP_URL` v Telegramu).  
@@ -123,4 +123,4 @@ Viz [`CLOSED_BETA_ONBOARDING_V1.md`](CLOSED_BETA_ONBOARDING_V1.md) + [`design/CH
 | 7 | Mapa / travel (pokud odemčeno) |
 | 8 | Dotazník + bug šablona z onboarding doc |
 
-**GO beta:** Lite PASS na Android **a** iOS + stabilní HTTPS staging (runtime) + CI zelené na deployovaném commitu (repo baseline `50a8890` k 15.3.1; staging HTTPS a fyzické QA dosud **NOT VERIFIED**).
+**GO beta:** Lite PASS na Android **a** iOS + stabilní HTTPS staging (runtime) + CI zelené na deployovaném commitu (baseline `37d9c88`; staging HTTPS a fyzické QA dosud **NOT VERIFIED**).

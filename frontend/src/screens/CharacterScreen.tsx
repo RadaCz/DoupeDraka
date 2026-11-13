@@ -49,6 +49,23 @@ export function CharacterScreen({
 }) {
   const { t, locale } = useI18n();
 
+  const spellRows = useMemo(
+    () => (character ? heroSpellRows(character, spells) : []),
+    [character, spells],
+  );
+  const features = useMemo(
+    () => (character ? classFeatureLines(character, t) : []),
+    [character, t],
+  );
+  const backgroundFeature = useMemo(
+    () => (character ? backgroundFeatureFor(character) : undefined),
+    [character],
+  );
+  const raceTraits = useMemo(
+    () => (character ? characterRaceFeatureRows(character) : []),
+    [character],
+  );
+
   if (!character) {
     return (
       <section className="screen empty-screen character-v2">
@@ -65,10 +82,6 @@ export function CharacterScreen({
   const equippedShield = equippedShieldInstance(character.item_instances);
   const xp = xpProgress(character.xp);
   const atLevelCap = isAtMaxMvpLevel(character.level, maxLevel);
-  const spellRows = useMemo(() => heroSpellRows(character, spells), [character, spells]);
-  const features = useMemo(() => classFeatureLines(character, t), [character, t]);
-  const backgroundFeature = useMemo(() => backgroundFeatureFor(character), [character]);
-  const raceTraits = useMemo(() => characterRaceFeatureRows(character), [character]);
   const hasSpellcasting = Object.values(character.max_spell_slots ?? {}).some(count => count > 0);
 
   const engineTraitStatus = (trait: { modeled: boolean; deferred: boolean }) => {

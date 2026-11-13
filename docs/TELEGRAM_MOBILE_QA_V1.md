@@ -1,7 +1,7 @@
 # Telegram Mobile QA V1 — Doupě Draka
 
 **Účel:** Jednotný manuální checklist pro **první herní session** v oficiální Telegram Mini App na fyzickém telefonu.  
-**Baseline kódu:** `git rev-parse --short HEAD` na `clean-main` (po Sprintu 5 ověř lokálně).  
+**Baseline kódu:** `git rev-parse --short HEAD` na **`main`** po deployi — minimum **`37d9c88`** (ověř CI na stejném SHA).  
 **Automatizace:** Playwright E2E + Vitest **nenahrazují** tento checklist (viz §L).
 
 **Související:** [`PHYSICAL_TELEGRAM_QA_V2.md`](PHYSICAL_TELEGRAM_QA_V2.md), [`TELEGRAM_PHONE_QA.md`](TELEGRAM_PHONE_QA.md).

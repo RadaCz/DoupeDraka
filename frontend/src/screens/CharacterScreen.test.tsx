@@ -54,4 +54,49 @@ describe('CharacterScreen V2', () => {
     expect(screen.getByText(/Strength · Constitution/)).toBeInTheDocument();
     expect(screen.getByText(/30 ft\./)).toBeInTheDocument();
   });
+
+  it('keeps hook order when character changes between null and a loaded hero', () => {
+    const shell = (
+      <LocaleProvider>
+        <CharacterScreen
+          character={null}
+          characters={[]}
+          spells={spells}
+          onSelect={() => {}}
+          onCreate={() => {}}
+        />
+      </LocaleProvider>
+    );
+    const { rerender: rtlRerender, unmount } = render(shell);
+    expect(screen.getByRole('heading', { name: /Your adventurers/i })).toBeInTheDocument();
+
+    rtlRerender(
+      <LocaleProvider>
+        <CharacterScreen
+          character={hero}
+          characters={[hero]}
+          spells={spells}
+          onSelect={() => {}}
+          onCreate={() => {}}
+        />
+      </LocaleProvider>,
+    );
+    expect(screen.getByRole('heading', { name: 'Grath' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Inventory/i })).toBeInTheDocument();
+    expect(screen.getByText(/ability scores/i)).toBeInTheDocument();
+
+    rtlRerender(
+      <LocaleProvider>
+        <CharacterScreen
+          character={null}
+          characters={[]}
+          spells={spells}
+          onSelect={() => {}}
+          onCreate={() => {}}
+        />
+      </LocaleProvider>,
+    );
+    expect(screen.getByRole('heading', { name: /Your adventurers/i })).toBeInTheDocument();
+    unmount();
+  });
 });

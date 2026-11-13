@@ -1,6 +1,6 @@
 # Sprint 38 — Staging deployment checklist
 
-**Target commit (remote baseline):** `2f0669c9a9a12aea9437e5137b007a5551029272` (`main`) — deploy až po zeleném CI pro konkrétní SHA  
+**Target commit (verified application baseline):** `37d9c885f2b9a2c76c989e0bdc754ed330b4b04b` (`37d9c88` on **`main`**) — deploy až po zeleném CI pro **stejný app SHA** (CI **#93** @ `2f0669c` = poslední známý green na tomto stromu)  
 **Schema head:** Alembic **`v005`** (no `v006` until Billing E ships) — viz [`REPO_STATUS_CURRENT.md`](REPO_STATUS_CURRENT.md)  
 **Mode:** Lite-first (`LLM_PROVIDER=fallback`) — no paid narration provider required  
 **Detailed runbook:** [`STAGING_RUNBOOK_V1.md`](STAGING_RUNBOOK_V1.md)
@@ -14,7 +14,7 @@
 - [ ] TLS certificate on reverse proxy (Caddy/nginx/Traefik)
 - [ ] Telegram bot created in BotFather
 - [ ] **Secrets prepared offline** (never committed): `BOT_TOKEN`, `BOT_API_TOKEN`, Postgres password, optional `ADMIN_API_KEY`
-- [ ] Maintainer confirms GitHub CI **green** on deploy SHA ([run #87](https://github.com/RadaCz/DoupeDraka/actions/runs/43458444949) for `188f187`)
+- [ ] Maintainer confirms GitHub CI **5/5 green** on deploy SHA (baseline: run **[#93](https://github.com/RadaCz/DoupeDraka/actions)** @ `2f0669c`, app tree = `37d9c88`)
 
 **If any item is missing:** stop — **do not claim staging is live**.
 
@@ -22,7 +22,7 @@
 
 ## 1. Repository on server
 
-- [ ] `git fetch` && checkout **`188f187`** (or newer `clean-main` only after CI green)
+- [ ] `git fetch origin` && checkout **`37d9c88`** (or newer **`main`** commit with green CI — no `clean-main`)
 - [ ] **Do not** copy local `data/` or Windows SQLite files to server
 - [ ] **Do not** deploy with uncommitted Billing E (`v006`) unless explicitly approved later
 
@@ -70,7 +70,7 @@ docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.st
 
 - [ ] `docker compose … up -d postgres` — wait until **healthy**
 - [ ] `docker compose … run --rm api alembic upgrade head`
-- [ ] `alembic current` shows head **`v005`** (on RC `188f187`)
+- [ ] `alembic current` shows head **`v005`**
 - [ ] Optional: `alembic check` passes on fresh volume
 
 Persistent data:

@@ -2,7 +2,7 @@
 
 **Purpose:** Exercise the Mini App on **real Android and iOS** clients.  
 **Environment:** HTTPS **staging** only (`MINI_APP_URL` from staging checklist) — not `localhost`, not Playwright.  
-**Baseline build:** `188f187` or newer `clean-main` with green CI.  
+**Baseline build:** `37d9c88` or newer **`main`** with green CI (HTTPS staging required).  
 **Lite mode:** `LLM_PROVIDER=fallback` unless Normal smoke is explicitly scoped.
 
 **Legend:** `PASS` | `FAIL` | `NOT TESTED`  

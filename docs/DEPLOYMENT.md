@@ -82,8 +82,8 @@ Set `PYTEST_DATABASE_URL` to the same URL when running concurrency tests against
 Develop on **`main`** only. Deploy or tag releases from commits with green CI on `main`
 (backend, backend-postgres, backend-slow, frontend, e2e).
 
-**Current repo baseline (2026-11-13):** commit `d296443d84f7a35c709197b3c8e6a4b33c9dd07c` on **`main`**
-— CI run **#95** **5/5 success**. Alembic head: **`v005`**
+**Verified application baseline (2026-11-13):** `37d9c885f2b9a2c76c989e0bdc754ed330b4b04b` on **`main`**
+— CI run **#93** @ `2f0669c` **5/5 success** (doc-only commits may follow on `origin/main`; deploy from app SHAs with green CI). Alembic head: **`v005`**
 (`v006` billing migration is **not** on `HEAD`). **Poslední nasazený staging commit:** none — HTTPS staging deploy remains
 **NOT DEPLOYED** until ops completes the checklist in
 [`STAGING_RUNBOOK_V1.md`](STAGING_RUNBOOK_V1.md) and
@@ -95,9 +95,11 @@ Develop on **`main`** only. Deploy or tag releases from commits with green CI on
 Operational runbook: [`STAGING_RUNBOOK_V1.md`](STAGING_RUNBOOK_V1.md) (architecture, env,
 migrations, backup/rollback, smoke tests).
 
-**Existing stack (no duplicate compose file):** root `docker-compose.yml` builds API
-(`Dockerfile`), production frontend (`frontend/Dockerfile` + nginx `/api` proxy), Postgres 16
-with named volume `pgdata`, and Telegram bot (`python -m app.bot`).
+**Compose stack:** root `docker-compose.yml` builds API (`Dockerfile`), production frontend
+(`frontend/Dockerfile` + `frontend/nginx.conf` proxy `/api` → `api:8000`), Postgres 16 (`pgdata`
+volume), and Telegram bot (`python -m app.bot`). Public staging merges
+**`docker-compose.staging.yml`**: resets Postgres/API/bot ports, binds frontend **`127.0.0.1:5173:80`**
+only (HTTPS terminates on host reverse proxy).
 
 **First staging deploy order** (detail v [`STAGING_RUNBOOK_V1.md`](STAGING_RUNBOOK_V1.md) §4–§6):
 
@@ -131,7 +133,7 @@ container; do not expose `vite` dev server on staging.
 
 ## Continuous integration
 
-GitHub Actions on `main` and `master` runs:
+GitHub Actions on push to **`main`** runs:
 
 - backend: `python -m pytest -q`
 - backend-postgres: `alembic upgrade head`, then `tests/test_concurrency.py` and `tests/test_alembic_v005.py`
