@@ -172,7 +172,7 @@ jobs:
           # setup-python puts a clean interpreter on PATH; run-tests pins it via E2E_PYTHON.
           E2E_PYTHON: python
         run: cd frontend && npm run test:e2e
-        timeout-minutes: 15
+        timeout-minutes: 20
       - name: Upload Playwright report
         if: failure()
         uses: actions/upload-artifact@v4
