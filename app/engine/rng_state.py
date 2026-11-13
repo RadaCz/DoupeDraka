@@ -16,10 +16,16 @@ def _seed_from_character_id(character_id: str) -> int:
     return int(digest[:8], 16)
 
 
-def seed_for_character(character_id: str, e2e_base: int | None = None) -> int:
-    """Stable per-character seed; E2E mode mixes harness base seed with character id."""
+def seed_for_character(
+    character_id: str,
+    e2e_base: int | None = None,
+    *,
+    e2e_identity: str | None = None,
+) -> int:
+    """Production: UUID hash. E2E: hash(base + stable identity), not random UUID."""
     if e2e_base is not None:
-        combined = f"{e2e_base}:{character_id}"
+        stable = (e2e_identity or "").strip() or character_id
+        combined = f"{e2e_base}:{stable}"
         digest = hashlib.sha256(combined.encode()).hexdigest()
         return int(digest[:8], 16)
     return _seed_from_character_id(character_id)
@@ -38,6 +44,7 @@ def bind_engine_rng(
     character: CharacterState,
     engine: GameEngine,
     e2e_base: int | None = None,
+    e2e_identity: str | None = None,
 ) -> None:
     """Load this character's RNG stream into the engine before resolve_action."""
     payload = getattr(character, "rng_state", None)
@@ -47,7 +54,7 @@ def bind_engine_rng(
             return
         except (KeyError, TypeError, ValueError):
             pass
-    engine.rng.seed(seed_for_character(character.id, e2e_base))
+    engine.rng.seed(seed_for_character(character.id, e2e_base, e2e_identity=e2e_identity))
 
 
 def capture_engine_rng(character: CharacterState, engine: GameEngine) -> None:

@@ -11,3 +11,11 @@ def parse_e2e_rng_base() -> int | None:
     if raw is not None and str(raw).isdigit():
         return int(raw)
     return None
+
+
+def build_e2e_rng_identity(telegram_id: int | None, character_name: str) -> str:
+    """Stable E2E dice stream key — independent of per-run character UUID."""
+    name = (character_name or "").strip() or "unnamed"
+    if telegram_id is not None:
+        return f"tg:{telegram_id}:{name}"
+    return f"name:{name}"

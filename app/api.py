@@ -24,7 +24,7 @@ from .engine.service import GameEngine
 from .engine.race_features import enrich_character_dict
 from .engine.rng_state import bind_engine_rng, capture_engine_rng
 from .billing_policy import narration_charge_applies
-from .e2e_rng import parse_e2e_rng_base
+from .e2e_rng import build_e2e_rng_identity, parse_e2e_rng_base
 
 
 def character_api_payload(character: CharacterState) -> dict:
@@ -1154,7 +1154,12 @@ async def commit_action_turn(
 
             turn_location = character.location
             active_monster = MonsterState(**character.combatant) if character.combatant else None
-            bind_engine_rng(character, game, _e2e_rng_base)
+            e2e_identity = (
+                build_e2e_rng_identity(user.telegram_id, character.name)
+                if _e2e_rng_base is not None
+                else None
+            )
+            bind_engine_rng(character, game, _e2e_rng_base, e2e_identity)
             result, monster = game.resolve_action(character, text, active_monster)
             bill_narration = narration_charge_applies(
                 billing_tier=billing_tier,
