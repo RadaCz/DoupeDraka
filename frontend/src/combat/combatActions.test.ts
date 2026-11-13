@@ -76,6 +76,19 @@ describe('combatActions', () => {
     expect(actions.every(a => a.disabled)).toBe(true);
   });
 
+  it('offers End turn when action and bonus are both spent (fighter second wind + attack)', () => {
+    const spent = {
+      ...fighter,
+      level: 3,
+      combat_flags: { action_used: true, bonus_action_used: true },
+    };
+    const actions = buildCombatActions(spent, spells, t);
+    const endTurn = actions.find(a => a.id === 'end_turn');
+    expect(endTurn?.disabled).toBe(false);
+    expect(endTurn?.action).toBe('end turn');
+    expect(actions.find(a => a.id === 'attack')?.disabled).toBe(true);
+  });
+
   it('filters modeled combat spells for wizard', () => {
     const wizard = {
       ...fighter,

@@ -34,8 +34,7 @@ export function shouldOfferEndTurn(character: Character): boolean {
   if (!character.in_combat || character.combat_turn === 'enemy') return false;
   const actionUsed = flag(character, 'action_used');
   const bonusUsed = flag(character, 'bonus_action_used');
-  if (!actionUsed && !bonusUsed) return false;
-  return !(actionUsed && bonusUsed);
+  return actionUsed || bonusUsed;
 }
 
 export function economyDenialReason(

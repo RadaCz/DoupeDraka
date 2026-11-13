@@ -30,11 +30,11 @@ describe('combatEconomy', () => {
     expect(reason).toContain('bonus action');
   });
 
-  it('offers end turn when only one pool was spent', () => {
+  it('offers end turn when any combat pool was spent (including both)', () => {
     expect(shouldOfferEndTurn(combatHero())).toBe(false);
     expect(shouldOfferEndTurn(combatHero({ action_used: true }))).toBe(true);
     expect(shouldOfferEndTurn(combatHero({ bonus_action_used: true }))).toBe(true);
-    expect(shouldOfferEndTurn(combatHero({ action_used: true, bonus_action_used: true }))).toBe(false);
+    expect(shouldOfferEndTurn(combatHero({ action_used: true, bonus_action_used: true }))).toBe(true);
   });
 
   it('classifies Healing Word as bonus', () => {
