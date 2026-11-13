@@ -82,9 +82,10 @@ Set `PYTEST_DATABASE_URL` to the same URL when running concurrency tests against
 Merge `clean-main` into `main` only after CI is green on `clean-main`, including the
 PostgreSQL migration job and Playwright E2E.
 
-**Current `clean-main` repo baseline (2026-11-11):** commit `50a88900756792d72284b40fb162f5639a5c29e9`
-(`50a8890`) — ověř poslední GitHub Actions run na tomto SHA (backend, backend-postgres,
-frontend, e2e). **Poslední nasazený staging commit:** none — HTTPS staging deploy remains
+**Current `clean-main` repo baseline (2026-11-13):** commit `188f1879bceacfe86cd7e19c1e6b10da840a73de`
+(`188f187`) — CI run [#87](https://github.com/RadaCz/DoupeDraka/actions/runs/43458444949) **5/5 success**
+(backend, backend-postgres, backend-slow, frontend, e2e). Alembic head on this tree: **`v005`**
+(`v006` billing migration is **not** on `HEAD`). **Poslední nasazený staging commit:** none — HTTPS staging deploy remains
 **NOT DEPLOYED** until ops completes the checklist in
 [`STAGING_RUNBOOK_V1.md`](STAGING_RUNBOOK_V1.md) and
 [`STAGING_DEVICE_VALIDATION_V1.md`](STAGING_DEVICE_VALIDATION_V1.md). Audit report:

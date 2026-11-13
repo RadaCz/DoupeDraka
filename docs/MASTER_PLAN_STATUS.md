@@ -1,10 +1,10 @@
 # Master plan — stav (sync s DOUPEDRAKA_MASTER_PLAN.md v1.0)
 
-Poslední revize: **2026-11-12 (Sprint 37.1 — Bell Warden UI E2E + blocker closure; HEAD `580494e`, změny necommitnuté)**. Etapy 7–9 záměrně otevřené až po uzavření sólo smyčky.
+Poslední revize: **2026-11-13 (Sprint 38 — release candidate; HEAD `188f187`)**. Etapy 7–9 záměrně otevřené až po uzavření sólo smyčky **a** fyzickém QA.
 
-**Kódový HEAD (committed):** `580494e` = `origin/clean-main` (Sprint 36). **Sprint 37:** audit docs. **Sprint 37.1:** `bell-warden-ui.spec.ts` + E2E helpers — viz `docs/SPRINT_37_CLOSED_BETA_READINESS.md` §37.1 (**READY FOR REVIEW** lokálně); **uzavřená beta NOT READY** (playtest + fyzický Telegram + staging + GHA po novém pushi).
+**Kódový HEAD (committed):** `188f1879bceacfe86cd7e19c1e6b10da840a73de` = `origin/clean-main` (P0.6: RNG, Bell Warden/ghoul E2E, G-09, docs, CI timeout). **Uzavřená beta NOT READY** — staging **NOT DEPLOYED**, fyzický Telegram **NOT TESTED**, lidský playtest **PENDING**.
 
-**CI:** GitHub Actions pro `580494e` — **BLOCKED** lokálně (`gh` chybí). PostgreSQL/Alembic joby ověřit po pushi: `gh run list --commit 580494e`.
+**CI:** GitHub Actions run [#87](https://github.com/RadaCz/DoupeDraka/actions/runs/43458444949) @ `188f187` — **5/5 success** (backend, backend-postgres, backend-slow, frontend, e2e Playwright).
 **Staging HTTPS:** **NOT DEPLOYED** — viz `docs/STAGING_DEVICE_VALIDATION_V1.md`.  
 **Fyzický Telegram:** Android / iOS **NOT TESTED** (`docs/TELEGRAM_MOBILE_QA_V1.md`).  
 **Normal debit/refund na stagingu:** **NOT TESTED**.
@@ -18,7 +18,7 @@ Poslední revize: **2026-11-12 (Sprint 37.1 — Bell Warden UI E2E + blocker clo
 | 4 | First campaign slice | Průběžně | `quests.py` + `/reference` katalog; side quest Crypt; hlavní quest refaktor |
 | 5 | AI DM CZ | **P2 + P2.1 + P3 (WT)** | Paměť, online `scene_kind`, offline fallbacky (`offline_variety`), journal UX stream order + CZ mechaniky |
 | 6 | Mini App & Telegram QA | **Kód připraven; fyzicky NOT TESTED** | Sprint 5: BackButton lifecycle, viewport E2E; `TELEGRAM_MOBILE_QA_V1.md` + `PHYSICAL_TELEGRAM_QA_V2.md` |
-| 7 | Closed beta | **37.1 UI boss VERIFIED; playtest PENDING** | `bell-warden-ui.spec.ts` (46 Playwright); blocker = lidský playtest + staging + fyzický Telegram + CI confirm |
+| 7 | Closed beta | **E2E boss VERIFIED; playtest PENDING** | `bell-warden-ui.spec.ts` + full suite green @ `188f187`; blocker = staging + fyzický Telegram + P1 UX (`docs/SPRINT_38_UX_BACKLOG.md`) |
 | 8 | Co-op MP | Nezačato | Záměrně po sólo kapitole |
 | 9 | Monetizace | Nezačato | GDS01 pilíře v dokumentaci; hypotézy 49/99/149 Kč v `ECONOMY_MODEL_V1.md`; **žádné platby** před playtestem a produktovým go (E6 až po validaci) |
 

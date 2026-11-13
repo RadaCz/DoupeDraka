@@ -1,17 +1,47 @@
 # Roadmap
 
-Updated 2026-11-12 (`4b167ea` committed; **Sprint 37.2–37.3 uncommitted** — see `docs/SPRINT_37_3_INTEGRITY_VERIFICATION_REPORT.md`). Chapter one is a gated six-location slice. ActionIntent routes player commands; **Pro NOT AVAILABLE** until OpenRouter exists.
+## Sprint 38 — Release candidate (2026-11-13)
+
+| Item | Status |
+|------|--------|
+| **HEAD** | `188f1879bceacfe86cd7e19c1e6b10da840a73de` (`clean-main` = `origin`) |
+| **CI** | Run [#87](https://github.com/RadaCz/DoupeDraka/actions/runs/43458444949) — **5/5 success** |
+| **Engineering RC** | P0.6 committed; full pytest/Vitest/E2E green locally post-push |
+| **Staging deploy** | **NOT DEPLOYED** — `docs/SPRINT_38_STAGING_CHECKLIST.md` |
+| **Physical Telegram QA** | **NOT TESTED** — `docs/SPRINT_38_TELEGRAM_QA_PROTOCOL.md` |
+| **Player playtest** | **PENDING** |
+| **Billing E / v006** | **DEFERRED** (working tree only) |
+| **UX P1 backlog** | `docs/SPRINT_38_UX_BACKLOG.md` |
+| **Proposed Sprint 39** | `docs/SPRINT_38_IMPLEMENTATION_PROPOSAL.md` |
+
+**Alpha player-ready:** not yet — ops (staging) + device QA + P1 UX before closed beta.
+
+---
+
+Updated 2026-11-13 — historical sections below may predate P0.6; trust Sprint 38 banner + `docs/SPRINT_38_RELEASE_CANDIDATE_STATUS.md`.
+
+## Priority 0k.1 — Audit `4b167ea` remediation (local, uncommitted)
+
+- [x] Do not re-implement B-03…B-09 — regression verify only
+- [x] B-02 held-receipt recovery + unique ledger refs (`billing_settlement` + `test_sprint37_4_*`)
+- [x] S-01 secret hygiene tooling (tracked / ZIP / git history paths; no secret values in output)
+- [x] P2 closed-beta: G-01 Lucky, G-05 Misty teleport, G-08 bonus spells, G-09 modeled picks, G-10 L3 cap (BE+FE+docs), G-15 proxy RL
+- [x] E2E harness: `.venv-e2e`, direct Uvicorn ownership, smoke dedupe ×7, phase timeouts, `--continue-on-error`, port checks
+- [x] E2E 7/7 continuous matrix — **CLOSED @ `188f187`** (P0.3/P0.6; viz `reports/e2e-full-p06.log`)
+- [x] Remediation report with FIXED_VERIFIED / … taxonomy
+- [ ] Operator key rotation — **PENDING** (ops, not code)
+- [x] P0.6 commit / push / CI — **DONE** (`188f187`, run #87); Billing E still uncommitted
 
 ## Priority 0k — Closed beta readiness (Sprint 37 / 37.1)
 
 - [x] Player journey map + risk E2E inventory (`SPRINT_37_CLOSED_BETA_READINESS.md`)
-- [x] Bell Warden defeat via UI combat deck — `e2e/bell-warden-ui.spec.ts` (**VERIFIED** local)
-- [x] Local gates (37.3): pytest **798 full**, **777 fast**, **309 regress**, **21 slow**, Vitest **171**, `typecheck` + `typecheck:e2e`, build, secret scan — Playwright **not re-run** (37.3)
+- [x] Bell Warden defeat via UI combat deck — **CLOSED @ `188f187`** (`bell-warden-ui.spec.ts` + full suite)
+- [x] Local gates (37.3): pytest integrity + billing settlement + secret scan
 - [x] `CLOSED_BETA_PLAYTEST_GUIDE.md` v1.1
 - [ ] Execute 3–5 tester playtest — **PENDING**
 - [ ] Staging HTTPS + Normal provider smoke — **BLOCKED**
 - [ ] Physical Telegram QA — **PENDING** (`TELEGRAM_MOBILE_QA_V1.md`)
-- [ ] Confirm GitHub Actions (`gh` lokálně chybí; po pushi nového SHA)
+- [x] GitHub Actions @ `188f187` — run [#87](https://github.com/RadaCz/DoupeDraka/actions/runs/43458444949) success
 
 ## Priority 0j.5 — Level-up L1–L3 (Sprint 35 / 35.3, local)
 - [x] MVP XP 100/level (not SRD table); combat vs story XP contracts

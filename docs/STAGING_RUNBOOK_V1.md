@@ -1,6 +1,6 @@
 # Staging deployment runbook V1 — Lite-first
 
-**Repo baseline (audit / připravenost k deployi):** `50a88900756792d72284b40fb162f5639a5c29e9` na `clean-main` — ověř `git rev-parse HEAD` před nasazením; CI na tomto commitu má být zelené (backend, backend-postgres, frontend, E2E).  
+**Repo baseline (audit / připravenost k deployi):** `188f1879bceacfe86cd7e19c1e6b10da840a73de` na `clean-main` — ověř `git rev-parse HEAD` před nasazením; CI run [#87](https://github.com/RadaCz/DoupeDraka/actions/runs/43458444949) (5 jobů včetně e2e). Alembic head **`v005`** na tomto commitu.  
 **Poslední nasazený commit (runtime):** **žádný** — HTTPS staging **NOT DEPLOYED** (tento runbook připravuje první deploy; neznamená to, že staging už běží).  
 **Související:** [`DEPLOYMENT.md`](DEPLOYMENT.md), [`STAGING_DEVICE_VALIDATION_V1.md`](STAGING_DEVICE_VALIDATION_V1.md), [`TELEGRAM_MOBILE_QA_V1.md`](TELEGRAM_MOBILE_QA_V1.md), [`SPRINT_15_3_STAGING_AND_PLAYER_VALIDATION.md`](SPRINT_15_3_STAGING_AND_PLAYER_VALIDATION.md), [`SPRINT_15_3_1_DOCUMENTATION_TRUTH_SYNC.md`](SPRINT_15_3_1_DOCUMENTATION_TRUTH_SYNC.md).
 
@@ -110,12 +110,12 @@ python scripts/secret_scan.py
 
 | Krok | Akce |
 |------|------|
-| 1 | Checkout repo na commit s **zeleným CI** (audit baseline: `50a8890` na `clean-main`); `.env.docker` na serveru vyplněn (§3). |
+| 1 | Checkout repo na commit s **zeleným CI** (audit baseline: `188f187` na `clean-main`); `.env.docker` na serveru vyplněn (§3). |
 | 2 | `python scripts/staging_preflight.py .env.docker --mode staging` → exit 0. |
 | 3 | `docker compose … config` — validace merge `docker-compose.yml` + `docker-compose.staging.yml` (Compose **v2.24+**). |
 | 4 | `build` (při prvním deployi nebo po změně Dockerfile). |
 | 5 | `up -d postgres` — počkat na **healthy** healthcheck. |
-| 6 | `run --rm api alembic upgrade head` — head **v005**. |
+| 6 | `run --rm api alembic upgrade head` — head **v005** @ `188f187` (před Billing E není `v006`). |
 | 7 | `up -d api frontend bot`. |
 | 8 | HTTPS reverse proxy na `127.0.0.1:5173` (§5.1). |
 | 9 | `curl` `/api/health` a `/api/ready` přes HTTPS (§6). |

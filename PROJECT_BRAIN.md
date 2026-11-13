@@ -2,13 +2,14 @@
 
 > Current source of truth. Code is authoritative; update this summary when behavior changes.
 
-- **Repository:** `D:\DoupeDraka`
+- **Repository:** [RadaCz/DoupeDraka](https://github.com/RadaCz/DoupeDraka) (`D:\DoupeDraka`)
 - **Development branch:** `clean-main` (merge to `main` after green CI only)
-- **Last updated:** 2026-11-11 (Sprint 16 character creation v2 — local, uncommitted)
-- **HEAD (working tree):** `50a8890` on `clean-main` — Character Creation V2 (SRD standard array, backgrounds, skills, gear/spells where modeled); staging HTTPS still **NOT DEPLOYED**.
-- **CI (2026-11-10):** GitHub Actions run `42824720654` na `339271d` — **4/4 SUCCESS**.
-- **Staging:** HTTPS deploy **NOT DEPLOYED**; checklist `docs/STAGING_DEVICE_VALIDATION_V1.md`.
-- **Fyzické QA:** Android / iOS Telegram **NOT TESTED** (`docs/TELEGRAM_MOBILE_QA_V1.md`).
+- **Last updated:** 2026-11-13 (Sprint 38 release candidate truth sync)
+- **HEAD (committed):** `188f1879bceacfe86cd7e19c1e6b10da840a73de` — P0.6 slice (RNG, Bell Warden/ghoul E2E, G-09, CI E2E timeout); staging HTTPS still **NOT DEPLOYED**.
+- **CI (2026-11-13):** GitHub Actions run [#87](https://github.com/RadaCz/DoupeDraka/actions/runs/43458444949) @ `188f187` — **5/5 SUCCESS** (backend, backend-postgres, backend-slow, frontend, e2e).
+- **Staging:** **NOT DEPLOYED** — [`docs/SPRINT_38_STAGING_CHECKLIST.md`](docs/SPRINT_38_STAGING_CHECKLIST.md), [`docs/STAGING_RUNBOOK_V1.md`](docs/STAGING_RUNBOOK_V1.md).
+- **Fyzické QA:** Android / iOS **NOT TESTED** — [`docs/SPRINT_38_TELEGRAM_QA_PROTOCOL.md`](docs/SPRINT_38_TELEGRAM_QA_PROTOCOL.md).
+- **Billing Sprint 37.4 / Alembic v006:** **deferred** (working tree only; not on `HEAD`).
 - **Normal paid narration (debit/refund):** **NOT TESTED** bez provozního providera na stagingu.
 - **External verification:** real Telegram visual QA and Docker/Postgres in production-like deploy remain **UNVERIFIED** by the maintainer.
 
@@ -49,12 +50,12 @@ Do not conflate resources:
 2. **Fyzické QA** Android + iOS proti staging URL (`docs/TELEGRAM_MOBILE_QA_V1.md`).
 3. Closed beta playtest (10–15 players, Czech UI, Lite default) po staging + fyzickém PASS.
 4. Veřejný staging deploy s `docker-compose.staging.yml` (loopback frontend) — **NOT DEPLOYED**.
-5. Merge `clean-main` → `main` when ready (CI green on `339271d`).
+5. Merge `clean-main` → `main` when ready (CI green on `188f187` + staging + device QA).
 6. Campaign depth after chapter one: general NPC dialogue, longer routes, balance (30+ minutes).
 7. OpenRouter provider and re-enable Pro tier only with a real adapter (**Pro NOT AVAILABLE** in API/UI today).
 8. Real-money payments **NOT ENABLED**; multiplayer and Redis remain deferred.
 
-See [ROADMAP.md](./ROADMAP.md) for statuses, [docs/MASTER_PLAN_STATUS.md](./docs/MASTER_PLAN_STATUS.md) for master-plan etapy, and [CHANGELOG.md](./CHANGELOG.md) for session history.
+See [ROADMAP.md](./ROADMAP.md) for statuses, [docs/MASTER_PLAN_STATUS.md](./docs/MASTER_PLAN_STATUS.md) for master-plan etapy, [docs/SPRINT_38_RELEASE_CANDIDATE_STATUS.md](./docs/SPRINT_38_RELEASE_CANDIDATE_STATUS.md) for Alpha RC truth, and [CHANGELOG.md](./CHANGELOG.md) for session history.
 
 ## 5. Documentation map
 
