@@ -732,6 +732,7 @@ async def get_character(character_id: str, user: User = Depends(get_user_by_toke
 
 IDEMPOTENCY_HEADER = "Idempotency-Key"
 IDEMPOTENCY_KEY_LIMIT = 64
+IDEMPOTENCY_ACTION_FIELD = "_idempotency_action"
 MAX_TURN_ATTEMPTS = 3
 IDEMPOTENCY_WINDOW = timedelta(hours=24)
 
@@ -788,7 +789,40 @@ def journal_result(narration: str, events: tuple[str, ...]) -> str:
     return f"{narration}\n\n{facts}" if facts else narration
 
 
-async def replay_receipt(key: str, user: User) -> ActionResponse | None:
+def _decode_action_receipt_response(stored: dict) -> ActionResponse:
+    payload = dict(stored)
+    payload.pop(IDEMPOTENCY_ACTION_FIELD, None)
+    return ActionResponse(**payload)
+
+
+def _encode_action_receipt_response(response: ActionResponse, action: str) -> str:
+    payload = response.model_dump()
+    payload[IDEMPOTENCY_ACTION_FIELD] = action
+    return encode_state(payload)
+
+
+def _assert_receipt_matches_request(
+    receipt: ActionReceipt,
+    user: User,
+    character_id: str,
+    action: str,
+) -> None:
+    if receipt.owner_id != user.id:
+        raise HTTPException(409, "Idempotency key belongs to another account")
+    if receipt.character_id != character_id:
+        raise HTTPException(409, "Idempotency key belongs to another character")
+    stored = decode_state(receipt.response)
+    bound_action = stored.get(IDEMPOTENCY_ACTION_FIELD)
+    if bound_action is not None and bound_action != action:
+        raise HTTPException(409, "Idempotency key was used for a different action")
+
+
+async def replay_receipt(
+    key: str,
+    user: User,
+    character_id: str,
+    action: str,
+) -> ActionResponse | None:
     """Return the stored response for a repeated key instead of resolving again."""
     async with Session() as session:
         now = datetime.utcnow()
@@ -803,9 +837,8 @@ async def replay_receipt(key: str, user: User) -> ActionResponse | None:
         receipt = await session.get(ActionReceipt, key)
         if receipt is None:
             return None
-        if receipt.owner_id != user.id:
-            raise HTTPException(409, "Idempotency key belongs to another account")
-        return ActionResponse(**decode_state(receipt.response))
+        _assert_receipt_matches_request(receipt, user, character_id, action)
+        return _decode_action_receipt_response(decode_state(receipt.response))
 
 
 async def narrate_committed(
@@ -1123,7 +1156,7 @@ async def commit_action_turn(
     billing_tier = billing_tier_for_user(user.model_tier)
     stored_tier = user.model_tier
 
-    replayed = await replay_receipt(key, user)
+    replayed = await replay_receipt(key, user, character_id, text)
     if replayed is not None:
         return replayed, None, None, key, True, 0, billing_tier, stored_tier, False
 
@@ -1198,7 +1231,7 @@ async def commit_action_turn(
                 # so no energy was spent and no event was recorded.
                 await session.rollback()
                 logger.warning(f"Version conflict on character {character_id} at v{base_version}; retrying")
-                replayed = await replay_receipt(key, user)
+                replayed = await replay_receipt(key, user, character_id, text)
                 if replayed is not None:
                     return replayed, None, None, key, True, 0, billing_tier, stored_tier, False
                 await asyncio.sleep(0)
@@ -1252,7 +1285,8 @@ async def commit_action_turn(
                 receipt_created_at = datetime.utcnow()
                 session.add(ActionReceipt(
                     key=key, owner_id=user.id, character_id=character_id,
-                    status="committed", response=encode_state(response.model_dump()),
+                    status="committed",
+                    response=_encode_action_receipt_response(response, text),
                     created_at=receipt_created_at,
                     expires_at=receipt_created_at + IDEMPOTENCY_WINDOW,
                 ))
@@ -1261,7 +1295,7 @@ async def commit_action_turn(
             except IntegrityError:
                 await session.rollback()
                 logger.warning(f"Idempotency receipt race for key {key[:8]}…")
-                replayed = await replay_receipt(key, user)
+                replayed = await replay_receipt(key, user, character_id, text)
                 if replayed is not None:
                     return replayed, None, None, key, True, 0, billing_tier, stored_tier, False
                 raise HTTPException(409, "Concurrent idempotency conflict; retry") from None
