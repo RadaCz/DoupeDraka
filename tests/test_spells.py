@@ -69,7 +69,8 @@ def test_character_initialization_assigns_class_ability_and_selected_spells():
     assert wizard.spellcasting_ability == "int"
     assert {"Fire Bolt", "Mage Hand", "Light"} <= set(wizard.known_spells)
     leveled = [s for s in wizard.known_spells if s not in {"Fire Bolt", "Mage Hand", "Light"}]
-    assert len(leveled) >= 6
+    # G-09 / character_creation: wizard knows 4 level-1 spells at creation (not 6).
+    assert len(leveled) == 4
     assert {"Sacred Flame", "Cure Wounds"} <= set(cleric.prepared_spells)
     assert cleric.known_spells == []
 

@@ -272,7 +272,10 @@ def test_empty_action(setup_db):
     assert response.status_code == 400
 
 
-def test_e2e_fallen_hook_is_hidden_in_normal_runs(setup_db):
+def test_e2e_fallen_hook_is_hidden_in_normal_runs(setup_db, monkeypatch):
+    from app import api as api_module
+
+    monkeypatch.setattr(api_module, "e2e_hooks_enabled", lambda: False)
     client.post("/auth/register", json={"username": "e2ehook", "password": "password123"})
     token = client.post(
         "/auth/login", json={"username": "e2ehook", "password": "password123"}
