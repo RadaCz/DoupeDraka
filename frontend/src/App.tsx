@@ -22,7 +22,20 @@ import type {
   ReferenceCatalog,
   Spell,
 } from './types';
-import { CHARACTER_HUB_SCREENS, MORE_HUB_SCREENS } from './types';
+import { ApiError } from './apiErrors';
+import {
+  type AuthFailureKind,
+  type BootstrapOutcome,
+  type BootstrapPhase,
+  classifyAuthFailure,
+  classifyBootstrapFailure,
+  isBootstrapLoading,
+  resetAppInitForTests,
+  runAppInitOnce,
+  shouldClearBrowserSession,
+  shouldInvalidateSessionToken,
+} from './authSession';
+import { canGoBackFrom, goBackScreen, navigateScreen } from './navigationHistory';
 import { isFallenError } from './game/gameActions';
 import { formatTurnDelta } from './game/turnDelta';
 import { formatJournalStreamResult, mergeJournalAfterRefresh } from './journalFormat';
@@ -59,6 +72,15 @@ const API_URL = import.meta.env.VITE_API_URL || '/api';
 const ACTIVE_CHARACTER_KEY = 'active_character_id';
 let sessionToken: string | null = null;
 
+/** Test-only reset for module session state between Vitest cases. */
+export function __resetAppSessionForTests(): void {
+  sessionToken = null;
+}
+
+export function __readAppSessionTokenForTests(): string | null {
+  return sessionToken;
+}
+
 interface ActionResponse {
   events: string[];
   narration: string;
@@ -73,12 +95,6 @@ interface ActionResponse {
 interface StreamActionEvent {
   type: 'turn' | 'delta' | 'replace' | 'complete';
   data: Record<string, unknown>;
-}
-
-class ApiError extends Error {
-  constructor(message: string, readonly status: number) {
-    super(message);
-  }
 }
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
@@ -188,9 +204,10 @@ function AppContent() {
   const [events, setEvents] = useState<JournalEvent[]>([]);
   const [narrationStatus, setNarrationStatus] = useState<'narrated' | 'fallback' | null>(null);
   const [screen, setScreen] = useState<AppScreen>('home');
-  const [loading, setLoading] = useState(true);
-  const [authenticated, setAuthenticated] = useState(false);
+  const [bootstrapPhase, setBootstrapPhase] = useState<BootstrapPhase>('checking_session');
+  const [authFailureKind, setAuthFailureKind] = useState<AuthFailureKind | null>(null);
   const [authViaBrowser, setAuthViaBrowser] = useState(false);
+  const authenticated = bootstrapPhase === 'authenticated';
   const [telegramLinkNotice, setTelegramLinkNotice] = useState<string | null>(null);
   const [telegramLinkBusy, setTelegramLinkBusy] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -200,6 +217,14 @@ function AppContent() {
   const [error, setError] = useState<string | null>(null);
   const [lastRetryableAction, setLastRetryableAction] = useState<string | null>(null);
   const busyRef = useRef(false);
+  const characterRef = useRef<Character | null>(null);
+  const navStackRef = useRef<AppScreen[]>([]);
+  const bootstrapInFlightRef = useRef(false);
+  const bootstrapPromiseRef = useRef<Promise<BootstrapOutcome> | null>(null);
+
+  useEffect(() => {
+    characterRef.current = character;
+  }, [character]);
   const [turnDelta, setTurnDelta] = useState<string | null>(null);
   const [levelUpNotice, setLevelUpNotice] = useState<LevelUpNotice | null>(null);
   const [showDefeatOverlay, setShowDefeatOverlay] = useState(false);
@@ -213,6 +238,7 @@ function AppContent() {
     setCharacter(selected);
     setEvents([]);
     localStorage.setItem(ACTIVE_CHARACTER_KEY, selected.id);
+    navStackRef.current = [];
     setScreen('home');
     setError(null);
     try {
@@ -230,22 +256,31 @@ function AppContent() {
     }
   }, [character?.id]);
 
-  const telegramBack = useCallback(() => {
-    if (CHARACTER_HUB_SCREENS.includes(screen) && screen !== 'character') {
-      setScreen('character');
-    } else if (MORE_HUB_SCREENS.includes(screen) && screen !== 'more') {
-      setScreen('more');
-    } else if (screen === 'create') {
-      setScreen('home');
-    } else {
-      setScreen('game');
-    }
+  const navigate = useCallback((next: AppScreen) => {
+    setScreen(current => {
+      const transition = navigateScreen(navStackRef.current, current, next, {
+        hasCharacter: Boolean(characterRef.current),
+      });
+      navStackRef.current = transition.stack;
+      return transition.screen;
+    });
     setError(null);
-  }, [screen]);
+  }, []);
+
+  const goBack = useCallback(() => {
+    setScreen(current => {
+      const transition = goBackScreen(navStackRef.current, current);
+      navStackRef.current = transition.stack;
+      return transition.screen;
+    });
+    setError(null);
+  }, []);
+
+  const canGoBack = canGoBackFrom(navStackRef.current, screen);
 
   useEffect(() => {
-    return syncTelegramBackButton(screen, telegramBack);
-  }, [screen, telegramBack]);
+    return syncTelegramBackButton(goBack, canGoBack);
+  }, [screen, goBack, canGoBack]);
 
   useEffect(() => {
     busyRef.current = busy;
@@ -271,11 +306,17 @@ function AppContent() {
     };
   }, [screen, character?.id, character?.hp, busy]);
 
-  const bootstrapSession = useCallback(async (token: string, viaBrowser = false) => {
-    sessionToken = token;
-    setAuthenticated(true);
-    setAuthViaBrowser(viaBrowser);
-
+  const bootstrapSession = useCallback((token: string, viaBrowser = false): Promise<BootstrapOutcome> => {
+    if (bootstrapPromiseRef.current) {
+      return bootstrapPromiseRef.current;
+    }
+    bootstrapInFlightRef.current = true;
+    const run = async (): Promise<BootstrapOutcome> => {
+      sessionToken = token;
+      setBootstrapPhase('loading_account');
+      setAuthFailureKind(null);
+      setError(null);
+      try {
         const [characterList, presetList, referenceData, economyData, spellList] = await Promise.all([
           request<Character[]>('/characters'),
           request<HeroPreset[]>('/characters/presets'),
@@ -290,12 +331,59 @@ function AppContent() {
         setSpells(spellList);
         const storedId = localStorage.getItem(ACTIVE_CHARACTER_KEY);
         const active = characterList.find(item => item.id === storedId) ?? characterList[0] ?? null;
-    if (active) {
-      setCharacter(active);
-      localStorage.setItem(ACTIVE_CHARACTER_KEY, active.id);
-      setEvents(await request<JournalEvent[]>(`/characters/${active.id}/events`));
+        if (active) {
+          setCharacter(active);
+          localStorage.setItem(ACTIVE_CHARACTER_KEY, active.id);
+          setEvents(await request<JournalEvent[]>(`/characters/${active.id}/events`));
+        } else {
+          setCharacter(null);
+          setEvents([]);
+        }
+        setAuthViaBrowser(viaBrowser);
+        setBootstrapPhase('authenticated');
+        return 'ok';
+      } catch (reason) {
+        const kind = classifyBootstrapFailure(reason);
+        if (viaBrowser && shouldClearBrowserSession(kind)) {
+          clearBrowserSessionToken();
+        }
+        if (shouldInvalidateSessionToken(kind)) {
+          sessionToken = null;
+        }
+        setAuthFailureKind(kind);
+        setBootstrapPhase('auth_error');
+        setError(reason instanceof Error ? presentError(reason.message) : t('Could not load your adventure data.'));
+        return kind;
+      } finally {
+        bootstrapInFlightRef.current = false;
+        bootstrapPromiseRef.current = null;
+      }
+    };
+    bootstrapPromiseRef.current = run();
+    return bootstrapPromiseRef.current;
+  }, [presentError, t]);
+
+  const retryTelegramSignIn = useCallback(async () => {
+    const initData = window.Telegram?.WebApp?.initData;
+    if (!initData) return;
+    setError(null);
+    setAuthFailureKind(null);
+    setBootstrapPhase('authenticating');
+    try {
+      const token = await loginWithTelegramInitData(initData);
+      await bootstrapSession(token, false);
+    } catch (reason) {
+      setAuthFailureKind('telegram_auth');
+      setBootstrapPhase('auth_error');
+      setError(reason instanceof Error ? presentError(reason.message) : t('Telegram sign-in failed.'));
     }
-  }, []);
+  }, [bootstrapSession, presentError, t]);
+
+  const retryBootstrap = useCallback(async () => {
+    if (!sessionToken) return;
+    const outcome = await bootstrapSession(sessionToken, authViaBrowser);
+    if (outcome !== 'ok') return;
+  }, [authViaBrowser, bootstrapSession]);
 
   useEffect(() => {
     const telegram = window.Telegram?.WebApp;
@@ -305,26 +393,39 @@ function AppContent() {
     const initData = telegram?.initData;
     const browserToken = readBrowserSessionToken();
 
-    void (async () => {
+    void runAppInitOnce(async () => {
+      setBootstrapPhase('checking_session');
       try {
         if (browserToken) {
-          await bootstrapSession(browserToken, true);
-        } else if (initData) {
+          const outcome = await bootstrapSession(browserToken, true);
+          if (outcome !== 'ok' && outcome === 'session_invalid' && initData) {
+            setBootstrapPhase('authenticating');
+            const token = await loginWithTelegramInitData(initData);
+            await bootstrapSession(token, false);
+            return;
+          }
+          if (outcome !== 'ok') return;
+          return;
+        }
+        if (initData) {
+          setBootstrapPhase('authenticating');
           const token = await loginWithTelegramInitData(initData);
           await bootstrapSession(token, false);
+          return;
         }
+        setBootstrapPhase('awaiting_login');
       } catch (reason) {
+        setAuthFailureKind(initData ? 'telegram_auth' : classifyAuthFailure(reason));
+        setBootstrapPhase('auth_error');
         setError(reason instanceof Error ? presentError(reason.message) : t('Could not sign in or load your adventure.'));
-      } finally {
-        setLoading(false);
       }
-    })();
+    });
 
     return () => {
       unbindChrome();
       teardownTelegramMainButton();
     };
-  }, [bootstrapSession]);
+  }, [bootstrapSession, presentError, t]);
 
   const [browserUsername, setBrowserUsername] = useState('');
   const [browserPassword, setBrowserPassword] = useState('');
@@ -351,15 +452,23 @@ function AppContent() {
   };
 
   const submitBrowserAuth = async (mode: 'login' | 'register') => {
+    if (browserBusy || bootstrapInFlightRef.current) return;
     setBrowserBusy(true);
     setError(null);
+    setAuthFailureKind(null);
     try {
+      setBootstrapPhase('authenticating');
       const token = mode === 'login'
         ? await loginWithPassword(browserUsername.trim(), browserPassword)
         : await registerBrowserAccount(browserUsername.trim(), browserPassword);
       writeBrowserSessionToken(token);
-      await bootstrapSession(token, true);
+      const outcome = await bootstrapSession(token, true);
+      if (outcome !== 'ok') {
+        setAuthFailureKind(outcome === 'bootstrap' ? 'browser_auth' : outcome);
+      }
     } catch (reason) {
+      setAuthFailureKind('browser_auth');
+      setBootstrapPhase('auth_error');
       setError(reason instanceof Error ? presentError(reason.message) : t('Could not sign in.'));
     } finally {
       setBrowserBusy(false);
@@ -429,9 +538,11 @@ function AppContent() {
         }),
       });
       setCharacters(previous => [...previous, created]);
+      characterRef.current = created;
       setCharacter(created);
       localStorage.setItem(ACTIVE_CHARACTER_KEY, created.id);
       setEvents([]);
+      navStackRef.current = [];
       setScreen('game');
     } catch (reason) {
       setError(reason instanceof Error ? presentError(reason.message) : t('Could not create the character.'));
@@ -450,9 +561,11 @@ function AppContent() {
         { method: 'POST' },
       );
       setCharacters(previous => [...previous, created]);
+      characterRef.current = created;
       setCharacter(created);
       localStorage.setItem(ACTIVE_CHARACTER_KEY, created.id);
       setEvents([]);
+      navStackRef.current = [];
       setScreen('game');
     } catch (reason) {
       setError(reason instanceof Error ? presentError(reason.message) : t('Could not create the ready-made hero.'));
@@ -565,7 +678,7 @@ function AppContent() {
         setTurnPhase(readPendingAction() ? 'recovering' : 'idle');
         setEvents(previous => previous.filter(event => event.id !== pendingEventId));
         const message = reason instanceof Error ? reason.message : t('The turn could not be completed.');
-        if (reason instanceof ApiError && reason.status === 402) setScreen('settings');
+        if (reason instanceof ApiError && reason.status === 402) navigate('settings');
         if (reason instanceof ApiError && reason.status === 409 && isFallenError(message)) {
           setError(null);
           try {
@@ -671,17 +784,65 @@ function AppContent() {
     }
   };
 
-  if (loading) return <LoadingScreen message={t('Opening your adventure…')} />;
+  const loadingMessage =
+    bootstrapPhase === 'checking_session'
+      ? t('Checking your session…')
+      : bootstrapPhase === 'authenticating'
+        ? t('Signing you in…')
+        : t('Opening your adventure…');
+
+  if (isBootstrapLoading(bootstrapPhase)) {
+    return <LoadingScreen message={loadingMessage} />;
+  }
+
   if (!authenticated) {
     const inTelegram = Boolean(window.Telegram?.WebApp?.initData);
+    const telegramFailed = authFailureKind === 'telegram_auth' || authFailureKind === 'session_invalid';
+    const showTelegramRetry = inTelegram && bootstrapPhase === 'auth_error' && telegramFailed;
+    const authBusy = browserBusy || isBootstrapLoading(bootstrapPhase);
+    const authErrorMessage =
+      authFailureKind === 'network'
+        ? t('A network error stopped sign-in. Check your connection and try again.')
+        : authFailureKind === 'server'
+          ? t('The server is temporarily unavailable. Try again in a moment.')
+          : authFailureKind === 'session_invalid'
+            ? t('Your saved session expired. Sign in again.')
+            : authFailureKind === 'telegram_auth'
+              ? t('Telegram sign-in failed. Retry below or use a browser account.')
+              : authFailureKind === 'bootstrap'
+                ? t('Your account loaded but game data failed. Try again.')
+                : null;
     return (
       <main className="login-screen">
         <span className="loading-sigil" aria-hidden="true">✦</span>
         <p className="eyebrow">{t('THE WHISPERING CELLAR')}</p>
         <h1>{inTelegram ? t('Your story begins in Telegram') : t('Sign in to continue')}</h1>
+        {sessionToken && bootstrapPhase === 'auth_error' && (authFailureKind === 'bootstrap' || authFailureKind === 'server' || authFailureKind === 'network') && (
+          <div className="browser-auth-actions">
+            <button type="button" className="primary" disabled={authBusy} onClick={() => void retryBootstrap()}>
+              {t('Retry loading adventure data')}
+            </button>
+          </div>
+        )}
         {inTelegram ? (
           <>
-            <p>{t('Sign in with your browser account to link Telegram in Settings, or wait for automatic Telegram sign-in.')}</p>
+            <p>
+              {showTelegramRetry
+                ? t('Telegram is the preferred sign-in inside the Mini App. You can retry or use a browser account below.')
+                : t('Telegram sign-in is recommended here. You can also use a browser account and link Telegram in Settings.')}
+            </p>
+            {showTelegramRetry && (
+              <div className="browser-auth-actions">
+                <button
+                  type="button"
+                  className="primary auth-retry-telegram"
+                  disabled={authBusy}
+                  onClick={() => void retryTelegramSignIn()}
+                >
+                  {t('Retry Telegram sign-in')}
+                </button>
+              </div>
+            )}
             <form
               className="browser-auth-form"
               onSubmit={event => {
@@ -707,68 +868,80 @@ function AppContent() {
                 />
               </label>
               <div className="browser-auth-actions">
-                <button type="submit" disabled={browserBusy || !browserUsername.trim() || browserPassword.length < 6}>
-                  {t('Sign in')}
+                <button type="submit" disabled={authBusy || !browserUsername.trim() || browserPassword.length < 6}>
+                  {authBusy ? t('Signing you in…') : t('Sign in with browser account')}
                 </button>
               </div>
             </form>
           </>
         ) : (
-          <form
-            className="browser-auth-form"
-            onSubmit={event => {
-              event.preventDefault();
-              void submitBrowserAuth('login');
-            }}
-          >
-            <label>
-              {t('Username')}
-              <input
-                autoComplete="username"
-                value={browserUsername}
-                onChange={event => setBrowserUsername(event.target.value)}
-              />
-            </label>
-            <label>
-              {t('Password')}
-              <input
-                type="password"
-                autoComplete="current-password"
-                value={browserPassword}
-                onChange={event => setBrowserPassword(event.target.value)}
-              />
-            </label>
-            <div className="browser-auth-actions">
-              <button type="submit" disabled={browserBusy || !browserUsername.trim() || browserPassword.length < 6}>
-                {t('Sign in')}
-              </button>
-              <button
-                type="button"
-                disabled={browserBusy || !browserUsername.trim() || browserPassword.length < 6}
-                onClick={() => void submitBrowserAuth('register')}
-              >
-                {t('Create account')}
-              </button>
-            </div>
-            <p>{t('Link Telegram later from the same account once you open the Mini App.')}</p>
-          </form>
+          <>
+            <p>{t('Sign in with your username and password. Link Telegram later from Settings when you open the Mini App.')}</p>
+            <form
+              className="browser-auth-form"
+              onSubmit={event => {
+                event.preventDefault();
+                void submitBrowserAuth('login');
+              }}
+            >
+              <label>
+                {t('Username')}
+                <input
+                  autoComplete="username"
+                  value={browserUsername}
+                  onChange={event => setBrowserUsername(event.target.value)}
+                />
+              </label>
+              <label>
+                {t('Password')}
+                <input
+                  type="password"
+                  autoComplete="current-password"
+                  value={browserPassword}
+                  onChange={event => setBrowserPassword(event.target.value)}
+                />
+              </label>
+              <div className="browser-auth-actions">
+                <button type="submit" disabled={authBusy || !browserUsername.trim() || browserPassword.length < 6}>
+                  {authBusy ? t('Signing you in…') : t('Sign in')}
+                </button>
+                <button
+                  type="button"
+                  disabled={authBusy || !browserUsername.trim() || browserPassword.length < 6}
+                  onClick={() => void submitBrowserAuth('register')}
+                >
+                  {t('Create account')}
+                </button>
+              </div>
+            </form>
+          </>
         )}
-        {error && <p className="error" role="alert">{error}</p>}
+        {(authErrorMessage || error) && (
+          <p className="error" role="alert">{authErrorMessage ?? error}</p>
+        )}
       </main>
     );
   }
   if (!catalog) {
-    return <main className="login-screen"><h1>{t('The reference library could not be loaded.')}</h1><p role="alert">{error}</p></main>;
+    return (
+      <main className="login-screen">
+        <h1>{t('The reference library could not be loaded.')}</h1>
+        <p role="alert">{error ?? t('Your account loaded but game data failed. Try again.')}</p>
+        <div className="browser-auth-actions">
+          <button type="button" className="primary" disabled={bootstrapInFlightRef.current} onClick={() => void retryBootstrap()}>
+            {t('Retry loading adventure data')}
+          </button>
+        </div>
+      </main>
+    );
   }
 
-  const navigate = (next: AppScreen) => {
-    if (next === 'game' && !character) {
-      setScreen('home');
-    } else {
-      setScreen(next);
-    }
-    setError(null);
-  };
+  const accountAuth: 'telegram' | 'browser' | 'browser_pending_telegram' =
+    authViaBrowser
+      ? Boolean(window.Telegram?.WebApp?.initData)
+        ? 'browser_pending_telegram'
+        : 'browser'
+      : 'telegram';
 
   return (
     <div className={`app-shell${screen === 'game' ? ' play-active' : ''}`}>
@@ -907,6 +1080,7 @@ function AppContent() {
             onLanguageChange={syncNarrationLanguage}
             onUpdateCampaign={updateCampaign}
             onOpenTools={() => navigate('tools')}
+            accountAuth={accountAuth}
             showTelegramLink={authViaBrowser && Boolean(window.Telegram?.WebApp?.initData)}
             telegramLinkBusy={telegramLinkBusy}
             telegramLinkNotice={telegramLinkNotice}

@@ -1,5 +1,3 @@
-import type { AppScreen } from './types';
-import { MORE_HUB_SCREENS } from './types';
 import { isLightUiColor } from './telegram/colorUtils';
 
 /** Fixed dark-fantasy palette when Telegram theme is light (white cards bug). */
@@ -10,8 +8,6 @@ const GAME_DARK = {
   hint: '#aebaa8',
   button: '#4a8f5c',
 } as const;
-
-const PRIMARY_TABS: AppScreen[] = ['home', 'game', 'character', 'more'];
 
 type MainButtonApi = {
   setText?: (text: string) => void;
@@ -274,13 +270,11 @@ export function haptic(type: 'light' | 'medium' | 'heavy' | 'success' | 'warning
   impact?.(type);
 }
 
-export function syncTelegramBackButton(screen: AppScreen, onBack: () => void) {
+export function syncTelegramBackButton(onBack: () => void, canGoBack: boolean) {
   backButtonState.onBack = onBack;
   const back = backButtonApi();
   if (!back) return () => {};
-  const hubChild = MORE_HUB_SCREENS.includes(screen) && screen !== 'more';
-  const show = hubChild || (!PRIMARY_TABS.includes(screen) && screen !== 'home' && screen !== 'create');
-  if (show) {
+  if (canGoBack) {
     back.show?.();
     ensureBackButtonHandler(back);
     return () => teardownTelegramBackButton();

@@ -1,6 +1,8 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
+import { resetAppInitForTests } from './authSession';
+import { __resetAppSessionForTests } from './App';
 import type { Character, JournalEvent } from './types';
 
 const mockCharacter: Character = {
@@ -257,7 +259,10 @@ function setupApp(initialCharacters: Character[] = [], initialHistory: Record<st
 describe('Telegram Mini App', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    resetAppInitForTests();
+    __resetAppSessionForTests();
     localStorage.clear();
+    sessionStorage.clear();
     vi.stubGlobal('fetch', vi.fn());
     window.Telegram = { WebApp: { initData: 'signed-init-data' } };
   });

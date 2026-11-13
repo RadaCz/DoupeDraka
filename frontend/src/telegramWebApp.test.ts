@@ -156,6 +156,38 @@ describe('telegramWebApp', () => {
     expect(document.documentElement.style.getPropertyValue('--app-safe-top')).toBe('44px');
   });
 
+  it('updates BackButton callback without duplicate listeners', () => {
+    const calls: string[] = [];
+    const handlers: Array<() => void> = [];
+    const btn = {
+      show: vi.fn(),
+      hide: vi.fn(),
+      onClick: vi.fn((handler: () => void) => handlers.push(handler)),
+      offClick: vi.fn(),
+    };
+    window.Telegram = { WebApp: { BackButton: btn } };
+
+    syncTelegramBackButton(() => calls.push('first'), true);
+    syncTelegramBackButton(() => calls.push('second'), true);
+    expect(btn.onClick).toHaveBeenCalledTimes(1);
+    handlers[0]?.();
+    expect(calls).toEqual(['second']);
+  });
+
+  it('hides BackButton on root tabs and shows on nested screens', () => {
+    const btn = {
+      show: vi.fn(),
+      hide: vi.fn(),
+      onClick: vi.fn(),
+      offClick: vi.fn(),
+    };
+    window.Telegram = { WebApp: { BackButton: btn } };
+    syncTelegramBackButton(() => {}, false);
+    expect(btn.hide).toHaveBeenCalled();
+    syncTelegramBackButton(() => {}, true);
+    expect(btn.show).toHaveBeenCalled();
+  });
+
   it('registers a single BackButton handler across sync calls', () => {
     const calls: string[] = [];
     const handlers: Array<() => void> = [];
@@ -167,9 +199,9 @@ describe('telegramWebApp', () => {
     };
     window.Telegram = { WebApp: { BackButton: btn } };
 
-    const cleanup = syncTelegramBackButton('map', () => calls.push('back'));
-    syncTelegramBackButton('map', () => calls.push('back'));
-    syncTelegramBackButton('map', () => calls.push('back'));
+    const cleanup = syncTelegramBackButton(() => calls.push('back'), true);
+    syncTelegramBackButton(() => calls.push('back'), true);
+    syncTelegramBackButton(() => calls.push('back'), true);
 
     expect(btn.onClick).toHaveBeenCalledTimes(1);
     handlers[0]?.();

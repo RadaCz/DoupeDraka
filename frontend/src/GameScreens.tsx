@@ -11,6 +11,7 @@ import type {
   QuestCatalog,
   Spell,
 } from './types';
+import { MORE_HUB_SCREENS } from './types';
 import { useI18n } from './i18n';
 import { displayLocation } from './i18n/gameDisplay';
 import { questStepsFromCatalog, visibleQuestTimeline } from './questProgress';
@@ -375,6 +376,8 @@ export function JournalScreen({
   );
 }
 
+export type AccountAuthPresentation = 'telegram' | 'browser' | 'browser_pending_telegram';
+
 export function SettingsScreen({
   character,
   economy,
@@ -384,6 +387,7 @@ export function SettingsScreen({
   onLanguageChange,
   onUpdateCampaign,
   onOpenTools,
+  accountAuth,
   showTelegramLink,
   telegramLinkBusy,
   telegramLinkNotice,
@@ -397,15 +401,35 @@ export function SettingsScreen({
   onLanguageChange?: (language: 'en' | 'cs') => void;
   onUpdateCampaign?: (settings: Record<string, string | boolean>) => void;
   onOpenTools?: () => void;
+  accountAuth?: AccountAuthPresentation;
   showTelegramLink?: boolean;
   telegramLinkBusy?: boolean;
   telegramLinkNotice?: string | null;
   onLinkTelegram?: () => void;
 }) {
   const { t, locale, setLocale } = useI18n();
+  const accountStatusLabel =
+    accountAuth === 'telegram'
+      ? t('Signed in with Telegram')
+      : accountAuth === 'browser_pending_telegram'
+        ? t('Browser account — link Telegram to unify access')
+        : accountAuth === 'browser'
+          ? t('Signed in with a browser account')
+          : null;
   return (
     <section className="screen settings-screen">
       <div className="page-title"><p className="eyebrow">{t('YOUR PREFERENCES')}</p><h1>{t('Settings')}</h1><p>{t('Manage how each adventure turn is narrated.')}</p></div>
+      {accountStatusLabel && (
+        <section className="section-block account-status-block" aria-labelledby="account-status-heading">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">{t('ACCOUNT')}</p>
+              <h2 id="account-status-heading">{t('Sign-in method')}</h2>
+            </div>
+          </div>
+          <p className="account-status-copy" role="status">{accountStatusLabel}</p>
+        </section>
+      )}
       {showTelegramLink && onLinkTelegram && (
         <section className="section-block telegram-link-block" aria-labelledby="telegram-link-heading">
           <div className="section-heading">
@@ -547,7 +571,7 @@ export function MoreScreen({
 
 export function BottomNav({ screen, onNavigate }: { screen: AppScreen; onNavigate: (screen: AppScreen) => void }) {
   const { t } = useI18n();
-  const moreScreens: AppScreen[] = ['more', 'journal', 'settings', 'tools', 'campaign', 'map', 'quests'];
+  const moreScreens = MORE_HUB_SCREENS;
   const characterScreens: AppScreen[] = ['character'];
   const active: AppScreen =
     screen === 'create' || screen === 'home'

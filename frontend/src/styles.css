@@ -3331,6 +3331,26 @@ summary:focus-visible {
   line-height: 1.6;
 }
 
+.login-screen .browser-auth-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(100%, 320px);
+  margin: 12px 0;
+}
+
+.login-screen .browser-auth-actions button,
+.login-screen .browser-auth-form button {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.settings-screen .account-status-copy {
+  color: #c5d4c6;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
 .login-screen .attribution,
 .loading-screen .attribution {
   position: absolute;

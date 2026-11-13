@@ -245,5 +245,5 @@ export type AppScreen =
   | 'journal'
   | 'more';
 
-export const MORE_HUB_SCREENS: AppScreen[] = ['more', 'journal', 'settings', 'tools', 'campaign', 'map'];
-export const CHARACTER_HUB_SCREENS: AppScreen[] = ['character'];
+/** Screens that highlight the More bottom-nav tab (not a back-stack parent). */
+export const MORE_HUB_SCREENS: AppScreen[] = ['more', 'journal', 'settings', 'tools', 'campaign', 'map', 'quests'];
