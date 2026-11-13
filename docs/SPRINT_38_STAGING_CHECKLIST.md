@@ -1,7 +1,7 @@
 # Sprint 38 — Staging deployment checklist
 
-**Target commit:** `188f1879bceacfe86cd7e19c1e6b10da840a73de` (`clean-main`)  
-**Schema head on that commit:** Alembic **`v005`** (no `v006` until Billing E ships)  
+**Target commit (remote baseline):** `91a9ac1c509190d5056dd43cf52f7cf55644dd59` (`clean-main`) — deploy až po zeleném CI pro konkrétní SHA  
+**Schema head:** Alembic **`v005`** (no `v006` until Billing E ships) — viz [`REPO_STATUS_CURRENT.md`](REPO_STATUS_CURRENT.md)  
 **Mode:** Lite-first (`LLM_PROVIDER=fallback`) — no paid narration provider required  
 **Detailed runbook:** [`STAGING_RUNBOOK_V1.md`](STAGING_RUNBOOK_V1.md)
 

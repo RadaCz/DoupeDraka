@@ -1,10 +1,10 @@
 # Master plan — stav (sync s DOUPEDRAKA_MASTER_PLAN.md v1.0)
 
-Poslední revize: **2026-11-13 (Sprint 38 — release candidate; HEAD `188f187`)**. Etapy 7–9 záměrně otevřené až po uzavření sólo smyčky **a** fyzickém QA.
+Poslední revize: **2026-11-13 (Sprint 39 + repo audit)**. Aktuální pravda: [`REPO_STATUS_CURRENT.md`](REPO_STATUS_CURRENT.md). Etapy 7–9 až po staging + fyzickém QA.
 
-**Kódový HEAD (committed):** `188f1879bceacfe86cd7e19c1e6b10da840a73de` = `origin/clean-main` (P0.6: RNG, Bell Warden/ghoul E2E, G-09, docs, CI timeout). **Uzavřená beta NOT READY** — staging **NOT DEPLOYED**, fyzický Telegram **NOT TESTED**, lidský playtest **PENDING**.
+**Kódový HEAD (remote):** `91a9ac1c509190d5056dd43cf52f7cf55644dd59` = `origin/clean-main` (Sprint 39.2 auth/navigation). **Uzavřená beta NOT READY** — staging **NOT DEPLOYED**, Telegram **NOT TESTED**, playtest **NOT TESTED**.
 
-**CI:** GitHub Actions run [#87](https://github.com/RadaCz/DoupeDraka/actions/runs/43458444949) @ `188f187` — **5/5 success** (backend, backend-postgres, backend-slow, frontend, e2e Playwright).
+**CI (remote baseline):** GitHub Actions run **#91** @ `91a9ac1` — **5/5 success** (nové lokální commity vyžadují nový CI běh).
 **Staging HTTPS:** **NOT DEPLOYED** — viz `docs/STAGING_DEVICE_VALIDATION_V1.md`.  
 **Fyzický Telegram:** Android / iOS **NOT TESTED** (`docs/TELEGRAM_MOBILE_QA_V1.md`).  
 **Normal debit/refund na stagingu:** **NOT TESTED**.

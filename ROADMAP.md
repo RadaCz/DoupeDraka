@@ -1,24 +1,24 @@
 # Roadmap
 
-## Sprint 38 — Release candidate (2026-11-13)
+## Sprint 39 — status (2026-11-13)
 
 | Item | Status |
 |------|--------|
-| **HEAD** | `188f1879bceacfe86cd7e19c1e6b10da840a73de` (`clean-main` = `origin`) |
-| **CI** | Run [#87](https://github.com/RadaCz/DoupeDraka/actions/runs/43458444949) — **5/5 success** |
-| **Engineering RC** | P0.6 committed; full pytest/Vitest/E2E green locally post-push |
-| **Staging deploy** | **NOT DEPLOYED** — `docs/SPRINT_38_STAGING_CHECKLIST.md` |
-| **Physical Telegram QA** | **NOT TESTED** — `docs/SPRINT_38_TELEGRAM_QA_PROTOCOL.md` |
-| **Player playtest** | **PENDING** |
-| **Billing E / v006** | **DEFERRED** (working tree only) |
-| **UX P1 backlog** | `docs/SPRINT_38_UX_BACKLOG.md` |
-| **Proposed Sprint 39** | `docs/SPRINT_38_IMPLEMENTATION_PROPOSAL.md` |
+| **Remote HEAD** | `91a9ac1` (`origin/clean-main`) — 39.2 auth/back stack |
+| **Recent UI** | `562ba29` coaching · `5979d53` mobile layout · `91a9ac1` auth FSM |
+| **CI (remote)** | Run **#91** @ `91a9ac1` — **5/5 success** |
+| **Truth doc** | [`docs/REPO_STATUS_CURRENT.md`](docs/REPO_STATUS_CURRENT.md) |
+| **Staging deploy** | **NOT DEPLOYED** |
+| **Physical Telegram QA** | **NOT TESTED** |
+| **Player playtest** | **NOT TESTED** |
+| **Billing E / v006** | **DEFERRED** |
+| **UX P1 backlog** | `docs/SPRINT_38_UX_BACKLOG.md` (verify against code before marking done) |
 
-**Alpha player-ready:** not yet — ops (staging) + device QA + P1 UX before closed beta.
+**Closed beta:** not yet — staging ops + device QA + remaining P1 UX.
 
 ---
 
-Updated 2026-11-13 — historical sections below may predate P0.6; trust Sprint 38 banner + `docs/SPRINT_38_RELEASE_CANDIDATE_STATUS.md`.
+Updated 2026-11-13 — sections below are historical snapshots (Sprint 38 RC @ `188f187`, etc.).
 
 ## Priority 0k.1 — Audit `4b167ea` remediation (local, uncommitted)
 

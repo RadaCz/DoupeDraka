@@ -4,9 +4,10 @@
 
 - **Repository:** [RadaCz/DoupeDraka](https://github.com/RadaCz/DoupeDraka) (`D:\DoupeDraka`)
 - **Development branch:** `clean-main` (merge to `main` after green CI only)
-- **Last updated:** 2026-11-13 (Sprint 38 release candidate truth sync)
-- **HEAD (committed):** `188f1879bceacfe86cd7e19c1e6b10da840a73de` — P0.6 slice (RNG, Bell Warden/ghoul E2E, G-09, CI E2E timeout); staging HTTPS still **NOT DEPLOYED**.
-- **CI (2026-11-13):** GitHub Actions run [#87](https://github.com/RadaCz/DoupeDraka/actions/runs/43458444949) @ `188f187` — **5/5 SUCCESS** (backend, backend-postgres, backend-slow, frontend, e2e).
+- **Last updated:** 2026-11-13 (repo audit + Sprint 39 sync — see [`docs/REPO_STATUS_CURRENT.md`](docs/REPO_STATUS_CURRENT.md))
+- **HEAD (remote `clean-main`):** `91a9ac1c509190d5056dd43cf52f7cf55644dd59` — Sprint 39.2 auth/navigation; staging HTTPS **NOT DEPLOYED**.
+- **CI (remote baseline):** GitHub Actions run **#91** @ `91a9ac1` — **5/5 SUCCESS** (new local commits require a fresh CI run).
+- **Active branch:** `clean-main` (not `main`). Merge to `main` only after explicit release approval.
 - **Staging:** **NOT DEPLOYED** — [`docs/SPRINT_38_STAGING_CHECKLIST.md`](docs/SPRINT_38_STAGING_CHECKLIST.md), [`docs/STAGING_RUNBOOK_V1.md`](docs/STAGING_RUNBOOK_V1.md).
 - **Fyzické QA:** Android / iOS **NOT TESTED** — [`docs/SPRINT_38_TELEGRAM_QA_PROTOCOL.md`](docs/SPRINT_38_TELEGRAM_QA_PROTOCOL.md).
 - **Billing Sprint 37.4 / Alembic v006:** **deferred** (working tree only; not on `HEAD`).
