@@ -6,8 +6,8 @@ zranění, HP a mana provádí deterministický Python engine.
 ## Projektová dokumentace
 
 - [Project brain](./PROJECT_BRAIN.md) — aktuální stav a invarianty.
-- [Repo status (current)](./docs/REPO_STATUS_CURRENT.md) — `clean-main` vs `main`, CI, staging.
-- **Branch:** aktivní vývoj na **`main`** (`clean-main` sloučena 2026-11-13).
+- [Repo status (current)](./docs/REPO_STATUS_CURRENT.md) — `main`, HEAD, CI, staging.
+- **Branch:** aktivní vývoj výhradně na **`main`**.
 - [Roadmap](./ROADMAP.md) · [Decision log](./DECISIONS.md) · [session history](./CHANGELOG.md).
 - Technické příručky: [architecture](./docs/ARCHITECTURE.md), [engine](./docs/ENGINE.md),
   [campaign content](./docs/CONTENT.md), [deployment](./docs/DEPLOYMENT.md),
@@ -30,7 +30,8 @@ is coerced offline when a paid stream would leak English.
 - hody, útoky, zranění, iniciativa a odpověď nepřítele;
 - obtížnost (easy/normal/hard) škáluje HP, AC, útok, zranění i odměnu XP;
 - katalog nestvůr, čtveřice hotových hrdinů a pravidla pro tooltipy (rasy, třídy, subclassy, dračí původ);
-- katalog SRD 5.1: 319 kouzel, feat Grappler a background Acolyte;
+- katalog SRD 5.1: 319 kouzel a feat Grappler v referenčním katalogu;
+- šest hratelných MVP backgroundů s kapitolovými schopnostmi v enginu (Acolyte, Criminal, Folk Hero, Sage, Soldier, Hermit);
 - MVP kouzlení pro 8 sesílacích tříd: třídní seznamy triků a kouzel 1. úrovně,
   naučená/připravená kouzla, sloty a omezený počet skutečných efektů;
 - nástroje: kalkulačka vyvážení střetu podle XP prahů a referenční katalog kouzel;
@@ -46,8 +47,9 @@ is coerced offline when a paid stream would leak English.
 ### Co je ve hře skutečně podporované
 
 Průvodce umožňuje vybrat hotového hrdinu nebo vytvořit postavu výběrem rasy a třídy.
-Engine přiděluje základní statistiky a vybavení. Podtřídy, backgroundy a featy jsou
-zatím pouze referenční katalog — jejich výběr ani mechanické efekty nejsou implementované.
+Engine přiděluje základní statistiky a vybavení. Při tvorbě se volí jeden ze **šesti MVP backgroundů**;
+každý má dovednosti, vybavení a **jednorázovou kapitolovou schopnost** (`app/engine/background_features.py`).
+Podtřídy a featy mimo MVP zůstávají referenční katalog v `/reference` bez herních efektů.
 Hra ukládá naučená nebo připravená kouzla pro barda, klerika, druida, paladina,
 hraničáře, čaroděje, kouzelníka a warlocka. Sloty se řídí postupem plné, poloviční nebo
 paktové magie; paladin a hraničář získají první sloty na 2. úrovni. Level-up přidá HP
@@ -66,12 +68,13 @@ Skutečný efekt mají pouze tato kouzla:
   pouze označí ve faktech a zatím se mechanicky neaplikuje;
 - **Magic Missile**: tři automaticky zasahující šipky;
 - **Burning Hands**: záchrana Obratností, při úspěchu poloviční poškození;
+- **Shield**: reakce při příchozím útoku (+5 AC do začátku dalšího tahu); v UI zvolit seslání nebo odmítnutí;
 - **Cure Wounds**: léčení `1k8 + modifikátor sesílací vlastnosti`;
 - **Healing Word**: léčení `1k4 + modifikátor sesílací vlastnosti`. SRD z něj dělá
   bonusovou akci, ale toto MVP ho řeší jako hlavní akci.
 - **Scorching Ray** (2. úroveň): tři samostatné útoky, každý za `2k6` poškození;
-- **Misty Step** (2. úroveň): při aktivním boji ukončí střet jako útěk; mimo boj není
-  cíl přesunu modelován, takže kouzlo neodečte slot;
+- **Misty Step** (2. úroveň): v boji funguje jako únik ze střetu (ne plný teleport na jinou lokaci);
+  mimo boj není cíl přesunu modelován, takže kouzlo neodečte slot;
 - **Invisibility** (2. úroveň): nastaví stav neviditelnosti, který skončí při útoku nebo
   seslání jiného kouzla. Neviditelnost zatím nemění útoky nepřátel ani další mechaniky.
 
@@ -195,9 +198,8 @@ cd D:\DoupeDraka
 python -m pytest -q
 ```
 
-Baseline na `0112747` (lokálně ověř): **457** pytest (2 skipped), frontend **137** Vitest,
-Playwright E2E **14** testů (+ volitelný visual). CI na `clean-main`: pip cache, npm cache,
-Playwright browser cache — viz [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md).
+Na `main` @ `ab2a3e0` (CI **#94**, 5/5): backend **793+** pytest (fast), **21** slow, **11** Postgres,
+Vitest **215**, Playwright **51** E2E. Viz [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md).
 
 ### Volitelný LLM chain (vývoj / budoucí DM)
 
@@ -316,7 +318,7 @@ Na tierech Normal a Pro dostane hráč bez dostatku Adventure Many při změněn
 ## Licence a atribuce
 
 Katalog pravidel používá materiál ze SRD 5.1 pod licencí CC BY 4.0. Kouzla,
-feat Grappler, background Acolyte a subclass data vycházejí z oficiálního SRD;
+feat Grappler a další SRD backgroundy mimo šest MVP vycházejí z oficiálního SRD jako reference;
 API nabízí stručný text kouzel a další katalogová metadata.
 
 This work includes material taken from the System Reference Document 5.1 (“SRD 5.1”) by Wizards of the Coast LLC and available at https://dnd.wizards.com/resources/systems-reference-document. The SRD 5.1 is licensed under the Creative Commons Attribution 4.0 International License available at https://creativecommons.org/licenses/by/4.0/legalcode.

@@ -79,12 +79,11 @@ timestamps and enforces NOT NULL to match ORM models).
 
 Set `PYTEST_DATABASE_URL` to the same URL when running concurrency tests against Postgres (as in CI).
 
-Merge `clean-main` into `main` only after CI is green on `clean-main`, including the
-PostgreSQL migration job and Playwright E2E.
+Develop on **`main`** only. Deploy or tag releases from commits with green CI on `main`
+(backend, backend-postgres, backend-slow, frontend, e2e).
 
-**Current `clean-main` repo baseline (2026-11-13):** commit `188f1879bceacfe86cd7e19c1e6b10da840a73de`
-(`188f187`) — CI run [#87](https://github.com/RadaCz/DoupeDraka/actions/runs/43458444949) **5/5 success**
-(backend, backend-postgres, backend-slow, frontend, e2e). Alembic head on this tree: **`v005`**
+**Current repo baseline (2026-11-13):** commit `ab2a3e06257eebcb0ba10f5b624bd67354f5a865` on **`main`**
+— CI run **#94** **5/5 success**. Alembic head: **`v005`**
 (`v006` billing migration is **not** on `HEAD`). **Poslední nasazený staging commit:** none — HTTPS staging deploy remains
 **NOT DEPLOYED** until ops completes the checklist in
 [`STAGING_RUNBOOK_V1.md`](STAGING_RUNBOOK_V1.md) and
@@ -132,7 +131,7 @@ container; do not expose `vite` dev server on staging.
 
 ## Continuous integration
 
-GitHub Actions on `main`, `master`, and `clean-main` runs:
+GitHub Actions on `main` and `master` runs:
 
 - backend: `python -m pytest -q`
 - backend-postgres: `alembic upgrade head`, then `tests/test_concurrency.py` and `tests/test_alembic_v005.py`

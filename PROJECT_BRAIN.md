@@ -3,10 +3,10 @@
 > Current source of truth. Code is authoritative; update this summary when behavior changes.
 
 - **Repository:** [RadaCz/DoupeDraka](https://github.com/RadaCz/DoupeDraka) (`D:\DoupeDraka`)
-- **Development branch:** **`main`** only (merged from `clean-main` 2026-11-13).
-- **Last updated:** 2026-11-13 (main branch consolidation — see [`docs/REPO_STATUS_CURRENT.md`](docs/REPO_STATUS_CURRENT.md))
-- **HEAD (remote `main`):** `2f0669c9a9a12aea9437e5137b007a5551029272`; staging HTTPS **NOT DEPLOYED**.
-- **CI (main):** GitHub Actions run **#43493374882** @ `2f0669c` — **5/5 SUCCESS**.
+- **Development branch:** **`main`** only.
+- **Last updated:** 2026-11-13 (documentation sync — see [`docs/REPO_STATUS_CURRENT.md`](docs/REPO_STATUS_CURRENT.md))
+- **HEAD (`main`):** `ab2a3e06257eebcb0ba10f5b624bd67354f5a865`; staging HTTPS **NOT DEPLOYED**.
+- **CI:** GitHub Actions run **#94** @ `ab2a3e0` — **5/5 SUCCESS**.
 - **Staging:** **NOT DEPLOYED** — [`docs/SPRINT_38_STAGING_CHECKLIST.md`](docs/SPRINT_38_STAGING_CHECKLIST.md), [`docs/STAGING_RUNBOOK_V1.md`](docs/STAGING_RUNBOOK_V1.md).
 - **Fyzické QA:** Android / iOS **NOT TESTED** — [`docs/SPRINT_38_TELEGRAM_QA_PROTOCOL.md`](docs/SPRINT_38_TELEGRAM_QA_PROTOCOL.md).
 - **Billing Sprint 37.4 / Alembic v006:** **deferred** (working tree only; not on `HEAD`).
@@ -23,7 +23,7 @@
 
 ## 2. Product and invariants
 
-Solo D&D 5e is a Telegram Mini App with an English default UI and Czech UI **with diacritics** (`i18n.tsx` + `applyCzechDiacritics` backfill for legacy keys). Presentation catalog: `localization/chapter_one_display.json`. Players create a hero through **Character Creation V2** (9-step wizard or quick/preset paths using the same engine rules): MVP **four races** and **four classes**, six SRD backgrounds, standard array, class/background skills, equipment packages, cleric/wizard spell picks, narrative personality fields. **Chapter one** has **six main** locations (bell quest → vault → Bell Warden) plus **three optional** sites — nine nodes on the map. Other SRD races/classes remain reference-only in `/reference`.
+Solo D&D 5e is a Telegram Mini App with an English default UI and Czech UI **with diacritics** (`i18n.tsx` + `applyCzechDiacritics` backfill for legacy keys). Presentation catalog: `localization/chapter_one_display.json`. Players create a hero through **Character Creation V2** (9-step wizard or quick/preset paths using the same engine rules): MVP **four races** and **four classes**, **six playable backgrounds** (each with a one-shot chapter feature in `background_features.py`), standard array, class/background skills, equipment packages, cleric/wizard spell picks, narrative personality fields. Additional SRD backgrounds remain reference-only in `/reference`. **Chapter one** has **six main** locations (bell quest → vault → Bell Warden) plus **three optional** sites — nine nodes on the map. Other SRD races/classes remain reference-only in `/reference`.
 
 `app/engine/` owns dice, HP, XP, spell slots, encounters, location transitions, quest flags, ActionIntent routing, and costs. It has no database, Telegram, or LLM calls. The API persists engine outcomes and journal events before streaming narration. Invalid/no-op actions do not spend **narrator credits** (⚡).
 
@@ -40,7 +40,7 @@ Do not conflate resources:
 - Version fence and idempotency receipts protect turns; SSE narrates after commit with offline fallback.
 - Narration: `app/narrator.py` + `app/ai/` (Ollama when configured). **Pro tier is disabled** in API/UI until an OpenRouter adapter exists.
 - **Lite** narration is free and uses the offline narrator only (no paid external API). **Normal** requires a configured external provider and debits ⚡ only when paid narration lands. New accounts start with 100.0 ⚡. No payment gateway is connected. **E3** (dice v1.1, `explore_track`) is **paused** — not in the engine.
-- Spell MVP supports 8 caster classes, cantrips, selected level-1/2 effects, rest recovery, and bounded level progression.
+- Spell MVP supports 8 caster classes, cantrips, selected level-1/2 effects, **Shield reaction** (+5 AC window on incoming attacks), rest recovery, and bounded level progression (L1–L3).
 - Six engine-owned locations, travel gating for vault/pit, bell quest with persistent `bell_acquired`, Bell Warden boss flag `chapter_one_complete`. Quest intents require explicit player commands to Caldus/Nib.
 - Historical patch scripts are preserved under `tools/archive/` and are not maintained utilities.
 

@@ -4,33 +4,22 @@
 
 | Field | Value |
 |-------|--------|
-| **Primary branch** | **`main`** @ `2f0669c9a9a12aea9437e5137b007a5551029272` |
-| **CI (main)** | Run **#43493374882** — **5/5 SUCCESS** (backend, backend-postgres, backend-slow, frontend, e2e) |
-| **Prior CI (clean-main, pre-merge)** | Run **#43489799957** @ `2f0669c` — **5/5 SUCCESS** |
-| **Old `main` (pre-FF)** | `879dbddb7d810f72ed9d44fa32bdbdddea65d0cc` |
+| **Primary branch** | **`main`** |
+| **HEAD** | `ab2a3e06257eebcb0ba10f5b624bd67354f5a865` |
+| **CI** | GitHub Actions run **[#94](https://github.com/RadaCz/DoupeDraka/actions)** — **5/5 SUCCESS** (backend, backend-postgres, backend-slow, frontend, e2e) |
+| **Alembic head (ship)** | **`v005`** (Billing **v006** DEFERRED — not in tree) |
 | **Staging HTTPS** | **NOT DEPLOYED** |
 | **Android / iOS Telegram QA** | **NOT TESTED** |
 | **Player playtest** | **NOT TESTED** |
-| **Billing E / Alembic v006** | **DEFERRED** (untracked + local WIP only) |
 
-## Branch policy (2026-11-13)
+## Branch policy
 
-- **`main` is the sole active development branch** (fast-forwarded from `clean-main` @ `2f0669c`).
-- Remote `clean-main` removed after merge to avoid dual-head confusion.
-- Default branch on GitHub should be **`main`**.
+- **`main` is the only active development branch** (2026-11-13 consolidation complete).
+- Do not use `clean-main` — remote branch removed.
 
-## Sprint 39 + audit commits on `main`
+## Release gates (unchanged)
 
-| Commit | Subject |
-|--------|---------|
-| `562ba29` | Adventure coaching strip + Bell Warden level hint |
-| `5979d53` | Mobile adventure layout fix |
-| `91a9ac1` | Telegram back stack + auth bootstrap FSM |
-| `2e7e6a1` | Idempotency receipt binding |
-| `3902463` | Telegram auth cache invalidation |
-| `d449346` | Level cap UI + proxy rate-limit headers |
-| `37d9c88` | secret_scan hardening |
-| `2f0669c` | Doc sync (pre-merge snapshot) |
+Closed beta still blocked by: staging deploy, physical Telegram QA, real-player playtest.
 
 ## Deferred (do not ship mixed)
 
@@ -39,6 +28,6 @@
 
 ## Next operator actions
 
-1. Confirm GitHub default branch = `main`.
-2. Staging deploy: PostgreSQL **v005**, Lite-first, no v006.
-3. Device QA + closed-beta playtest.
+1. Staging deploy per [`STAGING_RUNBOOK_V1.md`](STAGING_RUNBOOK_V1.md) (Postgres v005, Lite-first).
+2. Physical QA on Android/iOS against staging HTTPS.
+3. Pilot playtest (3–5), then cohort 10–15.

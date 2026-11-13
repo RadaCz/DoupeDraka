@@ -4,9 +4,9 @@
 
 | Item | Status |
 |------|--------|
-| **Remote HEAD** | `2f0669c` (`origin/main`) — Sprint 39 + audit fixes |
-| **Recent UI** | `562ba29` coaching · `5979d53` mobile layout · `91a9ac1` auth FSM |
-| **CI (remote)** | Run **#91** @ `91a9ac1` — **5/5 success** |
+| **Remote HEAD** | `ab2a3e0` (`origin/main`) |
+| **Recent UI** | Sprint 39 (`562ba29` · `5979d53` · `91a9ac1`) + audit fixes (`2e7e6a1`–`ab2a3e0`) |
+| **CI** | Run **#94** @ `ab2a3e0` — **5/5 success** |
 | **Truth doc** | [`docs/REPO_STATUS_CURRENT.md`](docs/REPO_STATUS_CURRENT.md) |
 | **Staging deploy** | **NOT DEPLOYED** |
 | **Physical Telegram QA** | **NOT TESTED** |
@@ -59,7 +59,7 @@ Updated 2026-11-13 — sections below are historical snapshots (Sprint 38 RC @ `
 - [x] Concentration system + CON saves on damage
 - [x] Bless, Shield of Faith, Mage Armor modeled
 - [x] Bonus-action spell pairing rule
-- [ ] Shield (reaction) — backlog
+- [x] Shield (reaction) — Sprint 33 (`reactive_spells.py`, combat UI + E2E)
 
 ## Priority 0j.2 — Spellcasting rules integrity (Sprint 31, committed `36fb99c`)
 - [x] `docs/SPELLCASTING_CONTRACT_V1.md`
@@ -78,7 +78,7 @@ Updated 2026-11-13 — sections below are historical snapshots (Sprint 38 RC @ `
 - [x] Opportunity attacks on leave melee reach (player + enemy)
 - [x] Disengage action (EN/CS UI)
 - [x] `tests/test_sprint29_combat_reactions.py` + `combat-reactions.spec.ts`
-- [ ] Shield / reaction spells — backlog
+- [x] Shield reaction — Sprint 33 (other reaction spells remain backlog)
 
 ## Priority 0i — Engineering reliability (Sprint 28, committed `29745eb`)
 - [x] pytest layers + `scripts/run_tests.ps1` (fast / diagnose / regress / full / slow)
@@ -101,7 +101,7 @@ Updated 2026-11-13 — sections below are historical snapshots (Sprint 38 RC @ `
 - [x] Combat UI economy strip (EN/CS)
 - [x] Tests + E2E spec `combat-action-economy.spec.ts`
 - [x] Opportunity attacks (Sprint 29)
-- [ ] Reaction spells (Shield, …) — backlog
+- [x] Shield reaction — Sprint 33 (other reaction spells — backlog)
 
 ## Priority 0f — Background features (Sprint 24, committed `53a6fed`)
 - [x] `app/engine/background_features.py` — six one-shot chapter gifts
@@ -141,7 +141,7 @@ Updated 2026-11-13 — sections below are historical snapshots (Sprint 38 RC @ `
 - [x] Combat tactics proposal (Heavy/Aim/Defend) — design only: `design/COMBAT_TACTICS_PROPOSAL_V1.md`.
 - [ ] Real-phone verification of header, nav, and keyboard overlap.
 
-## GDS01 — Dice, Resources & Economy (E1–E2b on `clean-main`; product sign-off pending)
+## GDS01 — Dice, Resources & Economy (E1–E2b on `main`; product sign-off pending)
 
 - [x] [`design/DICE_AND_ECONOMY_V1.md`](design/DICE_AND_ECONOMY_V1.md) — kostky, zdroje, billing contract, D6 doporučení
 - [x] [`design/ECONOMY_MODEL_V1.md`](design/ECONOMY_MODEL_V1.md) — session model, náklady (známé/hypotézy)
@@ -151,9 +151,9 @@ Updated 2026-11-13 — sections below are historical snapshots (Sprint 38 RC @ `
 
 | # | Epic | Obsah |
 |---|------|--------|
-| 1 | **E1** | UI copy: Kredity vypravěče; legacy mana — **implemented on `clean-main`** |
-| 2 | **E2** | Default Lite + tier gating dle providera — **implemented on `clean-main`** |
-| 3 | **E2b** | Billing: no charge / refund při fallback — **implemented on `clean-main`** |
+| 1 | **E1** | UI copy: Kredity vypravěče; legacy mana — **implemented** |
+| 2 | **E2** | Default Lite + tier gating dle providera — **implemented** |
+| 3 | **E2b** | Billing: no charge / refund při fallback — **implemented** |
 | 4 | **Min. telemetrie** | `state_changed`, narration outcome, turn/session (E5 minimální rozsah) |
 | 5 | **Playtest** | `CHAPTER_ONE_PLAYTEST_V1` — 10–15 hráčů, kvalitativní go/no-go |
 | 6 | **E3** *(pozastaveno)* | Dice v1.1 (DC, D6 varianta A); `explore_track` není v enginu |
@@ -167,10 +167,10 @@ Platby a produkční top-up zůstávají v **Deferred product decisions** (Prior
 - [x] Mini App UI-1–UI-6: nav, quick actions, graph map, quest next step, hero panels, Telegram chrome.
 - [x] Frontend stabilization: MainButton handler cleanup, Talk/NPC chips, error panel retry, theme/viewport listeners (+ Vitest regressions).
 - [x] Vault/pit travel gating, `bell_acquired` quest persistence, Map/Quest UI.
-- [x] CI on `clean-main`: pytest, Vitest/build, Postgres `alembic upgrade` + concurrency, Playwright E2E.
+- [x] CI on `main`: pytest, Vitest/build, Postgres `alembic upgrade` + concurrency, Playwright E2E.
 - [x] GitHub Actions green on `ec646fc` (run `42679663584`, 4/4 SUCCESS).
 - [x] Inventory equip/use + journal fact layering + chapter-one engine journey tests (local; phone QA pending).
-- [ ] Merge `clean-main` → `main` only after full CI pass (see [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)).
+- [x] `main` is the sole development branch (2026-11-13); see [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md).
 
 ## Priority 1 - Verify actual deployment
 - [ ] Run signed Telegram Mini App visual QA on a real phone: chapter one quest chain, vault gating, Bell Warden, combat, spells, rest.
