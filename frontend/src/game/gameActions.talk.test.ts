@@ -76,6 +76,34 @@ describe('Talk quick action', () => {
     expect(npc?.action).toBe('talk to Caldus about the vault of echoes');
   });
 
+  it('suggests quest travel from corridor to the shrine before the bell quest is accepted', () => {
+    const hero: Character = { ...base, location: 'The Sunken Corridor', quest_flags: {} };
+    const locations = [
+      {
+        name: 'The Whispering Cellar',
+        connections: ['The Sunken Corridor'],
+        arrival_beat: '',
+        encounter_pool: [],
+      },
+      {
+        name: 'The Sunken Corridor',
+        connections: ['The Shrine of the Forgotten', 'The Whispering Cellar'],
+        arrival_beat: '',
+        encounter_pool: [],
+      },
+      {
+        name: 'The Shrine of the Forgotten',
+        connections: ['The Goblin Market', 'The Sunken Corridor'],
+        arrival_beat: '',
+        encounter_pool: [],
+      },
+    ];
+    const travel = resolveQuestTravelAction(hero, locations, t);
+    expect(travel?.action).toBe('travel to The Shrine of the Forgotten');
+    const chips = playActionChips(hero, [], locations, t, false, false);
+    expect(chips.some(c => c.action === 'travel to The Shrine of the Forgotten')).toBe(true);
+  });
+
   it('suggests quest travel from cellar toward corridor before the bell quest is accepted', () => {
     const hero: Character = { ...base, quest_flags: {} };
     const locations = [

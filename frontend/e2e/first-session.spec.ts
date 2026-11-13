@@ -1,11 +1,5 @@
 import { expect, test } from '@playwright/test';
-import {
-  apiTelegramToken,
-  backToAdventure,
-  fetchCharacterState,
-  mapTravelTo,
-  openMap,
-} from './chapter-one-e2e-helpers.ts';
+import { apiTelegramToken, fetchCharacterState } from './chapter-one-e2e-helpers.ts';
 import {
   CELLAR_HEADING,
   completeWizardFighter,
@@ -59,7 +53,6 @@ test('first session: create → overview → travel chip → Caldus → explore'
     return state.location;
   }, { timeout: 30_000 }).toMatch(/Sunken Corridor|Potopen/i);
 
-  // Corridor may open combat or generic chips — use Map UI for the shrine hop.
   const stateAfterCorridor = await fetchCharacterState(request, token, characterId!);
   if (stateAfterCorridor.in_combat) {
     const flee = page.getByRole('button', { name: /^Flee$|^Útěk$|^Utek$/i });
@@ -70,11 +63,14 @@ test('first session: create → overview → travel chip → Caldus → explore'
       await waitForAdventureComposerIdle(page).catch(() => undefined);
     }
   }
-  if (!(await fetchCharacterState(request, token, characterId!)).location.match(/Shrine|Forgotten/i)) {
-    await openMap(page);
-    await mapTravelTo(page, /Shrine|Forgotten|Svatyn/i);
-    await backToAdventure(page);
-  }
+  const shrineChip = page.locator('.suggested-actions-row button').filter({
+    hasText: /Cesta ke Svatyni|Travel to The Shrine|Shrine of the Forgotten|Svatyn[ií] zapomenut/i,
+  });
+  await expect(shrineChip.first()).toBeVisible({ timeout: 20_000 });
+  const stream2 = playStreamResponse(page);
+  await shrineChip.first().click();
+  await stream2;
+  await waitForAdventureComposerIdle(page);
 
   await expect.poll(async () => {
     const state = await fetchCharacterState(request, token, characterId!);
@@ -100,10 +96,12 @@ test('first session: create → overview → travel chip → Caldus → explore'
   const stream4 = playStreamResponse(page);
   await explore.first().click();
   await stream4;
-  await waitForAdventureComposerIdle(page);
+  const combatDeck = page.getByRole('group', { name: /combat actions|bojové akce/i });
+  if (!(await combatDeck.isVisible().catch(() => false))) {
+    await waitForAdventureComposerIdle(page);
+  }
 
   const state = await fetchCharacterState(request, token, characterId!);
-  const combatDeck = page.getByRole('group', { name: /combat actions|bojové akce/i });
   const journal = page.getByRole('log', { name: /adventure journal|deník dobrodružství/i });
   if (state.in_combat) {
     await expect(combatDeck).toBeVisible({ timeout: 15_000 });

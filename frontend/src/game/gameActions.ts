@@ -124,6 +124,8 @@ export function resolveQuestTravelAction(
   if (!destination) {
     if (!quests.bell_quest_accepted && character.location === 'The Whispering Cellar') {
       destination = 'The Sunken Corridor';
+    } else if (!quests.bell_quest_accepted && character.location === 'The Sunken Corridor') {
+      destination = 'The Shrine of the Forgotten';
     } else {
       return null;
     }
