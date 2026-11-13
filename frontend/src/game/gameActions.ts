@@ -63,7 +63,7 @@ export function resolveNpcTalkAction(
 }
 
 /** Tier-3 bosses (Bell Warden) require hero level 3+ — matches `encounters.minimum_level_for_tier`. */
-const BELL_WARDEN_MIN_LEVEL = 3;
+export const BELL_WARDEN_MIN_LEVEL = 3;
 
 /** Background feature chip when location and chapter flags allow a one-time use. */
 export function resolveBackgroundFeatureChip(
@@ -383,6 +383,19 @@ export function primaryPlayChipKey(
     return chips.find(c => c.key === 'panel')?.key ?? chips[0].key;
   }
   return chips.find(c => c.key === 'explore')?.key ?? chips[0].key;
+}
+
+/** Coaching notice when the Bell Warden quest is active but the hero is under the minimum level. */
+export function bellWardenLevelGateNotice(
+  character: Character,
+  t: (value: string) => string,
+): string | null {
+  if (character.in_combat) return null;
+  if (character.quest_flags?.chapter_one_complete) return null;
+  const { active } = visibleQuestTimeline(character.quest_flags ?? {});
+  if (!active || active.id !== 'chapter_one_complete') return null;
+  if (character.level >= BELL_WARDEN_MIN_LEVEL) return null;
+  return `${t('The Bell Warden requires at least level 3.')}${t(' You are level')} ${character.level}. ${t('Gain experience through fights and exploration before you challenge the boss in the pit.')}`;
 }
 
 export function scenePrompt(character: Character, events: JournalEvent[], t: (value: string) => string) {

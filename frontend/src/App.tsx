@@ -822,6 +822,7 @@ function AppContent() {
             onOpenSheet={() => navigate('character')}
             onOpenMap={() => navigate('map')}
             onOpenSettings={() => navigate('settings')}
+            onOpenQuests={() => navigate('quests')}
             onRetryError={
               lastRetryableAction
                 ? () => { if (!busy) void takeAction(lastRetryableAction); }

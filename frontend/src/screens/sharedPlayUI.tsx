@@ -3,7 +3,13 @@ import type { TurnPhase } from '../pendingTurn';
 import type { Character, Economy, JournalEvent, LocationReference, Spell } from '../types';
 import { useI18n } from '../i18n';
 import { displayCreature, displayLocation } from '../i18n/gameDisplay';
-import { isFallenError, playActionChips, primaryPlayChipKey } from '../game/gameActions';
+import {
+  bellWardenLevelGateNotice,
+  isFallenError,
+  playActionChips,
+  primaryPlayChipKey,
+  scenePrompt,
+} from '../game/gameActions';
 import { SpellSlots } from '../components/characterVitals';
 import { JournalChronicle } from '../journal/JournalChronicle';
 import { visibleQuestTimeline } from '../questProgress';
@@ -27,6 +33,7 @@ export interface PlayScreenProps {
   onOpenSettings?: () => void;
   onCancelTurn?: () => void;
   onRetryError?: () => void;
+  onOpenQuests?: () => void;
 }
 
 export function TurnDeltaStrip({ message }: { message: string | null | undefined }) {
@@ -112,6 +119,32 @@ export function PlaySceneChrome({
         )}
       </div>
     </header>
+  );
+}
+
+export function PlayCoachingStrip({
+  character,
+  events,
+  onOpenQuests,
+}: {
+  character: Character;
+  events: JournalEvent[];
+  onOpenQuests?: () => void;
+}) {
+  const { t } = useI18n();
+  const prompt = scenePrompt(character, events, t);
+  const levelNotice = bellWardenLevelGateNotice(character, t);
+  if (!prompt && !levelNotice) return null;
+  return (
+    <div className="play-coaching-strip" role="region" aria-label={t('Scene coaching')}>
+      {prompt ? <p className="play-coaching-text">{prompt}</p> : null}
+      {levelNotice ? <p className="play-coaching-level-gate" role="status">{levelNotice}</p> : null}
+      {onOpenQuests ? (
+        <button type="button" className="play-coaching-quest-link" onClick={onOpenQuests}>
+          {t('View current quest')}
+        </button>
+      ) : null}
+    </div>
   );
 }
 

@@ -148,6 +148,48 @@
   font-size: 0.82rem;
 }
 
+.play-coaching-strip {
+  margin: 0 16px 6px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--gold) 35%, transparent);
+  background: color-mix(in srgb, var(--surface-raised, #1a1f2a) 92%, var(--gold) 8%);
+}
+
+.play-coaching-text,
+.play-coaching-level-gate {
+  margin: 0 0 8px;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: var(--text);
+}
+
+.play-coaching-level-gate {
+  color: color-mix(in srgb, var(--gold) 65%, var(--text));
+  font-weight: 600;
+}
+
+.play-coaching-quest-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 8px 14px;
+  border: 1px solid color-mix(in srgb, var(--accent-verb, #6fcf7f) 45%, transparent);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--accent-verb, #6fcf7f);
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.play-coaching-quest-link:hover,
+.play-coaching-quest-link:focus-visible {
+  background: color-mix(in srgb, var(--accent-verb, #6fcf7f) 12%, transparent);
+}
+
 /* Journal — no chat chrome */
 .game-screen.text-first .game-play-story .journal-scene {
   flex: 1 1 auto;

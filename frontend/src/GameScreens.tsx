@@ -200,6 +200,7 @@ export function GameScreen(props: {
   onOpenSheet: () => void;
   onOpenMap?: () => void;
   onOpenSettings?: () => void;
+  onOpenQuests?: () => void;
   onCancelTurn?: () => void;
   onRetryError?: () => void;
 }) {

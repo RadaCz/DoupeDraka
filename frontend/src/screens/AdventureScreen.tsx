@@ -1,5 +1,6 @@
 import {
   ActionComposer,
+  PlayCoachingStrip,
   PlayJournal,
   PlayErrorPanel,
   PlaySceneChrome,
@@ -8,11 +9,12 @@ import {
 } from './sharedPlayUI';
 
 export function AdventureScreen(props: PlayScreenProps) {
-  const { character, events, turnDelta } = props;
+  const { character, events, turnDelta, onOpenQuests } = props;
 
   return (
     <section className="screen game-screen adventure-screen text-first">
       <PlaySceneChrome character={character} economy={props.economy} events={events} />
+      <PlayCoachingStrip character={character} events={events} onOpenQuests={onOpenQuests} />
       <TurnDeltaStrip message={turnDelta} />
       <div className="game-play-story">
         <PlayJournal {...props} />

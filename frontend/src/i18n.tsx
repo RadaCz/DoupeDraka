@@ -903,6 +903,12 @@ const cs: Record<string, string> = {
   'Character hub': 'Postava',
   'Open world map': 'Otevřít mapu světa',
   'World map and travel': 'Mapa světa a cestování',
+  'Scene coaching': 'Nápověda ke scéně',
+  'View current quest': 'Zobrazit aktuální quest',
+  'The Bell Warden requires at least level 3.': 'Strážce zvonu vyžaduje alespoň 3. úroveň.',
+  ' You are level': ' Jsi na úrovni',
+  'Gain experience through fights and exploration before you challenge the boss in the pit.':
+    'Získej zkušenost v bojích a průzkumu, než v jámě vyzveš bosse.',
   'CURRENT OBJECTIVE': 'AKTUÁLNÍ CÍL',
   'Find out what happened to the shrine bell': 'Zjisti, co se stalo se chrámovým zvonem',
   'Further objectives unlock as you meet people along the way.': 'Další cíle se odemknou, až potkáš lidi na cestě.',

@@ -560,6 +560,63 @@ describe('Telegram Mini App', () => {
     await waitFor(() => expect(screen.getByRole('heading', { name: 'The Whispering Cellar' })).toBeInTheDocument());
   });
 
+  const pitReadyFlags = {
+    bell_quest_accepted: true,
+    bell_acquired: true,
+    bell_found: true,
+    bell_quest_complete: true,
+    vault_hint_given: true,
+    vault_unlocked: true,
+    vault_first_descent_story_awarded: true,
+  };
+
+  it('shows contextual coaching on Adventure for a new hero in the Whispering Cellar', async () => {
+    setupApp([mockCharacter]);
+    render(<App />);
+    await screen.findByRole('heading', { name: /welcome back, rada/i });
+    fireEvent.click(screen.getByRole('button', { name: 'Adventure' }));
+    expect(
+      await screen.findByText(/stolen shrine bell is missing somewhere below/i),
+    ).toBeInTheDocument();
+  });
+
+  it('opens the Quests screen from View current quest on Adventure', async () => {
+    setupApp([mockCharacter]);
+    render(<App />);
+    await screen.findByRole('heading', { name: /welcome back, rada/i });
+    fireEvent.click(screen.getByRole('button', { name: 'Adventure' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'View current quest' }));
+    expect(await screen.findByRole('heading', { name: 'Quests' })).toBeInTheDocument();
+  });
+
+  it('warns below level 3 when the Bell Warden quest is active', async () => {
+    const preBoss = {
+      ...mockCharacter,
+      level: 2,
+      quest_flags: { ...pitReadyFlags },
+    };
+    setupApp([preBoss]);
+    render(<App />);
+    await screen.findByRole('heading', { name: /welcome back, rada/i });
+    fireEvent.click(screen.getByRole('button', { name: 'Adventure' }));
+    expect(await screen.findByText(/Bell Warden requires at least level 3/i)).toBeInTheDocument();
+    expect(screen.getByText(/You are level 2/i)).toBeInTheDocument();
+  });
+
+  it('hides the Bell Warden level warning at level 3', async () => {
+    const ready = {
+      ...mockCharacter,
+      level: 3,
+      quest_flags: { ...pitReadyFlags },
+    };
+    setupApp([ready]);
+    render(<App />);
+    await screen.findByRole('heading', { name: /welcome back, rada/i });
+    fireEvent.click(screen.getByRole('button', { name: 'Adventure' }));
+    await screen.findByRole('button', { name: 'View current quest' });
+    expect(screen.queryByText(/Bell Warden requires at least level 3/i)).not.toBeInTheDocument();
+  });
+
   it('switches the interface to Czech and saves the preference', async () => {
     setupApp([mockCharacter]);
     const { container } = render(<App />);
