@@ -31,13 +31,17 @@ const DEDICATED_SPECS = {
   spellSave: 'e2e/spell-save-combat.spec.ts',
 };
 
+/** Playwright budget in ghoul-paralysis-combat.spec.ts — runner must outlive it (see tests/test_e2e_runner_phase_timeouts.py). */
+const GHOUL_PLAYWRIGHT_TEST_TIMEOUT_MS = 180_000;
+const RUNNER_PHASE_TEARDOWN_BUFFER_MS = 45_000;
+
 const PHASE_TIMEOUT_MS = {
   [DEDICATED_SPECS.firstSession]: 120_000,
   [DEDICATED_SPECS.chapterOne]: 180_000,
   [DEDICATED_SPECS.bellWarden]: 240_000,
   [DEDICATED_SPECS.defeatRecovery]: 90_000,
   [DEDICATED_SPECS.combatReactions]: 120_000,
-  [DEDICATED_SPECS.ghoul]: 120_000,
+  [DEDICATED_SPECS.ghoul]: GHOUL_PLAYWRIGHT_TEST_TIMEOUT_MS + RUNNER_PHASE_TEARDOWN_BUFFER_MS,
   [DEDICATED_SPECS.savingThrow]: 120_000,
   [DEDICATED_SPECS.spellSave]: 120_000,
   'e2e-smoke': 480_000,

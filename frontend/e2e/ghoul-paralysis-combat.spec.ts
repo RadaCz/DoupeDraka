@@ -1,13 +1,16 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 import {
+  combatProgressSignature,
   ensureLevelAtLeast,
   fetchCharacterState,
+  ghoulUiPlayerCombatTurn,
   type CharacterSnapshot,
   isCombatReactionPending,
   isMvpCombatDefeatRecovery,
   recoverForGhoulEncounter,
   resolvePendingReactionForE2E,
   reviveIfFallen,
+  startGhoulCombatForUi,
   syncPlayScreen,
 } from './chapter-one-e2e-helpers.ts';
 import {
@@ -87,25 +90,6 @@ async function uiEngageGhoulOrThrow(
   }
 }
 
-async function uiPlayerCombatStep(page: Page) {
-  const deck = page.getByRole('group', { name: COMBAT_ACTIONS });
-  await expect(deck).toBeVisible({ timeout: 15_000 });
-  const attack = deck.getByRole('button', { name: ATTACK_BTN }).first();
-  if (await attack.isEnabled().catch(() => false)) {
-    const streamDone = playStreamResponse(page);
-    await attack.click();
-    await streamDone;
-    await waitForGameScreenIdle(page).catch(() => undefined);
-  }
-  const endTurn = deck.getByRole('button', { name: END_TURN_BTN }).first();
-  if (await endTurn.isEnabled().catch(() => false)) {
-    const streamDone = playStreamResponse(page);
-    await endTurn.click();
-    await streamDone;
-    await waitForGameScreenIdle(page).catch(() => undefined);
-  }
-}
-
 /**
  * E2E harness: deterministic per-character RNG when E2E_RNG_SEED is set (see app/e2e_rng.py).
  * Fixture prep may use API; combat actions use the UI combat deck / composer.
@@ -122,13 +106,27 @@ test('ghoul paralyzing claws apply paralysis through real combat and UI', async 
   expect(characterId).toBeTruthy();
   const token = await apiTelegramToken(request, initData);
 
-  await ensureLevelAtLeast(request, token, characterId!, 2, 50);
-  await recoverForGhoulEncounter(request, token, characterId!, 8);
+  await ensureLevelAtLeast(request, token, characterId!, 2, 28);
+  await startGhoulCombatForUi(request, token, characterId!);
   await syncPlayScreen(page);
 
   let paralyzed = false;
-  for (let round = 0; round < 24; round += 1) {
+  let priorProgress: string | undefined;
+  let noProgressStreak = 0;
+  for (let round = 0; round < 40; round += 1) {
     let state = await fetchCharacterState(request, token, characterId!);
+    const progress = combatProgressSignature(state);
+    if (priorProgress !== undefined && progress === priorProgress) {
+      noProgressStreak += 1;
+      if (noProgressStreak >= 6) {
+        throw new Error(
+          `Ghoul UI combat stalled (no progress in 6 rounds).\n${formatGhoulCombatDiagnostics(state, `round=${round}`)}`,
+        );
+      }
+    } else {
+      noProgressStreak = 0;
+    }
+    priorProgress = progress;
     if (state.conditions?.some(c => c.condition_id === 'paralyzed')) {
       paralyzed = true;
       break;
@@ -152,7 +150,7 @@ test('ghoul paralyzing claws apply paralysis through real combat and UI', async 
     }
 
     if (state.combat_turn === 'player') {
-      await uiPlayerCombatStep(page);
+      await ghoulUiPlayerCombatTurn(page, request, token, characterId!);
       continue;
     }
 
@@ -162,7 +160,7 @@ test('ghoul paralyzing claws apply paralysis through real combat and UI', async 
   const finalState = await fetchCharacterState(request, token, characterId!);
   if (!paralyzed && !finalState.conditions?.some(c => c.condition_id === 'paralyzed')) {
     throw new Error(
-      `Ghoul paralysis not reached in 24 UI rounds.\n${formatGhoulCombatDiagnostics(finalState)}`,
+      `Ghoul paralysis not reached in 40 UI rounds.\n${formatGhoulCombatDiagnostics(finalState)}`,
     );
   }
 

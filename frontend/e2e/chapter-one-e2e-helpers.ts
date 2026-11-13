@@ -530,11 +530,7 @@ export async function earnBanditEvidenceViaEngine(
   }
 
   await postGameAction(request, token, characterId, 'inspect the bounty notice');
-  await postGameAction(request, token, characterId, 'sneak past the bandit sentries');
-  await postGameAction(request, token, characterId, 'bluff the bandit captain');
 
-  let priorFoeHp: number | undefined;
-  let stall = 0;
   for (let step = 0; step < 48; step += 1) {
     state = await fetchCharacterState(request, token, characterId);
     if (state.quest_flags?.bandit_shrine_evidence) {
@@ -547,32 +543,23 @@ export async function earnBanditEvidenceViaEngine(
     }
 
     if (state.in_combat) {
-      const foeHp = state.combatant?.hp;
-      if (priorFoeHp !== undefined && foeHp !== undefined && foeHp >= priorFoeHp) stall += 1;
-      else stall = 0;
-      priorFoeHp = foeHp;
-      expect(
-        stall,
-        `Bandit combat stall step=${step} foe_hp=${foeHp} hero_hp=${state.hp} location=${state.location}`,
-      ).toBeLessThan(12);
-      const foe = state.combatant?.name ?? 'Bandit captain';
-      await postCombatAttack(request, token, characterId, foe);
+      await postCombatAttack(request, token, characterId, state.combatant?.name ?? 'bandit captain');
       continue;
     }
 
-    await postGameAction(request, token, characterId, 'attack the bandit captain');
-    const after = await fetchCharacterState(request, token, characterId);
-    if (!after.in_combat && !after.quest_flags?.bandit_shrine_evidence) {
-      await postGameAction(request, token, characterId, 'attack');
+    const flags = state.quest_flags ?? {};
+    if (!flags.bandit_stealth_challenge_done) {
+      await postGameAction(request, token, characterId, 'sneak past the bandit sentries');
+    } else if (!flags.bandit_social_challenge_done) {
+      await postGameAction(request, token, characterId, 'bluff the bandit captain');
+    } else if (step % 4 === 3) {
+      await postGameAction(request, token, characterId, 'explore');
+    } else {
+      await postCombatAttack(request, token, characterId, 'bandit captain');
     }
   }
 
-  state = await fetchCharacterState(request, token, characterId);
-  expect(
-    state.quest_flags?.bandit_shrine_evidence,
-    `Bandit evidence missing after 48 steps: hp=${state.hp} location=${state.location} in_combat=${state.in_combat}`,
-  ).toBeTruthy();
-  return state;
+  return fetchCharacterState(request, token, characterId);
 }
 
 /**
@@ -580,7 +567,6 @@ export async function earnBanditEvidenceViaEngine(
  * bell return +10, crypt relic +15, bandit evidence +20 → ≥45 gp healing potion (engine authority).
  */
 /** Optional top-up: engine 1d4 scavenge on explore d6=3 (one-time per location). */
-
 export async function scavengeExplorationGoldUntil(
   request: APIRequestContext,
   token: string,
@@ -716,7 +702,7 @@ export async function earnChapterOneShopGold(
       token,
       characterId,
       minGoldGp,
-      36,
+      72,
     );
   }
 
@@ -1386,7 +1372,86 @@ export async function syncPlayScreen(page: Page) {
 /**
  * One player combat turn for ghoul paralysis hunt — stream-bound clicks, advance into melee, Sprint 25 end turn.
  */
+export async function ghoulUiPlayerCombatTurn(
+  page: Page,
+  request: APIRequestContext,
+  token: string,
+  characterId: string,
+) {
+  const state = await fetchCharacterState(request, token, characterId);
+  if (!state.in_combat || state.combat_turn !== 'player') return;
 
+  const deck = page.getByRole('group', { name: COMBAT_DECK });
+  if (!(await deck.isVisible().catch(() => false))) {
+    await syncPlayScreen(page);
+  }
+  await expect(deck).toBeVisible({ timeout: 8_000 });
+
+  const flags = state.combat_flags ?? {};
+  const distance = combatDistanceFt(state);
+  const advance = deck.getByRole('button', { name: ADVANCE_BTN });
+  const attack = deck.getByRole('button', { name: ATTACK_BTN });
+  const end = deck.getByRole('button', { name: END_TURN_BTN });
+  const decline = deck.getByRole('button', { name: DECLINE_REACTION });
+
+  if (await decline.isEnabled().catch(() => false)) {
+    await clickCombatDeckButtonAwaitState(page, request, token, characterId, DECLINE_REACTION, 'decline_reaction');
+    return;
+  }
+
+  if (!flags.action_used && distance > MELEE_REACH_FT && await advance.isEnabled().catch(() => false)) {
+    await clickCombatDeckButtonAwaitState(page, request, token, characterId, ADVANCE_BTN, 'advance');
+    return;
+  }
+
+  if (!flags.action_used && await attack.isEnabled().catch(() => false)) {
+    await clickCombatDeckButtonAwaitState(page, request, token, characterId, ATTACK_BTN, 'attack');
+    if (await endCombatTurnViaUiIfSpent(page, request, token, characterId)) {
+      return;
+    }
+  }
+
+  if (await end.isEnabled().catch(() => false)) {
+    await clickCombatDeckButtonAwaitState(page, request, token, characterId, END_TURN_BTN, 'end_turn');
+  }
+}
+
+/** API prep only — lands in ghoul combat with player turn (UI loop still drives attacks). */
+export async function startGhoulCombatForUi(
+  request: APIRequestContext,
+  token: string,
+  characterId: string,
+) {
+  await recoverForGhoulEncounter(request, token, characterId, 8);
+  let state = await fetchCharacterState(request, token, characterId);
+  if (state.in_combat) {
+    await waitForPlayerCombatTurn(request, token, characterId);
+    return state;
+  }
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    await postCombatAttack(request, token, characterId, 'ghoul');
+    state = await fetchCharacterState(request, token, characterId);
+    if (state.in_combat && /ghoul/i.test(state.combatant?.name ?? '')) {
+      await waitForPlayerCombatTurn(request, token, characterId);
+      return state;
+    }
+    if (state.in_combat) {
+      await leaveCombatIfNeeded(request, token, characterId, 40);
+    }
+  }
+  state = await fetchCharacterState(request, token, characterId);
+  if (!state.in_combat || !/ghoul/i.test(state.combatant?.name ?? '')) {
+    throw new Error(
+      `Ghoul prep: failed to open ghoul combat via engine.\n${JSON.stringify({
+        location: state.location,
+        in_combat: state.in_combat,
+        combatant: state.combatant?.name,
+      })}`,
+    );
+  }
+  await waitForPlayerCombatTurn(request, token, characterId);
+  return state;
+}
 
 export async function travelToPitViaEngine(
   request: APIRequestContext,

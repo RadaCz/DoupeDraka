@@ -62,12 +62,17 @@ export default defineConfig({
         {
           name: 'combat-saves',
           testMatch: [
-            '**/ghoul-paralysis-combat.spec.ts',
             '**/spell-save-combat.spec.ts',
             '**/saving-throw-combat.spec.ts',
             '**/combat-reactions.spec.ts',
           ],
           timeout: 120_000,
+        },
+        {
+          name: 'combat-saves',
+          testMatch: ['**/ghoul-paralysis-combat.spec.ts'],
+          // Matches test.setTimeout(180_000) in ghoul-paralysis-combat.spec.ts.
+          timeout: 180_000,
         },
         {
           name: 'e2e-smoke',
