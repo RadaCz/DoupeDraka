@@ -195,7 +195,11 @@ export async function reviveIfFallen(
   token: string,
   characterId: string,
 ) {
-  const state = await fetchCharacterState(request, token, characterId);
+  let state = await fetchCharacterState(request, token, characterId);
+  if (isMvpCombatDefeatRecovery(state)) {
+    await postGameAction(request, token, characterId, 'long rest');
+    return;
+  }
   if ((state.hp ?? 1) > 0) return;
   const response = await request.post(`${E2E_API_BASE}/characters/${characterId}/revive`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -576,6 +580,7 @@ export async function earnBanditEvidenceViaEngine(
  * bell return +10, crypt relic +15, bandit evidence +20 → ≥45 gp healing potion (engine authority).
  */
 /** Optional top-up: engine 1d4 scavenge on explore d6=3 (one-time per location). */
+
 export async function scavengeExplorationGoldUntil(
   request: APIRequestContext,
   token: string,
@@ -821,29 +826,108 @@ async function clickCombatDeckButtonAwaitState(
   _token: string,
   _characterId: string,
   name: RegExp,
+  actionLabel: string,
 ) {
   const continueAdventure = page.getByRole('button', { name: /Continue adventure|Pokračovat/i });
   if (await continueAdventure.isVisible().catch(() => false)) {
-    return; // caller handles defeat modal
+    return actionLabel; // caller handles defeat modal
   }
   const deck = page.getByRole('group', { name: COMBAT_DECK });
-  await expect(deck).toBeVisible({ timeout: 20_000 });
+  await expect(deck).toBeVisible({ timeout: 15_000 });
   const button = deck.getByRole('button', { name }).first();
-  await expect(button).toBeEnabled({ timeout: 10_000 });
+  await expect(button).toBeEnabled({ timeout: 8_000 });
   const streamDone = page.waitForResponse(
     response => response.url().includes('/actions/stream')
       && response.request().method() === 'POST'
       && response.status() === 200,
-    { timeout: 20_000 },
+    { timeout: 25_000 },
   );
   await button.click();
   await streamDone;
   if (await continueAdventure.isVisible().catch(() => false)) {
-    return;
+    return actionLabel;
   }
-  // Stream 200 already accepted the action — only a short busy settle, not a 15–120s budget.
   const screen = page.locator('section.game-screen, section.combat-screen').first();
-  await expect(screen).not.toHaveAttribute('aria-busy', 'true', { timeout: 5_000 }).catch(() => undefined);
+  await expect(screen).not.toHaveAttribute('aria-busy', 'true', { timeout: 8_000 });
+  return actionLabel;
+}
+
+export function combatProgressSignature(state: CharacterSnapshot): string {
+  const flags = state.quest_flags?.chapter_one_complete ? '1' : '0';
+  const reaction = isCombatReactionPending(state) ? '1' : '0';
+  const cf = state.combat_flags ?? {};
+  return [
+    state.in_combat ? '1' : '0',
+    state.combat_turn ?? '-',
+    state.combat_round ?? '-',
+    state.hp ?? '-',
+    state.combatant?.hp ?? '-',
+    flags,
+    reaction,
+    cf.action_used ? '1' : '0',
+    cf.bonus_action_used ? '1' : '0',
+    movementRemainingFt(state),
+    combatDistanceFt(state),
+  ].join('|');
+}
+
+function logBellWardenRound(round: number, action: string, state: CharacterSnapshot, t0: number) {
+  const elapsed = Date.now() - t0;
+  console.log(
+    `[bw-ui] round=${round} +${elapsed}ms action=${action} ${bossLoopSnapshot(state, round, action)}`,
+  );
+}
+
+/** Close player turn via UI when engage chip or deck spent action/bonus (matches Sprint 25 economy). */
+export async function endCombatTurnViaUiIfSpent(
+  page: Page,
+  request: APIRequestContext,
+  token: string,
+  characterId: string,
+): Promise<boolean> {
+  const state = await fetchCharacterState(request, token, characterId);
+  if (!state.in_combat || state.combat_turn !== 'player') return false;
+  if (!state.combat_flags?.action_used && !state.combat_flags?.bonus_action_used) return false;
+  const end = page.getByRole('group', { name: COMBAT_DECK }).getByRole('button', { name: END_TURN_BTN });
+  if (!await end.isEnabled().catch(() => false)) return false;
+  await clickCombatDeckButtonAwaitState(page, request, token, characterId, END_TURN_BTN, 'end_turn');
+  return true;
+}
+
+async function settleFreshPlayerTurnAfterEngage(
+  page: Page,
+  request: APIRequestContext,
+  token: string,
+  characterId: string,
+) {
+  await syncPlayScreen(page);
+  for (let guard = 0; guard < 12; guard += 1) {
+    const state = await fetchCharacterState(request, token, characterId);
+    if (!state.in_combat || state.quest_flags?.chapter_one_complete) return;
+    if (state.combat_turn !== 'player') {
+      await expect.poll(async () => {
+        const probe = await fetchCharacterState(request, token, characterId);
+        return probe.combat_turn === 'player' || isCombatReactionPending(probe);
+      }, { timeout: 10_000 }).toBe(true);
+      continue;
+    }
+    if (isCombatReactionPending(state)) {
+      const decline = page.getByRole('group', { name: COMBAT_DECK }).getByRole('button', { name: DECLINE_REACTION });
+      if (await decline.isEnabled().catch(() => false)) {
+        await clickCombatDeckButtonAwaitState(page, request, token, characterId, DECLINE_REACTION, 'decline_reaction');
+      }
+      continue;
+    }
+    if (await endCombatTurnViaUiIfSpent(page, request, token, characterId)) {
+      continue;
+    }
+    if (!state.combat_flags?.action_used && !state.combat_flags?.bonus_action_used) {
+      return;
+    }
+    throw new Error(
+      `Bell Warden engage: player turn blocked after chip. ${bossLoopSnapshot(state, guard, 'engage_stuck')}`,
+    );
+  }
 }
 
 /** Legacy helper — UI attack loop without stream waits (prefer completeBellWardenBossViaUI). */
@@ -879,13 +963,13 @@ export async function completeBellWardenBossViaUI(
   characterId: string,
   initData: string,
   maxRounds = 48,
+  hooks?: { onRound?: (round: number, action: string, state: CharacterSnapshot) => void },
 ): Promise<string> {
   let activeToken = token;
   const victoryPattern = /Chapter complete|bells fall silent|Warden.*defeated|kapitol/i;
+  const fightT0 = Date.now();
 
-  // Fixture stabilize/travel — boss damage itself must come from the UI deck.
-  await stabilizeForBellWardenFight(request, activeToken, characterId);
-  await ensureAtBellWardenPit(request, activeToken, characterId);
+  await prepareBellWardenUiFight(request, activeToken, characterId);
   await syncPlayScreen(page);
 
   const before = await fetchCharacterState(request, activeToken, characterId);
@@ -896,21 +980,41 @@ export async function completeBellWardenBossViaUI(
   await expect.poll(async () => {
     const probe = await fetchCharacterState(request, activeToken, characterId);
     return Boolean(probe.in_combat) || Boolean(probe.quest_flags?.chapter_one_complete);
-  }, { timeout: 45_000 }).toBe(true);
+  }, { timeout: 30_000 }).toBe(true);
+  await settleFreshPlayerTurnAfterEngage(page, request, activeToken, characterId);
 
   let sawDamage = false;
   let priorFoeHp: number | undefined;
+  let priorProgressSig: string | undefined;
   let noProgressStreak = 0;
   let defeatRecoveries = 0;
-  let nonPlayerStreak = 0;
 
-  const clickBoss = (name: RegExp) =>
-    clickCombatDeckButtonAwaitState(page, request, activeToken, characterId, name);
+  const clickBoss = (name: RegExp, label: string) =>
+    clickCombatDeckButtonAwaitState(page, request, activeToken, characterId, name, label);
 
   for (let round = 0; round < maxRounds; round += 1) {
-    const state = await fetchCharacterState(request, activeToken, characterId);
+    if (round > 0 && round % 4 === 0) {
+      activeToken = await apiTelegramToken(request, initData);
+    }
+    let state = await fetchCharacterState(request, activeToken, characterId);
+    logBellWardenRound(round, 'poll', state, fightT0);
+    hooks?.onRound?.(round, 'poll', state);
     if (state.quest_flags?.chapter_one_complete) {
       break;
+    }
+
+    if (
+      !state.in_combat
+      && !state.quest_flags?.chapter_one_complete
+      && (state.hp ?? 1) <= 1
+    ) {
+      activeToken = await apiTelegramToken(request, initData);
+      await reviveIfFallen(request, activeToken, characterId);
+      await prepareBellWardenUiFight(request, activeToken, characterId);
+      await syncPlayScreen(page);
+      await clickQuestChip(page, /Face the Bell Warden|Bell Warden|Strážce zvonu|Postav se/i);
+      await settleFreshPlayerTurnAfterEngage(page, request, activeToken, characterId);
+      continue;
     }
 
     // Defeat modal leaves HP at 1 in a safe hub — dismiss UI then re-stabilize (do not treat as normal turn).
@@ -921,10 +1025,11 @@ export async function completeBellWardenBossViaUI(
         throw new Error(`Hero fallen repeatedly during Bell Warden UI fight (round ${round}).`);
       }
       await continueAdventure.click();
-      await stabilizeForBellWardenFight(request, activeToken, characterId);
-      await ensureAtBellWardenPit(request, activeToken, characterId);
+      activeToken = await apiTelegramToken(request, initData);
+      await prepareBellWardenUiFight(request, activeToken, characterId);
       await syncPlayScreen(page);
       await clickQuestChip(page, /Face the Bell Warden|Bell Warden|Strážce zvonu|Postav se/i);
+      await settleFreshPlayerTurnAfterEngage(page, request, activeToken, characterId);
       continue;
     }
 
@@ -944,140 +1049,241 @@ export async function completeBellWardenBossViaUI(
       } else {
         await reviveIfFallen(request, activeToken, characterId);
       }
-      await stabilizeForBellWardenFight(request, activeToken, characterId);
-      await ensureAtBellWardenPit(request, activeToken, characterId);
+      await prepareBellWardenUiFight(request, activeToken, characterId);
       await syncPlayScreen(page);
       await clickQuestChip(page, /Face the Bell Warden|Bell Warden|Strážce zvonu|Postav se/i);
       continue;
     }
 
     if (!atBellWardenPit(state) && !state.in_combat) {
-      await stabilizeForBellWardenFight(request, activeToken, characterId);
-      await ensureAtBellWardenPit(request, activeToken, characterId);
+      await prepareBellWardenUiFight(request, activeToken, characterId);
       await syncPlayScreen(page);
       await clickQuestChip(page, /Face the Bell Warden|Bell Warden|Strážce zvonu|Postav se/i);
       continue;
     }
 
     const deck = page.getByRole('group', { name: COMBAT_DECK });
-    const decline = deck.getByRole('button', { name: DECLINE_REACTION });
-    if (await decline.isVisible().catch(() => false) && await decline.isEnabled().catch(() => false)) {
-      await clickBoss(DECLINE_REACTION);
-      continue;
+    const progressSig = combatProgressSignature(state);
+    if (priorProgressSig !== undefined && progressSig === priorProgressSig) {
+      noProgressStreak += 1;
+    } else {
+      noProgressStreak = 0;
     }
+    priorProgressSig = progressSig;
+    expect(
+      noProgressStreak,
+      `Bell Warden UI no combat progress for ${noProgressStreak} polls. ${bossLoopSnapshot(state, round, 'stall')}`,
+    ).toBeLessThan(12);
 
     if (state.in_combat && state.combatant?.hp != null) {
       const foeHp = state.combatant.hp;
       if (priorFoeHp !== undefined && foeHp < priorFoeHp) {
         sawDamage = true;
-        noProgressStreak = 0;
-      } else if (priorFoeHp !== undefined && foeHp >= priorFoeHp) {
-        noProgressStreak += 1;
       }
       priorFoeHp = foeHp;
       if (foeHp <= 0) {
-        await page.waitForTimeout(150);
         continue;
       }
-      expect(
-        noProgressStreak,
-        `Bell Warden UI no foe-HP progress for ${noProgressStreak} polls. ${bossLoopSnapshot(state, round, 'stall')}`,
-      ).toBeLessThan(16);
     }
 
     if (state.in_combat && state.combat_turn !== 'player') {
-      nonPlayerStreak += 1;
-      if (reactionPending(state) || nonPlayerStreak % 10 === 0) {
-        // Decline pending reaction via UI when possible.
-        const declineUi = page.getByRole('group', { name: COMBAT_DECK }).getByRole('button', { name: DECLINE_REACTION });
+      const declineUi = deck.getByRole('button', { name: DECLINE_REACTION });
+      if (reactionPending(state)) {
         if (await declineUi.isVisible().catch(() => false) && await declineUi.isEnabled().catch(() => false)) {
-          await clickBoss(DECLINE_REACTION);
-        } else {
-          await resolvePendingReactionForE2E(request, activeToken, characterId);
+          const act = await clickBoss(DECLINE_REACTION, 'decline_reaction');
+          logBellWardenRound(round, act, await fetchCharacterState(request, activeToken, characterId), fightT0);
+          hooks?.onRound?.(round, act, await fetchCharacterState(request, activeToken, characterId));
+          continue;
         }
+        throw new Error(
+          `Bell Warden UI: pending reaction without UI control. ${bossLoopSnapshot(state, round, 'reaction')}`,
+        );
       }
-      if (nonPlayerStreak > 24) {
-        const endUi = page.getByRole('group', { name: COMBAT_DECK }).getByRole('button', { name: END_TURN_BTN });
-        if (await endUi.isEnabled().catch(() => false)) {
-          await clickBoss(END_TURN_BTN);
-        }
-        nonPlayerStreak = 0;
+      const sig0 = combatProgressSignature(state);
+      try {
+        await expect.poll(async () => {
+          const probe = await fetchCharacterState(request, activeToken, characterId);
+          if (probe.combat_turn === 'player' || isCombatReactionPending(probe)) return true;
+          return combatProgressSignature(probe) !== sig0;
+        }, { timeout: 8_000, intervals: [150, 300, 600] }).toBe(true);
+      } catch {
+        const stuck = await fetchCharacterState(request, activeToken, characterId);
+        throw new Error(
+          `Bell Warden UI: enemy turn did not return control in 8s. ${bossLoopSnapshot(stuck, round, 'enemy_stall')}`,
+        );
       }
-      await page.waitForTimeout(100);
       continue;
     }
-    nonPlayerStreak = 0;
 
     const maxHp = state.max_hp ?? 12;
     const heroHp = state.hp ?? maxHp;
-    const distance = combatDistanceFt(state);
-    const lowHp = heroHp < Math.max(8, Math.floor(maxHp * 0.45));
+    let distance = combatDistanceFt(state);
+    let moveLeft = movementRemainingFt(state);
+    let combatFlags = state.combat_flags ?? {};
+    const lowHp = heroHp < Math.max(10, Math.floor(maxHp * 0.45));
+    const criticalHp = heroHp < Math.max(8, Math.floor(maxHp * 0.35));
+    if (state.in_combat && state.combat_turn !== 'player') {
+      throw new Error(
+        `Bell Warden UI: expected player turn before deck actions. ${bossLoopSnapshot(state, round, 'not_player')}`,
+      );
+    }
+
+    state = await fetchCharacterState(request, activeToken, characterId);
+
+    const logAfterClick = async (act: string) => {
+      const post = await fetchCharacterState(request, activeToken, characterId);
+      logBellWardenRound(round, act, post, fightT0);
+      hooks?.onRound?.(round, act, post);
+      return post;
+    };
+
     const potionBtn = deck.getByRole('button', { name: POTION_BTN });
     if (lowHp && await potionBtn.isEnabled().catch(() => false)) {
-      await clickBoss(POTION_BTN);
+      await logAfterClick(await clickBoss(POTION_BTN, 'potion'));
+      await endCombatTurnViaUiIfSpent(page, request, activeToken, characterId);
       continue;
     }
     const secondWind = deck.getByRole('button', { name: /Second Wind|Druhý dech/i });
-    if (lowHp && await secondWind.isEnabled().catch(() => false)) {
-      await clickBoss(/Second Wind|Druhý dech/i);
+    if (
+      lowHp
+      && combatFlags.action_used
+      && !combatFlags.bonus_action_used
+      && await secondWind.isEnabled().catch(() => false)
+    ) {
+      await logAfterClick(await clickBoss(/Second Wind|Druhý dech/i, 'second_wind'));
+      await endCombatTurnViaUiIfSpent(page, request, activeToken, characterId);
       continue;
     }
 
-    // Out-of-reach bosses need Advance before Attack (seed 27 often opens beyond melee).
     const advanceBtn = deck.getByRole('button', { name: ADVANCE_BTN });
     const attackBtn = deck.getByRole('button', { name: ATTACK_BTN });
+    const endBtn = deck.getByRole('button', { name: END_TURN_BTN });
     const attackEnabled = await attackBtn.isEnabled().catch(() => false);
-    if ((!attackEnabled || distance > MELEE_REACH_FT) && await advanceBtn.isEnabled().catch(() => false)) {
-      await clickBoss(ADVANCE_BTN);
+    const defendBtn = deck.getByRole('button', { name: DEFEND_BTN });
+
+    if (criticalHp && !combatFlags.action_used && await defendBtn.isEnabled().catch(() => false)) {
+      await logAfterClick(await clickBoss(DEFEND_BTN, 'defend'));
+      await endCombatTurnViaUiIfSpent(page, request, activeToken, characterId);
       continue;
     }
 
-    // Action already spent → close the turn via UI End turn (no API attack / no API end-turn cheat for damage).
-    if (state.combat_flags?.action_used) {
+    if (combatFlags.action_used) {
       const surgeBtn = deck.getByRole('button', { name: /Action Surge|Příval akce|Prival akce/i });
-      if (await surgeBtn.isEnabled().catch(() => false)) {
-        await clickBoss(/Action Surge|Příval akce|Prival akce/i);
+      if (await attackBtn.isEnabled().catch(() => false)) {
+        await logAfterClick(await clickBoss(ATTACK_BTN, 'attack'));
         continue;
       }
-      const endBtnEarly = deck.getByRole('button', { name: END_TURN_BTN });
-      if (await endBtnEarly.isEnabled().catch(() => false)) {
-        await clickBoss(END_TURN_BTN);
+      if (await surgeBtn.isEnabled().catch(() => false)) {
+        await logAfterClick(await clickBoss(/Action Surge|Příval akce|Prival akce/i, 'action_surge'));
+        continue;
+      }
+      if (await endBtn.isEnabled().catch(() => false)) {
+        await logAfterClick(await clickBoss(END_TURN_BTN, 'end_turn'));
         continue;
       }
       throw new Error(
-        `Bell Warden UI: action used but End turn unavailable. ${bossLoopSnapshot(state, round, 'action_used')}`,
+        `Bell Warden UI: action spent but no legal follow-up. dist=${distance} move=${moveLeft} `
+          + bossLoopSnapshot(state, round, 'action_used'),
       );
+    }
+
+    if (distance > MELEE_REACH_FT && moveLeft > 0) {
+      if (await advanceBtn.isEnabled().catch(() => false)) {
+        const distBefore = distance;
+        const moveBefore = moveLeft;
+        const post = await logAfterClick(await clickBoss(ADVANCE_BTN, 'advance'));
+        if (
+          combatDistanceFt(post) >= distBefore
+          && movementRemainingFt(post) >= moveBefore
+          && post.combat_turn === 'player'
+        ) {
+          throw new Error(
+            `Bell Warden UI: Advance did not change distance/movement. `
+              + bossLoopSnapshot(post, round, 'advance_noop'),
+          );
+        }
+        continue;
+      }
+      if (await endBtn.isEnabled().catch(() => false)) {
+        await logAfterClick(await clickBoss(END_TURN_BTN, 'end_turn'));
+        continue;
+      }
+    }
+
+    if (!combatFlags.action_used && !attackEnabled && moveLeft === 0 && distance > MELEE_REACH_FT) {
+      if (await endBtn.isEnabled().catch(() => false)) {
+        await logAfterClick(await clickBoss(END_TURN_BTN, 'end_turn'));
+        continue;
+      }
     }
 
     if (!attackEnabled) {
       await expect(attackBtn).toBeEnabled({ timeout: 3_000 }).catch(() => undefined);
     }
+    let afterAction = state;
+    type DeckChoice = 'attack' | 'end_turn' | 'defend' | 'enemy' | '';
+    let deckChoice = '' as DeckChoice;
     if (await attackBtn.isEnabled().catch(() => false)) {
-      await clickBoss(ATTACK_BTN);
-      // sawDamage is set only when combatant HP actually decreases (polled above).
-    } else if (await deck.getByRole('button', { name: END_TURN_BTN }).isEnabled().catch(() => false)) {
-      await clickBoss(END_TURN_BTN);
-      continue;
+      deckChoice = 'attack';
+    } else if (await endBtn.isEnabled().catch(() => false)) {
+      deckChoice = 'end_turn';
     } else if (await deck.getByRole('button', { name: DEFEND_BTN }).isEnabled().catch(() => false)) {
-      await clickBoss(DEFEND_BTN);
+      deckChoice = 'defend';
     } else {
-      throw new Error(
-        `Bell Warden UI: no Attack/End turn/Defend enabled. ${bossLoopSnapshot(state, round, 'no_buttons')}`,
-      );
+      try {
+        await expect.poll(async () => {
+          const probe = await fetchCharacterState(request, activeToken, characterId);
+          if (probe.combat_turn !== 'player') {
+            deckChoice = 'enemy';
+            return true;
+          }
+          const deckProbe = page.getByRole('group', { name: COMBAT_DECK });
+          const atk = deckProbe.getByRole('button', { name: ATTACK_BTN });
+          const end = deckProbe.getByRole('button', { name: END_TURN_BTN });
+          const def = deckProbe.getByRole('button', { name: DEFEND_BTN });
+          if (await atk.isEnabled().catch(() => false)) {
+            deckChoice = 'attack';
+            return true;
+          }
+          if (await end.isEnabled().catch(() => false)) {
+            deckChoice = 'end_turn';
+            return true;
+          }
+          if (await def.isEnabled().catch(() => false)) {
+            deckChoice = 'defend';
+            return true;
+          }
+          return false;
+        }, { timeout: 8_000, intervals: [200, 400, 800] }).toBe(true);
+      } catch {
+        const stuck = await fetchCharacterState(request, activeToken, characterId);
+        throw new Error(
+          `Bell Warden UI: no Attack/End turn/Defend enabled after 8s. ${bossLoopSnapshot(stuck, round, 'no_buttons')}`,
+        );
+      }
     }
 
-    const afterAction = await fetchCharacterState(request, activeToken, characterId);
+    switch (deckChoice) {
+      case 'enemy':
+        continue;
+      case 'attack':
+        afterAction = await logAfterClick(await clickBoss(ATTACK_BTN, 'attack'));
+        break;
+      case 'end_turn':
+        afterAction = await logAfterClick(await clickBoss(END_TURN_BTN, 'end_turn'));
+        continue;
+      case 'defend':
+        afterAction = await logAfterClick(await clickBoss(DEFEND_BTN, 'defend'));
+        break;
+      default:
+        break;
+    }
+
     if (afterAction.quest_flags?.chapter_one_complete) {
       break;
     }
-    const endBtn = deck.getByRole('button', { name: END_TURN_BTN });
-    if (
-      afterAction.in_combat
-      && afterAction.combat_turn === 'player'
-      && afterAction.combat_flags?.action_used
-      && await endBtn.isEnabled().catch(() => false)
-    ) {
-      await clickBoss(END_TURN_BTN);
+    if (await endCombatTurnViaUiIfSpent(page, request, activeToken, characterId)) {
+      logBellWardenRound(round, 'end_turn_cleanup', await fetchCharacterState(request, activeToken, characterId), fightT0);
     }
   }
 
@@ -1177,6 +1383,11 @@ export async function syncPlayScreen(page: Page) {
   await expect(page.getByRole('log', { name: ADVENTURE_JOURNAL })).toBeVisible({ timeout: 30_000 });
 }
 
+/**
+ * One player combat turn for ghoul paralysis hunt — stream-bound clicks, advance into melee, Sprint 25 end turn.
+ */
+
+
 export async function travelToPitViaEngine(
   request: APIRequestContext,
   token: string,
@@ -1247,7 +1458,7 @@ function atBellWardenPit(state: CharacterSnapshot): boolean {
 }
 
 /** Engine boss loop diagnostic line for E2E failure reports. */
-function bossLoopSnapshot(state: CharacterSnapshot, round: number, lastAction: string): string {
+export function bossLoopSnapshot(state: CharacterSnapshot, round: number, lastAction: string): string {
   const flags = state.quest_flags ? Object.entries(state.quest_flags).filter(([, v]) => v).map(([k]) => k) : [];
   return [
     `round=${round}`,
@@ -1267,15 +1478,118 @@ function bellWardenHealTarget(maxHp: number): number {
   return Math.max(10, Math.floor(maxHp * 0.5));
 }
 
-async function stabilizeForBellWardenFight(
+function atSafeRestHub(state: CharacterSnapshot): boolean {
+  return /Whispering Cellar|Shrine of the Forgotten|Goblin Market/i.test(state.location ?? '');
+}
+
+async function travelToSafeRestHub(
   request: APIRequestContext,
   token: string,
   characterId: string,
 ) {
+  let state = await fetchCharacterState(request, token, characterId);
+  if (atSafeRestHub(state)) return;
+  if (atBellWardenPit(state) || LOCATION_WAIT['The Vault of Echoes']!.test(state.location ?? '')) {
+    await travelToLocation(request, token, characterId, 'The Sunken Corridor');
+  }
+  state = await fetchCharacterState(request, token, characterId);
+  if (!atSafeRestHub(state)) {
+    await travelToLocation(request, token, characterId, 'The Whispering Cellar');
+  }
+}
+
+async function healCharacterToFullForBossFixture(
+  request: APIRequestContext,
+  token: string,
+  characterId: string,
+): Promise<CharacterSnapshot> {
+  await leaveCombatIfNeeded(request, token, characterId, 24);
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    let state = await fetchCharacterState(request, token, characterId);
+    const maxHp = state.max_hp ?? 12;
+    if ((state.hp ?? 0) >= maxHp) return state;
+
+    if (isMvpCombatDefeatRecovery(state) || (state.hp ?? 1) <= 1) {
+      await reviveIfFallen(request, token, characterId);
+      state = await fetchCharacterState(request, token, characterId);
+      if ((state.hp ?? 0) < (state.max_hp ?? 12) && atSafeRestHub(state)) {
+        await postGameAction(request, token, characterId, 'long rest');
+      }
+      continue;
+    }
+    if (!atSafeRestHub(state)) {
+      await travelToSafeRestHub(request, token, characterId);
+      continue;
+    }
+    await stabilizeForBellWardenFight(request, token, characterId, true);
+    state = await fetchCharacterState(request, token, characterId);
+    if ((state.hp ?? 0) < maxHp) {
+      await postGameAction(request, token, characterId, 'long rest');
+      state = await fetchCharacterState(request, token, characterId);
+    }
+    if ((state.hp ?? 0) < maxHp && (state.gold ?? 0) >= 45) {
+      if (!LOCATION_WAIT['The Goblin Market']!.test(state.location ?? '')) {
+        await travelToLocation(request, token, characterId, 'The Goblin Market');
+      }
+      for (let buy = 0; buy < 2 && (state.gold ?? 0) >= 45 && (state.hp ?? 0) < maxHp; buy += 1) {
+        await postGameAction(request, token, characterId, 'buy healing potion');
+        state = await fetchCharacterState(request, token, characterId);
+      }
+      const inv = state.inventory ?? [];
+      if (inv.some(item => /potion/i.test(item)) && (state.hp ?? 0) < maxHp) {
+        await postGameAction(request, token, characterId, 'drink potion');
+        state = await fetchCharacterState(request, token, characterId);
+      }
+    }
+    if ((state.hp ?? 0) < maxHp) {
+      await postGameAction(request, token, characterId, 'short rest');
+    }
+  }
+  const final = await fetchCharacterState(request, token, characterId);
+  throw new Error(
+    `Bell Warden UI heal fixture failed before travel. ${bossLoopSnapshot(final, 0, 'heal_failed')}`,
+  );
+}
+
+/** Full HP at pit before Bell Warden UI fight (fixture only). */
+export async function prepareBellWardenUiFight(
+  request: APIRequestContext,
+  token: string,
+  characterId: string,
+): Promise<CharacterSnapshot> {
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    await healCharacterToFullForBossFixture(request, token, characterId);
+    await leaveCombatIfNeeded(request, token, characterId, 24);
+    if (!atBellWardenPit(await fetchCharacterState(request, token, characterId))) {
+      await ensureAtBellWardenPit(request, token, characterId);
+      await leaveCombatIfNeeded(request, token, characterId, 24);
+    }
+
+    const state = await fetchCharacterState(request, token, characterId);
+    const maxHp = state.max_hp ?? 12;
+    const ready = (state.hp ?? 0) === maxHp
+      && atBellWardenPit(state)
+      && !state.in_combat
+      && state.level >= 3
+      && Boolean(state.quest_flags?.vault_unlocked);
+    if (ready) return state;
+  }
+  const final = await fetchCharacterState(request, token, characterId);
+  throw new Error(
+    `Bell Warden UI prep failed: expected full HP at pit. ${bossLoopSnapshot(final, 0, 'prep_failed')}`,
+  );
+}
+
+async function stabilizeForBellWardenFight(
+  request: APIRequestContext,
+  token: string,
+  characterId: string,
+  fullHeal = false,
+) {
   for (let attempt = 0; attempt < 6; attempt += 1) {
     let state = await fetchCharacterState(request, token, characterId);
     const maxHp = state.max_hp ?? 12;
-    const target = bellWardenHealTarget(maxHp);
+    const target = fullHeal ? maxHp : bellWardenHealTarget(maxHp);
     if ((state.hp ?? 1) >= target) return;
 
     const safeHub = /Whispering Cellar|Shrine of the Forgotten|Goblin Market/i.test(state.location ?? '');

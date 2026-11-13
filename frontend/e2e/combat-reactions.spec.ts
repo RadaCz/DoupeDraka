@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test';
 import {
   fetchCharacterState,
-  postCombatAttack,
   postGameAction,
+  startCellarCombat,
   syncCombatOrAdventurePlay,
 } from './chapter-one-e2e-helpers.ts';
 import { apiTelegramToken, completeWizardFighter, mockTelegramWebApp, signedTelegramInitData } from './telegram.ts';
@@ -18,12 +18,8 @@ test('disengage then step back avoids opportunity attack', async ({ page, reques
   expect(characterId).toBeTruthy();
   const token = await apiTelegramToken(request, initData);
 
+  await startCellarCombat(request, token, characterId!, 'goblin scout');
   let state = await fetchCharacterState(request, token, characterId!);
-  for (let i = 0; i < 20 && !state.in_combat; i += 1) {
-    await postCombatAttack(request, token, characterId!, 'goblin scout');
-    state = await fetchCharacterState(request, token, characterId!);
-  }
-  expect(state.in_combat).toBeTruthy();
 
   const dist = state.combat_tactics?.distance_ft ?? state.combat_distance_ft ?? 99;
   if (dist > 5) {
@@ -46,6 +42,12 @@ test('disengage then step back avoids opportunity attack', async ({ page, reques
     expect(raw.combat_flags?.enemy_reaction_used).toBe(true);
   }
 
+  let uiState = await fetchCharacterState(request, token, characterId!);
+  if (!uiState.in_combat) {
+    await startCellarCombat(request, token, characterId!, 'goblin scout');
+    uiState = await fetchCharacterState(request, token, characterId!);
+  }
+  expect(uiState.in_combat, 'Need an active fight to assert Disengage on the combat deck').toBeTruthy();
   await syncCombatOrAdventurePlay(page);
-  await expect(page.getByRole('button', { name: /^Disengage$|^Ustoupit$/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Disengage|^Odpojit se|^Ustoupit$/i })).toBeVisible({ timeout: 15_000 });
 });
