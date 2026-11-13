@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { TurnPhase } from '../pendingTurn';
 import type { Character, Economy, JournalEvent, LocationReference, Spell } from '../types';
 import { useI18n } from '../i18n';
@@ -46,12 +46,14 @@ export function PlaySceneChrome({
   economy,
   events,
   combat,
+  coaching,
 }: {
   character: Character;
   economy?: Economy | null;
   events?: JournalEvent[];
   onOpenSheet?: () => void;
   combat?: boolean;
+  coaching?: ReactNode;
 }) {
   const { t, locale } = useI18n();
   const enemy = character.combatant;
@@ -111,12 +113,13 @@ export function PlaySceneChrome({
             {playerTurn ? t('Your turn — choose an action.') : t('Enemy turn — wait for the outcome.')}
           </p>
         )}
-        {questObjective && (
+        {questObjective && !coaching && (
           <p className="play-quest-strip" role="status">
             <span className="eyebrow">{t('CURRENT OBJECTIVE')}</span>
             <span>{t(questObjective.label)}</span>
           </p>
         )}
+        {coaching}
       </div>
     </header>
   );

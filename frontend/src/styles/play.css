@@ -10,6 +10,8 @@
 
 .app-shell.play-active .main-content {
   padding-top: 0;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .game-screen.text-first {
@@ -43,6 +45,14 @@
   gap: 6px;
   margin: 0;
   width: 100%;
+  color: var(--muted);
+  font: 500 11px/1.35 var(--font-ui, Manrope, system-ui, sans-serif);
+  letter-spacing: 0.01em;
+}
+
+/* `.screen h1` page titles must not blow up the compact immersive location row */
+.game-screen.text-first .play-immersive-bar h1.play-immersive-place {
+  margin: 0;
   color: var(--muted);
   font: 500 11px/1.35 var(--font-ui, Manrope, system-ui, sans-serif);
   letter-spacing: 0.01em;
@@ -149,11 +159,53 @@
 }
 
 .play-coaching-strip {
-  margin: 0 16px 6px;
-  padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px solid color-mix(in srgb, var(--gold) 35%, transparent);
-  background: color-mix(in srgb, var(--surface-raised, #1a1f2a) 92%, var(--gold) 8%);
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 6px 10px;
+  margin: 0;
+  padding: 8px 0 0;
+  border: 0;
+  border-top: 1px solid color-mix(in srgb, var(--gold) 28%, transparent);
+  border-radius: 0;
+  background: transparent;
+}
+
+.play-immersive-bar .play-coaching-text,
+.play-immersive-bar .play-coaching-level-gate {
+  flex: 1 1 9rem;
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.play-immersive-bar .play-coaching-quest-link {
+  flex: 0 0 auto;
+  margin-left: auto;
+  min-height: 44px;
+  padding: 6px 12px;
+  font-size: 0.82rem;
+}
+
+@media (max-height: 640px) {
+  .play-immersive-bar {
+    padding-bottom: 6px;
+  }
+
+  .play-immersive-bar .play-coaching-strip {
+    padding-top: 4px;
+  }
+
+  .game-screen.text-first {
+    gap: 2px;
+    padding-bottom: 4px;
+  }
+
+  .game-screen.text-first .action-composer-wrap {
+    padding-top: 6px;
+    padding-bottom: calc(6px + var(--tg-safe-bottom, var(--safe-bottom, 0px)));
+  }
 }
 
 .play-coaching-text,

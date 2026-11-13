@@ -13,8 +13,14 @@ export function AdventureScreen(props: PlayScreenProps) {
 
   return (
     <section className="screen game-screen adventure-screen text-first">
-      <PlaySceneChrome character={character} economy={props.economy} events={events} />
-      <PlayCoachingStrip character={character} events={events} onOpenQuests={onOpenQuests} />
+      <PlaySceneChrome
+        character={character}
+        economy={props.economy}
+        events={events}
+        coaching={(
+          <PlayCoachingStrip character={character} events={events} onOpenQuests={onOpenQuests} />
+        )}
+      />
       <TurnDeltaStrip message={turnDelta} />
       <div className="game-play-story">
         <PlayJournal {...props} />
