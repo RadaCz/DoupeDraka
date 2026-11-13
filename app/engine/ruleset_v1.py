@@ -4,7 +4,8 @@ from __future__ import annotations
 
 RULESET_EDITION = "SRD 5.1"
 RULESET_LABEL = "DoupěDraka Ruleset v1"
-MAX_MVP_LEVEL = 5
+# Chapter 1 closed beta: L1–L3 only (Extra Attack / L3 spells not modeled yet).
+MAX_MVP_LEVEL = 3
 
 MVP_RACES: frozenset[str] = frozenset({"human", "elf", "dwarf", "halfling"})
 MVP_CLASSES: frozenset[str] = frozenset({"fighter", "rogue", "cleric", "wizard"})
@@ -40,6 +41,8 @@ def public_summary() -> dict:
         "mvp_classes": sorted(MVP_CLASSES),
         "notes": (
             "Reference catalogs may list additional SRD entries; only mvp_* options "
-            "are fully supported in chapter 1. Subclass and lineage picks are flavor text."
+            "are fully supported in chapter 1. Subclass and lineage picks are flavor text. "
+            "Levels above 3 are locked until Extra Attack, Uncanny Dodge, Destroy Undead, "
+            "and level-3 spell lists are implemented."
         ),
     }

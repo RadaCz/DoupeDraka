@@ -14,6 +14,8 @@ import {
   formatModifier,
   formatSavingThrowProficiencies,
   proficiencyBonus,
+  isAtMaxMvpLevel,
+  MAX_MVP_LEVEL,
   xpProgress,
 } from '../character/characterSheet';
 import { backgroundFeatureFor, backgroundFeatureUsed } from '../character/backgroundFeatures';
@@ -31,6 +33,7 @@ export function CharacterScreen({
   onInventoryAction,
   busy,
   error,
+  maxLevel = MAX_MVP_LEVEL,
 }: {
   character: Character | null;
   characters: Character[];
@@ -41,6 +44,8 @@ export function CharacterScreen({
   onInventoryAction?: (action: string) => void;
   busy?: boolean;
   error?: string;
+  /** Chapter-1 closed beta cap from `/reference` ruleset.max_level. */
+  maxLevel?: number;
 }) {
   const { t, locale } = useI18n();
 
@@ -59,6 +64,7 @@ export function CharacterScreen({
   const equippedArmor = equippedArmorInstance(character.item_instances);
   const equippedShield = equippedShieldInstance(character.item_instances);
   const xp = xpProgress(character.xp);
+  const atLevelCap = isAtMaxMvpLevel(character.level, maxLevel);
   const spellRows = useMemo(() => heroSpellRows(character, spells), [character, spells]);
   const features = useMemo(() => classFeatureLines(character, t), [character, t]);
   const backgroundFeature = useMemo(() => backgroundFeatureFor(character), [character]);
@@ -199,12 +205,21 @@ export function CharacterScreen({
             <span><small>{t('Level')}</small><strong>{character.level}</strong></span>
             <span><small>{t('EXPERIENCE')}</small><strong className="tabular-nums">{character.xp} XP</strong></span>
           </div>
-          <div className="char-v2-xp-track" role="progressbar" aria-valuenow={xp.current} aria-valuemin={0} aria-valuemax={xp.threshold} aria-label={t('Experience toward next level')}>
-            <span style={{ width: `${Math.min(100, (xp.current / xp.threshold) * 100)}%` }} />
-          </div>
-          <p className="char-v2-xp-caption tabular-nums">
-            {t('Experience toward next level')}: {xp.current} / {xp.threshold} XP
-          </p>
+          {atLevelCap ? (
+            <p className="char-v2-xp-caption" data-testid="level-cap-note">
+              {t('Chapter 1 level cap reached')}: {t('Level')} {maxLevel}.{' '}
+              {t('Levels above 3 are locked until Extra Attack and level-3 spells are modeled.')}
+            </p>
+          ) : (
+            <>
+              <div className="char-v2-xp-track" role="progressbar" aria-valuenow={xp.current} aria-valuemin={0} aria-valuemax={xp.threshold} aria-label={t('Experience toward next level')}>
+                <span style={{ width: `${Math.min(100, (xp.current / xp.threshold) * 100)}%` }} />
+              </div>
+              <p className="char-v2-xp-caption tabular-nums">
+                {t('Experience toward next level')}: {xp.current} / {xp.threshold} XP
+              </p>
+            </>
+          )}
         </article>
       </section>
 

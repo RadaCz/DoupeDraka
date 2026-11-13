@@ -1048,6 +1048,7 @@ function AppContent() {
             character={character}
             characters={characters}
             spells={spells}
+            maxLevel={catalog?.ruleset?.max_level ?? 3}
             onSelect={selectCharacter}
             onCreate={() => navigate('create')}
             onOpenTools={() => navigate('tools')}

@@ -5,6 +5,9 @@ import { inventoryItemMeta, inventoryItemCategory } from '../game/inventoryCatal
 /** Mirrors app/engine/service.py XP_THRESHOLD — display only. */
 export const XP_PER_LEVEL = 100;
 
+/** Mirrors app/engine/ruleset_v1.MAX_MVP_LEVEL — chapter 1 closed beta. */
+export const MAX_MVP_LEVEL = 3;
+
 /** Mirrors `app/engine/equipment.proficiency_bonus` — sheet display only. */
 export function proficiencyBonus(level: number): number {
   return 2 + Math.max(0, Math.floor((level - 1) / 4));
@@ -119,6 +122,11 @@ export function xpProgress(xp: number): { current: number; threshold: number } {
   const threshold = XP_PER_LEVEL;
   const current = xp >= threshold ? threshold : xp;
   return { current, threshold };
+}
+
+/** True when the hero has reached the chapter-1 level cap (backend also refuses further level-ups). */
+export function isAtMaxMvpLevel(level: number, maxLevel: number = MAX_MVP_LEVEL): boolean {
+  return level >= maxLevel;
 }
 
 export function potionUseBlocked(character: Character): string | null {
