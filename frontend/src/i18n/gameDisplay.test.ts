@@ -51,6 +51,22 @@ describe('gameDisplay', () => {
     expect(displayCreature('Kobold skirmisher', 'cs')).toBe('Koboldí záškodník');
   });
 
+  it('localizes first-session travel/NPC rejection lines', () => {
+    expect(
+      presentEngineEventLine('That route is not open. Nearby destinations: The Sunken Corridor.', 'cs'),
+    ).toMatch(/cesta není otevřená/i);
+    expect(
+      presentEngineEventLine(
+        'No one here answers to that. Name an NPC (Caldus, Nib) or use a suggested conversation chip.',
+        'cs',
+      ),
+    ).toMatch(/Nikdo tady/i);
+    expect(presentEngineEventLine('That quest step cannot be resolved here.', 'cs')).toMatch(/úkolu/i);
+    expect(
+      presentEngineEventLine('No enemy is in front of you. Explore the area or wait for a threat to appear.', 'cs'),
+    ).toMatch(/nepřítel/i);
+  });
+
   it('localizes Bell Warden level gate and pit travel messages', () => {
     const levelBlock =
       'Bell Warden is beyond your current experience (you are level 2; reach at least level 3 by winning fights and exploring before you attack).';

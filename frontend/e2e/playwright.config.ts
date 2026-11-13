@@ -22,8 +22,10 @@ const apiCommand = process.platform === 'win32'
 
 /** Specs with their own runner phase — must not also execute under e2e-smoke. */
 const DEDICATED_SMOKE_IGNORE = [
+  '**/first-session.spec.ts',
   '**/chapter-one-quest.spec.ts',
   '**/bell-warden-ui.spec.ts',
+  '**/fallen.spec.ts',
   '**/combat-reactions.spec.ts',
   '**/ghoul-paralysis-combat.spec.ts',
   '**/saving-throw-combat.spec.ts',
@@ -39,7 +41,8 @@ export default defineConfig({
   workers: 1,
   forbidOnly: Boolean(process.env.CI),
   timeout: 120_000,
-  retries: process.env.CI ? 1 : 0,
+  // Sprint 38: do not silently re-run long chapter/BW failures on CI.
+  retries: 0,
   reporter: [['list'], ['line']],
   outputDir: '../.playwright-results',
   projects: visualOnly
@@ -47,9 +50,14 @@ export default defineConfig({
     : [
         {
           name: 'chapter-journey',
-          testMatch: ['**/chapter-one-quest.spec.ts', '**/bell-warden-ui.spec.ts'],
-          // Per-spec budgets are enforced by run-tests.mjs; keep project ceiling at chapter max.
-          timeout: 300_000,
+          testMatch: [
+            '**/first-session.spec.ts',
+            '**/chapter-one-quest.spec.ts',
+            '**/bell-warden-ui.spec.ts',
+            '**/fallen.spec.ts',
+          ],
+          // Per-spec budgets are enforced by run-tests.mjs.
+          timeout: 240_000,
         },
         {
           name: 'combat-saves',

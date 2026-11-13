@@ -21,8 +21,10 @@ const isScopedRun = forwardedArgs.some(
 
 /** Dedicated specs — each runs in its own runner phase; must never also run in e2e-smoke. */
 const DEDICATED_SPECS = {
+  firstSession: 'e2e/first-session.spec.ts',
   chapterOne: 'e2e/chapter-one-quest.spec.ts',
   bellWarden: 'e2e/bell-warden-ui.spec.ts',
+  defeatRecovery: 'e2e/fallen.spec.ts',
   combatReactions: 'e2e/combat-reactions.spec.ts',
   ghoul: 'e2e/ghoul-paralysis-combat.spec.ts',
   savingThrow: 'e2e/saving-throw-combat.spec.ts',
@@ -30,9 +32,10 @@ const DEDICATED_SPECS = {
 };
 
 const PHASE_TIMEOUT_MS = {
-  [DEDICATED_SPECS.chapterOne]: 300_000,
-  // UI boss + defeat recoveries need headroom; still far below the old 900s chapter ceiling.
-  [DEDICATED_SPECS.bellWarden]: 300_000,
+  [DEDICATED_SPECS.firstSession]: 120_000,
+  [DEDICATED_SPECS.chapterOne]: 180_000,
+  [DEDICATED_SPECS.bellWarden]: 240_000,
+  [DEDICATED_SPECS.defeatRecovery]: 90_000,
   [DEDICATED_SPECS.combatReactions]: 120_000,
   [DEDICATED_SPECS.ghoul]: 120_000,
   [DEDICATED_SPECS.savingThrow]: 120_000,
@@ -68,7 +71,9 @@ const FULL_SUITE_PHASES = expandCombatSavesPhases(
   visualMode
     ? [['--project=visual']]
     : [
+      ['--project=chapter-journey', DEDICATED_SPECS.firstSession],
       ['--project=chapter-journey', DEDICATED_SPECS.chapterOne],
+      ['--project=chapter-journey', DEDICATED_SPECS.defeatRecovery],
       ['--project=chapter-journey', DEDICATED_SPECS.bellWarden],
       ['--project=combat-saves'],
       ['--project=e2e-smoke'],
@@ -177,6 +182,25 @@ function killOwnedTree(pid) {
       } catch {
         /* already gone */
       }
+    }
+  }
+}
+
+/** Ports 8001/5174 are reserved for this runner — reap leftover uvicorn/vite after owned-tree kill. */
+function reapReservedE2eListeners(when) {
+  for (const port of E2E_PORTS) {
+    for (const pid of listenersOnPort(port)) {
+      const detail = describePid(pid);
+      const owned =
+        /uvicorn\s+app\.api:app/.test(detail)
+        || /vite/.test(detail)
+        || /--port\s+8001|--port\s+5174/.test(detail);
+      if (!owned) {
+        console.error(`[e2e] Leaving foreign listener on ${port} ${when}: ${detail}`);
+        continue;
+      }
+      console.info(`[e2e] Reaping reserved listener on ${port} ${when}: ${detail}`);
+      killOwnedTree(pid);
     }
   }
 }
@@ -337,6 +361,8 @@ async function main() {
       result = await runPlaywright(phaseArgs, databaseDirectory, python.path, timeoutMs);
     } finally {
       if (result.ownedPid) killOwnedTree(result.ownedPid);
+      // Playwright webServer can outlive the killed Node tree on Linux (detached).
+      reapReservedE2eListeners(`after phase ${index + 1} cleanup`);
       try {
         rmDatabaseDir(databaseDirectory);
       } catch (error) {

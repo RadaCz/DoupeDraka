@@ -167,6 +167,26 @@ const MECHANIC_PATTERNS_CS: Array<[RegExp, string | ((...args: string[]) => stri
     () => 'Jáma strážce zvonu je zamčená, dokud u Calduse neodemkneš cestu do Komnaty ozvěn.',
   ],
   [
+    /^That route is not open\. Nearby destinations:\s*(.+)\.?$/i,
+    (destinations) => `Tahle cesta není otevřená. Blízké cíle: ${destinations}.`,
+  ],
+  [
+    /^No one here answers to that\. Name an NPC \(Caldus, Nib\) or use a suggested conversation chip\.?$/i,
+    'Nikdo tady na to neodpoví. Pojmenuj NPC (Caldus, Nib) nebo použij nabízený čip rozhovoru.',
+  ],
+  [
+    /^That quest step cannot be resolved here\.?$/i,
+    'Tento krok úkolu tady nejde vyřešit.',
+  ],
+  [
+    /^That action cannot be resolved here\. Try a clearer command or a UI chip\.?$/i,
+    'Tuhle akci tady nejde provést. Zkus jasnější příkaz nebo čip v UI.',
+  ],
+  [
+    /^No enemy is in front of you\. Explore the area or wait for a threat to appear\.?$/i,
+    'Před tebou není nepřítel. Prozkoumej okolí, nebo počkej, až se objeví hrozba.',
+  ],
+  [
     /^Attack with (.+?): (\d+) \(d20\s*\+(\d+)\) vs AC (\d+) — (critical miss|miss|hit|critical hit)\.?$/i,
     (weapon, total, mod, ac, result) => {
       const wKey = normalizeKey(weapon);

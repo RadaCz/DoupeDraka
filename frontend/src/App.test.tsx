@@ -552,7 +552,7 @@ describe('Telegram Mini App', () => {
     const requests = setupApp([fallen]);
     render(<App />);
     await screen.findByRole('heading', { name: /welcome back, rada/i });
-    fireEvent.click(screen.getByRole('button', { name: /continue adventure/i }));
+    fireEvent.click(screen.getByRole('button', { name: /revive hero/i }));
     expect(await screen.findByRole('heading', { name: 'You have fallen' })).toBeInTheDocument();
     expect(screen.queryByText(/thread of the weave/i)).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Revive hero' }));

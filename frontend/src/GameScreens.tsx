@@ -111,7 +111,15 @@ export function HomeScreen({
             <span>✦ {character.xp} XP</span>
             <span>⌖ {displayLocation(character.location, locale)}</span>
           </div>
-          <button type="button" className="primary continue-button" onClick={onContinue}>{t('Continue adventure')} <span aria-hidden="true">→</span></button>
+          {character.hp <= 0 ? (
+            <button type="button" className="primary continue-button" onClick={onContinue}>
+              {t('Revive hero')} <span aria-hidden="true">→</span>
+            </button>
+          ) : (
+            <button type="button" className="primary continue-button" onClick={onContinue}>
+              {t('Continue adventure')} <span aria-hidden="true">→</span>
+            </button>
+          )}
           {(questTimeline?.active || lastBeat) && (
             <div className="hub-campaign-pulse">
               {questTimeline?.active && (
