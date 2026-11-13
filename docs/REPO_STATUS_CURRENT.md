@@ -5,8 +5,8 @@
 | Field | Value |
 |-------|--------|
 | **Primary branch** | **`main`** |
-| **HEAD** | `ab2a3e06257eebcb0ba10f5b624bd67354f5a865` |
-| **CI** | GitHub Actions run **[#94](https://github.com/RadaCz/DoupeDraka/actions)** — **5/5 SUCCESS** (backend, backend-postgres, backend-slow, frontend, e2e) |
+| **HEAD** | `d296443d84f7a35c709197b3c8e6a4b33c9dd07c` |
+| **CI** | GitHub Actions run **[#95](https://github.com/RadaCz/DoupeDraka/actions)** @ `d296443` — **5/5 SUCCESS** (backend, backend-postgres, backend-slow, frontend, e2e) |
 | **Alembic head (ship)** | **`v005`** (Billing **v006** DEFERRED — not in tree) |
 | **Staging HTTPS** | **NOT DEPLOYED** |
 | **Android / iOS Telegram QA** | **NOT TESTED** |

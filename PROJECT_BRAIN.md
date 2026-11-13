@@ -5,8 +5,8 @@
 - **Repository:** [RadaCz/DoupeDraka](https://github.com/RadaCz/DoupeDraka) (`D:\DoupeDraka`)
 - **Development branch:** **`main`** only.
 - **Last updated:** 2026-11-13 (documentation sync — see [`docs/REPO_STATUS_CURRENT.md`](docs/REPO_STATUS_CURRENT.md))
-- **HEAD (`main`):** `ab2a3e06257eebcb0ba10f5b624bd67354f5a865`; staging HTTPS **NOT DEPLOYED**.
-- **CI:** GitHub Actions run **#94** @ `ab2a3e0` — **5/5 SUCCESS**.
+- **HEAD (`main`):** `d296443d84f7a35c709197b3c8e6a4b33c9dd07c`; staging HTTPS **NOT DEPLOYED**.
+- **CI:** GitHub Actions run **#95** @ `d296443` — **5/5 SUCCESS**.
 - **Staging:** **NOT DEPLOYED** — [`docs/SPRINT_38_STAGING_CHECKLIST.md`](docs/SPRINT_38_STAGING_CHECKLIST.md), [`docs/STAGING_RUNBOOK_V1.md`](docs/STAGING_RUNBOOK_V1.md).
 - **Fyzické QA:** Android / iOS **NOT TESTED** — [`docs/SPRINT_38_TELEGRAM_QA_PROTOCOL.md`](docs/SPRINT_38_TELEGRAM_QA_PROTOCOL.md).
 - **Billing Sprint 37.4 / Alembic v006:** **deferred** (working tree only; not on `HEAD`).

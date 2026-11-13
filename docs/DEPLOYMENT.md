@@ -82,8 +82,8 @@ Set `PYTEST_DATABASE_URL` to the same URL when running concurrency tests against
 Develop on **`main`** only. Deploy or tag releases from commits with green CI on `main`
 (backend, backend-postgres, backend-slow, frontend, e2e).
 
-**Current repo baseline (2026-11-13):** commit `ab2a3e06257eebcb0ba10f5b624bd67354f5a865` on **`main`**
-— CI run **#94** **5/5 success**. Alembic head: **`v005`**
+**Current repo baseline (2026-11-13):** commit `d296443d84f7a35c709197b3c8e6a4b33c9dd07c` on **`main`**
+— CI run **#95** **5/5 success**. Alembic head: **`v005`**
 (`v006` billing migration is **not** on `HEAD`). **Poslední nasazený staging commit:** none — HTTPS staging deploy remains
 **NOT DEPLOYED** until ops completes the checklist in
 [`STAGING_RUNBOOK_V1.md`](STAGING_RUNBOOK_V1.md) and

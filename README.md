@@ -198,7 +198,7 @@ cd D:\DoupeDraka
 python -m pytest -q
 ```
 
-Na `main` @ `ab2a3e0` (CI **#94**, 5/5): backend **793+** pytest (fast), **21** slow, **11** Postgres,
+Na `main` @ `d296443` (CI **#95**, 5/5): backend **793+** pytest (fast), **21** slow, **11** Postgres,
 Vitest **215**, Playwright **51** E2E. Viz [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md).
 
 ### Volitelný LLM chain (vývoj / budoucí DM)

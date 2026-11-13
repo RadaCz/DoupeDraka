@@ -4,9 +4,9 @@
 
 | Item | Status |
 |------|--------|
-| **Remote HEAD** | `ab2a3e0` (`origin/main`) |
-| **Recent UI** | Sprint 39 (`562ba29` · `5979d53` · `91a9ac1`) + audit fixes (`2e7e6a1`–`ab2a3e0`) |
-| **CI** | Run **#94** @ `ab2a3e0` — **5/5 success** |
+| **Remote HEAD** | `d296443` (`origin/main`) |
+| **Recent UI** | Sprint 39 (`562ba29` · `5979d53` · `91a9ac1`) + audit fixes + doc truth (`2e7e6a1`–`d296443`) |
+| **CI** | Run **#95** @ `d296443` — **5/5 success** |
 | **Truth doc** | [`docs/REPO_STATUS_CURRENT.md`](docs/REPO_STATUS_CURRENT.md) |
 | **Staging deploy** | **NOT DEPLOYED** |
 | **Physical Telegram QA** | **NOT TESTED** |
