@@ -430,9 +430,9 @@
 
 .composer-menu-toggle {
   flex-shrink: 0;
-  width: 40px;
-  min-height: 40px;
-  margin: 6px 0;
+  width: 44px;
+  min-height: 44px;
+  margin: 4px 0;
   border: 0;
   border-radius: 12px;
   background: transparent;
@@ -549,23 +549,88 @@
   opacity: 0.45;
 }
 
-.game-screen.text-first .spell-picker-compact {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-}
-
-.game-screen.text-first .composer-help-popover {
-  margin-top: 4px;
-  padding: 10px 12px;
+.composer-help-popover {
+  position: relative;
+  z-index: 32;
+  margin-bottom: 8px;
+  padding: 12px;
   border-radius: 12px;
   border: 1px solid var(--border-subtle);
   background: var(--surface-deep);
   font-size: 0.82rem;
-  line-height: 1.5;
+  line-height: 1.55;
   color: var(--muted);
+}
+
+.composer-help-head,
+.composer-spell-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.composer-help-close {
+  flex-shrink: 0;
+  width: 44px;
+  min-height: 44px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text-soft);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.composer-spell-sheet {
+  position: relative;
+  z-index: 31;
+  margin-bottom: 8px;
+  padding: 12px;
+  max-height: min(52vh, 360px);
+  overflow: auto;
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  background: var(--surface, #182019);
+  box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.35);
+}
+
+.composer-spell-sheet-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.composer-spell-sheet-list button {
+  display: flex;
+  width: 100%;
+  min-height: 48px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text-soft);
+  font: 600 0.95rem var(--font-ui);
+  text-align: left;
+  cursor: pointer;
+}
+
+.composer-spell-sheet-list button.selected,
+.composer-spell-sheet-list button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent-verb) 14%, transparent);
+}
+
+.composer-spell-sheet-list small {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 
 .tabular-nums {

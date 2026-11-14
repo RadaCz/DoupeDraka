@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useOverlayDismiss } from '../hooks/useOverlayDismiss';
 import type { Character } from '../types';
 import { useI18n } from '../i18n';
 import { displayInventoryLabel } from '../i18n/gameDisplay';
@@ -24,6 +25,8 @@ export function CharacterInventoryPanel({ character, busy = false, onInventoryAc
   const { t, locale } = useI18n();
   const [selected, setSelected] = useState<string | null>(null);
   const [lastSent, setLastSent] = useState('');
+  const closeDetail = useCallback(() => setSelected(null), []);
+  useOverlayDismiss(Boolean(selected), closeDetail);
   const instances = character.item_instances ?? [];
   const rows = useMemo(() => inventoryCounts(character.inventory ?? []), [character.inventory]);
 

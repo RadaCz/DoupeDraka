@@ -5,6 +5,25 @@ export type Locale = 'en' | 'cs';
 
 const STORAGE_KEY = 'app_locale';
 
+function telegramLanguagePrefersCzech(): boolean {
+  const code = window.Telegram?.WebApp?.initDataUnsafe?.user?.language_code?.toLowerCase();
+  if (code?.startsWith('cs') || code?.startsWith('sk')) return true;
+  return false;
+}
+
+function browserLanguagePrefersCzech(): boolean {
+  const lang = typeof navigator !== 'undefined' ? navigator.language?.toLowerCase() : '';
+  return Boolean(lang?.startsWith('cs') || lang?.startsWith('sk'));
+}
+
+function readInitialLocale(): Locale {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved === 'cs' || saved === 'en') return saved;
+  if (telegramLanguagePrefersCzech()) return 'cs';
+  if (browserLanguagePrefersCzech()) return 'cs';
+  return 'en';
+}
+
 const cs: Record<string, string> = {
   'Opening your adventure…': 'Otevírám tvé dobrodružství…',
   'Checking your session…': 'Kontroluji relaci…',
@@ -28,6 +47,24 @@ const cs: Record<string, string> = {
   'Browser account — link Telegram to unify access': 'Účet v prohlížeči — propoj Telegram pro jednotný přístup',
   'THE WHISPERING CELLAR': 'ŠEPTAJÍCÍ SKLEP',
   'Your story begins in Telegram': 'Tvůj příběh začíná v Telegramu',
+  'Sign in to continue': 'Pro pokračování se přihlas',
+  'Link Telegram': 'Propojit Telegram',
+  'Connect this browser account to your Telegram identity so both entry points share the same heroes.': 'Propoj účet v prohlížeči s Telegramem, aby oba vstupy sdílely stejné hrdiny.',
+  'Linking…': 'Propojuji…',
+  'Link Telegram now': 'Propojit Telegram teď',
+  HP: 'ŽP',
+  vs: 'vs',
+  'Hit points short': 'Životy',
+  'Close help': 'Zavřít nápovědu',
+  'Pick a spell': 'Vyber kouzlo',
+  Cantrip: 'Kantrip',
+  Quests: 'Úkoly',
+  'Filter journal': 'Filtrovat deník',
+  ACCOUNT: 'ÚČET',
+  'No spell selected': 'Žádné kouzlo',
+  'Story turns use the free offline narrator. Credits apply only if you enable paid narration in Settings.': 'Tahy příběhu používají bezplatného offline vypravěče. Kredity platí jen po zapnutí placené narace v Nastavení.',
+  'Lite storyteller': 'Vypravěč Lite',
+  'This work includes material taken from the System Reference Document 5.1 (“SRD 5.1”) by Wizards of the Coast LLC and available at the official SRD page. The SRD 5.1 is licensed under the Creative Commons Attribution 4.0 International License.': 'Tato hra využívá materiál z System Reference Document 5.1 („SRD 5.1“) od Wizards of the Coast LLC, dostupného na oficiální stránce SRD. SRD 5.1 je licencováno pod licencí Creative Commons Attribution 4.0 International.',
   'Open this app from Telegram to sign in.': 'Pro přihlášení otevři tuto aplikaci v Telegramu.',
   'Open this Mini App from your bot to sign in and continue your adventure.': 'Otevři tuto Mini App ze svého bota, přihlas se a pokračuj v dobrodružství.',
   'The reference library could not be loaded.': 'Knihovnu pravidel se nepodařilo načíst.',
@@ -1028,10 +1065,7 @@ interface I18nValue {
 const I18nContext = createContext<I18nValue | null>(null);
 
 export function LocaleProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved === 'cs' ? 'cs' : 'en';
-  });
+  const [locale, setLocaleState] = useState<Locale>(readInitialLocale);
 
   const setLocale = (next: Locale) => {
     localStorage.setItem(STORAGE_KEY, next);

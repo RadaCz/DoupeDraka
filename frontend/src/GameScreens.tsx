@@ -83,11 +83,24 @@ export function HomeScreen({
       </div>
 
       <div className="home-stat-grid">
-        <article className="stat-card mana-card">
-          <span className="stat-icon" aria-hidden="true">✧</span>
-          <div className="mana-stat-copy"><small>{t('NARRATOR CREDITS')}</small><strong>{economy ? economy.balance.toFixed(1) : '—'} <i>⚡</i></strong><ManaHelp /></div>
-          <small>{economy?.tier ?? 'normal'} {t('tier')}</small>
-        </article>
+        {economy && economy.tiers.length === 1 && economy.tiers[0]?.key === 'lite' ? (
+          <article className="stat-card mana-card mana-card-lite-hint">
+            <span className="stat-icon" aria-hidden="true">✧</span>
+            <div>
+              <small>{t('Lite storyteller')}</small>
+              <p className="home-lite-hint">{t('Story turns use the free offline narrator. Credits apply only if you enable paid narration in Settings.')}</p>
+            </div>
+          </article>
+        ) : (
+          <article className="stat-card mana-card">
+            <span className="stat-icon" aria-hidden="true">✧</span>
+            <div className="mana-stat-copy"><small>{t('NARRATOR CREDITS')}</small><strong>{economy ? economy.balance.toFixed(1) : '—'} <i>⚡</i></strong><ManaHelp /></div>
+            <small>
+              {economy?.tier === 'lite' ? t('Lite') : economy?.tier === 'normal' ? t('Normal') : economy?.tier === 'pro' ? t('Pro') : t('Normal')}
+              {' '}{t('tier')}
+            </small>
+          </article>
+        )}
         <article className="stat-card">
           <span className="stat-icon" aria-hidden="true">◈</span>
           <div><small>{t('YOUR ADVENTURERS')}</small><strong>{characters.length}</strong></div>
@@ -520,10 +533,11 @@ export function SettingsScreen({
         <details>
           <summary>{t('Show attribution and license')}</summary>
           <p>
-            This work includes material taken from the System Reference Document 5.1 (“SRD 5.1”) by Wizards of the Coast LLC and available at{' '}
-            <a href="https://dnd.wizards.com/resources/systems-reference-document">{t('the official SRD page')}</a>.
-            {' '}The SRD 5.1 is licensed under the{' '}
-            <a href="https://creativecommons.org/licenses/by/4.0/legalcode">{t('Creative Commons Attribution 4.0 International License')}</a>.
+            {t('This work includes material taken from the System Reference Document 5.1 (“SRD 5.1”) by Wizards of the Coast LLC and available at the official SRD page. The SRD 5.1 is licensed under the Creative Commons Attribution 4.0 International License.')}
+            {' '}
+            <a href="https://dnd.wizards.com/resources/systems-reference-document">{t('the official SRD page')}</a>
+            {' · '}
+            <a href="https://creativecommons.org/licenses/by/4.0/legalcode">{t('Creative Commons Attribution 4.0 International License')}</a>
           </p>
         </details>
       </section>

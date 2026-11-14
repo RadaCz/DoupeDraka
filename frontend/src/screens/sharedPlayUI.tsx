@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useOverlayDismiss } from '../hooks/useOverlayDismiss';
 import type { TurnPhase } from '../pendingTurn';
 import type { Character, Economy, JournalEvent, LocationReference, Spell } from '../types';
 import { useI18n } from '../i18n';
@@ -65,6 +66,10 @@ export function PlaySceneChrome({
     ? (enemy?.name ? displayCreature(enemy.name, locale) : t('Combat in progress'))
     : displayLocation(canonicalPlace, locale);
   const playerTurn = !combat || (character as Character & { combat_turn?: string }).combat_turn !== 'enemy';
+  const liteNarratorOnly = Boolean(
+    economy && economy.tier === 'lite' && !economy.tiers.some(tier => tier.key === 'normal'),
+  );
+  const showHudCredits = economy && !liteNarratorOnly;
   const manaLabel = economy ? economy.balance.toFixed(1) : '—';
   const questObjective = !combat
     ? visibleQuestTimeline(character.quest_flags ?? {}, undefined).active
@@ -82,7 +87,7 @@ export function PlaySceneChrome({
             <span className="play-immersive-hp-track" aria-hidden="true">
               <span style={{ width: `${hpRatio}%` }} className={hpRatio <= 25 ? 'critical' : ''} />
             </span>
-            <span className="play-immersive-stat-label">HP</span>
+            <span className="play-immersive-stat-label">{t('HP')}</span>
             <span className="play-immersive-num tabular-nums">
               {character.hp}<span className="play-immersive-num-dim">/{character.max_hp}</span>
             </span>
@@ -97,13 +102,15 @@ export function PlaySceneChrome({
               <SpellSlots character={character} t={t} />
             </span>
           )}
-          <span className="play-immersive-stat play-immersive-mana" title={t('NARRATOR CREDITS')}>
-            <span className="play-immersive-stat-glyph" aria-hidden="true">⚡</span>
-            <span className="play-immersive-num tabular-nums">{manaLabel}</span>
-          </span>
+          {showHudCredits && (
+            <span className="play-immersive-stat play-immersive-mana" title={t('NARRATOR CREDITS')}>
+              <span className="play-immersive-stat-glyph" aria-hidden="true">⚡</span>
+              <span className="play-immersive-num tabular-nums">{manaLabel}</span>
+            </span>
+          )}
           {combat && enemy && (
             <span className="play-immersive-stat play-immersive-enemy-hp tabular-nums" title={enemy.name}>
-              <span className="play-immersive-stat-label">vs</span>
+              <span className="play-immersive-stat-label">{t('vs')}</span>
               <span className="play-immersive-num">{enemy.hp}/{enemy.max_hp}</span>
             </span>
           )}
@@ -280,9 +287,12 @@ export function ActionComposer(props: PlayScreenProps) {
   } = props;
   const { t } = useI18n();
   const actionInputRef = useRef<HTMLInputElement>(null);
+  const menuToggleRef = useRef<HTMLButtonElement>(null);
+  const actionSheetRef = useRef<HTMLDivElement>(null);
   const [action, setAction] = useState('');
   const [selectedSpell, setSelectedSpell] = useState('');
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
+  const [spellSheetOpen, setSpellSheetOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const enemy = character.in_combat ? character.combatant : null;
   const accessibleSpells = new Set([...(character.known_spells ?? []), ...(character.prepared_spells ?? [])]);
@@ -319,11 +329,21 @@ export function ActionComposer(props: PlayScreenProps) {
     }
   };
 
-  const openSpellPicker = () => {
-    const select = document.getElementById('cast-spell') as HTMLSelectElement | null;
-    select?.focus();
-    select?.click();
-  };
+  const openSpellPicker = () => setSpellSheetOpen(true);
+
+  const closeActionMenu = useCallback(() => setActionMenuOpen(false), []);
+  const closeHelp = useCallback(() => setHelpOpen(false), []);
+  const closeSpellSheet = useCallback(() => setSpellSheetOpen(false), []);
+
+  useOverlayDismiss(actionMenuOpen, closeActionMenu, menuToggleRef);
+  useOverlayDismiss(helpOpen, closeHelp, menuToggleRef);
+  useOverlayDismiss(spellSheetOpen, closeSpellSheet, menuToggleRef);
+
+  useEffect(() => {
+    if (!actionMenuOpen) return;
+    const first = actionSheetRef.current?.querySelector<HTMLButtonElement>('button');
+    first?.focus();
+  }, [actionMenuOpen]);
 
   const handleChip = (chip: (typeof chips)[number]) => {
     if (chip.run === 'map') {
@@ -336,8 +356,6 @@ export function ActionComposer(props: PlayScreenProps) {
     }
     if (chip.action) onAction(chip.action);
   };
-
-  const closeActionMenu = () => setActionMenuOpen(false);
 
   const runMenuAction = (runner: () => void) => {
     closeActionMenu();
@@ -367,6 +385,7 @@ export function ActionComposer(props: PlayScreenProps) {
         <div className="composer-field composer-field-immersive">
           <button
             type="button"
+            ref={menuToggleRef}
             className="composer-menu-toggle"
             disabled={busy}
             aria-label={t('Play actions')}
@@ -379,7 +398,12 @@ export function ActionComposer(props: PlayScreenProps) {
           <input
             ref={actionInputRef}
             value={action}
-            onChange={event => setAction(event.target.value)}
+            onChange={event => {
+              setAction(event.target.value);
+              if (selectedSpell && !event.target.value.toLowerCase().includes(selectedSpell.toLowerCase())) {
+                setSelectedSpell('');
+              }
+            }}
             placeholder={busy ? t('The narrator is writing…') : t('What do you do?')}
             disabled={busy}
             aria-label={t('Your action')}
@@ -399,7 +423,13 @@ export function ActionComposer(props: PlayScreenProps) {
       {actionMenuOpen && (
         <>
           <button type="button" className="composer-sheet-backdrop" aria-label={t('Close')} onClick={closeActionMenu} />
-          <div className="composer-action-sheet" role="dialog" aria-modal="true" aria-label={t('Play actions')}>
+          <div
+            ref={actionSheetRef}
+            className="composer-action-sheet"
+            role="dialog"
+            aria-modal="true"
+            aria-label={t('Play actions')}
+          >
             <p className="composer-action-sheet-title">{t('Play actions')}</p>
             <ul className="composer-action-sheet-list">
               {character.in_combat ? (
@@ -449,41 +479,58 @@ export function ActionComposer(props: PlayScreenProps) {
           </div>
         </>
       )}
-      {characterSpells.length > 0 && (
-        <div className="spell-picker spell-picker-compact">
-          <select
-            id="cast-spell"
-            className="visually-compact-select"
-            value={selectedSpell}
-            disabled={busy}
-            onChange={event => {
-              const name = event.target.value;
-              setSelectedSpell(name);
-              if (!name) {
-                setAction('');
-                return;
-              }
-              const spell = characterSpells.find(item => item.name === name);
-              const target = spell && enemy && spell.effect_modeled && DAMAGE_TARGET_SPELLS.has(name)
-                ? ` at ${enemy.name}`
-                : '';
-              setAction(`cast ${name}${target}`);
-              actionInputRef.current?.focus();
-            }}
-            aria-label={t('Your spells')}
-          >
-            <option value="">{t('Choose a spell to cast')}</option>
-            {characterSpells.map(spell => <option key={spell.name} value={spell.name}>{spell.name}</option>)}
-          </select>
-        </div>
+      {spellSheetOpen && characterSpells.length > 0 && (
+        <>
+          <button type="button" className="composer-sheet-backdrop" aria-label={t('Close')} onClick={closeSpellSheet} />
+          <div className="composer-spell-sheet" role="dialog" aria-modal="true" aria-label={t('Pick a spell')}>
+            <div className="composer-spell-sheet-head">
+              <p className="composer-action-sheet-title">{t('Pick a spell')}</p>
+              <button type="button" className="composer-help-close" aria-label={t('Close')} onClick={closeSpellSheet}>
+                ×
+              </button>
+            </div>
+            <ul className="composer-spell-sheet-list">
+              {characterSpells.map(spell => (
+                <li key={spell.name}>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    className={selectedSpell === spell.name ? 'selected' : undefined}
+                    onClick={() => {
+                      setSelectedSpell(spell.name);
+                      const target = enemy && spell.effect_modeled && DAMAGE_TARGET_SPELLS.has(spell.name)
+                        ? ` at ${enemy.name}`
+                        : '';
+                      setAction(`cast ${spell.name}${target}`);
+                      closeSpellSheet();
+                      actionInputRef.current?.focus();
+                    }}
+                  >
+                    <strong>{spell.name}</strong>
+                    <small>{spell.level === 0 ? t('Cantrip') : t(`Level ${spell.level}`)}</small>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </>
       )}
       {spellWarning && <p className="spell-warning" role="status">{spellWarning}</p>}
       {!spellWarning && spellNotice && <p className="spell-warning" role="status">{spellNotice}</p>}
       {helpOpen && (
-        <div className="composer-help-popover" role="note">
-          <p>{t('Each search uses one six-sided die: a 1 brings an enemy; other results may reveal clues, quiet, or 1–4 gold coins. After a fight or escape, your next search is safe. Rejected actions cost no narrator credits.')}</p>
-          <p>{t('Action words guide ability checks: strength for force, dexterity for stealth, constitution to endure, intelligence to inspect, wisdom to notice, and charisma to persuade.')}</p>
-        </div>
+        <>
+          <button type="button" className="composer-sheet-backdrop" aria-label={t('Close help')} onClick={closeHelp} />
+          <div className="composer-help-popover" role="dialog" aria-modal="true" aria-label={t('How actions and exploration work')}>
+            <div className="composer-help-head">
+              <p className="composer-action-sheet-title">{t('How actions and exploration work')}</p>
+              <button type="button" className="composer-help-close" aria-label={t('Close help')} onClick={closeHelp}>
+                ×
+              </button>
+            </div>
+            <p>{t('Each search uses one six-sided die: a 1 brings an enemy; other results may reveal clues, quiet, or 1–4 gold coins. After a fight or escape, your next search is safe. Rejected actions cost no narrator credits.')}</p>
+            <p>{t('Action words guide ability checks: strength for force, dexterity for stealth, constitution to endure, intelligence to inspect, wisdom to notice, and charisma to persuade.')}</p>
+          </div>
+        </>
       )}
     </div>
   );

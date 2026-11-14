@@ -685,6 +685,13 @@ summary:focus-visible {
   margin-bottom: 14px;
 }
 
+.home-lite-hint {
+  margin: 4px 0 0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
 .stat-card {
   min-width: 0;
   display: grid;

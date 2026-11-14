@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { useOverlayDismiss } from '../hooks/useOverlayDismiss';
 import type { Character, LocationReference, QuestCatalog } from '../types';
 import { useI18n } from '../i18n';
 import { displayArrivalBeat, displayLocation, displayLocationShort } from '../i18n/gameDisplay';
@@ -43,6 +44,7 @@ export function MapScreen({
   const { t, locale } = useI18n();
   const [selected, setSelected] = useState<string | null>(null);
   const closeSheet = useCallback(() => setSelected(null), []);
+  useOverlayDismiss(Boolean(selected), closeSheet);
 
   if (!character) {
     return (

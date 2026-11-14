@@ -767,11 +767,18 @@ function AppContent() {
   }, [authenticated, character?.id, character?.narration_language, locale, syncNarrationLanguage]);
 
   useEffect(() => {
-    const tgLang = window.Telegram?.WebApp?.initDataUnsafe?.user?.language_code;
-    if (tgLang === 'cs' && localStorage.getItem('app_locale') !== 'en') {
+    if (localStorage.getItem('app_locale')) return;
+    const tgLang = window.Telegram?.WebApp?.initDataUnsafe?.user?.language_code?.toLowerCase();
+    if (tgLang?.startsWith('cs') || tgLang?.startsWith('sk')) {
       setLocale('cs');
     }
   }, [setLocale]);
+
+  useEffect(() => {
+    if (!character || localStorage.getItem('app_locale')) return;
+    const fromChar = (character.narration_language || '').toLowerCase().split('-')[0];
+    if (fromChar === 'cs' || fromChar === 'en') setLocale(fromChar);
+  }, [character?.id, character?.narration_language, setLocale]);
 
   const calculateEncounter = async (level: number, monsters: string[]) => {
     setCalculating(true);
