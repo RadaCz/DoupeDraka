@@ -65,6 +65,19 @@ export function resolveNpcTalkAction(
 /** Tier-3 bosses (Bell Warden) require hero level 3+ — matches `encounters.minimum_level_for_tier`. */
 export const BELL_WARDEN_MIN_LEVEL = 3;
 
+/** Single i18n source string for the Bell Warden level gate (Quests, map, coaching strip). */
+export const BELL_WARDEN_LEVEL_GATE_NOTICE =
+  'The Bell Warden requires at least level {minLevel}. You are level {level}. Gain experience through fights and exploration before you challenge the boss in the pit.';
+
+export function formatBellWardenLevelGateNotice(
+  level: number,
+  t: (value: string) => string,
+): string {
+  return t(BELL_WARDEN_LEVEL_GATE_NOTICE)
+    .replace(/\{minLevel\}/g, String(BELL_WARDEN_MIN_LEVEL))
+    .replace(/\{level\}/g, String(level));
+}
+
 /** Background feature chip when location and chapter flags allow a one-time use. */
 export function resolveBackgroundFeatureChip(
   character: Character,
@@ -395,7 +408,7 @@ export function bellWardenLevelGateNotice(
   const { active } = visibleQuestTimeline(character.quest_flags ?? {});
   if (!active || active.id !== 'chapter_one_complete') return null;
   if (character.level >= BELL_WARDEN_MIN_LEVEL) return null;
-  return `${t('The Bell Warden requires at least level 3.')}${t(' You are level')} ${character.level}. ${t('Gain experience through fights and exploration before you challenge the boss in the pit.')}`;
+  return formatBellWardenLevelGateNotice(character.level, t);
 }
 
 export function scenePrompt(character: Character, events: JournalEvent[], t: (value: string) => string) {
