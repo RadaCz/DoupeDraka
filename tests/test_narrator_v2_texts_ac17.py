@@ -17,7 +17,7 @@ from app.ai.offline_cs_narration import (
 from app.ai.offline_variety import familiarity_lead, variety_seed
 from app.ai.offline_variety import choose_variety
 from app.display_localization import catalog_for_tests, display_location_in, display_location_to, display_quest_hint
-from app.engine.quests import CHAPTER_ONE_STEPS
+from app.engine.quests import CHAPTER_ONE_STEPS, SIDE_QUESTS
 from app.narration_layers import compose_narration_layers, format_beat_outcome_cs, quest_next_hint
 
 
@@ -27,22 +27,37 @@ def _ctx(**kwargs) -> NarrationContext:
     return NarrationContext(**defaults)
 
 
-# --- a) hint_cs ---
+# --- a) hint_cs (Designer DOPLNĚK: všech 7 kroků z quests.py) ---
 
-_TRANSLATED_STEP_IDS = frozenset(
-    step.id for step in CHAPTER_ONE_STEPS if step.id != "chapter_one_complete"
-)
+_QUEST_HINT_CS_EXPECTED: dict[str, str] = {
+    "bell_quest_accepted": "Ve Svatyni zapomenutých si promluv s Caldem o zvonu.",
+    "bell_acquired": "Vydej se na Gobliní trh a zeptej se Niba na chrámový zvon.",
+    "bell_quest_complete": "Vrať se do svatyně a odevzdej zvon Caldovi.",
+    "vault_hint_given": (
+        "Vrať se do Svatyně zapomenutých a znovu promluv s Caldem. "
+        "Teď, když má zvon zpátky, ti prozradí cestu do Komnaty ozvěn."
+    ),
+    "vault_first_descent": (
+        "Sestup do Komnaty ozvěn, Caldus varoval před nebezpečím. Přežij první sestup "
+        "a než se postavíš Strážci zvonu, dosáhni alespoň 3. úrovně."
+    ),
+    "chapter_one_complete": (
+        "Až budeš mít alespoň 3. úroveň, vstup do Jámy strážce zvonu a postav se Strážci."
+    ),
+    "crypt_echo_relic": "Prohledej Zapomenutou kryptu. Za puklým sarkofágem je ukrytá relikvie.",
+}
 
 
-@pytest.mark.parametrize("step_id", sorted(_TRANSLATED_STEP_IDS))
-def test_ac17_texts_quest_hint_cs_present(step_id: str):
-    hint = display_quest_hint(step_id, "cs")
-    assert hint and hint.strip(), f"chybí hint_cs pro {step_id}"
+def _all_quest_hint_ids() -> tuple[str, ...]:
+    ids = [step.id for step in CHAPTER_ONE_STEPS]
+    ids.extend(q.id for q in SIDE_QUESTS)
+    return tuple(ids)
 
 
-@pytest.mark.xfail(reason="Designer zatím nepřeložil chapter_one_complete — uvedeno v PR")
-def test_ac17_texts_quest_hint_chapter_one_complete_pending():
-    assert display_quest_hint("chapter_one_complete", "cs") is None
+@pytest.mark.parametrize("step_id", _all_quest_hint_ids())
+def test_ac17_texts_quest_hint_cs_exact(step_id: str):
+    expected = _QUEST_HINT_CS_EXPECTED[step_id]
+    assert display_quest_hint(step_id, "cs") == expected
 
 
 def test_ac17_texts_quest_next_layer_uses_cs_catalog():

@@ -93,10 +93,12 @@
   },
   "quest_hints_cs": {
     "bell_quest_accepted": "Ve Svatyni zapomenutých si promluv s Caldem o zvonu.",
-    "bell_acquired": "Vydej se na Gobliní trh a zeptej se Niba na zvon ze svatyně.",
+    "bell_acquired": "Vydej se na Gobliní trh a zeptej se Niba na chrámový zvon.",
     "bell_quest_complete": "Vrať se do svatyně a odevzdej zvon Caldovi.",
-    "vault_hint_given": "Vrať se do Svatyně zapomenutých a znovu promluv s Caldem.",
-    "vault_first_descent": "Sestup do Komnaty ozvěn, Caldus varoval před nebezpečím. Přežij první sestup a než se postavíš Strážci zvonu, dosáhni alespoň 3. úrovně."
+    "vault_hint_given": "Vrať se do Svatyně zapomenutých a znovu promluv s Caldem. Teď, když má zvon zpátky, ti prozradí cestu do Komnaty ozvěn.",
+    "vault_first_descent": "Sestup do Komnaty ozvěn, Caldus varoval před nebezpečím. Přežij první sestup a než se postavíš Strážci zvonu, dosáhni alespoň 3. úrovně.",
+    "chapter_one_complete": "Až budeš mít alespoň 3. úroveň, vstup do Jámy strážce zvonu a postav se Strážci.",
+    "crypt_echo_relic": "Prohledej Zapomenutou kryptu. Za puklým sarkofágem je ukrytá relikvie."
   },
   "arrival_beats_cs": {
     "A cold draft curls around the old stone stairs.": "Studený průvan se vine kolem starých kamenných schodů.",
