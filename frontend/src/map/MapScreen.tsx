@@ -10,6 +10,7 @@ import {
   mapNodeState,
   routeOpen,
 } from '../chapterOneMap';
+import { bellWardenLevelGateNotice } from '../game/gameActions';
 import { questStepsFromCatalog, visibleQuestTimeline } from '../questProgress';
 import {
   buildTravelAction,
@@ -73,6 +74,8 @@ export function MapScreen({
 
   const quests = character.quest_flags ?? {};
   const { active } = visibleQuestTimeline(quests, questStepsFromCatalog(questCatalog));
+  const levelGateNotice = bellWardenLevelGateNotice(character, t);
+  const questTagLabel = active ? t(active.label) : t('Quest destination');
   const node = locations.find(item => item.name === character.location);
   const edges = mapEdges(locations);
   const visiblePlaces = sortPlacesByRelevance(visibleChapterPlaces(character, locations));
@@ -112,11 +115,15 @@ export function MapScreen({
         {active && (
           <p className="map-quest-context">
             <span className="eyebrow">{t('CURRENT OBJECTIVE')}</span>
+            <strong className="map-quest-objective-label">{t(active.label)}</strong>
             {active.location === character.location
               ? t('Your quest leads you here.')
               : active.location
                 ? `${t('Quest points toward')}: ${displayLocation(active.location, locale)}`
                 : t(active.hint)}
+            {levelGateNotice ? (
+              <span className="map-quest-level-gate" role="status">{levelGateNotice}</span>
+            ) : null}
           </p>
         )}
       </article>
@@ -177,6 +184,9 @@ export function MapScreen({
                 <span className="map-node-label">
                   <span className="map-node-place-icon" aria-hidden="true">{mapLocationEmoji(place)}</span>
                   {displayLocationShort(place, locale)}
+                  {questMark ? (
+                    <span className="map-node-quest-tag">{questTagLabel}</span>
+                  ) : null}
                 </span>
               </button>
             );
@@ -201,7 +211,7 @@ export function MapScreen({
                 <button type="button" className="text-button" onClick={() => setSelected(route)}>
                   <span aria-hidden="true">{mapLocationEmoji(route)}</span> {displayLocation(route, locale)}
                   {isQuestDestination(route, active) && (
-                    <span className="map-quest-tag">{t('Quest destination')}</span>
+                    <span className="map-quest-tag">{questTagLabel}</span>
                   )}
                 </button>
               </li>
@@ -222,7 +232,7 @@ export function MapScreen({
                   <span className="map-known-icon" aria-hidden="true">{mapLocationEmoji(name)}</span>
                   <span className="map-known-copy">
                     <strong>{displayLocation(name, locale)}</strong>
-                    <small>{t(mapStatusLabelKey(state))}{questMark ? ` · ${t('Quest destination')}` : ''}</small>
+                    <small>{t(mapStatusLabelKey(state))}{questMark ? ` · ${questTagLabel}` : ''}</small>
                     {beat && <span className="map-known-beat">{displayArrivalBeat(beat, locale)}</span>}
                   </span>
                 </button>
@@ -246,6 +256,9 @@ export function MapScreen({
               <p className="map-sheet-quest" role="status">
                 <span className="eyebrow">{t('CURRENT OBJECTIVE')}</span>
                 {t(active.label)}
+                {levelGateNotice ? (
+                  <span className="map-quest-level-gate">{levelGateNotice}</span>
+                ) : null}
               </p>
             )}
             <p>

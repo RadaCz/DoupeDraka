@@ -1,5 +1,7 @@
 import type { Character, JournalEvent, QuestCatalog } from '../types';
 import { useI18n } from '../i18n';
+import { displayLocation } from '../i18n/gameDisplay';
+import { bellWardenLevelGateNotice } from '../game/gameActions';
 import { journalExcerpt } from '../share/adventureShare';
 import { questStepsFromCatalog, visibleQuestTimeline } from '../questProgress';
 import {
@@ -24,8 +26,9 @@ export function QuestChronicle({
   onOpenMap?: (location?: string) => void;
   onContinueAdventure?: () => void;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const flags = character.quest_flags ?? {};
+  const levelGateNotice = bellWardenLevelGateNotice(character, t);
   const stepSource = questStepsFromCatalog(questCatalog);
   const { done, active, teaser } = visibleQuestTimeline(flags, stepSource);
   const learned = questLearnedFromFlags(flags);
@@ -53,12 +56,15 @@ export function QuestChronicle({
           <p className="eyebrow">{t('CURRENT OBJECTIVE')}</p>
           <h2>{t(active.label)}</h2>
           <p>{t(active.hint)}</p>
+          {levelGateNotice ? (
+            <p className="quest-level-gate" role="status">{levelGateNotice}</p>
+          ) : null}
           {why && <p className="quest-why">{t(why)}</p>}
           {active.location && (
             <p className="quest-next-meta">
               {atNextLocation
                 ? t('You are at the right location.')
-                : `${t('Head to')}: ${active.location}`}
+                : `${t('Head to')}: ${displayLocation(active.location, locale)}`}
             </p>
           )}
           <div className="quest-v2-actions">

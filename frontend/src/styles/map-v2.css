@@ -93,10 +93,41 @@
 
 .map-quest-tag {
   margin-left: 6px;
-  font-size: 0.72rem;
+  font-size: 0.875rem;
   color: var(--gold);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
+}
+
+.map-node-quest-tag {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.875rem;
+  line-height: 1.25;
+  color: var(--gold);
+  font-weight: 600;
+  max-width: 9rem;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.map-quest-objective-label {
+  display: block;
+  margin: 4px 0 6px;
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.map-quest-level-gate {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--gold) 65%, var(--text));
+}
+
+.map-sheet-quest .map-quest-level-gate {
+  margin-top: 6px;
 }
 
 .map-graph-node.quest-destination .map-node-label {

@@ -85,6 +85,14 @@
   color: color-mix(in srgb, var(--text) 88%, var(--muted));
 }
 
+.quest-level-gate {
+  margin: 10px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--gold) 65%, var(--text));
+}
+
 .quest-v2-actions {
   display: flex;
   flex-wrap: wrap;
