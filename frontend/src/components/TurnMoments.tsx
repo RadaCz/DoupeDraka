@@ -1,6 +1,8 @@
 import { useI18n } from '../i18n';
 import type { LevelUpNotice } from '../game/turnMoments';
+import type { CombatVictoryRewards } from '../combat/combatOutcome';
 import type { Character } from '../types';
+import { displayCreature } from '../i18n/gameDisplay';
 import { ShareButton } from './ShareButton';
 import { buildLevelUpShareMessage } from '../share/adventureShare';
 
@@ -55,10 +57,49 @@ export function DefeatOverlay({ onDismiss }: { onDismiss: () => void }) {
   const { t } = useI18n();
   return (
     <div className="turn-moment-overlay turn-moment-overlay-dim" role="dialog" aria-modal="true" aria-labelledby="defeat-title">
-      <div className="turn-moment-card defeat-moment-card">
+      <div className="turn-moment-card defeat-moment-card combat-outcome-card">
         <p className="eyebrow">{t('DEFEAT')}</p>
         <h2 id="defeat-title">{t('You have been defeated')}</h2>
         <p className="turn-moment-body">{t('You blacked out and woke at the last safe refuge.')}</p>
+        <p className="turn-moment-body turn-moment-muted">{t('You can rest, heal, and try the fight again when ready.')}</p>
+        <button type="button" className="primary" onClick={onDismiss}>
+          {t('Continue adventure')}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export function CombatVictoryOverlay({
+  rewards,
+  onDismiss,
+}: {
+  rewards: CombatVictoryRewards;
+  onDismiss: () => void;
+}) {
+  const { t, locale } = useI18n();
+  const foe = rewards.foeName ? displayCreature(rewards.foeName, locale) : null;
+  return (
+    <div className="turn-moment-overlay" role="dialog" aria-modal="true" aria-labelledby="victory-title">
+      <div className="turn-moment-card victory-moment-card combat-outcome-card">
+        <p className="eyebrow">{t('VICTORY')}</p>
+        <h2 id="victory-title">{t('Victory')}</h2>
+        {foe && (
+          <p className="turn-moment-body">
+            {t('{foe} is defeated.').replace('{foe}', foe)}
+          </p>
+        )}
+        <ul className="combat-victory-rewards" role="list">
+          {rewards.xp != null && (
+            <li>{t('Experience gained: +{amount} XP').replace('{amount}', String(rewards.xp))}</li>
+          )}
+          {rewards.gold != null && rewards.gold > 0 && (
+            <li>{t('Gold gained: +{amount} gp').replace('{amount}', String(rewards.gold))}</li>
+          )}
+          {rewards.lootLines.map((line, index) => (
+            <li key={index}>{line}</li>
+          ))}
+        </ul>
         <button type="button" className="primary" onClick={onDismiss}>
           {t('Continue adventure')}
         </button>

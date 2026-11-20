@@ -772,6 +772,173 @@
   text-decoration: line-through;
 }
 
+.combat-battlefield {
+  margin-top: 8px;
+}
+
+.combat-battlefield-rail {
+  position: relative;
+  height: 44px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--text-soft) 28%, transparent);
+  overflow: visible;
+}
+
+.combat-battlefield-tick {
+  position: absolute;
+  bottom: -18px;
+  font: 600 0.62rem var(--font-mono, monospace);
+  color: var(--muted);
+}
+
+.combat-battlefield-tick-start {
+  left: 0;
+}
+
+.combat-battlefield-tick-end {
+  right: 0;
+}
+
+.combat-battlefield-weapon-reach {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: 10px 0 0 10px;
+  background: color-mix(in srgb, var(--accent-verb) 22%, transparent);
+  border-right: 1px solid color-mix(in srgb, var(--accent-verb) 45%, transparent);
+  pointer-events: none;
+}
+
+.combat-battlefield-move-band {
+  position: absolute;
+  top: 18px;
+  height: 8px;
+  border-radius: 4px;
+  background: repeating-linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--gold) 55%, transparent) 0 6px,
+    transparent 6px 12px
+  );
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+.combat-battlefield-hero-token,
+.combat-battlefield-foe-token {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-deep) 92%, #000);
+  border: 2px solid color-mix(in srgb, var(--accent-verb) 55%, transparent);
+  color: var(--text);
+  transition: left 280ms ease, transform 280ms ease;
+}
+
+.combat-battlefield-foe-token {
+  border-color: color-mix(in srgb, #c45555 55%, transparent);
+  color: #e8b0b0;
+}
+
+.combat-battlefield-far-label {
+  position: absolute;
+  top: -16px;
+  right: 0;
+  font: 700 0.62rem var(--font-mono, monospace);
+  letter-spacing: 0.04em;
+  color: color-mix(in srgb, var(--gold) 80%, var(--text));
+}
+
+.combat-battlefield-caption {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  margin: 20px 0 0;
+  font-size: 0.68rem;
+  color: var(--muted);
+}
+
+.combat-chronicle-fold {
+  margin-top: 6px;
+  border-radius: 10px;
+  border: 1px solid var(--border-subtle);
+  background: color-mix(in srgb, var(--surface-deep) 88%, #000);
+}
+
+.combat-chronicle-fold summary {
+  min-height: 44px;
+  padding: 10px 12px;
+  font-weight: 650;
+  font-size: 0.78rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.combat-chronicle-fold summary::-webkit-details-marker {
+  display: none;
+}
+
+.combat-chronicle-list {
+  margin: 0;
+  padding: 0 12px 10px;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.combat-chronicle-item {
+  display: grid;
+  gap: 2px;
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.combat-chronicle-action {
+  font-weight: 650;
+  color: var(--text);
+}
+
+.combat-chronicle-summary {
+  color: var(--text-soft);
+}
+
+.victory-moment-card .combat-victory-rewards {
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.combat-outcome-card {
+  border: 1px solid color-mix(in srgb, var(--gold) 35%, transparent);
+}
+
+.victory-moment-card {
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--gold) 12%, var(--surface-deep)) 0%,
+    var(--surface-deep) 70%
+  );
+}
+
+.defeat-moment-card {
+  border-color: color-mix(in srgb, #8b3030 45%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .combat-battlefield-hero-token,
+  .combat-battlefield-foe-token {
+    transition: none;
+  }
+}
+
 .combat-atmosphere {
   margin: 8px 0 0;
   font-size: 0.88rem;

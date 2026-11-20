@@ -7,5 +7,6 @@ describe('AC16-9 reduced-motion styles', () => {
     const css = readFileSync(resolve(__dirname, '../styles/play.css'), 'utf8');
     expect(css).toMatch(/prefers-reduced-motion: reduce/);
     expect(css).toMatch(/\.combat-action-card:active:not\(:disabled\)[\s\S]*transform:\s*none/);
+    expect(css).toMatch(/\.combat-battlefield-foe-token[\s\S]*transition:\s*none/);
   });
 });

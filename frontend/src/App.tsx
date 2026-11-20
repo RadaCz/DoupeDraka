@@ -40,7 +40,15 @@ import { canGoBackFrom, goBackScreen, navigateScreen } from './navigationHistory
 import { isFallenError } from './game/gameActions';
 import { formatTurnDelta } from './game/turnDelta';
 import { formatJournalStreamResult, mergeJournalAfterRefresh } from './journalFormat';
-import { DefeatOverlay, EnergyExhaustedModal, LevelUpModal, type LevelUpNotice } from './components/TurnMoments';
+import {
+  CombatVictoryOverlay,
+  DefeatOverlay,
+  EnergyExhaustedModal,
+  LevelUpModal,
+  type LevelUpNotice,
+} from './components/TurnMoments';
+import type { CombatVictoryRewards } from './combat/combatOutcome';
+import { shouldOfferCombatVictory, extractCombatVictory } from './combat/combatOutcome';
 import { isCombatDefeatRespawn, noticeFromLevelUp } from './game/turnMoments';
 import { FallenScreen } from './screens/FallenScreen';
 import {
@@ -234,6 +242,7 @@ function AppContent() {
   const [turnDelta, setTurnDelta] = useState<string | null>(null);
   const [levelUpNotice, setLevelUpNotice] = useState<LevelUpNotice | null>(null);
   const [showDefeatOverlay, setShowDefeatOverlay] = useState(false);
+  const [combatVictory, setCombatVictory] = useState<CombatVictoryRewards | null>(null);
   const [showEnergyExhaustedModal, setShowEnergyExhaustedModal] = useState(false);
 
   const refreshEvents = useCallback(async (characterId: string) => {
@@ -598,9 +607,11 @@ function AppContent() {
     let resolvedFacts: string[] = [];
     let pendingLevelUp: LevelUpNotice | null = null;
     let pendingDefeatOverlay = false;
+    let pendingVictory: CombatVictoryRewards | null = null;
     setTurnPhase('sending');
     setLevelUpNotice(null);
     setShowDefeatOverlay(false);
+    setCombatVictory(null);
     const updatePendingNarration = (narration: string, facts: string[]) => {
       const result = formatJournalStreamResult(narration, facts, locale);
       setEvents(previous => previous.map(event => event.id === pendingEventId
@@ -623,6 +634,14 @@ function AppContent() {
           if (delta) setTurnDelta(delta);
           if (isCombatDefeatRespawn(result.events)) {
             pendingDefeatOverlay = true;
+          }
+          if (shouldOfferCombatVictory(
+            snapshot.in_combat,
+            result.character.in_combat,
+            result.character.hp,
+            result.events,
+          )) {
+            pendingVictory = extractCombatVictory(result.events);
           }
           const levelNotice = noticeFromLevelUp(snapshot, result.character, result.level_up_facts);
           if (levelNotice) pendingLevelUp = levelNotice;
@@ -661,6 +680,7 @@ function AppContent() {
             } : previous);
           }
           if (pendingDefeatOverlay) setShowDefeatOverlay(true);
+          if (pendingVictory) setCombatVictory(pendingVictory);
           if (pendingLevelUp) setLevelUpNotice(pendingLevelUp);
           haptic('success');
           clearPendingAction();
@@ -1134,6 +1154,12 @@ function AppContent() {
       )}
       {showDefeatOverlay && (
         <DefeatOverlay onDismiss={() => setShowDefeatOverlay(false)} />
+      )}
+      {combatVictory && (
+        <CombatVictoryOverlay
+          rewards={combatVictory}
+          onDismiss={() => setCombatVictory(null)}
+        />
       )}
       {showEnergyExhaustedModal && (
         <EnergyExhaustedModal
