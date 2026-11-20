@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type APIRequestContext } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -12,11 +12,7 @@ import {
 const API = 'http://127.0.0.1:8001';
 const OUT = resolve(dirname(fileURLToPath(import.meta.url)), '../../docs/pr-screenshots/18-1');
 
-async function seedHero(
-  request: Parameters<Parameters<typeof test>[1]>[0]['request'],
-  telegramId: number,
-  name: string,
-) {
+async function seedHero(request: APIRequestContext, telegramId: number, name: string) {
   const initData = signedTelegramInitData(telegramId);
   const token = await apiTelegramToken(request, initData);
   const response = await request.post(`${API}/characters`, {
