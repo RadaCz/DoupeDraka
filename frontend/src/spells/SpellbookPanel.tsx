@@ -12,6 +12,7 @@ import {
   usesPreparedSpells,
 } from './spellbook';
 import { SpellDetailSheet } from './SpellDetailSheet';
+import { SpellNarrativeOnlyTag } from './SpellNarrativeOnlyTag';
 
 type Props = {
   character: Character;
@@ -85,7 +86,7 @@ export function SpellbookPanel({ character, spells, busy = false, onCast, lastCa
                     {known && !prepared && <span className="char-v2-tag">{t('Known')}</span>}
                     {spell.effect_modeled
                       ? <span className="char-v2-tag">{t('Engine modeled')}</span>
-                      : <span className="char-v2-tag warn">{t('Catalog only')}</span>}
+                      : <SpellNarrativeOnlyTag />}
                     {ready && <span className="char-v2-tag">{t('Ready to cast')}</span>}
                   </span>
                 </button>

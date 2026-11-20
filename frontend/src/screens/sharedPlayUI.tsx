@@ -15,6 +15,7 @@ import { SpellSlots } from '../components/characterVitals';
 import { JournalChronicle } from '../journal/JournalChronicle';
 import { visibleQuestTimeline } from '../questProgress';
 import { DAMAGE_TARGET_SPELLS } from '../spells/spellbook';
+import { SpellNarrativeOnlyTag } from '../spells/SpellNarrativeOnlyTag';
 
 export interface PlayScreenProps {
   character: Character;
@@ -508,6 +509,7 @@ export function ActionComposer(props: PlayScreenProps) {
                   >
                     <strong>{spell.name}</strong>
                     <small>{spell.level === 0 ? t('Cantrip') : t(`Level ${spell.level}`)}</small>
+                    {!spell.effect_modeled && <SpellNarrativeOnlyTag className="char-v2-tag warn composer-spell-tag" />}
                   </button>
                 </li>
               ))}

@@ -374,6 +374,7 @@ const cs: Record<string, string> = {
   'Ready in combat': 'Připraveno v boji',
   'Prepared spells': 'Připravená kouzla',
   'Engine modeled': 'Modelováno enginem',
+  'Story only in play': 'Jen v příběhu',
   'Catalog only': 'Jen katalog',
   'Ready to cast': 'Lze seslat',
   'No spells match that search.': 'Žádné kouzlo neodpovídá hledání.',
@@ -389,6 +390,8 @@ const cs: Record<string, string> = {
   'SRD description': 'Popis podle SRD',
   'Engine support': 'Podpora v engine',
   'Modeled — slots and effects resolve in play.': 'Modelováno — sloty a efekty se řeší ve hře.',
+  'Story only in play — no slot spent; no mechanical effect yet.':
+    'Jen v příběhu — slot se nebere; mechanický efekt zatím ne.',
   'Catalog only — no slot spent; no mechanical effect yet.': 'Jen katalog — slot se nebere; mechanický efekt zatím ne.',
   'Slot cost': 'Spotřeba slotu',
   'Wait until the current action finishes.': 'Počkej, až se dokončí probíhající akce.',
@@ -408,6 +411,8 @@ const cs: Record<string, string> = {
   'Damage spells in combat need a target. The action is sent as “cast Fire Bolt at Goblin scout”. Healing and utility spells omit a target unless the scene requires one.':
     'Útočná kouzla v boji potřebují cíl. Akce jde jako „cast Fire Bolt at Goblin scout“. Léčení a užitková kouzla cíl vynechají, pokud scéna nevyžaduje jinak.',
   'Modeled vs catalog': 'Model vs katalog',
+  '“Engine modeled” spells have deterministic effects in Doupě Draka. Spells marked “Story only in play” appear in the SRD and on your sheet but refuse casting without spending slots — same as typing them in the adventure composer.':
+    'Kouzla „Modelováno enginem“ mají ve hře deterministický efekt. Kouzla „Jen v příběhu“ jsou v SRD i na listu, ale seslání odmítnou bez slotu — stejně jako v composeru na Hře.',
   '“Engine modeled” spells have deterministic effects in Doupě Draka. “Catalog only” spells appear in the SRD text but refuse casting without spending slots — same as typing them in the adventure composer.':
     'Kouzla „Modelováno enginem“ mají ve hře deterministický efekt. „Jen katalog“ jsou v SRD, ale seslání odmítnou bez slotu — stejně jako v composeru na Hře.',
   'Quick rules': 'Rychlá pravidla',

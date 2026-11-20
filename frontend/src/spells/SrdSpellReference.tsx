@@ -3,6 +3,7 @@ import type { Character, Spell } from '../types';
 import { useI18n } from '../i18n';
 import { titleCase } from '../components/characterVitals';
 import { highestSpellLevel } from './spellbook';
+import { SpellNarrativeOnlyTag } from './SpellNarrativeOnlyTag';
 
 export function SrdSpellReference({ character, spells }: { character: Character | null; spells: Spell[] }) {
   const { t } = useI18n();
@@ -52,7 +53,7 @@ export function SrdSpellReference({ character, spells }: { character: Character 
                 <strong>{spell.name}</strong>
                 <small>{t(titleCase(spell.school))} · {spell.range}</small>
               </span>
-              {spell.effect_modeled ? <span className="char-v2-tag">{t('Engine modeled')}</span> : <span className="char-v2-tag warn">{t('Catalog only')}</span>}
+              {spell.effect_modeled ? <span className="char-v2-tag">{t('Engine modeled')}</span> : <SpellNarrativeOnlyTag />}
             </summary>
             <p>{spell.text}</p>
           </details>

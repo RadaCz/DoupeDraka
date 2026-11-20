@@ -7,6 +7,7 @@ import {
   CAST_BLOCK_MESSAGES,
   spellEngineKind,
 } from './spellbook';
+import { SpellNarrativeOnlyTag } from './SpellNarrativeOnlyTag';
 
 const KIND_LABEL: Record<string, string> = {
   attack: 'Attack spell',
@@ -42,14 +43,22 @@ export function SpellDetailSheet({
     <div className="inventory-detail-overlay" role="dialog" aria-modal="true" aria-labelledby="spell-detail-title" onClick={() => !busy && onClose()}>
       <div className="inventory-detail-card spell-detail-card" onClick={event => event.stopPropagation()}>
         <p className="spellbook-detail-eyebrow">{spell.level === 0 ? t('Cantrip') : `${t('Level')} ${spell.level}`}</p>
-        <h2 id="spell-detail-title">{spell.name}</h2>
+        <h2 id="spell-detail-title">
+          {spell.name}
+          {!spell.effect_modeled && (
+            <>
+              {' '}
+              <SpellNarrativeOnlyTag className="char-v2-tag warn spell-detail-tag" />
+            </>
+          )}
+        </h2>
         <p className="char-v2-item-type">{t(titleCase(spell.school))} · {spell.range}</p>
         <dl className="spell-detail-meta">
           <div><dt>{t('Type in Doupě Draka')}</dt><dd>{t(KIND_LABEL[kind])}</dd></div>
           <div><dt>{t('SRD description')}</dt><dd>{spell.text || t('No description in the reference yet.')}</dd></div>
           <div>
             <dt>{t('Engine support')}</dt>
-            <dd>{spell.effect_modeled ? t('Modeled — slots and effects resolve in play.') : t('Catalog only — no slot spent; no mechanical effect yet.')}</dd>
+            <dd>{spell.effect_modeled ? t('Modeled — slots and effects resolve in play.') : t('Story only in play — no slot spent; no mechanical effect yet.')}</dd>
           </div>
           {spell.level > 0 && (
             <div><dt>{t('Slot cost')}</dt><dd>{t('Level')} {spell.level}</dd></div>

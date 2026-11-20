@@ -983,7 +983,18 @@ function AppContent() {
             onOpenJournal={() => navigate('journal')}
           />
         )}
-        {screen === 'create' && <CharacterWizard catalog={catalog} presets={presets} busy={busy} error={error} onCreate={createCharacter} onPreset={createPreset} onCancel={() => navigate('home')} />}
+        {screen === 'create' && (
+          <CharacterWizard
+            catalog={catalog}
+            presets={presets}
+            spells={spells}
+            busy={busy}
+            error={error}
+            onCreate={createCharacter}
+            onPreset={createPreset}
+            onCancel={() => navigate('home')}
+          />
+        )}
         {screen === 'game' && character && character.hp <= 0 && (
           <FallenScreen
             character={character}

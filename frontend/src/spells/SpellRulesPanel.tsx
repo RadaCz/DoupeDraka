@@ -16,7 +16,7 @@ export function SpellRulesPanel() {
       </section>
       <section>
         <h2 className="char-v2-section-title">{t('Modeled vs catalog')}</h2>
-        <p>{t('“Engine modeled” spells have deterministic effects in Doupě Draka. “Catalog only” spells appear in the SRD text but refuse casting without spending slots — same as typing them in the adventure composer.')}</p>
+        <p>{t('“Engine modeled” spells have deterministic effects in Doupě Draka. Spells marked “Story only in play” appear in the SRD and on your sheet but refuse casting without spending slots — same as typing them in the adventure composer.')}</p>
       </section>
     </div>
   );
