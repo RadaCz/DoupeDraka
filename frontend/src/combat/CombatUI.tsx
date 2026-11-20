@@ -19,6 +19,7 @@ import {
   suggestNextCombatAction,
 } from './combatResolution';
 import { economyDenialReason, readCombatEconomy, spellEconomySlot } from './combatEconomy';
+import { CombatBattlefieldTrack } from './CombatBattlefieldTrack';
 import { rangeDisadvantageLabel, readCombatTactics } from './combatRange';
 import type { CombatActionItem } from './combatActions';
 
@@ -102,6 +103,19 @@ export function CombatArena({
     <header className="combat-arena" role="banner" data-busy={busy || undefined}>
       <p className="combat-arena-eyebrow">{t('COMBAT')}</p>
       <div className="combat-arena-focus">
+        <p className={`combat-turn-pill ${playerTurn ? 'player' : 'enemy'}`} role="status">
+          {isReactionWindow(character)
+            ? t('Reaction — choose Shield or decline.')
+            : playerTurn
+              ? t('Your turn — choose an action.')
+              : t('Enemy turn — wait for the outcome.')}
+        </p>
+        {character.in_combat && (
+          <>
+            <CombatActionEconomyStrip character={character} />
+            <CombatBattlefieldTrack character={character} />
+          </>
+        )}
         <div className="combat-enemy-card" aria-labelledby="combat-enemy-name">
           <span className="combat-enemy-glyph" aria-hidden="true">
             {enemy ? <EnemySilhouette foeType={enemy.name} /> : <CombatIcon name="attack" />}
@@ -123,19 +137,7 @@ export function CombatArena({
             )}
           </div>
         </div>
-        <p className={`combat-turn-pill ${playerTurn ? 'player' : 'enemy'}`} role="status">
-          {isReactionWindow(character)
-            ? t('Reaction — choose Shield or decline.')
-            : playerTurn
-              ? t('Your turn — choose an action.')
-              : t('Enemy turn — wait for the outcome.')}
-        </p>
-        {character.in_combat && (
-          <>
-            <CombatTacticsStrip character={character} />
-            <CombatActionEconomyStrip character={character} />
-          </>
-        )}
+        {character.in_combat && <CombatTacticsStrip character={character} />}
       </div>
       <p className="combat-atmosphere combat-atmosphere-compact">{atmosphere}</p>
     </header>

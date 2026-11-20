@@ -3,6 +3,7 @@ import {
   TurnDeltaStrip,
   type PlayScreenProps,
 } from './sharedPlayUI';
+import { CombatChronicleFold } from '../combat/CombatChronicleFold';
 import { CombatActionDeck, CombatArena, CombatHeroStrip, CombatMoment } from '../combat/CombatUI';
 
 export function CombatScreen(props: PlayScreenProps) {
@@ -19,6 +20,7 @@ export function CombatScreen(props: PlayScreenProps) {
       <TurnDeltaStrip message={turnDelta} />
       <div className="combat-v2-story">
         <CombatMoment character={character} events={events} busy={busy} turnPhase={turnPhase} />
+        <CombatChronicleFold events={events} />
       </div>
       <PlayErrorPanel
         error={props.error}
