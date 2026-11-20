@@ -125,7 +125,7 @@ export function PlaySceneChrome({
             {playerTurn ? t('Your turn — choose an action.') : t('Enemy turn — wait for the outcome.')}
           </p>
         )}
-        {questObjective && !coaching && events.length > 0 && (
+        {questObjective && !coaching && (events?.length ?? 0) > 0 && (
           <p className="play-quest-strip" role="status">
             <span className="eyebrow">{t('CURRENT OBJECTIVE')}</span>
             <span>{t(questObjective.label)}</span>
