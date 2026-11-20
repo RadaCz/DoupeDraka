@@ -148,6 +148,7 @@ export interface RulesetReference {
   edition: string;
   label: string;
   max_level: number;
+  xp_per_level?: number;
   mvp_races: string[];
   mvp_classes: string[];
   notes: string;

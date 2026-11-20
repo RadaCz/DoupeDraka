@@ -41,14 +41,22 @@ describe('CharacterScreen V2', () => {
   it('renders identity, abilities, equipment, and progress', () => {
     render(
       <LocaleProvider>
-        <CharacterScreen character={hero} characters={[hero]} spells={spells} onSelect={() => {}} onCreate={() => {}} />
+        <CharacterScreen
+          character={hero}
+          characters={[hero]}
+          spells={spells}
+          maxLevel={3}
+          xpPerLevel={100}
+          onSelect={() => {}}
+          onCreate={() => {}}
+        />
       </LocaleProvider>,
     );
     expect(screen.getByRole('heading', { name: 'Grath' })).toBeInTheDocument();
     expect(screen.getByText(/The Underground River/)).toBeInTheDocument();
     expect(screen.getByText(/ability scores/i)).toBeInTheDocument();
     expect(screen.getAllByText('Mace').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText(/40 \/ 100 XP/)).toBeInTheDocument();
+    expect(screen.getAllByText(/40 \/ 100 ZK/).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(/Combat basics/i)).toBeInTheDocument();
     expect(screen.getByText(/Proficiency bonus/i)).toBeInTheDocument();
     expect(screen.getByText(/Strength · Constitution/)).toBeInTheDocument();
@@ -76,6 +84,8 @@ describe('CharacterScreen V2', () => {
           character={hero}
           characters={[hero]}
           spells={spells}
+          maxLevel={3}
+          xpPerLevel={100}
           onSelect={() => {}}
           onCreate={() => {}}
         />
