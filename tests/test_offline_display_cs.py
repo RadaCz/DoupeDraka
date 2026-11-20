@@ -33,8 +33,8 @@ def test_defeat_respawn_location_localized_cs():
     )
     text = narrate_offline(ctx)
     assert "The Whispering Cellar" not in text
-    # Respawn phrase uses locative case (v šeptajícím sklepu), not nominative label.
-    assert "šeptajícím sklepu" in text.casefold()
+    assert "Šeptajícím sklepě" in text
+    assert " v šeptajícím sklepu" not in text.casefold()
 
 
 def test_rest_prose_no_english_corridor_name():

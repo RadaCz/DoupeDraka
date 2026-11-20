@@ -1,6 +1,6 @@
 from collections.abc import AsyncIterator
 
-from ..display_localization import display_location
+from ..display_localization import display_location_in
 from ..narration_language import normalize_narration_language
 from .base import NarrationContext, NarrationRequest
 from .offline_prose import (
@@ -28,9 +28,9 @@ def narrate_offline(context: NarrationContext) -> str:
     if context.defeat_facts or any(event.startswith("Defeated in combat.") for event in context.events):
         raw_location = (context.defeat_facts or {}).get("respawn_location", "The Whispering Cellar")
         if language == "cs":
-            location = display_location(str(raw_location), "cs", "loc")
+            location = display_location_in(str(raw_location), "cs")
             return (
-                f"Tma tě pohltí. Probudíš se v {location} s jedním životem — boj skončil dřív, než přišel konec."
+                f"Tma tě pohltí. Probudíš se {location} s jedním životem — boj skončil dřív, než přišel konec."
             )
         location = raw_location
         return (

@@ -33,6 +33,40 @@ def display_location(name: str, language: str, case: LocationCase = "nom") -> st
     return entry.get(case) or entry.get("nom") or name
 
 
+def display_location_in(name: str, language: str) -> str:
+    """Czech prepositional phrase for „where“ (v/ve/na/u…)."""
+    if language != "cs" or not name.strip():
+        return display_location(name, language)
+    entry = _location_entry(name)
+    if isinstance(entry, dict) and entry.get("in_cs"):
+        return str(entry["in_cs"])
+    loc = display_location(name, "cs", "loc")
+    return f"v {loc}" if loc else name
+
+
+def display_location_to(name: str, language: str) -> str:
+    """Czech prepositional phrase for motion „toward“ (do/na/k…)."""
+    if language != "cs" or not name.strip():
+        return display_location(name, language)
+    entry = _location_entry(name)
+    if isinstance(entry, dict) and entry.get("to_cs"):
+        return str(entry["to_cs"])
+    gen = display_location(name, "cs", "gen")
+    return f"do {gen}" if gen else name
+
+
+def display_quest_hint(step_id: str, language: str) -> str | None:
+    if language != "cs" or not step_id.strip():
+        return None
+    return _catalog().get("quest_hints_cs", {}).get(step_id.strip())
+
+
+def display_npc(name: str, language: str) -> str:
+    if language != "cs" or not name.strip():
+        return name
+    return _catalog().get("npcs", {}).get(name.strip(), name)
+
+
 def display_creature(name: str, language: str) -> str:
     if language != "cs" or not name.strip():
         return name

@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import re
 
-from ..display_localization import display_creature
+from ..display_localization import display_creature, display_npc
+from .offline_variety import capitalize_cs_sentences
 from .base import NarrationContext
 from .offline_cs_catalog import (
     BATTLE_B11,
@@ -54,7 +55,25 @@ def _quest_flags(context: NarrationContext) -> dict[str, bool]:
 
 def _foe_cs(context: NarrationContext) -> str:
     raw = _enemy_from_appears(context.events) or _enemy_label(context, context.events)
-    return display_creature(raw, "cs")
+    resolution = context.resolution or {}
+    for beat in reversed(resolution.get("beats") or []):
+        enemy = beat.get("enemy") or {}
+        name = enemy.get("name")
+        if name:
+            raw = str(name)
+            break
+    dossier = context.scene_dossier or {}
+    combat = dossier.get("combat") or {}
+    if combat.get("enemy_name"):
+        raw = str(combat["enemy_name"])
+    if raw in ("your foe", "nepřítel"):
+        return "nepřítel"
+    creature = display_creature(raw, "cs")
+    if creature == raw:
+        creature = display_creature(raw.title(), "cs")
+    if creature == raw and raw.casefold() in ("goblin", "orc"):
+        return display_creature(raw.title(), "cs")
+    return creature
 
 
 def _render_category(
@@ -69,7 +88,8 @@ def _render_category(
     seed = variety_seed(context)
     last = last_variant_index(context, category)
     text, _ = choose_variety(templates, seed, last_index=last)
-    return text.replace("{foe}", foe).replace("{lead}", lead)
+    rendered = text.replace("{foe}", foe).replace("{lead}", lead)
+    return capitalize_cs_sentences(rendered)
 
 
 def _player_attack_natural(events: tuple[str, ...]) -> int | None:
@@ -231,7 +251,7 @@ def location_prose_v2_cs(
         category = f"C-{key}-{scene}"
         last = last_variant_index(context, category)
         text, _ = choose_variety(options, seed, last_index=last)
-        return f"{lead}{text}"
+        return capitalize_cs_sentences(f"{lead}{text}")
 
     if key in SECONDARY_LOCATIONS and explore and scene == "explore":
         lead = familiarity_lead(context, language="cs")
@@ -239,7 +259,7 @@ def location_prose_v2_cs(
         category = f"C-secondary-{key}"
         last = last_variant_index(context, category)
         text, _ = choose_variety(LOCATION_SECONDARY_EXPLORE, seed, last_index=last)
-        return f"{lead}{text}"
+        return capitalize_cs_sentences(f"{lead}{text}")
 
     return None
 
@@ -280,5 +300,7 @@ def npc_talk_prose_v2_cs(context: NarrationContext) -> str | None:
             continue
         text, _ = choose_variety(options, seed, last_index=last)
         lead = familiarity_lead(context, language="cs")
-        return f"{lead}{text}"
+        display_name = display_npc(str(npc.get("name") or npc_id), "cs")
+        line = f"{lead}{display_name} řekne: „{text}“"
+        return capitalize_cs_sentences(line)
     return None

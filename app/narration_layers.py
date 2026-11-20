@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from .ai.base import NarrationContext
+from .display_localization import display_quest_hint, display_spell
 
 _OUTCOME_CS = {
     "hit": "zásah",
@@ -137,7 +138,8 @@ def format_beat_outcome_cs(beat: dict[str, Any]) -> str:
         return f"Léčení: +{beat.get('healing')} HP"
 
     if kind == "spell_damage":
-        spell = beat.get("spell_name") or "Kouzlo"
+        raw_spell = beat.get("spell_name") or "Kouzlo"
+        spell = display_spell(str(raw_spell), "cs")
         dmg = beat.get("damage")
         if isinstance(dmg, dict):
             dmg = dmg.get("total")
@@ -212,9 +214,15 @@ def format_beat_outcome_en(beat: dict[str, Any]) -> str:
 
 
 def quest_next_hint(context: NarrationContext) -> str:
+    language = (context.language or "en").lower()
     dossier = context.scene_dossier or {}
     quests = dossier.get("quests") or {}
     active = quests.get("active_step") or {}
+    step_id = active.get("id")
+    if language == "cs" and step_id:
+        cs_hint = display_quest_hint(str(step_id), "cs")
+        if cs_hint:
+            return cs_hint.strip()
     hint = (active.get("hint") or "").strip()
     return hint
 
