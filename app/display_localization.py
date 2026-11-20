@@ -44,6 +44,19 @@ def display_location_in(name: str, language: str) -> str:
     return f"v {loc}" if loc else name
 
 
+def display_location_gen_cs(name: str, language: str) -> str:
+    """Genitiv lokace pro lead („Známé stěny {gen_cs} …“), velké počáteční písmeno."""
+    if language != "cs" or not name.strip():
+        return display_location(name, language, "gen")
+    entry = _location_entry(name)
+    if isinstance(entry, dict) and entry.get("gen_cs"):
+        return str(entry["gen_cs"])
+    gen = display_location(name, "cs", "gen")
+    if not gen:
+        return gen
+    return gen[0].upper() + gen[1:] if gen[0].islower() else gen
+
+
 def display_location_to(name: str, language: str) -> str:
     """Czech prepositional phrase for motion „toward“ (do/na/k…)."""
     if language != "cs" or not name.strip():
@@ -114,10 +127,10 @@ def embed_catalog_names(text: str, language: str) -> str:
     for bucket in ("creatures", "spells", "items"):
         entries = sorted(cat.get(bucket, {}).items(), key=lambda kv: len(kv[0]), reverse=True)
         for en, cs in entries:
-            if bucket == "items":
+            if bucket in ("items", "creatures"):
                 pattern = re.compile(rf"\b{re.escape(en)}\b", re.IGNORECASE)
             else:
-                pattern = re.compile(re.escape(en), re.IGNORECASE if bucket == "creatures" else 0)
+                pattern = re.compile(re.escape(en), re.IGNORECASE if bucket == "spells" else 0)
             out = pattern.sub(cs, out)
     return out
 

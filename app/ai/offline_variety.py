@@ -63,7 +63,7 @@ def choose_variety(
 
 
 def familiarity_lead(context: NarrationContext, *, language: str) -> str:
-    from ..display_localization import display_location, display_location_in, display_location_to
+    from ..display_localization import display_location, display_location_gen_cs, display_location_in, display_location_to
 
     dossier = context.scene_dossier or {}
     location = dossier.get("location") or {}
@@ -75,11 +75,11 @@ def familiarity_lead(context: NarrationContext, *, language: str) -> str:
     if language == "cs":
         place_in = display_location_in(raw_place, "cs")
         place_to = display_location_to(raw_place, "cs")
-        place_nom = display_location(raw_place, "cs", "nom")
+        place_gen = display_location_gen_cs(raw_place, "cs")
         return choose(
             (
                 f"Na tomto místě {place_in} už víš, kam šlápneš. ",
-                f"Známé stěny {place_nom} tě vítají jinak než poprvé. ",
+                f"Známé stěny {place_gen} tě vítají jinak než poprvé. ",
                 f"Vracíš se {place_to} a prostor ti odpovídá tíhou vzpomínek. ",
             ),
             seed,

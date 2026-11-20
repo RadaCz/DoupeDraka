@@ -8,7 +8,8 @@
       "loc": "šeptajícím sklepu",
       "ins": "šeptajícím sklepem",
       "in_cs": "v Šeptajícím sklepě",
-      "to_cs": "do Šeptajícího sklepa"
+      "to_cs": "do Šeptajícího sklepa",
+      "gen_cs": "Šeptajícího sklepa"
     },
     "The Sunken Corridor": {
       "nom": "Potopená chodba",
@@ -18,7 +19,8 @@
       "loc": "potopené chodbě",
       "ins": "potopenou chodbou",
       "in_cs": "v Potopené chodbě",
-      "to_cs": "do Potopené chodby"
+      "to_cs": "do Potopené chodby",
+      "gen_cs": "Potopené chodby"
     },
     "The Shrine of the Forgotten": {
       "nom": "Svatyně zapomenutých",
@@ -28,7 +30,8 @@
       "loc": "svatyni zapomenutých",
       "ins": "svatyní zapomenutých",
       "in_cs": "ve Svatyni zapomenutých",
-      "to_cs": "do Svatyně zapomenutých"
+      "to_cs": "do Svatyně zapomenutých",
+      "gen_cs": "Svatyně zapomenutých"
     },
     "The Goblin Market": {
       "nom": "Gobliní trh",
@@ -38,7 +41,8 @@
       "loc": "gobliním trhu",
       "ins": "gobliním trhem",
       "in_cs": "na Gobliním trhu",
-      "to_cs": "na Gobliní trh"
+      "to_cs": "na Gobliní trh",
+      "gen_cs": "Gobliního trhu"
     },
     "The Vault of Echoes": {
       "nom": "Komnata ozvěn",
@@ -48,7 +52,8 @@
       "loc": "komnatě ozvěn",
       "ins": "komnatou ozvěn",
       "in_cs": "v Komnatě ozvěn",
-      "to_cs": "do Komnaty ozvěn"
+      "to_cs": "do Komnaty ozvěn",
+      "gen_cs": "Komnaty ozvěn"
     },
     "The Bell Warden's Pit": {
       "nom": "Jáma strážce zvonu",
@@ -58,7 +63,8 @@
       "loc": "jámě strážce zvonu",
       "ins": "jámou strážce zvonu",
       "in_cs": "v Jámě strážce zvonu",
-      "to_cs": "do Jámy strážce zvonu"
+      "to_cs": "do Jámy strážce zvonu",
+      "gen_cs": "Jámy strážce zvonu"
     },
     "The Forgotten Crypt": {
       "nom": "Zapomenutá krypta",
@@ -68,7 +74,8 @@
       "loc": "zapomenuté kryptě",
       "ins": "zapomenutou kryptou",
       "in_cs": "v Zapomenuté kryptě",
-      "to_cs": "do Zapomenuté krypty"
+      "to_cs": "do Zapomenuté krypty",
+      "gen_cs": "Zapomenuté krypty"
     },
     "The Underground River": {
       "nom": "Podzemní řeka",
@@ -78,7 +85,8 @@
       "loc": "podzemní řece",
       "ins": "podzemní řekou",
       "in_cs": "u Podzemní řeky",
-      "to_cs": "k Podzemní řece"
+      "to_cs": "k Podzemní řece",
+      "gen_cs": "Podzemní řeky"
     },
     "The Bandit Camp": {
       "nom": "Tábor loupežníků",
@@ -88,7 +96,8 @@
       "loc": "táboru loupežníků",
       "ins": "táborem loupežníků",
       "in_cs": "v Táboře loupežníků",
-      "to_cs": "do Tábora loupežníků"
+      "to_cs": "do Tábora loupežníků",
+      "gen_cs": "Tábora loupežníků"
     }
   },
   "quest_hints_cs": {
@@ -124,8 +133,8 @@
     "Orc marauder": "Orčí nájezdník",
     "Orc": "Orčí nájezdník",
     "orc": "Orčí nájezdník",
-    "Goblin": "Goblin",
-    "goblin": "Goblin",
+    "Goblin": "Gobliní zvěd",
+    "goblin": "Gobliní zvěd",
     "Bell Warden": "Strážce zvonu"
   },
   "items": {
