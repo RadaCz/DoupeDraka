@@ -21,7 +21,7 @@ import { type JournalFilter } from './journalCategories';
 import { InviteShareCard } from './components/InviteShareCard';
 import { JournalChronicle } from './journal/JournalChronicle';
 import { QuestChronicle } from './quests/QuestChronicle';
-import { formatExperienceSummary } from './character/characterSheet';
+import { formatExperienceDisplay, isAtMaxMvpLevel } from './character/characterSheet';
 import { HpBar, SpellSlots, titleCase } from './components/characterVitals';
 import { GameScreenRouter } from './screens/GameScreenRouter';
 
@@ -52,6 +52,7 @@ export function HomeScreen({
   onOpenQuests,
   onOpenJournal,
   xpPerLevel,
+  maxLevel,
 }: {
   character: Character | null;
   characters: Character[];
@@ -60,6 +61,7 @@ export function HomeScreen({
   events: JournalEvent[];
   questCatalog?: QuestCatalog;
   xpPerLevel?: number;
+  maxLevel?: number;
   onContinue: () => void;
   onCreate: () => void;
   onPreset: (key: string) => void;
@@ -136,7 +138,14 @@ export function HomeScreen({
           </article>
           <div className="hero-card-footer">
             <span>{t('AC')} {character.armor_class}</span>
-            <span>{formatExperienceSummary(character.xp, xpPerLevel, t)}</span>
+            <span>
+              {formatExperienceDisplay(
+                character.xp,
+                xpPerLevel,
+                isAtMaxMvpLevel(character.level, maxLevel),
+                t,
+              )}
+            </span>
             <span>{displayLocation(character.location, locale)}</span>
           </div>
           {character.hp <= 0 ? (

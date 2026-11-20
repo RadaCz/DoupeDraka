@@ -119,22 +119,38 @@ export interface XpProgress {
   showBar: boolean;
 }
 
-/** XP bar only when `/reference` exposes `ruleset.xp_per_level`. */
-export function xpProgress(xp: number, threshold?: number | null): XpProgress {
-  if (threshold == null || threshold <= 0) {
+/** XP bar only when `/reference` exposes `ruleset.xp_per_level` and hero is below level cap. */
+export function xpProgress(
+  xp: number,
+  threshold?: number | null,
+  atLevelCap = false,
+): XpProgress {
+  if (atLevelCap || threshold == null || threshold <= 0) {
     return { xp, current: xp, threshold: 0, showBar: false };
   }
   const current = xp >= threshold ? threshold : xp;
   return { xp, current, threshold, showBar: true };
 }
 
-export function formatExperienceSummary(
+/** Vitals strip — the `ZK` label is separate; value is bare xp at cap or `xp / threshold`. */
+export function formatExperienceVitalsValue(
   xp: number,
   threshold: number | null | undefined,
+  atLevelCap: boolean,
+): string {
+  if (atLevelCap || threshold == null || threshold <= 0) return String(xp);
+  return `${xp} / ${threshold}`;
+}
+
+/** Home footer and progress captions — includes the ZK suffix. */
+export function formatExperienceDisplay(
+  xp: number,
+  threshold: number | null | undefined,
+  atLevelCap: boolean,
   t: (label: string) => string,
 ): string {
   const short = t('ZK');
-  if (threshold == null || threshold <= 0) return `${xp} ${short}`;
+  if (atLevelCap || threshold == null || threshold <= 0) return `${xp} ${short}`;
   return `${xp} / ${threshold} ${short}`;
 }
 
