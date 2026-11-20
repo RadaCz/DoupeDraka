@@ -80,7 +80,7 @@ timestamps and enforces NOT NULL to match ORM models).
 Set `PYTEST_DATABASE_URL` to the same URL when running concurrency tests against Postgres (as in CI).
 
 Develop on **`main`** only. Deploy or tag releases from commits with green CI on `main`
-(backend, backend-postgres, backend-slow, frontend, e2e).
+(backend, docker-alembic, backend-postgres, backend-slow, frontend, e2e).
 
 **Verified application baseline (2026-11-13):** `37d9c885f2b9a2c76c989e0bdc754ed330b4b04b` on **`main`**
 — CI run **#93** @ `2f0669c` **5/5 success** (doc-only commits may follow on `origin/main`; deploy from app SHAs with green CI). Alembic head: **`v005`**
@@ -136,6 +136,7 @@ container; do not expose `vite` dev server on staging.
 GitHub Actions on push to **`main`** runs:
 
 - backend: `python -m pytest -q`
+- docker-alembic: `docker build` API image, then `alembic upgrade head` and `alembic check` on Postgres 16 inside the runtime container (same path as `docker compose run --rm api alembic …`)
 - backend-postgres: `alembic upgrade head`, then `tests/test_concurrency.py` and `tests/test_alembic_v005.py`
 - frontend: Vitest and `npm run build`
 - e2e: `npm run test:e2e` (API on 8001, Vite on 5174); Chromium only
@@ -147,8 +148,10 @@ GitHub Actions on push to **`main`** runs:
 - `actions/cache` on `~/.cache/ms-playwright` keyed on `hashFiles('frontend/package-lock.json')`.
   Install step still runs `npx playwright install --with-deps chromium`; on cache hit downloads are skipped.
 
-`docker compose up --build` is configured for the API, bot, and frontend. Before the
-first run (and before upgrades), apply migrations inside the API image:
+`docker compose up --build` is configured for the API, bot, and frontend. The API
+runtime image ships `alembic.ini`, `alembic/`, and the `alembic` CLI (equivalent:
+`python -m alembic`). Before the first run (and before upgrades), apply migrations
+inside the API image:
 
 ```powershell
 docker compose run --rm api alembic upgrade head
