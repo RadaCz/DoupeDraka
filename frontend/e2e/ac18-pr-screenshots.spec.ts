@@ -87,17 +87,31 @@ test('PR screenshot after character 375px at level cap', async ({ page, request 
   await page.addInitScript(() => {
     try { localStorage.setItem('app_locale', 'cs'); } catch { /* ignore */ }
   });
-  await page.route(`**/characters/${fighterId}`, async route => {
+  const capPatch = (body: Record<string, unknown>) => ({ ...body, level: 3, xp: 99 });
+  await page.route('**/characters**', async route => {
     if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    const url = route.request().url();
+    if (!url.includes('/characters')) {
       await route.continue();
       return;
     }
     const response = await route.fetch();
     const body = await response.json();
-    await route.fulfill({
-      response,
-      json: { ...body, level: 3, xp: 99 },
-    });
+    if (Array.isArray(body)) {
+      await route.fulfill({
+        response,
+        json: body.map(row => (row.id === fighterId ? capPatch(row) : row)),
+      });
+      return;
+    }
+    if (body && typeof body === 'object' && body.id === fighterId) {
+      await route.fulfill({ response, json: capPatch(body) });
+      return;
+    }
+    await route.continue();
   });
   await page.goto('/');
   await page.evaluate(id => localStorage.setItem('active_character_id', id), fighterId);
@@ -105,7 +119,9 @@ test('PR screenshot after character 375px at level cap', async ({ page, request 
   await expect(page.getByRole('heading', { name: HOME_HEADING })).toBeVisible({ timeout: 25_000 });
   const nav = page.getByRole('navigation', { name: /Main navigation|Hlavní navigace/i });
   await nav.getByRole('button', { name: /^Character$|^Postava$/i }).click();
-  await expect(page.getByTestId('level-cap-note')).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByTestId('level-cap-note')).toBeVisible({ timeout: 20_000 });
+  await expect(page.locator('.char-v2-vitals-primary')).toContainText('99');
+  await expect(page.locator('.char-v2-vitals-primary')).not.toContainText('/ 100');
   await page.locator('.char-v2-identity').screenshot({
     path: `${OUT}/after-character-375-cap.png`,
   });
