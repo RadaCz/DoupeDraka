@@ -56,6 +56,7 @@ describe('CharacterScreen V2', () => {
     expect(screen.getByText(/The Underground River/)).toBeInTheDocument();
     expect(screen.getByText(/ability scores/i)).toBeInTheDocument();
     expect(screen.getAllByText('Mace').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/^40 \/ 100$/).length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText(/40 \/ 100 ZK/).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(/Combat basics/i)).toBeInTheDocument();
     expect(screen.getByText(/Proficiency bonus/i)).toBeInTheDocument();

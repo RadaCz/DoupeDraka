@@ -14,7 +14,8 @@ import {
   equippedWeaponInstance,
   formatModifier,
   formatSavingThrowProficiencies,
-  formatExperienceSummary,
+  formatExperienceDisplay,
+  formatExperienceVitalsValue,
   proficiencyBonus,
   isAtMaxMvpLevel,
   xpProgress,
@@ -86,10 +87,11 @@ export function CharacterScreen({
   const equippedWeapon = equippedWeaponInstance(character.item_instances);
   const equippedArmor = equippedArmorInstance(character.item_instances);
   const equippedShield = equippedShieldInstance(character.item_instances);
-  const xp = xpProgress(character.xp, xpPerLevel);
   const atLevelCap = isAtMaxMvpLevel(character.level, maxLevel);
+  const xp = xpProgress(character.xp, xpPerLevel, atLevelCap);
   const hasSpellcasting = Object.values(character.max_spell_slots ?? {}).some(count => count > 0);
-  const experienceLine = formatExperienceSummary(character.xp, xpPerLevel, t);
+  const vitalsXp = formatExperienceVitalsValue(character.xp, xpPerLevel, atLevelCap);
+  const experienceDisplay = formatExperienceDisplay(character.xp, xpPerLevel, atLevelCap, t);
 
   return (
     <section className="screen character-screen character-v2" aria-busy={busy || undefined}>
@@ -111,7 +113,7 @@ export function CharacterScreen({
           <span className="char-v2-vital"><small>{t('Hit points short')}</small><strong className="tabular-nums">{character.hp}/{character.max_hp}</strong></span>
           <span className="char-v2-vital"><small>{t('AC')}</small><strong className="tabular-nums">{character.armor_class}</strong></span>
           <span className="char-v2-vital"><small>{t('Level')}</small><strong className="tabular-nums">{character.level}</strong></span>
-          <span className="char-v2-vital"><small>{t('ZK')}</small><strong className="tabular-nums">{experienceLine}</strong></span>
+          <span className="char-v2-vital"><small>{t('ZK')}</small><strong className="tabular-nums">{vitalsXp}</strong></span>
         </div>
         <div className="char-v2-vitals-secondary">
           <span className="char-v2-vital"><small>{t('Gold')}</small><strong className="tabular-nums">{character.gold} {t('gp')}</strong></span>
@@ -235,11 +237,11 @@ export function CharacterScreen({
                 <span style={{ width: `${Math.min(100, (xp.current / xp.threshold) * 100)}%` }} />
               </div>
               <p className="char-v2-xp-caption tabular-nums">
-                {formatExperienceSummary(xp.xp, xp.threshold, t)}
+                {formatExperienceDisplay(xp.xp, xp.threshold, false, t)}
               </p>
             </>
           ) : (
-            <p className="char-v2-xp-caption tabular-nums">{experienceLine}</p>
+            <p className="char-v2-xp-caption tabular-nums">{experienceDisplay}</p>
           )}
         </article>
       </section>

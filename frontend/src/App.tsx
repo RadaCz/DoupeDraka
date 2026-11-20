@@ -1009,6 +1009,7 @@ function AppContent() {
             events={events}
             questCatalog={catalog?.quests}
             xpPerLevel={catalog?.ruleset?.xp_per_level}
+            maxLevel={catalog?.ruleset?.max_level}
             onContinue={() => navigate('game')}
             onCreate={() => navigate('create')}
             onPreset={createPreset}

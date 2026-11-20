@@ -38,9 +38,38 @@ describe('AC18-1 Character sheet (cs)', () => {
       />,
     );
     expect(screen.getAllByText(/^OČ$/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/^40 \/ 100$/).length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText(/40 \/ 100 ZK/).length).toBeGreaterThanOrEqual(1);
     expect(screen.queryByText(/\bXP\b/)).not.toBeInTheDocument();
     expect(screen.queryByText(/^AC$/)).not.toBeInTheDocument();
+    cleanup();
+  });
+
+  it('at chapter level cap shows bare xp in vitals and no progress bar', () => {
+    const hero = characterStub({
+      id: '1',
+      name: 'Mira',
+      character_class: 'fighter',
+      level: 3,
+      xp: 99,
+      armor_class: 16,
+      location: 'The Whispering Cellar',
+    });
+    renderCs(
+      <CharacterScreen
+        character={hero}
+        characters={[hero]}
+        spells={spells}
+        maxLevel={3}
+        xpPerLevel={100}
+        onSelect={() => undefined}
+        onCreate={() => undefined}
+      />,
+    );
+    expect(screen.getAllByText(/^99$/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByText(/99 \/ 100/)).not.toBeInTheDocument();
+    expect(document.querySelector('.char-v2-xp-track')).not.toBeInTheDocument();
+    expect(screen.getByTestId('level-cap-note')).toHaveTextContent(/V 1\. kapitole je nejvyšší 3\. úroveň/);
     cleanup();
   });
 
