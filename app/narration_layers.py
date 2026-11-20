@@ -10,10 +10,36 @@ _OUTCOME_CS = {
     "hit": "zásah",
     "miss": "minutí",
     "critical_hit": "kritický zásah",
-    "critical_miss": "kritický minutí",
+}
+
+_ABILITY_CS = {
+    "strength": "Síla",
+    "dexterity": "Obratnost",
+    "constitution": "Odolnost",
+    "intelligence": "Inteligence",
+    "wisdom": "Moudrost",
+    "charisma": "Charisma",
+}
+
+_REACTION_CS = {
+    "shield": "Štít",
+    "opportunity_attack": "Příležitostný útok",
 }
 
 _SIGNIFICANT_BEAT_KINDS = frozenset({"attack", "flee", "defend", "movement", "spell_damage", "healing"})
+
+
+def _outcome_label_cs(outcome: str) -> str:
+    key = outcome or ""
+    if key == "critical_miss":
+        key = "miss"
+    return _OUTCOME_CS.get(key, key)
+
+
+def _ability_label_cs(ability: str | None) -> str | None:
+    if not ability:
+        return None
+    return _ABILITY_CS.get(str(ability).lower())
 
 
 def _hero_hp_fraction(beat: dict[str, Any]) -> float | None:
@@ -70,6 +96,9 @@ def classify_combat_category_from_beats(beats: list[dict[str, Any]]) -> str | No
                 return "B6"
 
     if kind == "spell_damage":
+        enemy = beat.get("enemy") or {}
+        if beat.get("actor") == "hero" and enemy.get("hp_current") == 0:
+            return "B9"
         return "B2"
 
     return None
@@ -83,7 +112,7 @@ def format_beat_outcome_cs(beat: dict[str, Any]) -> str:
         modifier = roll.get("modifier", 0)
         total = roll.get("total", 0)
         ac = beat.get("target_ac")
-        outcome = _OUTCOME_CS.get(beat.get("outcome") or "", beat.get("outcome") or "")
+        outcome = _outcome_label_cs(beat.get("outcome") or "")
         parts = [f"Útočný hod: {total} (d20{modifier:+d}) vs AC {ac} — {outcome}"]
         damage = beat.get("damage")
         if isinstance(damage, dict) and damage.get("total") is not None:
@@ -117,11 +146,17 @@ def format_beat_outcome_cs(beat: dict[str, Any]) -> str:
     if kind == "saving_throw":
         roll = beat.get("roll") or {}
         ok = "úspěch" if beat.get("success") else "neúspěch"
-        return f"Záchraný hod ({beat.get('ability')}): {roll.get('total')} vs DC {beat.get('dc')} — {ok}"
+        ability = _ability_label_cs(beat.get("ability"))
+        if ability:
+            return f"Záchranný hod ({ability}): {roll.get('total')} vs DC {beat.get('dc')} — {ok}"
+        return f"Záchranný hod: {roll.get('total')} vs DC {beat.get('dc')} — {ok}"
 
     if kind == "reaction":
-        name = beat.get("name") or "reakce"
-        return f"Reakce: {name}"
+        raw = beat.get("name") or ""
+        label = _REACTION_CS.get(raw)
+        if label:
+            return f"Reakce: {label}"
+        return "Reakce" if raw else ""
 
     return ""
 
