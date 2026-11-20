@@ -8,7 +8,12 @@ from app.engine.ruleset_v1 import (
     validate_mvp_creation,
 )
 from app.engine.reference import class_list, race_list
-from app.engine.service import GameEngine
+from app.engine.ruleset_v1 import public_summary
+from app.engine.service import GameEngine, XP_THRESHOLD
+
+
+def test_ruleset_xp_per_level_matches_engine_threshold():
+    assert public_summary()["xp_per_level"] == XP_THRESHOLD
 
 
 def test_mvp_race_and_class_sets():

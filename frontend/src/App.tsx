@@ -1008,6 +1008,8 @@ function AppContent() {
             economy={economy}
             events={events}
             questCatalog={catalog?.quests}
+            xpPerLevel={catalog?.ruleset?.xp_per_level}
+            maxLevel={catalog?.ruleset?.max_level}
             onContinue={() => navigate('game')}
             onCreate={() => navigate('create')}
             onPreset={createPreset}
@@ -1100,7 +1102,8 @@ function AppContent() {
             character={character}
             characters={characters}
             spells={spells}
-            maxLevel={catalog?.ruleset?.max_level ?? 3}
+            maxLevel={catalog?.ruleset?.max_level}
+            xpPerLevel={catalog?.ruleset?.xp_per_level}
             onSelect={selectCharacter}
             onCreate={() => navigate('create')}
             onOpenTools={() => navigate('tools')}

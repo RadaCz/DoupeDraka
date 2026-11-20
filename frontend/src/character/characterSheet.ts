@@ -2,12 +2,6 @@ import type { Character, ItemInstance } from '../types';
 import { gearKind } from '../game/equipmentRules';
 import { inventoryItemMeta, inventoryItemCategory } from '../game/inventoryCatalog';
 
-/** Mirrors app/engine/service.py XP_THRESHOLD — display only. */
-export const XP_PER_LEVEL = 100;
-
-/** Mirrors app/engine/ruleset_v1.MAX_MVP_LEVEL — chapter 1 closed beta. */
-export const MAX_MVP_LEVEL = 3;
-
 /** Mirrors `app/engine/equipment.proficiency_bonus` — sheet display only. */
 export function proficiencyBonus(level: number): number {
   return 2 + Math.max(0, Math.floor((level - 1) / 4));
@@ -118,14 +112,51 @@ export function inventoryCounts(inventory: string[]): Array<{ label: string; cou
     .sort((a, b) => a.label.localeCompare(b.label));
 }
 
-export function xpProgress(xp: number): { current: number; threshold: number } {
-  const threshold = XP_PER_LEVEL;
-  const current = xp >= threshold ? threshold : xp;
-  return { current, threshold };
+export interface XpProgress {
+  xp: number;
+  current: number;
+  threshold: number;
+  showBar: boolean;
 }
 
-/** True when the hero has reached the chapter-1 level cap (backend also refuses further level-ups). */
-export function isAtMaxMvpLevel(level: number, maxLevel: number = MAX_MVP_LEVEL): boolean {
+/** XP bar only when `/reference` exposes `ruleset.xp_per_level` and hero is below level cap. */
+export function xpProgress(
+  xp: number,
+  threshold?: number | null,
+  atLevelCap = false,
+): XpProgress {
+  if (atLevelCap || threshold == null || threshold <= 0) {
+    return { xp, current: xp, threshold: 0, showBar: false };
+  }
+  const current = xp >= threshold ? threshold : xp;
+  return { xp, current, threshold, showBar: true };
+}
+
+/** Vitals strip — the `ZK` label is separate; value is bare xp at cap or `xp / threshold`. */
+export function formatExperienceVitalsValue(
+  xp: number,
+  threshold: number | null | undefined,
+  atLevelCap: boolean,
+): string {
+  if (atLevelCap || threshold == null || threshold <= 0) return String(xp);
+  return `${xp} / ${threshold}`;
+}
+
+/** Home footer and progress captions — includes the ZK suffix. */
+export function formatExperienceDisplay(
+  xp: number,
+  threshold: number | null | undefined,
+  atLevelCap: boolean,
+  t: (label: string) => string,
+): string {
+  const short = t('ZK');
+  if (atLevelCap || threshold == null || threshold <= 0) return `${xp} ${short}`;
+  return `${xp} / ${threshold} ${short}`;
+}
+
+/** True when the hero has reached the ruleset level cap from `/reference`. */
+export function isAtMaxMvpLevel(level: number, maxLevel: number | undefined): boolean {
+  if (maxLevel == null) return false;
   return level >= maxLevel;
 }
 
