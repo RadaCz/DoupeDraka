@@ -311,6 +311,26 @@ def test_pro_tier_is_rejected(auth):
     assert "not available" in response.json()["detail"].casefold()
 
 
+def test_closed_beta_lists_only_lite_and_rejects_paid_tiers(auth, monkeypatch):
+    monkeypatch.setenv("CLOSED_BETA_LITE_ONLY", "1")
+    monkeypatch.setenv("NVIDIA_API_KEY", "test-nvidia-key")
+    monkeypatch.setenv("GROQ_API_KEY", "test-groq-key")
+    from app.settings import get_settings
+
+    get_settings.cache_clear()
+    try:
+        payload = client.get("/economy", headers=auth).json()
+        assert [tier["key"] for tier in payload["tiers"]] == ["lite"]
+        assert payload["tier"] == "lite"
+        blocked_normal = client.post("/economy/tier", json={"tier": "normal"}, headers=auth)
+        assert blocked_normal.status_code == 422
+        assert "lite" in blocked_normal.json()["detail"].casefold()
+        blocked_pro = client.post("/economy/tier", json={"tier": "pro"}, headers=auth)
+        assert blocked_pro.status_code == 422
+    finally:
+        get_settings.cache_clear()
+
+
 def test_economy_lists_only_lite_without_llm_provider(auth, monkeypatch):
     monkeypatch.setenv("LLM_PROVIDER", "fallback")
     from app.settings import get_settings

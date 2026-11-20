@@ -509,10 +509,11 @@ export function SettingsScreen({
         </div>
         {economy && economy.tiers.length === 1 && economy.tiers[0]?.key === 'lite' && (
           <p className="settings-tier-hint" role="note">
-            {t('Normal paid narration needs an external provider on the server. This build uses Lite (free offline storyteller) only.')}
+            {t('This closed beta build uses the Lite storyteller only. Paid narration tiers are not selectable.')}
           </p>
         )}
-        {!economy?.tiers.some(tier => tier.key === 'pro') && (
+        {economy && economy.tiers.some(tier => tier.key === 'pro') === false
+          && economy.tiers.some(tier => tier.key === 'normal') && (
           <p className="settings-tier-hint muted" role="note">{t('Pro tier is disabled in this beta.')}</p>
         )}
         {error && <p className="error" role="alert">{error}</p>}
@@ -526,7 +527,14 @@ export function SettingsScreen({
         </div>
       </section>
       <article className="notice-card storyteller-note" role="note">
-        <div><strong>{t('When is the storyteller using AI?')}</strong><p>{t('Lite always uses the built-in offline storyteller for free. Normal charges narrator credits only when an external provider (for example NVIDIA NIM or Groq) is configured and delivers paid narration. Local Ollama is not billed on Normal. Pro is disabled in closed beta. Tiers never change game rules.')}</p></div>
+        <div>
+          <strong>{t('When is the storyteller using AI?')}</strong>
+          <p>
+            {economy?.tiers.some(tier => tier.key === 'normal')
+              ? t('Lite always uses the built-in offline storyteller for free. Normal charges narrator credits only when an external provider (for example NVIDIA NIM or Groq) is configured and delivers paid narration. Local Ollama is not billed on Normal. Pro is disabled in closed beta. Tiers never change game rules.')
+              : t('Lite always uses the built-in offline storyteller for free. Paid narration tiers are not available in this closed beta build.')}
+          </p>
+        </div>
       </article>
       <section className="section-block license-section">
         <div className="section-heading"><div><p className="eyebrow">{t('CONTENT CREDITS')}</p><h2>{t('SRD 5.1 license')}</h2></div></div>

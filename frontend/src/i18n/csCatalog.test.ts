@@ -74,6 +74,10 @@ describe('cs i18n catalog', () => {
       'Kredity vypravěče',
       'Nastavení',
       'ŽIVOTY',
+      'Dobrodružná mana',
+      'normální',
+      'základní',
+      'Normální',
     ];
     for (const fragment of mustHaveDiacritics) {
       expect(file, `missing ${fragment}`).toContain(fragment);
