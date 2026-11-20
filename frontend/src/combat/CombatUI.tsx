@@ -309,22 +309,28 @@ function CombatActionButton({
     item.disabled ? 'combat-action-disabled' : '',
   ].filter(Boolean).join(' ');
 
+  const labelId = `combat-action-label-${item.id}`;
+  const reasonId = `combat-action-reason-${item.id}`;
+
   return (
     <button
       type="button"
       className={cardClass}
       disabled={busy || item.disabled || (item.kind !== 'panel' && !item.action)}
       title={item.disabledReason ?? item.description}
+      aria-labelledby={labelId}
+      aria-describedby={item.disabled && item.disabledReason ? reasonId : undefined}
       aria-busy={pendingId === item.id && busy ? true : undefined}
       aria-expanded={item.kind === 'panel' ? Boolean(expanded) : undefined}
+      data-combat-action-id={item.id}
       onClick={onPress}
     >
       <span className="combat-action-icon" aria-hidden="true">
         <CombatIcon name={item.icon} />
       </span>
-      <span className="combat-action-label">{item.label}</span>
+      <span id={labelId} className="combat-action-label">{item.label}</span>
       {item.disabled && item.disabledReason && (
-        <span className="combat-action-reason">{item.disabledReason}</span>
+        <span id={reasonId} className="combat-action-reason">{item.disabledReason}</span>
       )}
     </button>
   );
