@@ -114,7 +114,7 @@ def format_beat_outcome_cs(beat: dict[str, Any]) -> str:
         total = roll.get("total", 0)
         ac = beat.get("target_ac")
         outcome = _outcome_label_cs(beat.get("outcome") or "")
-        parts = [f"Útočný hod: {total} (d20{modifier:+d}) vs AC {ac} — {outcome}"]
+        parts = [f"Útočný hod: {total} (d20{modifier:+d}) vs OČ {ac} — {outcome}"]
         damage = beat.get("damage")
         if isinstance(damage, dict) and damage.get("total") is not None:
             parts.append(f"Poškození: {damage['total']}")
@@ -132,7 +132,7 @@ def format_beat_outcome_cs(beat: dict[str, Any]) -> str:
     if kind == "flee":
         roll = beat.get("roll") or {}
         label = "Útěk poveden" if beat.get("success") else "Útěk nevyšel"
-        return f"{label} · hod {roll.get('total')} vs DC {beat.get('dc')}"
+        return f"{label} · hod {roll.get('total')} vs ST {beat.get('dc')}"
 
     if kind == "healing":
         return f"Léčení: +{beat.get('healing')} HP"
@@ -150,8 +150,8 @@ def format_beat_outcome_cs(beat: dict[str, Any]) -> str:
         ok = "úspěch" if beat.get("success") else "neúspěch"
         ability = _ability_label_cs(beat.get("ability"))
         if ability:
-            return f"Záchranný hod ({ability}): {roll.get('total')} vs DC {beat.get('dc')} — {ok}"
-        return f"Záchranný hod: {roll.get('total')} vs DC {beat.get('dc')} — {ok}"
+            return f"Záchranný hod ({ability}): {roll.get('total')} vs ST {beat.get('dc')} — {ok}"
+        return f"Záchranný hod: {roll.get('total')} vs ST {beat.get('dc')} — {ok}"
 
     if kind == "reaction":
         raw = beat.get("name") or ""

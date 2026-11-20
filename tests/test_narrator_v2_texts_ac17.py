@@ -223,6 +223,39 @@ def test_ac17_texts_spell_name_in_outcome_layer():
     assert "Fire Bolt" not in line
 
 
+def test_ac17_texts_outcome_layer_uses_oc_and_st_not_ac_dc():
+    attack = format_beat_outcome_cs(
+        {
+            "kind": "attack",
+            "outcome": "hit",
+            "attack_roll": {"natural": 15, "modifier": 3, "total": 18},
+            "target_ac": 13,
+        }
+    )
+    assert "vs OČ 13" in attack
+    assert " vs AC " not in attack
+    save = format_beat_outcome_cs(
+        {
+            "kind": "saving_throw",
+            "ability": "wisdom",
+            "dc": 15,
+            "roll": {"total": 14},
+            "success": False,
+        }
+    )
+    assert "vs ST 15" in save
+    assert " vs DC " not in save
+    flee = format_beat_outcome_cs(
+        {
+            "kind": "flee",
+            "success": True,
+            "dc": 12,
+            "roll": {"total": 16},
+        }
+    )
+    assert "vs ST 12" in flee
+
+
 # --- g) AC17-5 dvě návštěvy Svatyně ---
 
 
