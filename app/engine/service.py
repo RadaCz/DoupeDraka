@@ -1039,6 +1039,11 @@ class GameEngine:
         if character.character_class == "rogue" and character.level >= 2 and not _flag(character, FLAG_BONUS_USED):
             ok, lines, class_facts = use_cunning_disengage(character)
             if ok:
+                from .turn_resolution import beat_disengage
+
+                self._record_resolution_beat(
+                    beat_disengage(character=character, monster=monster, bonus_action=True)
+                )
                 return (
                     TurnResult(action, lines, True, class_facts=class_facts, costs_adventure_mana=False),
                     monster,
@@ -1055,6 +1060,9 @@ class GameEngine:
         if not ok:
             return TurnResult(action, [reason], False, costs_adventure_mana=False), monster
         set_disengaged(character, True)
+        from .turn_resolution import beat_disengage
+
+        self._record_resolution_beat(beat_disengage(character=character, monster=monster))
         return (
             TurnResult(
                 action,
@@ -1688,6 +1696,31 @@ class GameEngine:
             if enemy_save:
                 merged_save_facts = {**merged_save_facts, **enemy_save}
             monster = None if not character.in_combat else monster
+
+        from .turn_resolution import beat_spell_auto_hit, beat_spell_save_damage
+
+        if kind == "auto_damage" and effect_facts.get("damage") is not None:
+            self._record_resolution_beat(
+                beat_spell_auto_hit(
+                    spell_name=selected,
+                    damage=int(effect_facts["damage"]),
+                    darts=list(effect_facts.get("darts") or []),
+                    character=character,
+                    monster=monster,
+                )
+            )
+        elif save_result is not None and kind not in {"heal", "spell_attack", "multi_attack"}:
+            self._record_resolution_beat(
+                beat_spell_save_damage(
+                    spell_name=selected,
+                    save_facts=save_result,
+                    damage=int(effect_facts.get("damage", damage)),
+                    rolled_total=effect_facts.get("damage_rolled"),
+                    half_on_success=bool(effect_facts.get("half_damage_on_success")),
+                    character=character,
+                    monster=monster,
+                )
+            )
 
         facts = {
             "spell_name": selected,
@@ -2470,6 +2503,9 @@ class GameEngine:
                 return TurnResult(action, [reason], False, costs_adventure_mana=False), monster
             character.dodging = True
             events = ["You dodge and gain disadvantage protection against the next enemy attack."]
+            from .turn_resolution import beat_defend
+
+            self._record_resolution_beat(beat_defend(character=character, monster=monster, action="dodge"))
             events, save_payload = self._maybe_advance_enemy_after_player_action(
                 character,
                 monster,
@@ -2626,8 +2662,30 @@ class GameEngine:
                 if not ok:
                     return TurnResult(action, [reason], False, costs_adventure_mana=False), monster
             check, success, lucky = self.ability_check(character, "dexterity", FLEE_DC)
+            from .turn_resolution import beat_flee
+
             if not success:
+                self._record_resolution_beat(
+                    beat_flee(
+                        success=False,
+                        ability="dexterity",
+                        dc=FLEE_DC,
+                        check=check,
+                        character=character,
+                        monster=monster,
+                    )
+                )
                 return TurnResult(action, [f"Dexterity check: {check.total} vs DC {FLEE_DC} — you fail to break away.{lucky}"], True), monster
+            self._record_resolution_beat(
+                beat_flee(
+                    success=True,
+                    ability="dexterity",
+                    dc=FLEE_DC,
+                    check=check,
+                    character=character,
+                    monster=monster,
+                )
+            )
             self._exit_combat(character)
             character.exploration_cooldown = 1
             from .combat_action_economy import clear_economy_on_combat_end

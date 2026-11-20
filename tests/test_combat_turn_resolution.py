@@ -232,6 +232,88 @@ def test_low_hp_visible_in_participant_facts():
     assert beat["hero"]["hp_current"] == journal_hp[0]
 
 
+def test_defend_beat_matches_journal():
+    game = GameEngine(random.Random(20))
+    hero, monster = _melee(game)
+    game.rng.randint = lambda a, b: 2
+    result, monster = game.resolve_action(hero, "dodge", monster)
+    result = _finalize(game, hero, monster, result)
+    defend = next(b for b in result.resolution["beats"] if b["kind"] == "defend")
+    assert defend["action"] == "dodge"
+    assert "disadvantage protection" in " ".join(result.events).lower()
+
+
+def test_disengage_beat_matches_journal():
+    game = GameEngine(random.Random(21))
+    hero, monster = _melee(game)
+    result, monster = game.resolve_action(hero, "disengage", monster)
+    result = _finalize(game, hero, monster, result)
+    beat = next(b for b in result.resolution["beats"] if b["kind"] == "disengage")
+    assert "Disengage action" in " ".join(result.events)
+
+
+def test_flee_fail_beat_matches_journal():
+    game = GameEngine(random.Random(22))
+    hero, monster = _melee(game)
+    game.rng.randint = lambda a, b: 1
+    result, monster = game.resolve_action(hero, "flee", monster)
+    result = _finalize(game, hero, monster, result)
+    flee = next(b for b in result.resolution["beats"] if b["kind"] == "flee")
+    assert flee["success"] is False
+    assert flee["dc"] == 10
+    line = next(e for e in result.events if "Dexterity check" in e)
+    assert str(flee["roll"]["total"]) in line
+    assert str(flee["dc"]) in line
+
+
+def test_flee_success_beat_matches_journal():
+    game = GameEngine(random.Random(23))
+    hero, monster = _melee(game)
+    game.rng.randint = lambda a, b: 18 if b == 20 else 4
+    result, monster = game.resolve_action(hero, "flee", monster)
+    result = _finalize(game, hero, monster, result)
+    flee = next(b for b in result.resolution["beats"] if b["kind"] == "flee")
+    assert flee["success"] is True
+    assert "break away" in " ".join(result.events).lower()
+
+
+def test_magic_missile_auto_hit_beat_matches_journal():
+    game = GameEngine(random.Random(24))
+    hero = create_hero("wizard")
+    hero.in_combat = True
+    hero.combat_turn = "player"
+    monster = MonsterState(name="Goblin", hp=40, max_hp=40, armor_class=12, template_key="goblin")
+    hero.combatant = {"name": "Goblin", "hp": 40, "max_hp": 40, "armor_class": 12}
+    game.rng.randint = lambda a, b: 4
+    result, monster = game.resolve_action(hero, "cast Magic Missile at goblin", monster)
+    result = _finalize(game, hero, monster, result)
+    spell = next(b for b in result.resolution["beats"] if b["kind"] == "spell_damage")
+    assert spell["subtype"] == "auto_hit"
+    assert spell["auto_hit"] is True
+    line = next(e for e in result.events if "Magic Missile" in e and "automatically" in e)
+    assert str(spell["damage"]) in line
+
+
+def test_burning_hands_save_spell_beat_matches_journal():
+    game = GameEngine(random.Random(25))
+    hero = create_hero("wizard")
+    hero.in_combat = True
+    hero.combat_turn = "player"
+    monster = MonsterState(
+        name="Goblin", hp=40, max_hp=40, armor_class=12, saving_throws={"dexterity": 2}, template_key="goblin",
+    )
+    hero.combatant = {"name": "Goblin", "hp": 40, "max_hp": 40, "armor_class": 12}
+    game.rng.randint = lambda a, b: 18 if b == 20 else 3
+    result, monster = game.resolve_action(hero, "cast Burning Hands", monster)
+    result = _finalize(game, hero, monster, result)
+    spell = next(b for b in result.resolution["beats"] if b["kind"] == "spell_damage")
+    assert spell["subtype"] == "saving_throw"
+    joined = " ".join(result.events)
+    assert str(spell["roll"]["total"]) in joined
+    assert str(spell["dc"]) in joined
+    assert str(spell["damage"]) in joined
+
+
 @pytest.fixture
 def setup_db():
     import asyncio

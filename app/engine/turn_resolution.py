@@ -232,6 +232,104 @@ def beat_reaction_opportunity(
     return attach_participant_hp(beat, character=character, monster=monster)
 
 
+def beat_defend(
+    *,
+    character: CharacterState,
+    monster: MonsterState | None = None,
+    action: str = "dodge",
+) -> dict[str, Any]:
+    beat = {"kind": "defend", "actor": "hero", "action": action}
+    return attach_participant_hp(beat, character=character, monster=monster)
+
+
+def beat_disengage(
+    *,
+    character: CharacterState,
+    monster: MonsterState | None = None,
+    bonus_action: bool = False,
+) -> dict[str, Any]:
+    beat: dict[str, Any] = {"kind": "disengage", "actor": "hero", "action": "disengage"}
+    if bonus_action:
+        beat["bonus_action"] = True
+    return attach_participant_hp(beat, character=character, monster=monster)
+
+
+def beat_flee(
+    *,
+    success: bool,
+    ability: str,
+    dc: int,
+    check: RollResult,
+    character: CharacterState,
+    monster: MonsterState | None = None,
+) -> dict[str, Any]:
+    beat = {
+        "kind": "flee",
+        "actor": "hero",
+        "success": success,
+        "ability": ability,
+        "dc": dc,
+        "roll": {
+            "natural": check.values[0] if check.values else check.total - check.modifier,
+            "modifier": check.modifier,
+            "total": check.total,
+        },
+    }
+    return attach_participant_hp(beat, character=character, monster=monster)
+
+
+def beat_spell_auto_hit(
+    *,
+    spell_name: str,
+    damage: int,
+    darts: list[dict],
+    character: CharacterState,
+    monster: MonsterState | None = None,
+) -> dict[str, Any]:
+    beat: dict[str, Any] = {
+        "kind": "spell_damage",
+        "subtype": "auto_hit",
+        "actor": "hero",
+        "spell_name": spell_name,
+        "auto_hit": True,
+        "damage": damage,
+        "darts": darts,
+    }
+    return attach_participant_hp(beat, character=character, monster=monster)
+
+
+def beat_spell_save_damage(
+    *,
+    spell_name: str,
+    save_facts: dict,
+    damage: int,
+    rolled_total: int | None = None,
+    half_on_success: bool = False,
+    character: CharacterState,
+    monster: MonsterState | None = None,
+) -> dict[str, Any]:
+    beat: dict[str, Any] = {
+        "kind": "spell_damage",
+        "subtype": "saving_throw",
+        "actor": "hero",
+        "spell_name": spell_name,
+        "damage": damage,
+        "roll": {
+            "natural": save_facts.get("d20_roll"),
+            "modifier": save_facts.get("ability_modifier", 0) + save_facts.get("proficiency_bonus", 0),
+            "total": save_facts.get("total"),
+        },
+        "ability": save_facts.get("ability"),
+        "dc": save_facts.get("dc"),
+        "success": save_facts.get("succeeded", save_facts.get("success")),
+    }
+    if rolled_total is not None:
+        beat["damage_rolled"] = rolled_total
+    if half_on_success:
+        beat["half_damage_on_success"] = True
+    return attach_participant_hp(beat, character=character, monster=monster)
+
+
 def beats_from_save_facts(
     save_facts: dict,
     *,
@@ -241,6 +339,9 @@ def beats_from_save_facts(
     beats: list[dict[str, Any]] = []
     inner = save_facts.get("save")
     if isinstance(inner, dict):
+        # Spell saves are emitted as spell_damage beats in _cast_spell.
+        if inner.get("source") == "spell":
+            return beats
         beat = beat_saving_throw(inner, character=character, monster=monster)
         if beat:
             beats.append(beat)

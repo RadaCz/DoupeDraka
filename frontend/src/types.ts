@@ -210,25 +210,49 @@ export interface ParticipantHp {
   name?: string;
 }
 
+export interface TurnResolutionRoll {
+  natural?: number;
+  modifier: number;
+  total: number;
+}
+
 export interface TurnResolutionBeat {
-  kind: string;
+  kind:
+    | 'attack'
+    | 'movement'
+    | 'healing'
+    | 'saving_throw'
+    | 'reaction'
+    | 'defend'
+    | 'disengage'
+    | 'flee'
+    | 'spell_damage'
+    | string;
   actor?: string;
   actor_name?: string;
   hero?: ParticipantHp;
   enemy?: ParticipantHp;
-  attack_roll?: { natural: number; modifier: number; total: number };
+  attack_roll?: TurnResolutionRoll;
   target_ac?: number;
   outcome?: string;
-  damage?: Record<string, unknown>;
+  damage?: number | Record<string, unknown>;
+  damage_rolled?: number;
+  half_damage_on_success?: boolean;
   distance_ft?: { from: number; to: number };
   healing?: number;
-  roll?: { natural: number; modifier: number; total: number };
+  roll?: TurnResolutionRoll;
   dc?: number;
   ability?: string;
   success?: boolean;
   name?: string;
   cast?: boolean;
   declined?: boolean;
+  action?: string;
+  bonus_action?: boolean;
+  spell_name?: string;
+  subtype?: 'auto_hit' | 'saving_throw' | string;
+  auto_hit?: boolean;
+  darts?: Array<Record<string, unknown>>;
   [key: string]: unknown;
 }
 

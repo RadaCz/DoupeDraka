@@ -70,4 +70,9 @@ def resolve_spell_save_damage(
     else:
         lines.append(f"{monster.name} {outcome} the save; takes no damage.")
 
+    if rolled_total:
+        extras["damage_rolled"] = rolled_total
+    if save_on_success == "half":
+        extras["half_damage_on_success"] = True
+
     return max(0, damage), save_result, lines, extras
