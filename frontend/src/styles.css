@@ -1648,10 +1648,6 @@ summary:focus-visible {
 }
 
 @media (max-width: 430px) {
-  .game-screen.text-first .game-play-story .journal-scene {
-    min-height: 200px;
-  }
-
   .play-scene-intro-card,
   .play-npc-card {
     padding: 8px 10px;

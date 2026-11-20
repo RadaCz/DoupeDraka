@@ -140,17 +140,14 @@ export function PlaySceneChrome({
 export function PlaySceneIntroCard({
   character,
   locations,
-  events = [],
 }: {
   character: Character;
   locations: LocationReference[];
-  events?: JournalEvent[];
 }) {
   const { t, locale } = useI18n();
   const beat = locationDescription(character.location, locations);
   const { active } = visibleQuestTimeline(character.quest_flags ?? {}, undefined);
   if (character.in_combat) return null;
-  if (events.length > 0) return null;
   return (
     <article className="play-scene-intro-card" aria-labelledby="play-scene-intro-title">
       <h2 id="play-scene-intro-title" className="play-scene-intro-heading">{t('Where you are and what you want')}</h2>
@@ -246,9 +243,11 @@ export function PlayJournal({
   busy,
   turnPhase,
   narrationStatus,
+  locations,
+  onAction,
   onResumePending,
   onCancelTurn,
-}: Pick<PlayScreenProps, 'character' | 'economy' | 'events' | 'busy' | 'turnPhase' | 'narrationStatus' | 'onResumePending' | 'onCancelTurn'>) {
+}: Pick<PlayScreenProps, 'character' | 'economy' | 'events' | 'busy' | 'turnPhase' | 'narrationStatus' | 'locations' | 'onAction' | 'onResumePending' | 'onCancelTurn'>) {
   const { t } = useI18n();
   const [thinkingSeconds, setThinkingSeconds] = useState(0);
   useEffect(() => {
@@ -267,6 +266,8 @@ export function PlayJournal({
       )}
       {events.length === 0 ? (
         <div className="journal-scene journal-presentation-text-first" role="log" aria-label={t('Adventure journal')}>
+          <PlaySceneIntroCard character={character} locations={locations} />
+          {onAction && <PlayNpcTopicsCard character={character} busy={busy} onAction={onAction} />}
           <div className="scene-empty">
             <span aria-hidden="true">✦</span>
             <p>{t(character.location === 'The Whispering Cellar'
