@@ -23,11 +23,11 @@ export function AdventureScreen(props: PlayScreenProps) {
           <PlayCoachingStrip character={character} events={events} onOpenQuests={onOpenQuests} />
         )}
       />
-      <PlaySceneIntroCard character={character} locations={props.locations} />
-      <PlayNpcTopicsCard character={character} busy={props.busy} onAction={props.onAction} />
       <TurnDeltaStrip message={turnDelta} />
       {questToast ? <p className="quest-step-toast" role="status">{questToast}</p> : null}
       <div className="game-play-story">
+        <PlaySceneIntroCard character={character} locations={props.locations} />
+        <PlayNpcTopicsCard character={character} busy={props.busy} onAction={props.onAction} />
         <PlayJournal {...props} />
       </div>
       <PlayErrorPanel error={props.error} onOpenSettings={props.onOpenSettings} onRetry={props.onRetryError} />

@@ -1717,10 +1717,15 @@ summary:focus-visible {
   overflow: hidden;
 }
 
+.game-play-story .play-scene-intro-card,
+.game-play-story .play-npc-card {
+  flex: 0 0 auto;
+}
+
 .play-scene-intro-card,
 .play-npc-card {
-  margin: 0 0 12px;
-  padding: 12px 14px;
+  margin: 0 0 8px;
+  padding: 10px 12px;
   border: 1px solid var(--border-subtle, #2a382d);
   border-radius: 12px;
   background: var(--surface-deep, #121812);
