@@ -139,7 +139,11 @@ function jsonResponse(body: unknown, status = 200) {
   } as Response);
 }
 
-function setupApp(initialCharacters: Character[] = [], initialHistory: Record<string, JournalEvent[]> = {}) {
+function setupApp(
+  initialCharacters: Character[] = [],
+  initialHistory: Record<string, JournalEvent[]> = {},
+  options?: { streamStatus?: number },
+) {
   let characters = [...initialCharacters];
   const history = { ...initialHistory };
   const requests: Array<{ url: string; method: string; body: Record<string, unknown> | null }> = [];
@@ -216,6 +220,12 @@ function setupApp(initialCharacters: Character[] = [], initialHistory: Record<st
 
     const actionMatch = url.pathname.match(/^\/api\/characters\/([^/]+)\/actions\/stream$/);
     if (actionMatch && method === 'POST') {
+      if (options?.streamStatus === 402) {
+        return jsonResponse(
+          { detail: 'Not enough narrator credits for this turn. Top up to continue.' },
+          402,
+        );
+      }
       const current = characters.find(item => item.id === actionMatch[1])!;
       const updated = { ...current, hp: current.hp - 1 };
       characters = characters.map(item => item.id === updated.id ? updated : item);
@@ -540,6 +550,38 @@ describe('Telegram Mini App', () => {
     expect(tierButtons[0]).toHaveTextContent(/lite/i);
     expect(tierButtons[0]).not.toHaveTextContent(/normal/i);
     expect(requests.filter(item => item.url === '/api/economy')).toHaveLength(1);
+  });
+
+  it('keeps play on 402, shows Lite switch modal without payment wording', async () => {
+    localStorage.setItem('app_locale', 'cs');
+    localStorage.setItem('active_character_id', mockCharacter.id);
+    const requests = setupApp([mockCharacter], {}, { streamStatus: 402 });
+    render(<App />);
+    await screen.findByRole('heading', { name: /Vítej zpět, rada/i });
+    fireEvent.click(screen.getByRole('button', { name: /Pokračovat/i }));
+    await screen.findByRole('heading', { name: /Šeptající sklep/i });
+
+    fireEvent.change(screen.getByLabelText(/tvoje akce/i), { target: { value: 'prozkoumat chodbu' } });
+    fireEvent.click(screen.getByRole('button', { name: /odeslat akci/i }));
+
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByText('Došla energie pro tento režim vypravěče.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Přepnout na Lite' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Šeptající sklep/i })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /Nastavení/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/dobij/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/payment/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/top up/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Na tento tah nemáš dost kreditů vypravěče/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Not enough narrator credits for this turn/i)).not.toBeInTheDocument();
+    expect(document.querySelector('.error-panel')).toBeNull();
+    expect(
+      screen.queryByRole('alert', { name: /thread of the weave|nitka/i }),
+    ).not.toBeInTheDocument();
+    expect(requests.some(item => item.url.endsWith('/actions/stream'))).toBe(true);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Přepnout na Lite' }));
+    await waitFor(() => expect(requests.some(item => item.url === '/api/economy/tier' && item.body?.tier === 'lite')).toBe(true));
   });
 
   it('changes narrator tier but makes no false promise of payments', async () => {

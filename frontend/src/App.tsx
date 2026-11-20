@@ -40,7 +40,7 @@ import { canGoBackFrom, goBackScreen, navigateScreen } from './navigationHistory
 import { isFallenError } from './game/gameActions';
 import { formatTurnDelta } from './game/turnDelta';
 import { formatJournalStreamResult, mergeJournalAfterRefresh } from './journalFormat';
-import { DefeatOverlay, LevelUpModal, type LevelUpNotice } from './components/TurnMoments';
+import { DefeatOverlay, EnergyExhaustedModal, LevelUpModal, type LevelUpNotice } from './components/TurnMoments';
 import { isCombatDefeatRespawn, noticeFromLevelUp } from './game/turnMoments';
 import { FallenScreen } from './screens/FallenScreen';
 import {
@@ -234,6 +234,7 @@ function AppContent() {
   const [turnDelta, setTurnDelta] = useState<string | null>(null);
   const [levelUpNotice, setLevelUpNotice] = useState<LevelUpNotice | null>(null);
   const [showDefeatOverlay, setShowDefeatOverlay] = useState(false);
+  const [showEnergyExhaustedModal, setShowEnergyExhaustedModal] = useState(false);
 
   const refreshEvents = useCallback(async (characterId: string) => {
     const history = await request<JournalEvent[]>(`/characters/${characterId}/events`);
@@ -687,8 +688,10 @@ function AppContent() {
         setTurnPhase(readPendingAction() ? 'recovering' : 'idle');
         setEvents(previous => previous.filter(event => event.id !== pendingEventId));
         const message = reason instanceof Error ? reason.message : t('The turn could not be completed.');
-        if (reason instanceof ApiError && reason.status === 402) navigate('settings');
-        if (reason instanceof ApiError && reason.status === 409 && isFallenError(message)) {
+        if (reason instanceof ApiError && reason.status === 402) {
+          setShowEnergyExhaustedModal(true);
+          setLastRetryableAction(action);
+        } else if (reason instanceof ApiError && reason.status === 409 && isFallenError(message)) {
           setError(null);
           try {
             await refreshCharacter(character.id);
@@ -1131,6 +1134,16 @@ function AppContent() {
       )}
       {showDefeatOverlay && (
         <DefeatOverlay onDismiss={() => setShowDefeatOverlay(false)} />
+      )}
+      {showEnergyExhaustedModal && (
+        <EnergyExhaustedModal
+          busy={busy}
+          onClose={() => setShowEnergyExhaustedModal(false)}
+          onSwitchToLite={() => {
+            setShowEnergyExhaustedModal(false);
+            void changeTier('lite');
+          }}
+        />
       )}
     </div>
   );

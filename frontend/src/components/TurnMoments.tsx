@@ -66,3 +66,29 @@ export function DefeatOverlay({ onDismiss }: { onDismiss: () => void }) {
     </div>
   );
 }
+
+export function EnergyExhaustedModal({
+  busy,
+  onSwitchToLite,
+  onClose,
+}: {
+  busy: boolean;
+  onSwitchToLite: () => void;
+  onClose: () => void;
+}) {
+  const { t } = useI18n();
+  return (
+    <div className="turn-moment-overlay turn-moment-overlay-dim" role="dialog" aria-modal="true" aria-labelledby="energy-exhausted-title">
+      <div className="turn-moment-card">
+        <h2 id="energy-exhausted-title">{t('The energy for this narration mode ran out.')}</h2>
+        <p className="turn-moment-body">{t('Switch to Lite to keep playing with the free offline storyteller.')}</p>
+        <button type="button" className="primary" disabled={busy} onClick={onSwitchToLite}>
+          {t('Switch to Lite')}
+        </button>
+        <button type="button" className="ghost" disabled={busy} onClick={onClose}>
+          {t('Close')}
+        </button>
+      </div>
+    </div>
+  );
+}
