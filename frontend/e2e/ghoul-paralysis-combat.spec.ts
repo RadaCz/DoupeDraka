@@ -27,8 +27,8 @@ import {
 import { E2E_TELEGRAM_ID } from './test-config.ts';
 
 const COMBAT_ACTIONS = /combat actions|bojové akce/i;
-const COMBAT_BEAT = /latest combat beat|nejnovější bojový moment/i;
-const ATTACK_BTN = /^Attack$|^Útok$/i;
+const COMBAT_BEAT = /latest combat beat|nejnovější bojový moment|poslední bojový moment/i;
+const ATTACK_BTN = /^Attack\b|^Útok\b/i;
 const END_TURN_BTN = /^End turn$|^Konec tahu$/i;
 const DECLINE_REACTION = /decline reaction|odmítnout reakci/i;
 
@@ -170,25 +170,10 @@ test('ghoul paralyzing claws apply paralysis through real combat and UI', async 
   expect(beforeTurn.conditions?.some(c => c.condition_id === 'paralyzed')).toBeTruthy();
   await expect(page.getByText(/paralyz|paralyzed|Paralyza/i).first()).toBeVisible({ timeout: 30_000 });
 
-  const blockedOrSave = /paralyz|cannot act|neschopný|repeat save|end of your turn|konce tvého tahu|saving throw|záchranný hod/i;
+  const blockedOrSave = /paralyz|cannot act|nemůžeš jednat|neschopný|repeat save|end of your turn|konce tvého tahu|saving throw|záchranný hod/i;
   const deck = page.getByRole('group', { name: COMBAT_ACTIONS });
-  if (await deck.isVisible().catch(() => false)) {
-    const streamDone = playStreamResponse(page);
-    await deck.getByRole('button', { name: ATTACK_BTN }).click();
-    await streamDone;
-    await waitForGameScreenIdle(page);
-  } else {
-    const streamDone = playStreamResponse(page);
-    await page.getByRole('textbox', { name: ACTION_TEXTBOX }).fill('attack ghoul');
-    await page.getByRole('button', { name: SEND_ACTION_BTN }).click();
-    await streamDone;
-    await waitForAdventureComposerIdle(page);
-  }
-  const mechanics = page.getByRole('button', { name: /mechanical details|mechanické detaily/i });
-  if (await mechanics.isVisible().catch(() => false)) {
-    await mechanics.click();
-  }
-  const combatBeat = page.getByRole('region', { name: COMBAT_BEAT });
-  const journal = page.getByRole('log', { name: /Adventure journal|Dobrodružný deník/i });
-  await expect(combatBeat.or(journal)).toContainText(blockedOrSave, { timeout: 30_000 });
+  expect(await deck.isVisible().catch(() => false)).toBeTruthy();
+  const attackBtn = deck.getByRole('button', { name: ATTACK_BTN });
+  await expect(attackBtn).toBeDisabled({ timeout: 10_000 });
+  await expect(deck).toContainText(blockedOrSave, { timeout: 10_000 });
 });

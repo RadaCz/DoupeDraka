@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildCombatActionDeck,
   buildCombatActions,
   castSpellAction,
   hasHealingPotion,
@@ -53,27 +54,26 @@ describe('combatActions', () => {
   });
 
   it('uses Czech attack descriptions without English templates', () => {
-    const actions = buildCombatActions(fighter, spells, t, 'cs');
-    const attack = actions.find(a => a.id === 'attack');
+    const deck = buildCombatActionDeck(fighter, spells, t, 'cs');
+    const attack = deck.main.find(a => a.id === 'attack');
     expect(attack?.description).toContain('Goblin scout');
     expect(attack?.description).not.toMatch(/Strike|with your weapon/i);
   });
 
-  it('builds combat actions with movement and potion when in pack', () => {
-    const actions = buildCombatActions(fighter, spells, t);
-    expect(actions).toHaveLength(8);
-    expect(actions.find(a => a.id === 'disengage')?.action).toBe('disengage');
-    expect(actions.find(a => a.id === 'advance')?.action).toBe('advance 15 ft');
-    expect(actions.find(a => a.id === 'potion')?.disabled).toBe(false);
+  it('builds combat deck with tactics and potion panel', () => {
+    const deck = buildCombatActionDeck(fighter, spells, t);
+    expect(deck.main).toHaveLength(4);
+    expect(deck.tactics.find(a => a.id === 'disengage')?.action).toBe('disengage');
+    expect(deck.tactics.find(a => a.id === 'advance')?.action).toBe('advance 15 ft');
+    expect(deck.itemActions.find(a => a.id === 'potion')?.disabled).toBe(false);
     expect(hasHealingPotion({ ...fighter, inventory: [] })).toBe(false);
-    expect(buildCombatActions({ ...fighter, inventory: [] }, spells, t).find(a => a.id === 'potion')?.disabled).toBe(
-      true,
-    );
+    expect(buildCombatActionDeck({ ...fighter, inventory: [] }, spells, t).itemActions[0]?.disabled).toBe(true);
   });
 
-  it('disables all actions on enemy turn', () => {
-    const actions = buildCombatActions({ ...fighter, combat_turn: 'enemy' }, spells, t);
-    expect(actions.every(a => a.disabled)).toBe(true);
+  it('disables attack on enemy turn', () => {
+    const deck = buildCombatActionDeck({ ...fighter, combat_turn: 'enemy' }, spells, t);
+    expect(deck.main.every(a => a.disabled)).toBe(true);
+    expect(deck.tactics).toHaveLength(0);
   });
 
   it('offers End turn when action and bonus are both spent (fighter second wind + attack)', () => {
@@ -82,11 +82,10 @@ describe('combatActions', () => {
       level: 3,
       combat_flags: { action_used: true, bonus_action_used: true },
     };
-    const actions = buildCombatActions(spent, spells, t);
-    const endTurn = actions.find(a => a.id === 'end_turn');
-    expect(endTurn?.disabled).toBe(false);
-    expect(endTurn?.action).toBe('end turn');
-    expect(actions.find(a => a.id === 'attack')?.disabled).toBe(true);
+    const deck = buildCombatActionDeck(spent, spells, t);
+    expect(deck.endTurn?.disabled).toBe(false);
+    expect(deck.endTurn?.action).toBe('end turn');
+    expect(deck.main.find(a => a.id === 'attack')?.disabled).toBe(true);
   });
 
   it('filters modeled combat spells for wizard', () => {
@@ -109,5 +108,9 @@ describe('combatActions', () => {
       { id: 2, character_id: '1', action: 'attack goblin', result: 'Steel rings.\n\nAttack roll: 15 — hit.', created_at: new Date().toISOString() },
     ];
     expect(lastCombatBeat(events)?.action).toMatch(/attack/);
+  });
+
+  it('legacy buildCombatActions flattens deck entries', () => {
+    expect(buildCombatActions(fighter, spells, t).length).toBeGreaterThan(4);
   });
 });

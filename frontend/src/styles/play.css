@@ -670,9 +670,15 @@
 }
 
 .combat-enemy-glyph {
-  font-size: 2rem;
-  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: color-mix(in srgb, #e8c4c4 75%, var(--gold));
   filter: drop-shadow(0 0 8px color-mix(in srgb, #e25555 40%, transparent));
+}
+
+.combat-enemy-silhouette {
+  display: block;
 }
 
 .combat-enemy-copy h1 {
@@ -773,6 +779,15 @@
   color: var(--text-soft);
 }
 
+.combat-atmosphere-compact {
+  font-size: 0.75rem;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 .combat-hero-strip {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -855,10 +870,71 @@
 }
 
 .combat-v2-story {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-height: 0;
+  max-height: min(28vh, 220px);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+}
+
+.combat-result-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.combat-result-layer {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border-subtle);
+  background: color-mix(in srgb, var(--surface-deep) 94%, #000);
+}
+
+.combat-result-heading {
+  margin: 0 0 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.combat-result-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.combat-result-chip {
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  line-height: 1.25;
+  border: 1px solid color-mix(in srgb, var(--text-soft) 22%, transparent);
+  background: color-mix(in srgb, var(--surface) 88%, #000);
+}
+
+.combat-result-chip.tone-hit,
+.combat-result-chip.tone-crit {
+  border-color: color-mix(in srgb, var(--accent-verb) 45%, transparent);
+  color: color-mix(in srgb, var(--accent-verb) 92%, var(--text));
+}
+
+.combat-result-chip.tone-miss {
+  border-color: color-mix(in srgb, #8b3030 40%, transparent);
+}
+
+.combat-result-chip.tone-heal {
+  border-color: color-mix(in srgb, #3a7a4a 45%, transparent);
+}
+
+.combat-result-fallback {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--text-soft);
 }
 
 .combat-screen.combat-v2 {
@@ -936,8 +1012,25 @@
 
 .combat-action-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
+}
+
+.combat-action-grid-main {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.combat-action-grid-tactics,
+.combat-action-grid-sub {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.combat-tactics-heading {
+  margin: 8px 0 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 
 .combat-action-card {
@@ -946,14 +1039,57 @@
   align-items: center;
   justify-content: center;
   gap: 4px;
-  min-height: 56px;
-  padding: 8px 6px;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 8px 4px;
   border-radius: 12px;
   border: 1px solid var(--border-subtle);
   background: var(--surface-deep);
   color: var(--text);
-  font-size: 0.72rem;
+  font-size: 0.875rem;
   font-weight: 650;
+  text-align: center;
+}
+
+.combat-action-reason {
+  display: block;
+  font-size: 0.75rem;
+  line-height: 1.2;
+  font-weight: 500;
+  color: var(--text-soft);
+  max-width: 100%;
+}
+
+.combat-action-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: color-mix(in srgb, var(--gold) 70%, var(--text));
+}
+
+.combat-action-expanded {
+  outline: 2px solid color-mix(in srgb, var(--gold) 50%, transparent);
+  outline-offset: 1px;
+}
+
+.combat-subpanel {
+  margin-top: 6px;
+  padding: 6px;
+  border-radius: 10px;
+  border: 1px dashed color-mix(in srgb, var(--gold) 35%, var(--border-subtle));
+}
+
+.combat-end-turn {
+  width: 100%;
+  margin-top: 8px;
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border-subtle);
+  background: color-mix(in srgb, var(--surface) 90%, #000);
+  color: var(--text);
+  font-size: 0.875rem;
+  font-weight: 700;
 }
 
 .combat-action-card.combat-action-primary {
@@ -967,7 +1103,17 @@
 
 .combat-action-card:active:not(:disabled) {
   transform: scale(0.97);
-  transition: transform 0.08s ease;
+  transition: transform 0.12s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .combat-action-card:active:not(:disabled) {
+    transform: none;
+    transition: none;
+  }
+  .combat-action-card.combat-action-pending {
+    animation: none;
+  }
 }
 
 .combat-action-card.combat-action-pending {
@@ -982,50 +1128,3 @@
   margin-left: 2px;
 }
 
-.combat-action-glyph {
-  font-size: 1.15rem;
-  line-height: 1;
-}
-
-.combat-action-hints {
-  list-style: none;
-  margin: 8px 0 0;
-  padding: 0;
-  font-size: 0.72rem;
-  line-height: 1.4;
-  color: var(--muted);
-}
-
-.combat-action-hints em {
-  font-style: normal;
-  opacity: 0.85;
-}
-
-.combat-spell-row {
-  display: flex;
-  gap: 8px;
-  margin-top: 10px;
-}
-
-.combat-spell-row select {
-  flex: 1;
-  min-width: 0;
-  padding: 8px 10px;
-  border-radius: 10px;
-  border: 1px solid var(--border-subtle);
-  background: var(--surface-deep);
-  color: var(--text);
-}
-
-.combat-spell-cast {
-  padding: 8px 14px;
-  border-radius: 10px;
-  border: 1px solid color-mix(in srgb, var(--accent-verb) 50%, transparent);
-  background: color-mix(in srgb, var(--accent-verb) 22%, var(--surface));
-  font-weight: 700;
-  color: var(--text);
-}
-
-.combat-spell-cast:disabled {
-  opacity: 0.45;
-}

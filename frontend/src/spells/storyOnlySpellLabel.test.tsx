@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { LocaleProvider } from '../i18n';
 import { CharacterScreen } from '../screens/CharacterScreen';
@@ -112,7 +112,7 @@ describe('Story-only spell label (task 22)', () => {
     expect(screen.getByText('Bless').closest('li')?.textContent).not.toContain(STORY_LABEL);
   });
 
-  it('omits unmodeled spells from the combat spell picker', () => {
+  it('omits unmodeled spells from the combat abilities panel', () => {
     expect(modeledCombatSpells(combatWizard, wizardSpells).map(s => s.name)).toEqual([
       'Fire Bolt',
       'Magic Missile',
@@ -127,9 +127,11 @@ describe('Story-only spell label (task 22)', () => {
         />
       </LocaleProvider>,
     );
-    const select = screen.getByRole('combobox', { name: /Tvoje kouzla|Your spells/i });
-    const options = Array.from(select.querySelectorAll('option')).map(node => node.textContent?.trim());
-    expect(options).toEqual(expect.arrayContaining(['Fire Bolt', 'Magic Missile']));
-    expect(options).not.toEqual(expect.arrayContaining(['Mage Hand', 'Light', 'Sleep']));
+    fireEvent.click(screen.getByRole('button', { name: /Schopnosti|Combat abilities/i }));
+    expect(screen.getByRole('button', { name: 'Fire Bolt' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Magic Missile' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Mage Hand' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Light' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Sleep' })).not.toBeInTheDocument();
   });
 });

@@ -784,7 +784,7 @@ export async function backToAdventure(page: Page) {
 
 const COMBAT_DECK = /combat actions|bojové akce/i;
 const PLAYER_TURN = /Your turn|Tvůj tah/i;
-const ATTACK_BTN = /^Attack$|^Útok$/i;
+const ATTACK_BTN = /^Attack\b|^Útok\b/i;
 const ADVANCE_BTN = /^Advance$|^Přiblížit|^Priblizit/i;
 const END_TURN_BTN = /^End turn$|^Konec tahu$/i;
 const DEFEND_BTN = /^Defend$|^Obrana$|^Bránit se$/i;

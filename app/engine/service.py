@@ -1535,16 +1535,20 @@ class GameEngine:
                 int(dice.split("d", 1)[0]) if kind == "multi_attack" else
                 self._cantrip_dice_count(character.level) if selected == "Fire Bolt" else 1
             )
+            from .turn_resolution import attack_outcome, beat_attack
+
             attacks = []
             total_damage = 0
             for _ in range(beams):
                 attack_roll = self.roll("1d20", ability_bonus)
-                hit = attack_roll.values[0] == 20 or (
-                    attack_roll.values[0] != 1 and attack_roll.total >= monster.armor_class
+                natural = attack_roll.values[0]
+                hit = natural == 20 or (
+                    natural != 1 and attack_roll.total >= monster.armor_class
                 )
                 attack_facts = {"roll": self._roll_facts(attack_roll), "hit": hit}
+                rolled = None
                 if hit:
-                    critical = attack_roll.values[0] == 20
+                    critical = natural == 20
                     rolled = self.roll(
                         f"{damage_count}d{damage_die}",
                         critical=critical,
@@ -1552,6 +1556,22 @@ class GameEngine:
                     total_damage += rolled.total
                     attack_facts["damage_roll"] = self._roll_facts(rolled)
                 attacks.append(attack_facts)
+                self._record_resolution_beat(
+                    beat_attack(
+                        actor="hero",
+                        actor_name=character.name,
+                        natural=natural,
+                        attack_modifier=ability_bonus,
+                        attack_total=attack_roll.total,
+                        target_ac=monster.armor_class,
+                        outcome=attack_outcome(natural=natural, hit=hit),
+                        character=character,
+                        monster=monster,
+                        spell_name=selected,
+                        damage=rolled,
+                        damage_dice=f"{damage_count}d{damage_die}" if rolled else None,
+                    )
+                )
             damage = total_damage
             effect_facts.update({"attacks": attacks, "damage": damage})
             if damage:

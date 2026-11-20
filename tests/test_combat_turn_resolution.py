@@ -277,6 +277,23 @@ def test_flee_success_beat_matches_journal():
     assert "break away" in " ".join(result.events).lower()
 
 
+def test_fire_bolt_attack_beat_carries_spell_name():
+    game = GameEngine(random.Random(30))
+    game.rng.randint = lambda a, b: 18 if b == 20 else 4
+    hero = create_hero("wizard", intelligence=16)
+    hero.in_combat = True
+    hero.combat_turn = "player"
+    monster = MonsterState(name="Goblin", hp=40, max_hp=40, armor_class=12, template_key="goblin")
+    hero.combatant = {"name": "Goblin", "hp": 40, "max_hp": 40, "armor_class": 12}
+    result, monster = game.resolve_action(hero, "cast Fire Bolt at Goblin", monster)
+    result = _finalize(game, hero, monster, result)
+    attack = _attack_beat(result.resolution)
+    assert attack.get("spell_name") == "Fire Bolt"
+    assert attack.get("weapon") is None
+    joined = " ".join(result.events)
+    assert "Fire Bolt" in joined
+
+
 def test_magic_missile_auto_hit_beat_matches_journal():
     game = GameEngine(random.Random(24))
     hero = create_hero("wizard")
