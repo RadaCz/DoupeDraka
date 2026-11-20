@@ -14,17 +14,9 @@ export const LOCATION_CS: Record<string, string> = Object.fromEntries(
   Object.keys(chapterCatalog.locations).map(key => [key, locationNom(key)]),
 );
 
+/** Canonical engine creature id → Czech display label. Synced with localization/chapter_one_display.json */
 export const CREATURE_CS: Record<string, string> = {
-  'Goblin scout': 'Gobliní zvěd',
-  'Goblin Scout': 'Gobliní zvěd',
-  'Kobold skirmisher': 'Koboldí záškodník',
-  'Starving wolf': 'Hladový vlk',
-  'Rattling skeleton': 'Chřestící kostlivec',
-  'Road bandit': 'Loupežník na cestě',
-  'Hobgoblin soldier': 'Hobgobliní voják',
-  'Cellar ghoul': 'Ghúl ze sklepa',
-  'Orc marauder': 'Orčí nájezdník',
-  'Bell Warden': 'Strážce zvonu',
+  ...(chapterCatalog.creatures as Record<string, string>),
 };
 
 const ITEM_LABEL_CS: Record<string, string> = {

@@ -5,6 +5,25 @@ from __future__ import annotations
 from .base import NarrationContext
 
 
+def capitalize_cs_sentences(text: str) -> str:
+    """Po tečce začíná věta velkým písmenem (cs próza po {lead})."""
+    if not text:
+        return text
+    chars: list[str] = []
+    cap_next = True
+    for ch in text:
+        if cap_next and ch.isalpha():
+            chars.append(ch.upper())
+            cap_next = False
+        else:
+            chars.append(ch)
+            if ch == ".":
+                cap_next = True
+            elif ch not in " \t\n":
+                cap_next = False
+    return "".join(chars)
+
+
 def variety_seed(context: NarrationContext) -> int:
     """Stable but distinct per facts, memories, and scene kind."""
     base = sum(ord(char) for char in "|".join(context.events))
@@ -44,7 +63,7 @@ def choose_variety(
 
 
 def familiarity_lead(context: NarrationContext, *, language: str) -> str:
-    from ..display_localization import display_location
+    from ..display_localization import display_location, display_location_in, display_location_to
 
     dossier = context.scene_dossier or {}
     location = dossier.get("location") or {}
@@ -54,15 +73,14 @@ def familiarity_lead(context: NarrationContext, *, language: str) -> str:
     place = display_location(raw_place, language) if language == "cs" else raw_place
     seed = variety_seed(context)
     if language == "cs":
-        from ..display_localization import display_location
-
-        place_gen = display_location(raw_place, "cs", "gen")
-        place_loc = display_location(raw_place, "cs", "loc")
+        place_in = display_location_in(raw_place, "cs")
+        place_to = display_location_to(raw_place, "cs")
+        place_nom = display_location(raw_place, "cs", "nom")
         return choose(
             (
-                f"Na tomto místě v {place_loc} už víš, kam šlápneš. ",
-                f"Známé stěny {place_gen} tě vítají jinak než poprvé. ",
-                f"Vracíš se do {place_gen} a prostor ti odpovídá tíhou vzpomínek. ",
+                f"Na tomto místě {place_in} už víš, kam šlápneš. ",
+                f"Známé stěny {place_nom} tě vítají jinak než poprvé. ",
+                f"Vracíš se {place_to} a prostor ti odpovídá tíhou vzpomínek. ",
             ),
             seed,
         )
@@ -96,68 +114,68 @@ def _action_echoes_place(context: NarrationContext) -> bool:
 
 def generic_scene_prose(context: NarrationContext, *, language: str) -> str:
     """Fallback when no fact-specific offline branch matched — sensory, no meta-game voice."""
-    from ..display_localization import display_location
+    from ..display_localization import display_location, display_location_in, display_location_to
 
     seed = variety_seed(context)
     lead = familiarity_lead(context, language=language)
     kind = context.scene_kind or "general"
     raw_place = _place_name(context)
     place = display_location(raw_place, language) if language == "cs" else raw_place
-    place_loc = display_location(raw_place, "cs", "loc") if language == "cs" else raw_place
-    place_gen = display_location(raw_place, "cs", "gen") if language == "cs" else raw_place
+    place_in = display_location_in(raw_place, "cs") if language == "cs" else raw_place
+    place_to = display_location_to(raw_place, "cs") if language == "cs" else raw_place
     place_nom = place
     echo_place = _action_echoes_place(context)
 
     if language == "cs":
         explore_cs = (
             (
-                f"{lead}Přejdeš místem v {place_loc}; kameny, stíny a vzduch vyprávějí vlastní příběh.",
-                f"{lead}V {place_loc} pozoruješ detaily — vlhkost, šelest a stopy minulých kroků.",
-                f"{lead}Okolí {place_gen} zkoumáš očima i sluchem; nic nespěchá do očí.",
-                f"{lead}Každý krok v {place_loc} odhalí jen další vrstvu prachu a stínů.",
+                f"{lead}Přejdeš místem {place_in}; kameny, stíny a vzduch vyprávějí vlastní příběh.",
+                f"{lead}Pozoruješ detaily {place_in} — vlhkost, šelest a stopy minulých kroků.",
+                f"{lead}Okolí {place_nom} zkoumáš očima i sluchem; nic nespěchá do očí.",
+                f"{lead}Každý krok {place_in} odhalí jen další vrstvu prachu a stínů.",
             )
             if echo_place
             else (
-                f"{lead}Přejdeš blíž ke stěnám v {place_loc} a hledáš, co by prozradily stopy na zemi.",
-                f"{lead}Pozornost klouže po chladném kameni a vlhkém vzduchu {place_gen}.",
-                f"{lead}Uši a zrak nasávají zvuky a stíny v {place_loc}.",
-                f"{lead}Okraj světla střídavě odhaluje a skrývá rohy {place_gen}.",
+                f"{lead}Přejdeš blíž ke stěnám {place_in} a hledáš, co by prozradily stopy na zemi.",
+                f"{lead}Pozornost klouže po chladném kameni a vlhkém vzduchu {place_nom}.",
+                f"{lead}Uši a zrak nasávají zvuky a stíny {place_in}.",
+                f"{lead}Okraj světla střídavě odhaluje a skrývá rohy {place_nom}.",
             )
         )
         by_kind: dict[str, tuple[str, ...]] = {
             "talk": (
-                f"{lead}Slova se rozplete mezi vámi v {place_loc}; tón hlasů nese váhu okamžiku.",
-                f"{lead}Rozhovor v {place_loc} je křehký — každé přerušení zní hlasitěji v tichu.",
+                f"{lead}Slova se rozplete mezi vámi {place_in}; tón hlasů nese váhu okamžiku.",
+                f"{lead}Rozhovor {place_in} je křehký — každé přerušení zní hlasitěji v tichu.",
                 f"{lead}Hlas se nese kamsi dál; {place_nom} ti vrací jen ozvěnu a pohled druhých.",
             ),
             "combat": (
-                f"{lead}Ocel zazvoní v {place_loc} a ruch boje utlučí vše ostatní.",
+                f"{lead}Ocel zazvoní {place_in} a ruch boje utlučí vše ostatní.",
                 f"{lead}Úder nebo krok přehluší ticho — dech soupeře je vidět v záblesku světla.",
-                f"{lead}Boj v {place_loc} je krátký a ostrý; tělo pamatuje každý nádech.",
+                f"{lead}Boj {place_in} je krátký a ostrý; tělo pamatuje každý nádech.",
             ),
             "explore": explore_cs,
             "travel": (
-                f"{lead}Kroky odnesou dál od {place_gen}; cesta voní prachem a chladným vzduchem.",
+                f"{lead}Kroky odnesou dál od {place_nom}; cesta voní prachem a chladným vzduchem.",
                 f"{lead}Batoh šustí a ulice podzemí mizí za zády.",
                 f"{lead}Překročíš práh — {place_nom} zůstává v paměti, dokud se nevrátíš.",
             ),
             "rest": (
-                f"{lead}Sedneš si; chlad kamene a vzdálené kapání ti dovolí vydechnout v {place_loc}.",
+                f"{lead}Sedneš si; chlad kamene a vzdálené kapání ti dovolí vydechnout {place_in}.",
                 f"{lead}Ramenům dovolíš klesnout — únava jako olovo, zatímco {place_nom} dřímá.",
-                f"{lead}Oči se na chvíli zavřou; vzduch v {place_loc} je těžký, ale klidný.",
+                f"{lead}Oči se na chvíli zavřou; vzduch {place_in} je těžký, ale klidný.",
             ),
             "story_moment": (
-                f"{lead}Okamžik v {place_loc} se zastaví — i kapky vody znějí hlasitěji.",
+                f"{lead}Okamžik {place_in} se zastaví — i kapky vody znějí hlasitěji.",
                 f"{lead}Něco ve zdejším tichu se posune; {place_nom} to ponese v sobě.",
-                f"{lead}Srdce tlukou do vzduchu v {place_loc}; rozhodnutí visí mezi údery.",
+                f"{lead}Srdce tlukou do vzduchu {place_in}; rozhodnutí visí mezi údery.",
             ),
             "general": (
                 f"{lead}Uděláš, co je třeba, a {place_nom} to přijme bez zbytečných slov.",
-                f"{lead}Ruce i pohled patří okamžiku v {place_loc} — bez zbytečného hluku.",
-                f"{lead}Čin dozní v {place_loc}; kameny a vzduch ho nesou dál.",
+                f"{lead}Ruce i pohled patří okamžiku {place_in} — bez zbytečného hluku.",
+                f"{lead}Čin dozní {place_in}; kameny a vzduch ho nesou dál.",
             ),
         }
-        return choose(by_kind.get(kind, by_kind["general"]), seed)
+        return capitalize_cs_sentences(choose(by_kind.get(kind, by_kind["general"]), seed))
 
     explore_en = (
         (

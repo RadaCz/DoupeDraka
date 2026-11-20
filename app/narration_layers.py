@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from .ai.base import NarrationContext
+from .display_localization import display_quest_hint, display_spell
 
 _OUTCOME_CS = {
     "hit": "zásah",
@@ -113,7 +114,7 @@ def format_beat_outcome_cs(beat: dict[str, Any]) -> str:
         total = roll.get("total", 0)
         ac = beat.get("target_ac")
         outcome = _outcome_label_cs(beat.get("outcome") or "")
-        parts = [f"Útočný hod: {total} (d20{modifier:+d}) vs AC {ac} — {outcome}"]
+        parts = [f"Útočný hod: {total} (d20{modifier:+d}) vs OČ {ac} — {outcome}"]
         damage = beat.get("damage")
         if isinstance(damage, dict) and damage.get("total") is not None:
             parts.append(f"Poškození: {damage['total']}")
@@ -131,13 +132,14 @@ def format_beat_outcome_cs(beat: dict[str, Any]) -> str:
     if kind == "flee":
         roll = beat.get("roll") or {}
         label = "Útěk poveden" if beat.get("success") else "Útěk nevyšel"
-        return f"{label} · hod {roll.get('total')} vs DC {beat.get('dc')}"
+        return f"{label} · hod {roll.get('total')} vs ST {beat.get('dc')}"
 
     if kind == "healing":
         return f"Léčení: +{beat.get('healing')} HP"
 
     if kind == "spell_damage":
-        spell = beat.get("spell_name") or "Kouzlo"
+        raw_spell = beat.get("spell_name") or "Kouzlo"
+        spell = display_spell(str(raw_spell), "cs")
         dmg = beat.get("damage")
         if isinstance(dmg, dict):
             dmg = dmg.get("total")
@@ -148,8 +150,8 @@ def format_beat_outcome_cs(beat: dict[str, Any]) -> str:
         ok = "úspěch" if beat.get("success") else "neúspěch"
         ability = _ability_label_cs(beat.get("ability"))
         if ability:
-            return f"Záchranný hod ({ability}): {roll.get('total')} vs DC {beat.get('dc')} — {ok}"
-        return f"Záchranný hod: {roll.get('total')} vs DC {beat.get('dc')} — {ok}"
+            return f"Záchranný hod ({ability}): {roll.get('total')} vs ST {beat.get('dc')} — {ok}"
+        return f"Záchranný hod: {roll.get('total')} vs ST {beat.get('dc')} — {ok}"
 
     if kind == "reaction":
         raw = beat.get("name") or ""
@@ -212,9 +214,15 @@ def format_beat_outcome_en(beat: dict[str, Any]) -> str:
 
 
 def quest_next_hint(context: NarrationContext) -> str:
+    language = (context.language or "en").lower()
     dossier = context.scene_dossier or {}
     quests = dossier.get("quests") or {}
     active = quests.get("active_step") or {}
+    step_id = active.get("id")
+    if language == "cs" and step_id:
+        cs_hint = display_quest_hint(str(step_id), "cs")
+        if cs_hint:
+            return cs_hint.strip()
     hint = (active.get("hint") or "").strip()
     return hint
 

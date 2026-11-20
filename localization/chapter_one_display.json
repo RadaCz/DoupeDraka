@@ -6,7 +6,9 @@
       "dat": "šeptajícímu sklepu",
       "acc": "šeptající sklep",
       "loc": "šeptajícím sklepu",
-      "ins": "šeptajícím sklepem"
+      "ins": "šeptajícím sklepem",
+      "in_cs": "v Šeptajícím sklepě",
+      "to_cs": "do Šeptajícího sklepa"
     },
     "The Sunken Corridor": {
       "nom": "Potopená chodba",
@@ -14,7 +16,9 @@
       "dat": "potopené chodbě",
       "acc": "potopenou chodbu",
       "loc": "potopené chodbě",
-      "ins": "potopenou chodbou"
+      "ins": "potopenou chodbou",
+      "in_cs": "v Potopené chodbě",
+      "to_cs": "do Potopené chodby"
     },
     "The Shrine of the Forgotten": {
       "nom": "Svatyně zapomenutých",
@@ -22,7 +26,9 @@
       "dat": "svatyni zapomenutých",
       "acc": "svatyni zapomenutých",
       "loc": "svatyni zapomenutých",
-      "ins": "svatyní zapomenutých"
+      "ins": "svatyní zapomenutých",
+      "in_cs": "ve Svatyni zapomenutých",
+      "to_cs": "do Svatyně zapomenutých"
     },
     "The Goblin Market": {
       "nom": "Gobliní trh",
@@ -30,7 +36,9 @@
       "dat": "goblinímu trhu",
       "acc": "gobliní trh",
       "loc": "gobliním trhu",
-      "ins": "gobliním trhem"
+      "ins": "gobliním trhem",
+      "in_cs": "na Gobliním trhu",
+      "to_cs": "na Gobliní trh"
     },
     "The Vault of Echoes": {
       "nom": "Komnata ozvěn",
@@ -38,7 +46,9 @@
       "dat": "komnatě ozvěn",
       "acc": "komnatu ozvěn",
       "loc": "komnatě ozvěn",
-      "ins": "komnatou ozvěn"
+      "ins": "komnatou ozvěn",
+      "in_cs": "v Komnatě ozvěn",
+      "to_cs": "do Komnaty ozvěn"
     },
     "The Bell Warden's Pit": {
       "nom": "Jáma strážce zvonu",
@@ -46,7 +56,9 @@
       "dat": "jámě strážce zvonu",
       "acc": "jámu strážce zvonu",
       "loc": "jámě strážce zvonu",
-      "ins": "jámou strážce zvonu"
+      "ins": "jámou strážce zvonu",
+      "in_cs": "v Jámě strážce zvonu",
+      "to_cs": "do Jámy strážce zvonu"
     },
     "The Forgotten Crypt": {
       "nom": "Zapomenutá krypta",
@@ -54,7 +66,9 @@
       "dat": "zapomenuté kryptě",
       "acc": "zapomenutou kryptu",
       "loc": "zapomenuté kryptě",
-      "ins": "zapomenutou kryptou"
+      "ins": "zapomenutou kryptou",
+      "in_cs": "v Zapomenuté kryptě",
+      "to_cs": "do Zapomenuté krypty"
     },
     "The Underground River": {
       "nom": "Podzemní řeka",
@@ -62,7 +76,9 @@
       "dat": "podzemní řece",
       "acc": "podzemní řeku",
       "loc": "podzemní řece",
-      "ins": "podzemní řekou"
+      "ins": "podzemní řekou",
+      "in_cs": "u Podzemní řeky",
+      "to_cs": "k Podzemní řece"
     },
     "The Bandit Camp": {
       "nom": "Tábor loupežníků",
@@ -70,8 +86,19 @@
       "dat": "táboru loupežníků",
       "acc": "tábor loupežníků",
       "loc": "táboru loupežníků",
-      "ins": "táborem loupežníků"
+      "ins": "táborem loupežníků",
+      "in_cs": "v Táboře loupežníků",
+      "to_cs": "do Tábora loupežníků"
     }
+  },
+  "quest_hints_cs": {
+    "bell_quest_accepted": "Ve Svatyni zapomenutých si promluv s Caldem o zvonu.",
+    "bell_acquired": "Vydej se na Gobliní trh a zeptej se Niba na chrámový zvon.",
+    "bell_quest_complete": "Vrať se do svatyně a odevzdej zvon Caldovi.",
+    "vault_hint_given": "Vrať se do Svatyně zapomenutých a znovu promluv s Caldem. Teď, když má zvon zpátky, ti prozradí cestu do Komnaty ozvěn.",
+    "vault_first_descent": "Sestup do Komnaty ozvěn, Caldus varoval před nebezpečím. Přežij první sestup a než se postavíš Strážci zvonu, dosáhni alespoň 3. úrovně.",
+    "chapter_one_complete": "Až budeš mít alespoň 3. úroveň, vstup do Jámy strážce zvonu a postav se Strážci.",
+    "crypt_echo_relic": "Prohledej Zapomenutou kryptu. Za puklým sarkofágem je ukrytá relikvie."
   },
   "arrival_beats_cs": {
     "A cold draft curls around the old stone stairs.": "Studený průvan se vine kolem starých kamenných schodů.",
@@ -95,6 +122,10 @@
     "Hobgoblin soldier": "Hobgobliní voják",
     "Cellar ghoul": "Ghúl ze sklepa",
     "Orc marauder": "Orčí nájezdník",
+    "Orc": "Orčí nájezdník",
+    "orc": "Orčí nájezdník",
+    "Goblin": "Goblin",
+    "goblin": "Goblin",
     "Bell Warden": "Strážce zvonu"
   },
   "items": {
@@ -133,6 +164,7 @@
   },
   "npcs": {
     "Caldus": "Caldus",
-    "Nib": "Nib"
+    "Nib": "Nib",
+    "Mara": "Mara"
   }
 }
