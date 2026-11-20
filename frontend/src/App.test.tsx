@@ -572,6 +572,12 @@ describe('Telegram Mini App', () => {
     expect(screen.queryByText(/dobij/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/payment/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/top up/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Na tento tah nemáš dost kreditů vypravěče/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Not enough narrator credits for this turn/i)).not.toBeInTheDocument();
+    expect(document.querySelector('.error-panel')).toBeNull();
+    expect(
+      screen.queryByRole('alert', { name: /thread of the weave|nitka/i }),
+    ).not.toBeInTheDocument();
     expect(requests.some(item => item.url.endsWith('/actions/stream'))).toBe(true);
 
     fireEvent.click(screen.getByRole('button', { name: 'Přepnout na Lite' }));
