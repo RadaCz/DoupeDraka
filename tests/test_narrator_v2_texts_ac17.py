@@ -16,7 +16,14 @@ from app.ai.offline_cs_narration import (
 )
 from app.ai.offline_variety import familiarity_lead, variety_seed
 from app.ai.offline_variety import choose_variety
-from app.display_localization import catalog_for_tests, display_location_in, display_location_to, display_quest_hint
+from app.display_localization import (
+    catalog_for_tests,
+    display_location_gen_cs,
+    display_location_in,
+    display_location_to,
+    display_quest_hint,
+    embed_catalog_names,
+)
 from app.engine.quests import CHAPTER_ONE_STEPS, SIDE_QUESTS
 from app.narration_layers import compose_narration_layers, format_beat_outcome_cs, quest_next_hint
 
@@ -160,7 +167,132 @@ def test_ac17_texts_all_chapter_one_locations_have_in_to_cs():
         assert entry.get("to_cs"), key
 
 
+_LOCATION_GEN_CS_EXPECTED: dict[str, str] = {
+    "The Whispering Cellar": "Šeptajícího sklepa",
+    "The Sunken Corridor": "Potopené chodby",
+    "The Shrine of the Forgotten": "Svatyně zapomenutých",
+    "The Goblin Market": "Gobliního trhu",
+    "The Vault of Echoes": "Komnaty ozvěn",
+    "The Bell Warden's Pit": "Jámy strážce zvonu",
+    "The Forgotten Crypt": "Zapomenuté krypty",
+    "The Underground River": "Podzemní řeky",
+    "The Bandit Camp": "Tábora loupežníků",
+}
+
+
+@pytest.mark.parametrize("name,expected", list(_LOCATION_GEN_CS_EXPECTED.items()))
+def test_ac17_texts_location_gen_cs(name: str, expected: str):
+    assert display_location_gen_cs(name, "cs") == expected
+    assert expected[0].isupper()
+
+
+def test_ac17_texts_every_catalog_location_has_gen_cs():
+    locs = catalog_for_tests().get("locations", {})
+    for name, entry in locs.items():
+        assert isinstance(entry, dict), name
+        gen = entry.get("gen_cs")
+        assert gen and str(gen).strip(), f"chybí gen_cs pro {name}"
+        assert str(gen)[0].isupper(), name
+
+
+def test_ac17_texts_familiarity_walls_lead_uses_gen_cs():
+    for salt in range(120):
+        ctx = _ctx(
+            location="The Sunken Corridor",
+            events=(f"revisit-salt-{salt}",),
+            scene_dossier={"location": {"name": "The Sunken Corridor", "first_visit_here": False}},
+        )
+        lead = familiarity_lead(ctx, language="cs")
+        if lead.startswith("Známé stěny"):
+            assert "Potopené chodby" in lead
+            assert "Potopená chodba" not in lead
+            return
+    raise AssertionError("seed nevybral variantu Známé stěny")
+
+
+def test_ac17_texts_embed_catalog_skips_goblin_inside_goblini():
+    text = "Vracíš se na Gobliní trh a prostor ti odpovídá tíhou vzpomínek."
+    assert embed_catalog_names(text, "cs") == text
+
+
+def _english_creature_labels_pattern() -> re.Pattern[str]:
+    creatures = catalog_for_tests().get("creatures", {})
+    keys = sorted(
+        (k for k in creatures if re.search(r"[A-Za-z]", k)),
+        key=len,
+        reverse=True,
+    )
+    return re.compile(r"\b(?:" + "|".join(re.escape(k) for k in keys) + r")\b")
+
+
 # --- e) {foe} nominativ + velká písmena ---
+
+
+def test_ac17_texts_foe_goblin_cs_catalog_in_combat_prose():
+    beats = [
+        {
+            "kind": "spell_damage",
+            "subtype": "spell_attack",
+            "actor": "hero",
+            "spell_name": "Fire Bolt",
+            "damage": 8,
+            "hero": {"hp_current": 18, "hp_max": 20},
+            "enemy": {"hp_current": 12, "hp_max": 20, "name": "Goblin"},
+        }
+    ]
+    ctx = _ctx(
+        scene_kind="combat",
+        action="cast Fire Bolt at Goblin",
+        events=("Fire Bolt hits.",),
+        resolution={"beats": beats},
+        scene_dossier={"location": {"name": "The Whispering Cellar"}, "combat": {"enemy_name": "Goblin"}},
+    )
+    prose = combat_prose_v2_cs(ctx)
+    assert prose
+    assert "Gobliní zvěd" in prose
+    assert _english_creature_labels_pattern().search(prose) is None
+
+
+def test_ac17_texts_cs_combat_prose_no_english_creature_catalog_names():
+    pattern = _english_creature_labels_pattern()
+    scenarios: list[NarrationContext] = [
+        _ctx(
+            scene_kind="combat",
+            action="cast Fire Bolt at Goblin",
+            events=("Fire Bolt hits.",),
+            resolution={
+                "beats": [
+                    {
+                        "kind": "spell_damage",
+                        "actor": "hero",
+                        "spell_name": "Fire Bolt",
+                        "damage": 8,
+                        "enemy": {"hp_current": 12, "hp_max": 20, "name": "Goblin"},
+                    }
+                ]
+            },
+            scene_dossier={"location": {"name": "The Whispering Cellar"}, "combat": {"enemy_name": "Goblin"}},
+        ),
+        _ctx(
+            scene_kind="combat",
+            events=("Orc misses.",),
+            resolution={
+                "beats": [
+                    {
+                        "kind": "attack",
+                        "actor": "enemy",
+                        "outcome": "miss",
+                        "enemy": {"name": "Orc", "hp_current": 14, "hp_max": 20},
+                    }
+                ]
+            },
+            scene_dossier={"location": {"name": "The Whispering Cellar"}, "combat": {"enemy_name": "Orc"}},
+        ),
+    ]
+    for ctx in scenarios:
+        prose = combat_prose_v2_cs(ctx)
+        assert prose
+        assert pattern.search(prose) is None, f"anglické jméno tvora v: {prose!r}"
 
 
 def test_ac17_texts_foe_from_creature_catalog():
