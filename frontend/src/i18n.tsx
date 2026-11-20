@@ -491,10 +491,10 @@ const cs: Record<string, string> = {
   'Completed: {label}': 'Splněno: {label}',
   'Caldus keeps the Shrine of the Forgotten — he knows about the stolen bell.':
     'Caldus střeží Svatyni zapomenutých — ví o ukradeném zvonu.',
-  'Nib runs a stall at the Goblin Market.': 'Nib má stánek na tržišti goblinů.',
+  'Nib runs a stall at the Goblin Market.': 'Nib má stánek na Gobliním trhu.',
   'Choose a topic to speak in this place.': 'Vyber téma rozhovoru na tomto místě.',
   'No one here answers to that. Name an NPC (Caldus, Nib) or use a suggested conversation chip.':
-    'Nikdo tady na to nereaguje. Jmenuj NPC (Caldus, Nib) nebo klepni na navržený rozhovor.',
+    'Nikdo tady na to neodpoví. Klepni na téma rozhovoru.',
   'Your story starts with a hero': 'Tvůj příběh začíná hrdinou',
   'Choose a ready-made adventurer or create one of your own.': 'Vyber si předpřipraveného dobrodruha nebo vytvoř vlastního.',
   'Create your character': 'Vytvořit postavu',
@@ -1038,7 +1038,7 @@ const cs: Record<string, string> = {
   'Full journal': 'Celý deník',
   'Open map': 'Otevřít mapu',
   'Caldus told you the shrine bell was stolen — the Vault of Echoes grows louder every night.':
-    'Caldus ti řekl, že ukradli chrámový zvon — Komnata ozvěn je každou noc hlasitější.',
+    'Caldus ti řekl, že ukradli chrámový zvon – Komnata ozvěn je každou noc hlasitější.',
   'You secured the shrine bell from Nib at the Goblin Market.':
     'Získal jsi chrámový zvon od Niba na Gobliním tržišti.',
   'You found a lead on the stolen shrine bell.':

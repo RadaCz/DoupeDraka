@@ -5,6 +5,17 @@ import type { Character, JournalEvent, LocationReference } from '../types';
 import { BELL_WARDEN_MIN_LEVEL, routeOpen } from '../chapterOneMap';
 import { chapterOneQuestProgress, visibleQuestTimeline } from '../questProgress';
 
+/** Mirrors `SAFE_LONG_REST_LOCATIONS` in `app/engine/economy_balance.py`. */
+export const SAFE_LONG_REST_LOCATIONS = new Set([
+  'The Whispering Cellar',
+  'The Shrine of the Forgotten',
+  'The Goblin Market',
+]);
+
+export function longRestChipAllowed(location: string): boolean {
+  return SAFE_LONG_REST_LOCATIONS.has(location);
+}
+
 export interface SuggestedAction {
   label: string;
   action: string;
@@ -244,7 +255,9 @@ export function suggestedActions(
   const actions: SuggestedAction[] = [];
   const npcTalk = resolveNpcTalkAction(character, t);
   if (npcTalk) actions.push(npcTalk);
-  if (injured) actions.push({ label: t('Recover your strength'), action: 'rest' });
+  if (injured && longRestChipAllowed(character.location)) {
+    actions.push({ label: t('Recover your strength'), action: 'rest' });
+  }
 
   if (latest.includes('tracks')) {
     actions.push({ label: t('Study the fresh tracks'), action: 'inspect the fresh tracks' });
@@ -363,7 +376,11 @@ export function playActionChips(
   ) {
     push('arcane_recovery', t('Arcane Recovery'), 'arcane recovery');
   }
-  if (character.hp < character.max_hp && !character.in_combat) {
+  if (
+    character.hp < character.max_hp
+    && !character.in_combat
+    && longRestChipAllowed(character.location)
+  ) {
     push('rest', t('Rest'), 'rest');
   }
   return out.slice(0, 4);
@@ -390,13 +407,6 @@ export function primaryPlayChipKey(
   if (npcTalk) return chips.find(c => c.action === npcTalk.action)?.key ?? chips[0].key;
   const questBoss = resolveQuestBossAction(character, t);
   if (questBoss) return chips.find(c => c.action === questBoss.action)?.key ?? chips[0].key;
-  if (
-    character.hp / Math.max(1, character.max_hp) <= 0.5
-    && !character.in_combat
-  ) {
-    const rest = chips.find(c => c.action === 'rest');
-    if (rest) return rest.key;
-  }
   if (character.hp < character.max_hp) {
     const rest = chips.find(c => c.action === 'rest');
     if (rest) return rest.key;
