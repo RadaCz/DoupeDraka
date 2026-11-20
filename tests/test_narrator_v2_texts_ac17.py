@@ -187,12 +187,14 @@ def test_ac17_texts_location_gen_cs(name: str, expected: str):
 
 
 def test_ac17_texts_every_catalog_location_has_gen_cs():
+    """Přesné gen_cs v chapter_one_display.json — Designer tabulka (9 lokací)."""
     locs = catalog_for_tests().get("locations", {})
-    for name, entry in locs.items():
+    assert len(_LOCATION_GEN_CS_EXPECTED) == 9
+    for name, expected in _LOCATION_GEN_CS_EXPECTED.items():
+        entry = locs.get(name)
         assert isinstance(entry, dict), name
         gen = entry.get("gen_cs")
-        assert gen and str(gen).strip(), f"chybí gen_cs pro {name}"
-        assert str(gen)[0].isupper(), name
+        assert gen == expected, f"{name}: očekáváno {expected!r}, v katalogu {gen!r}"
 
 
 def test_ac17_texts_familiarity_walls_lead_uses_gen_cs():
