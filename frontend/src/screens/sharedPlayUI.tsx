@@ -140,14 +140,17 @@ export function PlaySceneChrome({
 export function PlaySceneIntroCard({
   character,
   locations,
+  events = [],
 }: {
   character: Character;
   locations: LocationReference[];
+  events?: JournalEvent[];
 }) {
   const { t, locale } = useI18n();
   const beat = locationDescription(character.location, locations);
   const { active } = visibleQuestTimeline(character.quest_flags ?? {}, undefined);
   if (character.in_combat) return null;
+  if (events.length > 0) return null;
   return (
     <article className="play-scene-intro-card" aria-labelledby="play-scene-intro-title">
       <h2 id="play-scene-intro-title" className="play-scene-intro-heading">{t('Where you are and what you want')}</h2>

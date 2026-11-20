@@ -26,7 +26,7 @@ export function AdventureScreen(props: PlayScreenProps) {
       <TurnDeltaStrip message={turnDelta} />
       {questToast ? <p className="quest-step-toast" role="status">{questToast}</p> : null}
       <div className="game-play-story">
-        <PlaySceneIntroCard character={character} locations={props.locations} />
+        <PlaySceneIntroCard character={character} locations={props.locations} events={events} />
         <PlayNpcTopicsCard character={character} busy={props.busy} onAction={props.onAction} />
         <PlayJournal {...props} />
       </div>

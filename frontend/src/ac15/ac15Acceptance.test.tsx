@@ -153,7 +153,7 @@ describe('AC15 scene intro and quest toast helpers', () => {
       location: 'The Whispering Cellar',
       quest_flags: {},
     });
-    renderCs(<PlaySceneIntroCard character={hero} locations={locations} />);
+    renderCs(<PlaySceneIntroCard character={hero} locations={locations} events={[]} />);
     expect(screen.getByRole('heading', { name: /Kde jsi a co chceš|Where you are/i })).toBeInTheDocument();
   });
 
