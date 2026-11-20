@@ -4,10 +4,9 @@ import { characterRaceFeatureRows, modeledRaceTraits, raceTraitStatus } from './
 const t = (label: string) => label;
 
 describe('raceTraits', () => {
-  it('labels modeled vs deferred traits', () => {
-    expect(raceTraitStatus({ name: 'Lucky', text: '', modeled: true }, t)).toBe('Active in engine');
-    expect(raceTraitStatus({ name: 'Trance', text: '', deferred: true }, t)).toBe('Deferred in MVP');
-    expect(raceTraitStatus({ name: 'Extra', text: '', modeled: false }, t)).toBe('Reference only');
+  it('labels modeled vs story-only traits', () => {
+    expect(raceTraitStatus({ modeled: true }, t)).toBe('Applies in play');
+    expect(raceTraitStatus({ modeled: false }, t)).toBe('Story only');
   });
 
   it('filters modeled catalog traits', () => {
@@ -27,5 +26,18 @@ describe('raceTraits', () => {
       },
     } as never);
     expect(rows[0]?.name).toBe('Darkvision');
+  });
+
+  it('hides deferred traits on the character sheet', () => {
+    const rows = characterRaceFeatureRows({
+      race_features: {
+        race: 'elf',
+        traits: [
+          { id: 'lucky', name: 'Lucky', modeled: true, deferred: false },
+          { id: 'trance', name: 'Trance', modeled: false, deferred: true },
+        ],
+      },
+    } as never);
+    expect(rows.map(row => row.id)).toEqual(['lucky']);
   });
 });

@@ -82,8 +82,11 @@ def test_create_character_rejects_non_mvp_race(auth):
 
 
 def test_reference_includes_ruleset_and_quests(auth):
+    from app.engine.service import XP_THRESHOLD
+
     data = client.get("/reference", headers=auth).json()
     assert data["ruleset"]["edition"] == "SRD 5.1"
+    assert data["ruleset"]["xp_per_level"] == XP_THRESHOLD
     assert data["quests"]["campaigns"][0]["id"] == "chapter_one"
     assert data["races"][0]["mvp_playable"] in (True, False)
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Character } from '../types';
+import * as characterSheet from './characterSheet';
 import {
   abilityModifier,
   canWieldInventoryItem,
@@ -61,8 +62,13 @@ describe('characterSheet', () => {
     expect(line).toContain('Constitution');
   });
 
-  it('tracks XP progress toward engine threshold', () => {
-    expect(xpProgress(35)).toEqual({ current: 35, threshold: 100 });
+  it('tracks XP progress when ruleset exposes xp_per_level', () => {
+    expect(xpProgress(35, 100)).toEqual({ xp: 35, current: 35, threshold: 100, showBar: true });
+    expect(xpProgress(35, null).showBar).toBe(false);
+  });
+
+  it('does not export XP_PER_LEVEL constant', () => {
+    expect('XP_PER_LEVEL' in characterSheet).toBe(false);
   });
 
   it('knows wieldable vs decorative weapons', () => {
