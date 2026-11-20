@@ -320,7 +320,7 @@ describe('Telegram Mini App', () => {
         item => item.url === `/api/characters/${mockCharacter.id}` && item.method === 'GET',
       )).toBe(true);
     });
-    expect(await screen.findByText(/paralyz/i)).toBeInTheDocument();
+    expect((await screen.findAllByText(/paralyz/i)).length).toBeGreaterThan(0);
   });
 
   it('shows the active enemy and only relevant combat choices during a fight', async () => {
@@ -334,7 +334,7 @@ describe('Telegram Mini App', () => {
     expect(screen.getByText(/HP.*4\/7/)).toBeInTheDocument();
     const combatActions = screen.getByRole('group', { name: 'Combat actions' });
     expect(within(combatActions).getByRole('button', { name: /^Attack\b/ })).toBeInTheDocument();
-    expect(within(combatActions).getByRole('button', { name: /^Flee\b/ })).toBeInTheDocument();
+    expect(within(combatActions).getByRole('button', { name: /^Flee\b/i })).toBeInTheDocument();
     expect(screen.queryByLabelText('Suggested actions')).not.toBeInTheDocument();
   });
 
@@ -356,12 +356,11 @@ describe('Telegram Mini App', () => {
 
     expect(await screen.getByText('L1: 2/2')).toBeInTheDocument();
     const combatActions = screen.getByRole('group', { name: 'Combat actions' });
-    expect(within(combatActions).getByRole('button', { name: /^Cast spell\b/ })).toBeInTheDocument();
-    const picker = screen.getByRole('combobox', { name: 'Your spells' });
-    expect(within(picker).getByRole('option', { name: 'Fire Bolt' })).toBeInTheDocument();
-    expect(within(picker).getByRole('option', { name: 'Magic Missile' })).toBeInTheDocument();
-    expect(within(picker).queryByRole('option', { name: 'Cure Wounds' })).not.toBeInTheDocument();
-    expect(within(picker).queryByRole('option', { name: 'Shield' })).not.toBeInTheDocument();
+    fireEvent.click(within(combatActions).getByRole('button', { name: /^Combat abilities\b/i }));
+    expect(screen.getByRole('button', { name: 'Fire Bolt' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Magic Missile' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Cure Wounds' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Shield' })).not.toBeInTheDocument();
     expect(requests.some(item => item.url.endsWith('/actions'))).toBe(false);
   });
 

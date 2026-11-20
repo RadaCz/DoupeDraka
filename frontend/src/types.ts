@@ -235,6 +235,7 @@ export interface TurnResolutionBeat {
   attack_roll?: TurnResolutionRoll;
   target_ac?: number;
   outcome?: string;
+  weapon?: string;
   damage?: number | Record<string, unknown>;
   damage_rolled?: number;
   half_damage_on_success?: boolean;

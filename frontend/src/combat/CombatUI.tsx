@@ -5,18 +5,21 @@ import { useI18n } from '../i18n';
 import { SpellSlots } from '../components/characterVitals';
 import { splitJournalResult, splitNarrationAndFacts } from '../components/journalBlocks';
 import {
-  buildCombatActions,
+  buildCombatActionDeck,
   buildReactionCombatActions,
-  castSpellAction,
-  enemyPortraitGlyph,
   isPlayerCombatTurn,
   isReactionWindow,
   lastCombatBeat,
-  modeledCombatSpells,
 } from './combatActions';
 import { combatAtmosphereLine, canonicalPlayLocation, combatIntroProse, isPreStrikeCombatBeat } from './combatDisplay';
+import { CombatIcon, EnemySilhouette } from './combatIcons';
+import {
+  chipsFromResolution,
+  suggestNextCombatAction,
+} from './combatResolution';
 import { economyDenialReason, readCombatEconomy, spellEconomySlot } from './combatEconomy';
 import { rangeDisadvantageLabel, readCombatTactics } from './combatRange';
+import type { CombatActionItem } from './combatActions';
 
 function economyChipLabel(
   available: boolean,
@@ -33,7 +36,7 @@ export function CombatTacticsStrip({ character }: { character: Character }) {
   const wr = tactics.weapon_range;
   const dis = rangeDisadvantageLabel(wr?.disadvantage_reason, t);
   return (
-    <div className="combat-tactics-strip" role="status">
+    <div className="combat-tactics-strip" role="status" aria-label={t('Battlefield')}>
       <p className="combat-tactics-line">
         <span>{t('Distance')}: <strong>{tactics.distance_ft} {t('ft.')}</strong></span>
         {tactics.movement_remaining_ft != null && (
@@ -100,7 +103,7 @@ export function CombatArena({
       <div className="combat-arena-focus">
         <div className="combat-enemy-card" aria-labelledby="combat-enemy-name">
           <span className="combat-enemy-glyph" aria-hidden="true">
-            {enemy ? enemyPortraitGlyph(enemy.name) : '⚔'}
+            {enemy ? <EnemySilhouette foeType={enemy.name} /> : <CombatIcon name="attack" />}
           </span>
           <div className="combat-enemy-copy">
             <h1 id="combat-enemy-name">{enemy?.name ?? t('Unknown foe')}</h1>
@@ -124,14 +127,14 @@ export function CombatArena({
               ? t('Your turn — choose an action.')
               : t('Enemy turn — wait for the outcome.')}
         </p>
-          {character.in_combat && (
-            <>
-              <CombatTacticsStrip character={character} />
-              <CombatActionEconomyStrip character={character} />
-            </>
-          )}
+        {character.in_combat && (
+          <>
+            <CombatTacticsStrip character={character} />
+            <CombatActionEconomyStrip character={character} />
+          </>
+        )}
       </div>
-      <p className="combat-atmosphere">{atmosphere}</p>
+      <p className="combat-atmosphere combat-atmosphere-compact">{atmosphere}</p>
     </header>
   );
 }
@@ -185,13 +188,13 @@ export function CombatHeroStrip({ character }: { character: Character }) {
   );
 }
 
-function CombatMechanicsFold({ facts, locale }: { facts: string; locale: 'en' | 'cs' }) {
+function ResolutionFallbackFold({ facts, locale }: { facts: string; locale: 'en' | 'cs' }) {
   const { t } = useI18n();
   const blocks = splitJournalResult(facts, locale);
   if (!blocks.length) return null;
   return (
     <details className="combat-mechanics-fold">
-      <summary>{t('Mechanical details')}</summary>
+      <summary>{t('Mechanical details (legacy)')}</summary>
       <div className="combat-mechanics-body">
         {blocks.map((block, index) => (
           <p key={index} className={`journal-mechanic journal-mechanic-${block.tone ?? 'neutral'}`}>{block.text}</p>
@@ -217,19 +220,57 @@ export function CombatMoment({
   const preStrike = useMemo(() => isPreStrikeCombatBeat(events), [events]);
   const { narration, facts } = beat ? splitNarrationAndFacts(beat.result) : { narration: '', facts: '' };
   const showIntro = preStrike && !busy;
+  const chips = useMemo(
+    () => chipsFromResolution(beat?.resolution, locale),
+    [beat?.resolution, locale],
+  );
+  const nextHint = useMemo(
+  () => suggestNextCombatAction(character, locale),
+  [character, locale],
+  );
+  const hasStructured = chips.length > 0;
 
   return (
-    <section className="combat-moment" aria-live="polite" aria-label={t('Latest combat beat')}>
+    <section
+      className="combat-result-card combat-moment"
+      role="region"
+      aria-live="polite"
+      aria-label={t('Latest combat beat')}
+    >
       {showIntro && (
-        <p className="combat-story-prose combat-intro-prose">{combatIntroProse(character, locale)}</p>
+        <article className="combat-result-layer combat-result-story">
+          <h2 className="combat-result-heading">{t('Story')}</h2>
+          <p className="combat-story-prose combat-intro-prose">{combatIntroProse(character, locale)}</p>
+        </article>
       )}
       {beat && !showIntro && (
         <>
-          {!busy && narration && <p className="combat-story-prose">{narration}</p>}
-          {!busy && !narration && facts && (
-            <p className="combat-story-prose combat-story-muted">{facts.split('\n')[0]}</p>
+          <article className="combat-result-layer combat-result-story">
+            <h2 className="combat-result-heading">{t('Story')}</h2>
+            {!busy && narration && <p className="combat-story-prose">{narration}</p>}
+            {!busy && !narration && facts && (
+              <p className="combat-story-prose combat-story-muted">{facts.split('\n')[0]}</p>
+            )}
+          </article>
+          <article className="combat-result-layer combat-result-facts">
+            <h2 className="combat-result-heading">{t('Turn outcome')}</h2>
+            {hasStructured ? (
+              <ul className="combat-result-chips" role="list">
+                {chips.map(chip => (
+                  <li key={chip.id} className={`combat-result-chip tone-${chip.tone}`}>{chip.label}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="combat-result-fallback">{t('Structured turn facts are unavailable for this entry.')}</p>
+            )}
+            {!hasStructured && facts && <ResolutionFallbackFold facts={facts} locale={locale} />}
+          </article>
+          {nextHint && !busy && (
+            <article className="combat-result-layer combat-result-next">
+              <h2 className="combat-result-heading">{t('What next')}</h2>
+              <p className="combat-story-prose">{nextHint}</p>
+            </article>
           )}
-          {facts && <CombatMechanicsFold facts={facts} locale={locale} />}
         </>
       )}
       {busy && (
@@ -245,6 +286,56 @@ export function CombatMoment({
   );
 }
 
+function CombatActionButton({
+  item,
+  busy,
+  pendingId,
+  primary,
+  expanded,
+  onPress,
+}: {
+  item: CombatActionItem;
+  busy: boolean;
+  pendingId: string;
+  primary?: boolean;
+  expanded?: boolean;
+  onPress: () => void;
+}) {
+  const cardClass = [
+    'combat-action-card',
+    primary ? 'combat-action-primary' : '',
+    pendingId === item.id && busy ? 'combat-action-pending' : '',
+    expanded ? 'combat-action-expanded' : '',
+    item.disabled ? 'combat-action-disabled' : '',
+  ].filter(Boolean).join(' ');
+
+  const labelId = `combat-action-label-${item.id}`;
+  const reasonId = `combat-action-reason-${item.id}`;
+
+  return (
+    <button
+      type="button"
+      className={cardClass}
+      disabled={busy || item.disabled || (item.kind !== 'panel' && !item.action)}
+      title={item.disabledReason ?? item.description}
+      aria-labelledby={labelId}
+      aria-describedby={item.disabled && item.disabledReason ? reasonId : undefined}
+      aria-busy={pendingId === item.id && busy ? true : undefined}
+      aria-expanded={item.kind === 'panel' ? Boolean(expanded) : undefined}
+      data-combat-action-id={item.id}
+      onClick={onPress}
+    >
+      <span className="combat-action-icon" aria-hidden="true">
+        <CombatIcon name={item.icon} />
+      </span>
+      <span id={labelId} className="combat-action-label">{item.label}</span>
+      {item.disabled && item.disabledReason && (
+        <span id={reasonId} className="combat-action-reason">{item.disabledReason}</span>
+      )}
+    </button>
+  );
+}
+
 export function CombatActionDeck({
   character,
   spells,
@@ -257,19 +348,12 @@ export function CombatActionDeck({
   onAction: (action: string) => void;
 }) {
   const { t, locale } = useI18n();
-  const [spellPick, setSpellPick] = useState('');
   const [lastSent, setLastSent] = useState('');
   const [pendingId, setPendingId] = useState('');
+  const [openPanel, setOpenPanel] = useState<'abilities' | 'items' | null>(null);
   const reactionActions = buildReactionCombatActions(character, t);
-  const actions = reactionActions.length
-    ? reactionActions
-    : buildCombatActions(character, spells, t, locale);
-  const modeled = modeledCombatSpells(character, spells);
+  const deck = buildCombatActionDeck(character, spells, t, locale);
   const economy = readCombatEconomy(character);
-  const enemy = character.combatant?.name;
-  const spellCastBlocked = spellPick
-    ? economyDenialReason(economy, spellEconomySlot(spellPick), t, character)
-    : undefined;
 
   useEffect(() => {
     if (!busy) {
@@ -277,6 +361,10 @@ export function CombatActionDeck({
       setPendingId('');
     }
   }, [busy]);
+
+  useEffect(() => {
+    if (!isPlayerCombatTurn(character)) setOpenPanel(null);
+  }, [character.combat_turn]);
 
   const fire = (action: string, actionId: string) => {
     if (busy || !action.trim()) return;
@@ -286,95 +374,104 @@ export function CombatActionDeck({
     onAction(action);
   };
 
-  const onSpellCast = () => {
-    if (!spellPick) return;
-    const spell = modeled.find(item => item.name === spellPick);
-    if (!spell) return;
-    fire(castSpellAction(spell.name, enemy), 'spell');
-    setSpellPick('');
-  };
+  const panelActions = openPanel === 'abilities'
+    ? deck.abilityActions
+    : openPanel === 'items'
+      ? deck.itemActions
+      : [];
 
-  const cardClass = (id: string, primary?: boolean) => {
-    const parts = ['combat-action-card'];
-    if (primary) parts.push('combat-action-primary');
-    if (pendingId === id && busy) parts.push('combat-action-pending');
-    return parts.join(' ');
-  };
+  const renderDeck = reactionActions.length > 0;
 
   return (
     <div className="combat-action-deck" role="group" aria-label={t('Combat actions')}>
-      <div className="combat-action-grid">
-        {actions.map(item => {
-          if (item.kind === 'spell') {
-            return (
-              <button
-                type="button"
+      {renderDeck ? (
+        <div className="combat-action-grid combat-action-grid-main">
+          {reactionActions.map(item => (
+            <CombatActionButton
+              key={item.id}
+              item={item}
+              busy={busy}
+              pendingId={pendingId}
+              primary={item.id === 'cast_shield'}
+              onPress={() => item.action && fire(item.action, item.id)}
+            />
+          ))}
+        </div>
+      ) : (
+        <>
+          <div className="combat-action-grid combat-action-grid-main">
+            {deck.main.map(item => (
+              <CombatActionButton
                 key={item.id}
-                className={cardClass(item.id, true)}
-                disabled={busy || item.disabled || (modeled.length > 1)}
-                title={item.disabledReason}
-                aria-busy={pendingId === item.id && busy ? true : undefined}
-                aria-describedby={`combat-desc-${item.id}`}
-                onClick={() => {
-                  if (modeled.length === 1) {
-                    fire(castSpellAction(modeled[0].name, enemy), item.id);
+                item={item}
+                busy={busy}
+                pendingId={pendingId}
+                primary={item.kind === 'attack'}
+                expanded={item.panelTarget != null && openPanel === item.panelTarget}
+                onPress={() => {
+                  if (item.kind === 'panel' && item.panelTarget) {
+                    setOpenPanel(cur => (cur === item.panelTarget ? null : item.panelTarget ?? null));
+                    return;
                   }
+                  if (item.action) fire(item.action, item.id);
                 }}
-              >
-                <span className="combat-action-glyph" aria-hidden="true">{item.glyph}</span>
-                <span className="combat-action-label">{item.label}</span>
-              </button>
-            );
-          }
-          const primary = item.kind === 'attack';
-          return (
+              />
+            ))}
+          </div>
+          {openPanel && panelActions.length > 0 && (
+            <div
+              className="combat-subpanel"
+              role="region"
+              aria-label={openPanel === 'abilities' ? t('Combat abilities') : t('Items')}
+            >
+              <div className="combat-action-grid combat-action-grid-sub">
+                {panelActions.map(item => {
+                  const spellBlocked = item.kind === 'spell' && item.action
+                    ? economyDenialReason(economy, spellEconomySlot(item.label), t, character)
+                    : undefined;
+                  const merged: CombatActionItem = spellBlocked
+                    ? { ...item, disabled: true, disabledReason: spellBlocked }
+                    : item;
+                  return (
+                    <CombatActionButton
+                      key={item.id}
+                      item={merged}
+                      busy={busy}
+                      pendingId={pendingId}
+                      onPress={() => merged.action && fire(merged.action, merged.id)}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          {deck.tactics.length > 0 && (
+            <>
+              <p className="combat-tactics-heading">{t('Tactics')}</p>
+              <div className="combat-action-grid combat-action-grid-tactics">
+                {deck.tactics.map(item => (
+                  <CombatActionButton
+                    key={item.id}
+                    item={item}
+                    busy={busy}
+                    pendingId={pendingId}
+                    onPress={() => item.action && fire(item.action, item.id)}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+          {deck.endTurn && (
             <button
               type="button"
-              key={item.id}
-              className={cardClass(item.id, primary)}
-              disabled={busy || item.disabled || !item.action}
-              title={item.disabledReason}
-              aria-busy={pendingId === item.id && busy ? true : undefined}
-              aria-describedby={`combat-desc-${item.id}`}
-              onClick={() => item.action && fire(item.action, item.id)}
+              className="combat-end-turn"
+              disabled={busy}
+              onClick={() => fire(deck.endTurn!.action!, deck.endTurn!.id)}
             >
-              <span className="combat-action-glyph" aria-hidden="true">{item.glyph}</span>
-              <span className="combat-action-label">{item.label}</span>
+              {deck.endTurn.label}
             </button>
-          );
-        })}
-      </div>
-      <ul className="combat-action-hints">
-        {actions.map(item => (
-          <li key={`hint-${item.id}`} id={`combat-desc-${item.id}`}>
-            <strong>{item.label}</strong> — {item.description}
-            {item.disabled && item.disabledReason && <em> ({item.disabledReason})</em>}
-          </li>
-        ))}
-      </ul>
-      {modeled.length > 1 && !actions.find(a => a.id === 'spell')?.disabled && (
-        <div className="combat-spell-row">
-          <select
-            aria-label={t('Your spells')}
-            value={spellPick}
-            disabled={busy || !isPlayerCombatTurn(character)}
-            onChange={event => setSpellPick(event.target.value)}
-          >
-            <option value="">{t('Choose a spell to cast')}</option>
-            {modeled.map(spell => (
-              <option key={spell.name} value={spell.name}>{spell.name}</option>
-            ))}
-          </select>
-          <button
-            type="button"
-            className="combat-spell-cast"
-            disabled={busy || !spellPick || !isPlayerCombatTurn(character) || Boolean(spellCastBlocked)}
-            title={spellCastBlocked}
-            onClick={onSpellCast}
-          >
-            {t('Cast')}
-          </button>
-        </div>
+          )}
+        </>
       )}
     </div>
   );

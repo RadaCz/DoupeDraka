@@ -60,6 +60,7 @@ def beat_attack(
     character: CharacterState | None = None,
     monster: MonsterState | None = None,
     weapon: str | None = None,
+    spell_name: str | None = None,
     damage: RollResult | None = None,
     damage_dice: str | None = None,
     damage_type: str | None = None,
@@ -77,7 +78,9 @@ def beat_attack(
         "target_ac": target_ac,
         "outcome": outcome,
     }
-    if weapon:
+    if spell_name:
+        beat["spell_name"] = spell_name
+    elif weapon:
         beat["weapon"] = weapon
     if opportunity:
         beat["opportunity_attack"] = True

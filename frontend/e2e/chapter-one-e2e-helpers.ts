@@ -784,16 +784,32 @@ export async function backToAdventure(page: Page) {
 
 const COMBAT_DECK = /combat actions|bojové akce/i;
 const PLAYER_TURN = /Your turn|Tvůj tah/i;
-const ATTACK_BTN = /^Attack$|^Útok$/i;
-const ADVANCE_BTN = /^Advance$|^Přiblížit|^Priblizit/i;
-const END_TURN_BTN = /^End turn$|^Konec tahu$/i;
-const DEFEND_BTN = /^Defend$|^Obrana$|^Bránit se$/i;
-const POTION_BTN = /healing potion|léčivý lektvar/i;
+const ATTACK_BTN = /^Attack\b|^Útok\b/i;
+const ADVANCE_BTN = /^Advance\b|^Přiblížit|^Priblizit/i;
+const END_TURN_BTN = /^End turn\b|^Konec tahu\b/i;
+const DEFEND_BTN = /^Defend\b|^Obrana\b|^Bránit se\b/i;
+const ABILITIES_HUB = /^Combat abilities\b|^Schopnosti\b/i;
+const ITEMS_HUB = /^Items\b|^Předměty\b/i;
+const POTION_BTN = /healing potion|léčivý lektvar|Lecivy lektvar/i;
 const DECLINE_REACTION = /decline reaction|odmítnout reakci/i;
 
-async function clickCombatDeckButton(page: Page, name: RegExp) {
+async function openCombatHubIfNeeded(page: Page, hubPattern: RegExp, hubId?: string) {
+  const deck = page.getByRole('group', { name: COMBAT_DECK });
+  const hub = hubId
+    ? deck.locator(`[data-combat-action-id="${hubId}"]`)
+    : deck.getByRole('button', { name: hubPattern });
+  if (await hub.getAttribute('aria-expanded') !== 'true') {
+    await hub.click();
+  }
+}
+
+async function clickCombatDeckButton(page: Page, name: RegExp, hub?: RegExp) {
   const deck = page.getByRole('group', { name: COMBAT_DECK });
   await expect(deck).toBeVisible({ timeout: 45_000 });
+  if (hub) {
+    const hubId = hub === ITEMS_HUB ? 'items' : hub === ABILITIES_HUB ? 'abilities' : undefined;
+    await openCombatHubIfNeeded(page, hub, hubId);
+  }
   const button = deck.getByRole('button', { name }).first();
   await expect(button).toBeEnabled({ timeout: 15_000 });
   const streamDone = playStreamResponse(page);
@@ -813,6 +829,7 @@ async function clickCombatDeckButtonAwaitState(
   _characterId: string,
   name: RegExp,
   actionLabel: string,
+  hub?: RegExp,
 ) {
   const continueAdventure = page.getByRole('button', { name: /Continue adventure|Pokračovat/i });
   if (await continueAdventure.isVisible().catch(() => false)) {
@@ -820,6 +837,10 @@ async function clickCombatDeckButtonAwaitState(
   }
   const deck = page.getByRole('group', { name: COMBAT_DECK });
   await expect(deck).toBeVisible({ timeout: 15_000 });
+  if (hub) {
+    const hubId = hub === ITEMS_HUB ? 'items' : hub === ABILITIES_HUB ? 'abilities' : undefined;
+    await openCombatHubIfNeeded(page, hub, hubId);
+  }
   const button = deck.getByRole('button', { name }).first();
   await expect(button).toBeEnabled({ timeout: 8_000 });
   const streamDone = page.waitForResponse(
@@ -975,8 +996,8 @@ export async function completeBellWardenBossViaUI(
   let noProgressStreak = 0;
   let defeatRecoveries = 0;
 
-  const clickBoss = (name: RegExp, label: string) =>
-    clickCombatDeckButtonAwaitState(page, request, activeToken, characterId, name, label);
+  const clickBoss = (name: RegExp, label: string, hub?: RegExp) =>
+    clickCombatDeckButtonAwaitState(page, request, activeToken, characterId, name, label, hub);
 
   for (let round = 0; round < maxRounds; round += 1) {
     if (round > 0 && round % 4 === 0) {
@@ -1123,12 +1144,14 @@ export async function completeBellWardenBossViaUI(
       return post;
     };
 
+    await openCombatHubIfNeeded(page, ITEMS_HUB, 'items');
     const potionBtn = deck.getByRole('button', { name: POTION_BTN });
     if (lowHp && await potionBtn.isEnabled().catch(() => false)) {
-      await logAfterClick(await clickBoss(POTION_BTN, 'potion'));
+      await logAfterClick(await clickBoss(POTION_BTN, 'potion', ITEMS_HUB));
       await endCombatTurnViaUiIfSpent(page, request, activeToken, characterId);
       continue;
     }
+    await openCombatHubIfNeeded(page, ABILITIES_HUB, 'abilities');
     const secondWind = deck.getByRole('button', { name: /Second Wind|Druhý dech/i });
     if (
       lowHp
@@ -1136,7 +1159,7 @@ export async function completeBellWardenBossViaUI(
       && !combatFlags.bonus_action_used
       && await secondWind.isEnabled().catch(() => false)
     ) {
-      await logAfterClick(await clickBoss(/Second Wind|Druhý dech/i, 'second_wind'));
+      await logAfterClick(await clickBoss(/Second Wind|Druhý dech/i, 'second_wind', ABILITIES_HUB));
       await endCombatTurnViaUiIfSpent(page, request, activeToken, characterId);
       continue;
     }
@@ -1154,13 +1177,14 @@ export async function completeBellWardenBossViaUI(
     }
 
     if (combatFlags.action_used) {
+      await openCombatHubIfNeeded(page, ABILITIES_HUB, 'abilities');
       const surgeBtn = deck.getByRole('button', { name: /Action Surge|Příval akce|Prival akce/i });
       if (await attackBtn.isEnabled().catch(() => false)) {
         await logAfterClick(await clickBoss(ATTACK_BTN, 'attack'));
         continue;
       }
       if (await surgeBtn.isEnabled().catch(() => false)) {
-        await logAfterClick(await clickBoss(/Action Surge|Příval akce|Prival akce/i, 'action_surge'));
+        await logAfterClick(await clickBoss(/Action Surge|Příval akce|Prival akce/i, 'action_surge', ABILITIES_HUB));
         continue;
       }
       if (await endBtn.isEnabled().catch(() => false)) {
