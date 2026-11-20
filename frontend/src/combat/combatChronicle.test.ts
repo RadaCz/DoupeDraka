@@ -6,7 +6,7 @@ const mk = (id: number, action: string, result = ''): JournalEvent => ({
   id,
   action,
   result,
-  created_at: new Date().toISOString(),
+  created_at: `2020-06-15T12:00:${String(id).padStart(2, '0')}.000Z`,
 });
 
 describe('combat chronicle (Průběh boje)', () => {
