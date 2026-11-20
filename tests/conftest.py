@@ -29,6 +29,8 @@ if _postgres:
 else:
     os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///" + _TEST_DB_PATH.replace(os.sep, "/")
 os.environ.setdefault("LLM_PROVIDER", "fallback")
+# Paid-tier API tests opt into full tiers; closed beta defaults to lite-only in production.
+os.environ.setdefault("CLOSED_BETA_LITE_ONLY", "0")
 # Session fixture runs init_db(); disable FastAPI startup bootstrap to avoid parallel SQLite writers.
 os.environ["DB_BOOTSTRAP"] = "none"
 # aiosqlite + TestClient use many ephemeral event loops; never pool SQLite across them.

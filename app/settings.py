@@ -49,6 +49,10 @@ class Settings(BaseSettings):
         default=False,
         validation_alias=AliasChoices("PAID_NARRATION_STRICT", "paid_narration_strict"),
     )
+    closed_beta_lite_only: bool = Field(
+        default=True,
+        validation_alias=AliasChoices("CLOSED_BETA_LITE_ONLY", "closed_beta_lite_only"),
+    )
     nvidia_api_key: str = Field(default="", validation_alias=AliasChoices("NVIDIA_API_KEY", "nvidia_api_key"))
     nvidia_base_url: str = Field(
         default="https://integrate.api.nvidia.com/v1",

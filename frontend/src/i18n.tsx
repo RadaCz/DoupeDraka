@@ -62,7 +62,7 @@ const cs: Record<string, string> = {
   'Filter journal': 'Filtrovat deník',
   ACCOUNT: 'ÚČET',
   'No spell selected': 'Žádné kouzlo',
-  'Story turns use the free offline narrator. Credits apply only if you enable paid narration in Settings.': 'Tahy příběhu používají bezplatného offline vypravěče. Kredity platí jen po zapnutí placené narace v Nastavení.',
+  'Story turns use the free offline narrator. Credits apply only if you enable paid narration in Settings.': 'Tahy příběhu používají bezplatného offline vypravěče. V této closed betě placenou naraci v Nastavení zapnout nejde.',
   'Lite storyteller': 'Vypravěč Lite',
   'This work includes material taken from the System Reference Document 5.1 (“SRD 5.1”) by Wizards of the Coast LLC and available at the official SRD page. The SRD 5.1 is licensed under the Creative Commons Attribution 4.0 International License.': 'Tato hra využívá materiál z System Reference Document 5.1 („SRD 5.1“) od Wizards of the Coast LLC, dostupného na oficiální stránce SRD. SRD 5.1 je licencováno pod licencí Creative Commons Attribution 4.0 International.',
   'Open this app from Telegram to sign in.': 'Pro přihlášení otevři tuto aplikaci v Telegramu.',
@@ -451,8 +451,8 @@ const cs: Record<string, string> = {
   'NARRATOR CREDITS': 'KREDITY VYPRAVĚČE',
   'AVAILABLE NARRATOR CREDITS': 'DOSTUPNÉ KREDITY VYPRAVĚČE',
   'Narrator credits': 'Kredity vypravěče',
-  'About narrator credits': 'O kreditech vypravce',
-  'Narrator credits pay for changed turns at paid narration tiers. Lite turns, rests and no-op actions are free.': 'Kredity vypravěče platí změněné tahy u placených úrovní vypravěče. Lite tahy, odpočinek a akce bez změny jsou zdarma.',
+  'About narrator credits': 'O kreditech vypravěče',
+  'Narrator credits pay for changed turns at paid narration tiers. Lite turns, rests and no-op actions are free.': 'Vypravěč Lite popisuje změněné tahy zdarma. V této closed betě placené úrovně nejsou k dispozici.',
   'Spell slots power casting for spellcaster classes. They are separate from narrator credits, which pay only for story turns.': 'Kouzelné sloty pohánějí sesílání u sesílacích povolání. Jsou oddělené od kreditů vypravěče, které platí pouze za herní tahy.',
   'Each search uses one six-sided die: a 1 brings an enemy; other results may reveal clues, quiet, or 1–4 gold coins. After a fight or escape, your next search is safe. Rejected actions cost no narrator credits.': 'Kazdy pruzkum hazi jednou sestistenou kostkou: pri 1 se objevi nepritel, jiny vysledek muze odhalit stopy, klid nebo 1–4 zlate mince. Po boji nebo uteku je dalsi pruzkum bezpecny. Odmitnute akce nestoji kredity vypravce.',
   'tier': 'úroveň',
@@ -494,7 +494,7 @@ const cs: Record<string, string> = {
   'Hit points': 'Životy',
   'Spell slots': 'Kouzlové sloty',
   'About Adventure Mana': 'O dobrodruzne mane',
-  'Adventure Mana pays for changed turns at paid narration tiers. Lite turns, rests and no-op actions are free.': 'Dobrodruzna mana plati zmenene tahy u placenych urovni vypravěče. Lite tahy, odpocinek a akce bez zmeny jsou zdarma.',
+  'Adventure Mana pays for changed turns at paid narration tiers. Lite turns, rests and no-op actions are free.': 'Dobrodružná mana: v closed betě hraješ na Lite, změněné tahy jsou zdarma.',
   'Top-ups are not available yet': 'Dobití zatím není dostupné',
   'Your spells': 'Tvoje kouzla',
   'Mana (historical)': 'Mana (historicka)',
@@ -548,7 +548,7 @@ const cs: Record<string, string> = {
   'Shrine bell': 'Chramovy zvon',
   'A stolen shrine bell. Caldus at the Shrine of the Forgotten will reward its return.':
     'Ukradený chrámový zvon. Caldus ve Svatyni zabomenych odmeni jeho navrat.',
-  'Adventuring gear': 'Dobrodruzna vybava',
+  'Adventuring gear': 'Dobrodružná výbava',
   'Worn gear that shapes your look in the story. Armor class comes from class and stats.':
     'Obleceni, ktere formuje příběh. Trida obrany vychazi z povolani a atributu.',
   'Equipment carried on the road. Details may unfold as the story progresses.':
@@ -587,6 +587,10 @@ const cs: Record<string, string> = {
     'Nastavení platí jen pro tuto postavu.',
   'Normal paid narration needs an external provider on the server. This build uses Lite (free offline storyteller) only.':
     'Placená úroveň Normal vyžaduje na serveru externího providera. Tato verze používá jen Lite (zdarma, vestavěný vypravěč).',
+  'This closed beta build uses the Lite storyteller only. Paid narration tiers are not selectable.':
+    'Tato closed beta používá jen vypravěče Lite. Placené úrovně vypravěče nejdou vybrat.',
+  'Lite always uses the built-in offline storyteller for free. Paid narration tiers are not available in this closed beta build.':
+    'Vypravěč Lite je vestavěný offline vypravěč zdarma. V této closed betě nejsou dostupné placené úrovně.',
   'Pro tier is disabled in this beta.': 'Úroveň Pro je v této betě vypnutá.',
   'The narrator is shaping the moment…': 'Vypravěč právě popisuje, co se děje…',
   'Look around': 'Rozhlednout se',
@@ -628,7 +632,7 @@ const cs: Record<string, string> = {
   'Listen for movement': 'Naslouchat pohybu',
   Planned: 'Pripravovano',
   'Ability score bonuses from your species are applied at creation. Traits marked “Active in engine” are enforced by the game rules.':
-    'Bonuses k vlastnostem z rasy se aplikuji pri vytvoreni. Vlastnosti oznacene „Aktivni v engine“ vynucuje herni pravidla.',
+    'Bonuses k vlastnostem z rasy se aplikuji pri vytvořeni. Vlastnosti oznacene „Aktivni v engine“ vynucuje herni pravidla.',
   'Racial traits': 'Rasove vlastnosti',
   'Ability increases': 'Navyseni vlastnosti',
   'Active in engine': 'Aktivni v engine',
@@ -645,7 +649,7 @@ const cs: Record<string, string> = {
     'Pribliz se k nepriteli (spotrebuje pohyb, ne Akci).',
   'Increase distance (uses movement, not your Action).':
     'Zvetsi vzdalenost (spotrebuje pohyb, ne Akci).',
-  'No movement remaining this turn.': 'Tento tah uz nemas pohyb.',
+  'No movement remaining this turn.': 'Tento tah uz nemás pohyb.',
   'Ruleset v1 supports Human, Elf, Dwarf, and Halfling for chapter one.':
     'Ruleset v1 podporuje pro kapitolu 1 lidskou, elfskou, trpaslickou a halfling rasu.',
   'Ruleset v1 supports Fighter, Rogue, Cleric, and Wizard in play.':
@@ -790,7 +794,7 @@ const cs: Record<string, string> = {
   'Choose narration quality': 'Vyber kvalitu vypraveni',
   'This build does not process payments. No real-money purchase can be made from the Mini App.': 'Tato verze nezpracovava platby. V Mini App nelze nakoupit za skutecne penize.',
   'HOW IT WORKS': 'JAK TO FUNGUJE',
-  'Adventure Mana': 'Dobrodruzna mana',
+  'Adventure Mana': 'Dobrodružná mana',
   'Pays for a story turn when the game state changes. Balance is shared by your Telegram account.': 'Plati za tah příběhu, kdyz se zmeni stav hry. Zustatek se sdili v ramci tveho uctu Telegram.',
   'When is the storyteller using AI?': 'Kdy vypravec pouziva AI?',
   'Lite always uses the built-in offline storyteller for free. Normal charges narrator credits only when an external provider (for example NVIDIA NIM or Groq) is configured and delivers paid narration. Local Ollama is not billed on Normal. Pro is disabled in closed beta. Tiers never change game rules.': 'Lite vzdy zdarma pouziva vestaveny offline vypravec. Normal uctuje kredity jen pri nakonfigurovanem externim providerovi (napr. NVIDIA NIM nebo Groq) a dorucene placene naraci. Lokalni Ollama se na Normal neuctuje. Pro je v closed beta vypnute. Urovne nemení herni pravidla.',
@@ -847,7 +851,7 @@ const cs: Record<string, string> = {
   'frequent': 'casty',
   'comedy': 'komedialni',
   'easy': 'lehka',
-  'normal': 'normalni',
+  'normal': 'normální',
   'hard': 'tezka',
   'wizard': 'carodej',
   'fighter': 'bojovnik',
@@ -875,13 +879,13 @@ const cs: Record<string, string> = {
   'bandit': 'bandita',
   'ghoul': 'ghul',
   'ogre': 'obr',
-  'lite': 'zakladni',
+  'lite': 'základní',
   'Lite': 'Lite',
   'Free narration for the core game loop.': 'Zakladni herni tahy jsou zdarma.',
   'Built-in offline storyteller; free changed turns.': 'Vestaveny offline vypravec; zmenene tahy zdarma.',
   'External AI narration when configured; 1.0 ⚡ per delivered paid turn.': 'Externi AI vypraveni pri nakonfigurovanem providerovi; 1,0 ⚡ za doruceny placeny tah.',
   'Disabled in closed beta until OpenRouter is available.': 'V closed beta vypnuto, dokud není k dispozici OpenRouter.',
-  'Normal': 'Normalni',
+  'Normal': 'Normální',
   'Pro': 'Pokrocila',
   'pro': 'pokrocila',
   'Fast and economical.': 'Rychla a usporna volba.',

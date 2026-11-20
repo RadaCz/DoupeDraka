@@ -609,6 +609,8 @@ def _available_narration_tiers() -> list[dict]:
 
     settings = get_settings()
     tiers = economy.tier_list()
+    if settings.closed_beta_lite_only:
+        return [tier for tier in tiers if tier["key"] == "lite"]
     if not has_external_paid_narration_provider(settings):
         return [tier for tier in tiers if tier["key"] == "lite"]
     if settings.llm_provider.lower() != "openrouter" or not settings.openrouter_api_key.strip():
@@ -619,9 +621,12 @@ def _available_narration_tiers() -> list[dict]:
 @app.get("/economy")
 async def get_economy(user: User = Depends(get_user_by_token)) -> dict:
     tier = user.model_tier
+    settings = get_settings()
     from .ai.registry import has_external_paid_narration_provider
 
-    if not has_external_paid_narration_provider(get_settings()) and tier != "lite":
+    if tier != "lite" and (
+        settings.closed_beta_lite_only or not has_external_paid_narration_provider(settings)
+    ):
         async with Session() as session:
             record = await session.get(User, user.id)
             if record is not None:
@@ -643,9 +648,15 @@ async def set_tier(request: CharacterTier, user: User = Depends(get_user_by_toke
         raise HTTPException(422, f"Unknown tier: {request.tier}")
     if request.tier == "pro":
         raise HTTPException(422, "Pro tier is not available in this build.")
+    settings = get_settings()
+    if settings.closed_beta_lite_only and request.tier != "lite":
+        raise HTTPException(
+            422,
+            "Paid narration tiers are disabled during closed beta; use lite.",
+        )
     from .ai.registry import has_external_paid_narration_provider
 
-    if request.tier != "lite" and not has_external_paid_narration_provider(get_settings()):
+    if request.tier != "lite" and not has_external_paid_narration_provider(settings):
         raise HTTPException(422, "Paid narration tiers require a configured external provider; use lite.")
     async with Session() as session:
         record = await session.get(User, user.id)

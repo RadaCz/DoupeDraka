@@ -99,10 +99,9 @@ const referenceData = {
 const economyData = {
   balance: 100,
   balance_tenths: 1000,
-  tier: 'normal',
+  tier: 'lite',
   tiers: [
     { key: 'lite', label: 'Lite', cost: 0, description: 'Built-in offline storyteller; free changed turns.' },
-    { key: 'normal', label: 'Normal', cost: 1, description: 'Balanced for most turns.' },
   ],
   packages: [{ key: 'starter', label: 'Starter', mana: 50, price_rub: 100 }],
 };
@@ -279,7 +278,7 @@ describe('Telegram Mini App', () => {
     render(<App />);
     expect(await screen.findByRole('heading', { name: /an adventure awaits/i })).toBeInTheDocument();
     expect(screen.queryByRole('navigation', { name: 'Main navigation' })).not.toBeInTheDocument();
-    expect(screen.getByText('100.0')).toBeInTheDocument();
+    expect(screen.getByText(/Story turns use the free offline narrator/i)).toBeInTheDocument();
     expect(requests.map(item => item.url)).toContain('/api/reference');
     expect(localStorage.getItem('api_token')).toBeNull();
     expect(localStorage.getItem('active_character_id')).toBeNull();
@@ -528,6 +527,21 @@ describe('Telegram Mini App', () => {
     });
   });
 
+  it('does not render Normal or Pro narrator tier options in Settings', async () => {
+    const requests = setupApp([mockCharacter]);
+    render(<App />);
+    await screen.findByRole('heading', { name: /welcome back, rada/i });
+    openMoreSubscreen('Settings');
+    expect(await screen.findByRole('heading', { name: 'Settings' })).toBeInTheDocument();
+    const tierButtons = screen.getAllByRole('button').filter(
+      button => button.className.includes('tier-card'),
+    );
+    expect(tierButtons).toHaveLength(1);
+    expect(tierButtons[0]).toHaveTextContent(/lite/i);
+    expect(tierButtons[0]).not.toHaveTextContent(/normal/i);
+    expect(requests.filter(item => item.url === '/api/economy')).toHaveLength(1);
+  });
+
   it('changes narrator tier but makes no false promise of payments', async () => {
     const requests = setupApp([mockCharacter]);
     render(<App />);
@@ -547,8 +561,7 @@ describe('Telegram Mini App', () => {
     expect(screen.queryByText(/SRD 5\.1 · Creative Commons/i)).not.toBeInTheDocument();
     fireEvent.click(screen.getByText('Show attribution and license'));
     expect(screen.getByRole('link', { name: /official srd page/i })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /lite built-in offline storyteller/i }));
-    await waitFor(() => expect(requests.some(item => item.url === '/api/economy/tier' && item.body?.tier === 'lite')).toBe(true));
+    expect(screen.getByRole('button', { name: /lite built-in offline storyteller/i })).toBeDisabled();
     expect(screen.getByText(/top-ups are not available yet/i, { selector: 'p' })).toBeInTheDocument();
   });
 
