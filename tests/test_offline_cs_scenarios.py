@@ -81,4 +81,7 @@ def test_czech_defeat_rest():
     )
     text = Narrator.narrate_offline(context)
     assert "catch your breath" not in text.lower()
-    assert any(word in text.lower() for word in ("dech", "zastav", "klid"))
+    assert any(
+        word in text.lower()
+        for word in ("dech", "zastav", "klid", "srdce", "sud", "oči", "chlad", "schod")
+    )

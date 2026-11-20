@@ -14,7 +14,33 @@ def variety_seed(context: NarrationContext) -> int:
 
 
 def choose(options: tuple[str, ...], seed: int) -> str:
-    return options[seed % len(options)]
+    text, _ = choose_variety(options, seed)
+    return text
+
+
+def last_variant_index(context: NarrationContext, category: str) -> int | None:
+    """Index poslední varianty stejné kategorie (volitelně v scene_dossier.narrator_variety)."""
+    dossier = context.scene_dossier or {}
+    block = dossier.get("narrator_variety") or {}
+    raw = block.get(category)
+    if raw is None:
+        return None
+    return int(raw)
+
+
+def choose_variety(
+    options: tuple[str, ...],
+    seed: int,
+    *,
+    last_index: int | None = None,
+) -> tuple[str, int]:
+    """Deterministický výběr; stejná varianta se neopakuje za sebou (AC17-5)."""
+    if not options:
+        return "", 0
+    index = seed % len(options)
+    if last_index is not None and index == last_index and len(options) > 1:
+        index = (index + 1) % len(options)
+    return options[index], index
 
 
 def familiarity_lead(context: NarrationContext, *, language: str) -> str:
@@ -36,7 +62,7 @@ def familiarity_lead(context: NarrationContext, *, language: str) -> str:
             (
                 f"Na tomto místě v {place_loc} už víš, kam šlápneš. ",
                 f"Známé stěny {place_gen} tě vítají jinak než poprvé. ",
-                f"Vraceš se do {place_gen} a prostor ti odpovídá tíhou vzpomínek. ",
+                f"Vracíš se do {place_gen} a prostor ti odpovídá tíhou vzpomínek. ",
             ),
             seed,
         )
