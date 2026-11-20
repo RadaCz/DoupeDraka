@@ -40,6 +40,46 @@ jobs:
           path: reports/junit-backend.xml
           if-no-files-found: ignore
 
+  docker-alembic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: doupe
+          POSTGRES_PASSWORD: doupe
+          POSTGRES_DB: doupedraka
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U doupe -d doupedraka"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build API Docker image
+        run: docker build -t doupe-api:ci .
+      - name: Alembic upgrade head (runtime image)
+        env:
+          DATABASE_URL: postgresql+asyncpg://doupe:doupe@host.docker.internal:5432/doupedraka
+        run: |
+          docker run --rm \
+            --add-host=host.docker.internal:host-gateway \
+            -e DATABASE_URL="$DATABASE_URL" \
+            -e DB_BOOTSTRAP=none \
+            doupe-api:ci alembic upgrade head
+      - name: Alembic check (runtime image)
+        env:
+          DATABASE_URL: postgresql+asyncpg://doupe:doupe@host.docker.internal:5432/doupedraka
+        run: |
+          docker run --rm \
+            --add-host=host.docker.internal:host-gateway \
+            -e DATABASE_URL="$DATABASE_URL" \
+            -e DB_BOOTSTRAP=none \
+            doupe-api:ci alembic check
+
   backend-postgres:
     runs-on: ubuntu-latest
     timeout-minutes: 15
