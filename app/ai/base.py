@@ -21,6 +21,7 @@ class NarrationContext:
     long_term_memory: str = ""
     scene_dossier: dict | None = None
     scene_kind: str = "general"
+    resolution: dict | None = None
 
 
 @dataclass(frozen=True)

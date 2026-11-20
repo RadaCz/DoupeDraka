@@ -757,6 +757,7 @@ def build_narration_context(
     spell_facts: dict | None = None,
     rest_facts: dict | None = None,
     level_up_facts: dict | None = None,
+    resolution: dict | None = None,
 ) -> NarrationContext:
     """Everything the narrator is allowed to see. Facts come from the engine."""
     return NarrationContext(
@@ -770,7 +771,14 @@ def build_narration_context(
         long_term_memory=effective_long_term_memory(character),
         scene_dossier=scene_dossier_for_character(character),
         scene_kind=infer_scene_kind(text, events, in_combat=character.in_combat),
+        resolution=resolution,
     )
+
+
+def attach_narration_layers(response: ActionResponse, context: NarrationContext) -> None:
+    from .narration_layers import compose_narration_layers
+
+    response.narration_layers = compose_narration_layers(context, response.narration or "")
 
 
 def record_narration_delivery(character_id: str | None, status: str) -> tuple[str | None, str | None]:
@@ -971,6 +979,7 @@ async def action(
             character_id=character_id,
             billing_tier=billing_tier,
         )
+    attach_narration_layers(response, context)
     await reconcile_narrator_billing(
         user_id=user.id,
         stored_tier=stored_tier,
@@ -1223,6 +1232,7 @@ async def commit_action_turn(
                 result.spell_facts or None,
                 result.rest_facts or None,
                 result.level_up_facts or None,
+                resolution=result.resolution or None,
             )
 
             claimed = await session.execute(
@@ -1295,6 +1305,7 @@ async def commit_action_turn(
                 class_facts=result.class_facts or None,
                 resolution=result.resolution or None,
             )
+            attach_narration_layers(response, context)
             # The receipt is written in the same commit as the turn, so a retry
             # arriving a millisecond later finds the turn and cannot repeat it.
             if key:
