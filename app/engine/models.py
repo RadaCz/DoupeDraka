@@ -96,4 +96,5 @@ class TurnResult:
     level_up_facts: dict = field(default_factory=dict)
     purchase_facts: dict = field(default_factory=dict)
     class_facts: dict = field(default_factory=dict)
+    resolution: dict = field(default_factory=dict)
     costs_adventure_mana: bool = True

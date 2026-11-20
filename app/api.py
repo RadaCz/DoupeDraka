@@ -726,6 +726,7 @@ async def list_character_events(
                 "action": row.action,
                 "result": row.result,
                 "created_at": row.created_at.isoformat(),
+                **({"resolution": row.resolution_json} if row.resolution_json else {}),
             }
             for row in reversed(rows)
         ]
@@ -1205,6 +1206,7 @@ async def commit_action_turn(
             )
             bind_engine_rng(character, game, _e2e_rng_base, e2e_identity)
             result, monster = game.resolve_action(character, text, active_monster)
+            result = game._finalize_turn_result(result, character=character, monster=monster)
             bill_narration = narration_charge_applies(
                 billing_tier=billing_tier,
                 state_changed=result.state_changed,
@@ -1259,10 +1261,12 @@ async def commit_action_turn(
                 await session.rollback()
                 raise
             fallback = Narrator.narrate_offline(context)
+            resolution_payload = result.resolution if result.resolution else {}
             event = EventRecord(
                 character_id=character_id,
                 action=text,
                 result=journal_result(fallback, context.events),
+                resolution_json=resolution_payload,
             )
             session.add(event)
             await session.flush()
@@ -1289,6 +1293,7 @@ async def commit_action_turn(
                 rest_facts=result.rest_facts or None,
                 level_up_facts=result.level_up_facts or None,
                 class_facts=result.class_facts or None,
+                resolution=result.resolution or None,
             )
             # The receipt is written in the same commit as the turn, so a retry
             # arriving a millisecond later finds the turn and cannot repeat it.

@@ -95,6 +95,7 @@ class EventRecord(Base):
     __tablename__ = "events"
     id: Mapped[int] = mapped_column(Integer, primary_key=True); character_id: Mapped[str] = mapped_column(String(36), index=True)
     action: Mapped[str] = mapped_column(Text); result: Mapped[str] = mapped_column(Text); created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    resolution_json: Mapped[dict] = mapped_column(JsonMetadata, default=dict)
 
 class AnalyticsEvent(Base):
     """Lightweight product telemetry (first-party, no third-party analytics)."""
@@ -126,6 +127,7 @@ async def init_db() -> None:
             await connection.run_sync(Base.metadata.create_all)
             await connection.run_sync(_migrate_character_version)
             await connection.run_sync(_migrate_action_receipt_expiry)
+            await connection.run_sync(_migrate_event_resolution_json)
         _init_db_ready_urls.add(url)
 
 def _migrate_character_version(connection) -> None:
@@ -140,6 +142,17 @@ def _migrate_character_version(connection) -> None:
     columns = {row[1] for row in connection.exec_driver_sql("PRAGMA table_info(characters)").fetchall()}
     if columns and "version" not in columns:
         connection.exec_driver_sql("ALTER TABLE characters ADD COLUMN version INTEGER NOT NULL DEFAULT 0")
+
+def _migrate_event_resolution_json(connection) -> None:
+    """Add events.resolution_json for databases created before Combat V2 task 16."""
+    if connection.dialect.name != "sqlite":
+        return
+    columns = {row[1] for row in connection.exec_driver_sql("PRAGMA table_info(events)").fetchall()}
+    if columns and "resolution_json" not in columns:
+        connection.exec_driver_sql(
+            "ALTER TABLE events ADD COLUMN resolution_json JSON NOT NULL DEFAULT '{}'"
+        )
+
 
 def _migrate_action_receipt_expiry(connection) -> None:
     """Add the 24-hour idempotency expiry to databases initialized before Alembic."""
