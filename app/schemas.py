@@ -73,6 +73,8 @@ class ActionResponse(BaseModel):
     class_facts: dict | None = None
     # Structured engine beats for Combat V2 — same numbers as journal fact lines, never parsed from text.
     resolution: dict | None = None
+    # Lite narrator: oddělené vrstvy Příběh / Výsledek / Co dál (Úkol 17).
+    narration_layers: dict | None = None
 
 class TopUpRequest(BaseModel):
     package: str = Field(default="starter", max_length=32)

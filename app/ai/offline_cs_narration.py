@@ -107,6 +107,15 @@ def _has_player_attack(facts: str) -> bool:
 
 def classify_combat_category(context: NarrationContext) -> str | None:
     """Mapování faktů enginu → kategorie B1–B13 (bez B1 otevírání boje)."""
+    resolution = context.resolution or {}
+    beats = resolution.get("beats") or []
+    if beats:
+        from ..narration_layers import classify_combat_category_from_beats
+
+        mapped = classify_combat_category_from_beats(beats)
+        if mapped:
+            return mapped
+
     joined = " ".join(context.events)
     facts = joined.lower()
 
