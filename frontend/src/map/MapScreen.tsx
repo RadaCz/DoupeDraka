@@ -4,10 +4,12 @@ import type { Character, LocationReference, QuestCatalog } from '../types';
 import { useI18n } from '../i18n';
 import { displayArrivalBeat, displayLocation, displayLocationShort } from '../i18n/gameDisplay';
 import {
+  BELL_WARDEN_PIT,
   CHAPTER_ONE_LAYOUT,
   mapEdges,
   mapLocationEmoji,
   mapNodeState,
+  pitBlockedByLevel,
   routeOpen,
 } from '../chapterOneMap';
 import { bellWardenLevelGateNotice } from '../game/gameActions';
@@ -184,6 +186,9 @@ export function MapScreen({
                 <span className="map-node-label">
                   <span className="map-node-place-icon" aria-hidden="true">{mapLocationEmoji(place)}</span>
                   {displayLocationShort(place, locale)}
+                  {place === BELL_WARDEN_PIT && pitBlockedByLevel(character.level ?? 1, quests) ? (
+                    <span className="map-node-level-tag">{t('From level 3')}</span>
+                  ) : null}
                   {questMark ? (
                     <span className="map-node-quest-tag">{questTagLabel}</span>
                   ) : null}

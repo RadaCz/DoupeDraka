@@ -481,6 +481,20 @@ const cs: Record<string, string> = {
   'CURRENT ADVENTURER': 'AKTUÁLNÍ DOBRODRUH',
   'Level': 'Úroveň',
   'Continue adventure': 'Pokračovat v dobrodružství',
+  'Resume where you left off': 'Pokračuj tam, kde jsi skončil',
+  'Where you are and what you want': 'Kde jsi a co chceš',
+  'From level 3': 'Od 3. úrovně',
+  'Conversation': 'Rozhovor',
+  'Conversation topics': 'Témata rozhovoru',
+  'Local contacts': 'Místní kontakty',
+  'Try instead': 'Zkus raději',
+  'Completed: {label}': 'Splněno: {label}',
+  'Caldus keeps the Shrine of the Forgotten — he knows about the stolen bell.':
+    'Caldus střeží Svatyni zapomenutých — ví o ukradeném zvonu.',
+  'Nib runs a stall at the Goblin Market.': 'Nib má stánek na tržišti goblinů.',
+  'Choose a topic to speak in this place.': 'Vyber téma rozhovoru na tomto místě.',
+  'No one here answers to that. Name an NPC (Caldus, Nib) or use a suggested conversation chip.':
+    'Nikdo tady na to nereaguje. Jmenuj NPC (Caldus, Nib) nebo klepni na navržený rozhovor.',
   'Your story starts with a hero': 'Tvůj příběh začíná hrdinou',
   'Choose a ready-made adventurer or create one of your own.': 'Vyber si předpřipraveného dobrodruha nebo vytvoř vlastního.',
   'Create your character': 'Vytvořit postavu',
@@ -624,7 +638,10 @@ const cs: Record<string, string> = {
   'Travel to The Shrine of the Forgotten': 'Cesta ke Svatyni zapomenutych',
   'Travel to The Goblin Market': 'Cesta na Goblini trh',
   'Talk to Caldus': 'Promluvit s Caldusem',
-  'Ask Caldus about the Vault': 'Zeptej se Calduse na Kryptu ozvěn',
+  'Ask Caldus about the Vault': 'Zeptat se Calda na Komnatu ozvěn',
+  'That quest step cannot be resolved here.': 'Tenhle krok úkolu se tady splnit nedá.',
+  'That action cannot be resolved here. Try a clearer command or a UI chip.':
+    'Tohle se tady udělat nedá. Zkus jinou akci nebo klepni na nabídku.',
   'A stolen shrine bell is missing somewhere below. Use Travel or the current objective to head toward the shrine.':
     'Někde pod zemí zmizel chrámový zvon. Vydej se ke svatyni přes Cesta nebo aktuální úkol.',
   'Ask Nib about the shrine bell': 'Zeptat se Niba na chrámový zvon',

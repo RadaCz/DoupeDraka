@@ -9,7 +9,7 @@ import {
 } from './sharedPlayUI';
 
 export function AdventureScreen(props: PlayScreenProps) {
-  const { character, events, turnDelta, onOpenQuests } = props;
+  const { character, events, turnDelta, questToast, onOpenQuests } = props;
 
   return (
     <section className="screen game-screen adventure-screen text-first">
@@ -22,6 +22,7 @@ export function AdventureScreen(props: PlayScreenProps) {
         )}
       />
       <TurnDeltaStrip message={turnDelta} />
+      {questToast ? <p className="quest-step-toast" role="status">{questToast}</p> : null}
       <div className="game-play-story">
         <PlayJournal {...props} />
       </div>

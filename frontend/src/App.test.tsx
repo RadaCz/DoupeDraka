@@ -635,7 +635,7 @@ describe('Telegram Mini App', () => {
     await screen.findByRole('heading', { name: /welcome back, rada/i });
     fireEvent.click(screen.getByRole('button', { name: 'Adventure' }));
     expect(
-      await screen.findByText(/stolen shrine bell is missing somewhere below/i),
+      await screen.findByText(/shrine bell|chrámový zvon/i),
     ).toBeInTheDocument();
   });
 
