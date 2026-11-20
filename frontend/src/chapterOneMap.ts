@@ -1,5 +1,8 @@
 import type { Character, LocationReference } from './types';
 
+export const BELL_WARDEN_MIN_LEVEL = 3;
+export const BELL_WARDEN_PIT = "The Bell Warden's Pit";
+
 /** Fixed layout for chapter-one locations (viewBox 0–100). */
 export const CHAPTER_ONE_LAYOUT: Record<string, { x: number; y: number }> = {
   'The Whispering Cellar': { x: 12, y: 52 },
@@ -10,18 +13,32 @@ export const CHAPTER_ONE_LAYOUT: Record<string, { x: number; y: number }> = {
   'The Vault of Echoes': { x: 38, y: 78 },
   'The Forgotten Crypt': { x: 62, y: 78 },
   'The Underground River': { x: 38, y: 32 },
-  "The Bell Warden's Pit": { x: 38, y: 92 },
+  [BELL_WARDEN_PIT]: { x: 38, y: 92 },
 };
 
-export function routeOpen(route: string, quests: Record<string, boolean>) {
-  if (route === 'The Vault of Echoes' || route === "The Bell Warden's Pit") {
-    return Boolean(quests.vault_unlocked);
+export function pitBlockedByLevel(level: number, quests: Record<string, boolean>): boolean {
+  if (quests.chapter_one_complete) return false;
+  return Boolean(quests.vault_unlocked) && level < BELL_WARDEN_MIN_LEVEL;
+}
+
+export function routeOpen(route: string, quests: Record<string, boolean>, level = 1) {
+  if (route === 'The Vault of Echoes' || route === BELL_WARDEN_PIT) {
+    if (!quests.vault_unlocked) return false;
+    if (route === BELL_WARDEN_PIT && pitBlockedByLevel(level, quests)) return false;
+    return true;
   }
   return true;
 }
 
-export function mapLockReason(route: string, quests: Record<string, boolean>) {
-  if (route === 'The Vault of Echoes' || route === "The Bell Warden's Pit") {
+export function mapLockReason(
+  route: string,
+  quests: Record<string, boolean>,
+  level = 1,
+): string | null {
+  if (route === BELL_WARDEN_PIT && quests.vault_unlocked && pitBlockedByLevel(level, quests)) {
+    return 'From level 3';
+  }
+  if (route === 'The Vault of Echoes' || route === BELL_WARDEN_PIT) {
     if (quests.vault_unlocked) return null;
     if (quests.bell_quest_complete) {
       return 'Return to the Shrine of the Forgotten and speak with Caldus again to learn the way to the Vault of Echoes.';
@@ -46,18 +63,18 @@ export function mapNodeState(
   if (place === current) return 'current';
   if (!CHAPTER_ONE_LAYOUT[place]) return 'hidden';
 
-  const isVaultRoute = place === 'The Vault of Echoes' || place === "The Bell Warden's Pit";
-  if (isVaultRoute && !routeOpen(place, quests)) {
+  const isVaultRoute = place === 'The Vault of Echoes' || place === BELL_WARDEN_PIT;
+  if (isVaultRoute && !routeOpen(place, quests, character.level ?? 1)) {
     return visited.has(current) || visited.has('The Sunken Corridor') ? 'locked' : 'hidden';
   }
 
   if (visited.has(place)) return 'visited';
 
   const neighborOfCurrent = node?.connections.includes(place) ?? false;
-  if (neighborOfCurrent && routeOpen(place, quests)) return 'adjacent';
+  if (neighborOfCurrent && routeOpen(place, quests, character.level ?? 1)) return 'adjacent';
 
   const anyVisitedConnects = locations.some(
-    loc => visited.has(loc.name) && loc.connections.includes(place) && routeOpen(place, quests),
+    loc => visited.has(loc.name) && loc.connections.includes(place) && routeOpen(place, quests, character.level ?? 1),
   );
   if (anyVisitedConnects) return 'known';
 
@@ -73,7 +90,7 @@ const LOCATION_EMOJI: Record<string, string> = {
   'The Vault of Echoes': '🔔',
   'The Forgotten Crypt': '⚰️',
   'The Underground River': '💧',
-  "The Bell Warden's Pit": '⛓️',
+  [BELL_WARDEN_PIT]: '⛓️',
 };
 
 export function mapLocationEmoji(place: string): string {

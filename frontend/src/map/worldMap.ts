@@ -35,13 +35,13 @@ export function travelEligibility(
       reasonKey: 'You cannot reach this place from here — travel from a connected location first.',
     };
   }
-  if (!routeOpen(destination, quests)) {
-    const reason = mapLockReason(destination, quests);
+  if (!routeOpen(destination, quests, character.level ?? 1)) {
+    const reason = mapLockReason(destination, quests, character.level ?? 1);
     return { canTravel: false, reasonKey: reason ?? 'This path is not open yet.' };
   }
   const state = mapNodeState(destination, character, locations);
   if (state === 'locked' || state === 'hidden') {
-    const reason = mapLockReason(destination, quests);
+    const reason = mapLockReason(destination, quests, character.level ?? 1);
     return { canTravel: false, reasonKey: reason ?? 'This path is not open yet.' };
   }
   return { canTravel: true, reasonKey: null };
@@ -54,7 +54,7 @@ export function reachableFromCurrent(
   const node = locations.find(item => item.name === character.location);
   if (!node) return [];
   const quests = character.quest_flags ?? {};
-  return node.connections.filter(route => routeOpen(route, quests));
+  return node.connections.filter(route => routeOpen(route, quests, character.level ?? 1));
 }
 
 export function visibleChapterPlaces(

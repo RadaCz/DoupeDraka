@@ -2,8 +2,8 @@ import type { Locale } from '../i18n';
 import { backgroundFeatureAvailable, backgroundFeatureFor } from '../character/backgroundFeatures';
 import { latestStoryBeatForOverview } from '../journal/journalPresentation';
 import type { Character, JournalEvent, LocationReference } from '../types';
-import { routeOpen } from '../chapterOneMap';
-import { visibleQuestTimeline } from '../questProgress';
+import { BELL_WARDEN_MIN_LEVEL, routeOpen } from '../chapterOneMap';
+import { chapterOneQuestProgress, visibleQuestTimeline } from '../questProgress';
 
 export interface SuggestedAction {
   label: string;
@@ -62,8 +62,7 @@ export function resolveNpcTalkAction(
   return null;
 }
 
-/** Tier-3 bosses (Bell Warden) require hero level 3+ — matches `encounters.minimum_level_for_tier`. */
-export const BELL_WARDEN_MIN_LEVEL = 3;
+export { BELL_WARDEN_MIN_LEVEL };
 
 /** Single i18n source string for the Bell Warden level gate (Quests, map, coaching strip). */
 export const BELL_WARDEN_LEVEL_GATE_NOTICE =
@@ -146,16 +145,16 @@ export function resolveQuestTravelAction(
   if (destination === character.location) return null;
   const node = locations.find(item => item.name === character.location);
   if (!node) return null;
-  if (node.connections.includes(destination) && routeOpen(destination, quests)) {
+  if (node.connections.includes(destination) && routeOpen(destination, quests, character.level ?? 1)) {
     return {
       label: t(`Travel to ${destination}`),
       action: `travel to ${destination}`,
     };
   }
   for (const route of node.connections) {
-    if (!routeOpen(route, quests)) continue;
+    if (!routeOpen(route, quests, character.level ?? 1)) continue;
     const hop = locations.find(item => item.name === route);
-    if (hop?.connections.includes(destination) && routeOpen(destination, quests)) {
+    if (hop?.connections.includes(destination) && routeOpen(destination, quests, character.level ?? 1)) {
       return {
         label: t(`Travel to ${route}`),
         action: `travel to ${route}`,
@@ -260,7 +259,7 @@ export function suggestedActions(
   actions.push({ label: t('Inspect the stonework'), action: 'inspect the stonework' });
   const node = locations.find(location => location.name === character.location);
   const questsFlags = character.quest_flags ?? {};
-  const nextLocation = node?.connections.find(route => routeOpen(route, questsFlags));
+  const nextLocation = node?.connections.find(route => routeOpen(route, questsFlags, character.level ?? 1));
   if (nextLocation) {
     actions.push({ label: t(`Travel to ${nextLocation}`), action: `travel to ${nextLocation}` });
     return [...actions.slice(0, 2), actions[actions.length - 1]];
@@ -382,10 +381,22 @@ export function primaryPlayChipKey(
   const chips = playActionChips(character, events, locations, t, hasSpells, hasPotion);
   if (!chips.length) return null;
   if (character.in_combat) return chips.find(c => c.action?.startsWith('attack '))?.key ?? chips[0].key;
+  const { active } = visibleQuestTimeline(character.quest_flags ?? {});
+  const questTravel = resolveQuestTravelAction(character, locations, t);
+  if (active && questTravel) {
+    return chips.find(c => c.action === questTravel.action)?.key ?? chips[0].key;
+  }
   const npcTalk = resolveNpcTalkAction(character, t);
   if (npcTalk) return chips.find(c => c.action === npcTalk.action)?.key ?? chips[0].key;
   const questBoss = resolveQuestBossAction(character, t);
   if (questBoss) return chips.find(c => c.action === questBoss.action)?.key ?? chips[0].key;
+  if (
+    character.hp / Math.max(1, character.max_hp) <= 0.5
+    && !character.in_combat
+  ) {
+    const rest = chips.find(c => c.action === 'rest');
+    if (rest) return rest.key;
+  }
   if (character.hp < character.max_hp) {
     const rest = chips.find(c => c.action === 'rest');
     if (rest) return rest.key;
@@ -450,4 +461,92 @@ export function latestSceneNarration(events: JournalEvent[], locale: Locale = 'e
 
 export function isFallenError(message: string | null) {
   return Boolean(message && /fallen|can no longer act/i.test(message));
+}
+
+export interface NpcTopicChip {
+  key: string;
+  label: string;
+  blurb: string;
+  action: string;
+}
+
+/** NPC topics available at the current location (engine-backed only). */
+export function resolveNpcTopicChips(
+  character: Character,
+  t: (value: string) => string,
+): NpcTopicChip[] {
+  const quests = character.quest_flags ?? {};
+  const topics: NpcTopicChip[] = [];
+  const push = (key: string, label: string, blurb: string, action: string) => {
+    topics.push({ key, label, blurb, action });
+  };
+  if (character.location === 'The Shrine of the Forgotten') {
+    if (!quests.bell_quest_accepted && !quests.bell_quest_complete) {
+      push('caldus-intro', t('Talk to Caldus'), t('At the Shrine of the Forgotten, talk to Caldus about the bell.'), 'talk to Caldus about the shrine bell');
+    }
+    if ((quests.bell_found || quests.bell_acquired) && !quests.bell_quest_complete) {
+      push('caldus-return', t('Return the shrine bell'), t('Return to the shrine and give the bell back to Caldus.'), 'return the shrine bell to Caldus');
+    }
+    if (quests.bell_quest_complete && !quests.vault_unlocked) {
+      push('caldus-vault', t('Ask Caldus about the Vault'), t('Learn about the Vault of Echoes'), 'talk to Caldus about the vault of echoes');
+    }
+  }
+  if (
+    character.location === 'The Goblin Market'
+    && quests.bell_quest_accepted
+    && !quests.bell_found
+    && !quests.bell_acquired
+  ) {
+    push('nib-bell', t('Ask Nib about the shrine bell'), t('Travel to the Goblin Market and ask Nib about the shrine bell.'), 'ask Nib about the shrine bell');
+  }
+  return topics.slice(0, 3);
+}
+
+export interface ActionRejectionCoach {
+  reasonKey: string;
+  alternative: PlayActionChip | null;
+}
+
+/** Czech coaching when the engine rejects a free-text action. */
+export function actionRejectionCoach(
+  message: string,
+  character: Character,
+  events: JournalEvent[],
+  locations: LocationReference[],
+  t: (value: string) => string,
+  hasSpells: boolean,
+  hasPotion: boolean,
+): ActionRejectionCoach | null {
+  const trimmed = message.trim();
+  if (!trimmed) return null;
+  if (!/cannot be resolved|quest step cannot|No one here answers|That route is not open/i.test(trimmed)) {
+    return null;
+  }
+  const chips = playActionChips(character, events, locations, t, hasSpells, hasPotion);
+  const primary = primaryPlayChipKey(character, events, locations, t, hasSpells, hasPotion);
+  const alt = chips.find(c => c.key === primary) ?? chips[0] ?? null;
+  let reasonKey = trimmed;
+  if (/quest step cannot/i.test(trimmed)) reasonKey = 'That quest step cannot be resolved here.';
+  if (/cannot be resolved here/i.test(trimmed)) reasonKey = 'That action cannot be resolved here. Try a clearer command or a UI chip.';
+  if (/No one here answers/i.test(trimmed)) {
+    reasonKey = 'No one here answers to that. Name an NPC (Caldus, Nib) or use a suggested conversation chip.';
+  }
+  return { reasonKey, alternative: alt ?? null };
+}
+
+export function questStepCompletionLine(
+  before: Record<string, boolean>,
+  after: Record<string, boolean>,
+  t: (value: string) => string,
+): string | null {
+  const prev = chapterOneQuestProgress(before);
+  const next = chapterOneQuestProgress(after);
+  for (const step of next.steps) {
+    if (step.status !== 'done') continue;
+    const was = prev.steps.find(row => row.id === step.id);
+    if (was?.status === 'open') {
+      return t('Completed: {label}').replace('{label}', t(step.label));
+    }
+  }
+  return null;
 }

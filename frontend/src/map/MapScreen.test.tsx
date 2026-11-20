@@ -69,5 +69,20 @@ describe('MapScreen', () => {
     );
     expect(screen.getAllByText(/Defeat the Bell Warden/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/Bell Warden requires at least level/i)).toBeInTheDocument();
+    expect(screen.getByText(/Od 3\. úrovně|From level 3/i)).toBeInTheDocument();
+  });
+
+  it('hides the level tag on the pit node when the hero is level 3', () => {
+    const ready = {
+      ...hero,
+      level: 3,
+      location: 'The Vault of Echoes',
+      visited_locations: ['The Whispering Cellar', 'The Vault of Echoes'],
+      quest_flags: pitReadyFlags,
+    } as Character;
+    renderMap(
+      <MapScreen character={ready} locations={allLocations} onTravel={() => undefined} />,
+    );
+    expect(screen.queryByText(/Od 3\. úrovně|From level 3/i)).not.toBeInTheDocument();
   });
 });

@@ -120,6 +120,17 @@ export function HomeScreen({
             <span className="level-chip">{t('LV.')} {character.level}</span>
           </div>
           <HpBar character={character} />
+          <article className="home-resume-card" aria-labelledby="home-resume-title">
+            <p className="eyebrow">{t('Resume where you left off')}</p>
+            <h2 id="home-resume-title">{displayLocation(character.location, locale)}</h2>
+            {questTimeline?.active && (
+              <p className="home-resume-goal">
+                <strong>{t(questTimeline.active.label)}</strong>
+                <span> — {t(questTimeline.active.hint)}</span>
+              </p>
+            )}
+            {lastBeat && <p className="home-resume-beat">{lastBeat}</p>}
+          </article>
           <div className="hero-card-footer">
             <span>◈ AC {character.armor_class}</span>
             <span>✦ {character.xp} XP</span>
@@ -209,6 +220,7 @@ export function GameScreen(props: {
   error: string | null;
   narrationStatus: 'narrated' | 'fallback' | null;
   turnDelta?: string | null;
+  questToast?: string | null;
   onAction: (action: string) => void;
   onResumePending?: () => void;
   onOpenSheet: () => void;

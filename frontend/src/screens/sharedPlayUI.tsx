@@ -3,14 +3,17 @@ import { useOverlayDismiss } from '../hooks/useOverlayDismiss';
 import type { TurnPhase } from '../pendingTurn';
 import type { Character, Economy, JournalEvent, LocationReference, Spell } from '../types';
 import { useI18n } from '../i18n';
-import { displayCreature, displayLocation } from '../i18n/gameDisplay';
+import { displayArrivalBeat, displayCreature, displayLocation } from '../i18n/gameDisplay';
 import {
   bellWardenLevelGateNotice,
   isFallenError,
+  actionRejectionCoach,
   playActionChips,
   primaryPlayChipKey,
+  resolveNpcTopicChips,
   scenePrompt,
 } from '../game/gameActions';
+import { locationDescription } from '../map/worldMap';
 import { SpellSlots } from '../components/characterVitals';
 import { JournalChronicle } from '../journal/JournalChronicle';
 import { visibleQuestTimeline } from '../questProgress';
@@ -28,6 +31,7 @@ export interface PlayScreenProps {
   error: string | null;
   narrationStatus: 'narrated' | 'fallback' | null;
   turnDelta?: string | null;
+  questToast?: string | null;
   onAction: (action: string) => void;
   onResumePending?: () => void;
   onOpenSheet: () => void;
@@ -130,6 +134,74 @@ export function PlaySceneChrome({
         {coaching}
       </div>
     </header>
+  );
+}
+
+export function PlaySceneIntroCard({
+  character,
+  locations,
+}: {
+  character: Character;
+  locations: LocationReference[];
+}) {
+  const { t, locale } = useI18n();
+  const beat = locationDescription(character.location, locations);
+  const { active } = visibleQuestTimeline(character.quest_flags ?? {}, undefined);
+  if (character.in_combat) return null;
+  return (
+    <article className="play-scene-intro-card" aria-labelledby="play-scene-intro-title">
+      <h2 id="play-scene-intro-title" className="play-scene-intro-heading">{t('Where you are and what you want')}</h2>
+      <p className="play-scene-place">{displayLocation(character.location, locale)}</p>
+      {beat && <p className="play-scene-arrival">{displayArrivalBeat(beat, locale)}</p>}
+      {active && (
+        <p className="play-scene-quest-hint">
+          <strong>{t(active.label)}</strong>
+          <span> — {t(active.hint)}</span>
+        </p>
+      )}
+    </article>
+  );
+}
+
+export function PlayNpcTopicsCard({
+  character,
+  busy,
+  onAction,
+}: {
+  character: Character;
+  busy: boolean;
+  onAction: (action: string) => void;
+}) {
+  const { t } = useI18n();
+  const topics = resolveNpcTopicChips(character, t);
+  if (!topics.length || character.in_combat) return null;
+  const npc = character.location === 'The Goblin Market' ? 'Nib' : character.location === 'The Shrine of the Forgotten' ? 'Caldus' : null;
+  return (
+    <article className="play-npc-card" aria-labelledby="play-npc-title">
+      <p className="eyebrow">{t('Conversation')}</p>
+      <h2 id="play-npc-title">{npc ?? t('Local contacts')}</h2>
+      <p className="play-npc-blurb">
+        {npc === 'Caldus'
+          ? t('Caldus keeps the Shrine of the Forgotten — he knows about the stolen bell.')
+          : npc === 'Nib'
+            ? t('Nib runs a stall at the Goblin Market.')
+            : t('Choose a topic to speak in this place.')}
+      </p>
+      <div className="play-npc-topics" role="group" aria-label={t('Conversation topics')}>
+        {topics.map(topic => (
+          <button
+            key={topic.key}
+            type="button"
+            className="play-npc-topic"
+            disabled={busy}
+            onClick={() => onAction(topic.action)}
+          >
+            <strong>{topic.label}</strong>
+            <span>{topic.blurb}</span>
+          </button>
+        ))}
+      </div>
+    </article>
   );
 }
 
@@ -284,7 +356,7 @@ export function PlayErrorPanel({
 
 export function ActionComposer(props: PlayScreenProps) {
   const {
-    character, events, spells, locations, busy, onAction, onOpenMap, onOpenSheet,
+    character, events, spells, locations, busy, error, onAction, onOpenMap, onOpenSheet,
   } = props;
   const { t } = useI18n();
   const actionInputRef = useRef<HTMLInputElement>(null);
@@ -363,8 +435,35 @@ export function ActionComposer(props: PlayScreenProps) {
     runner();
   };
 
+  const rejection = error
+    ? actionRejectionCoach(
+      error,
+      character,
+      events,
+      locations,
+      t,
+      characterSpells.length > 0,
+      hasPotion,
+    )
+    : null;
+
   return (
     <div className="action-composer-wrap action-composer-text-first action-composer-immersive">
+      {rejection && (
+        <div className="action-rejection-coach" role="status">
+          <p>{t(rejection.reasonKey)}</p>
+          {rejection.alternative?.action && (
+            <button
+              type="button"
+              className="text-button"
+              disabled={busy}
+              onClick={() => onAction(rejection.alternative!.action!)}
+            >
+              {t('Try instead')}: {t(rejection.alternative.label)}
+            </button>
+          )}
+        </div>
+      )}
       {chips.length > 0 && (
         <div className="suggested-actions-scroll">
           <div className="suggested-actions suggested-actions-row" aria-label={t('Suggested actions')}>

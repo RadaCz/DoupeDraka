@@ -101,10 +101,36 @@ test('first session: create → overview → travel chip → Caldus → explore'
     await waitForAdventureComposerIdle(page);
   }
 
-  const state = await fetchCharacterState(request, token, characterId!);
+  let state = await fetchCharacterState(request, token, characterId!);
   const journal = page.getByRole('log', { name: /adventure journal|deník dobrodružství/i });
   if (state.in_combat) {
     await expect(combatDeck).toBeVisible({ timeout: 15_000 });
+    const attackBtn = combatDeck.getByRole('button', { name: /^Attack$|^Útok$/i });
+    const advanceBtn = combatDeck.getByRole('button', { name: /Přiblížit|Advance|Move closer/i });
+    const endTurnBtn = combatDeck.getByRole('button', { name: /End turn|Ukončit tah/i });
+    for (let round = 0; round < 28; round += 1) {
+      state = await fetchCharacterState(request, token, characterId!);
+      if (!state.in_combat) break;
+      if (await attackBtn.isEnabled().catch(() => false)) {
+        const streamAtk = playStreamResponse(page);
+        await attackBtn.click();
+        await streamAtk;
+      } else if (await advanceBtn.isEnabled().catch(() => false)) {
+        const streamMove = playStreamResponse(page);
+        await advanceBtn.click();
+        await streamMove;
+      } else if (await endTurnBtn.isEnabled().catch(() => false)) {
+        const streamEnd = playStreamResponse(page);
+        await endTurnBtn.click();
+        await streamEnd;
+      }
+      await waitForAdventureComposerIdle(page).catch(() => undefined);
+    }
+    await expect.poll(async () => {
+      const next = await fetchCharacterState(request, token, characterId!);
+      return Boolean(next.in_combat);
+    }, { timeout: 120_000 }).toBe(false);
+    await expect(journal).toBeVisible();
   } else {
     await expect(journal).toBeVisible();
     await expect(page.getByRole('textbox', { name: /Your action|tvoje akce|Co uděláš/i })).toBeEnabled();

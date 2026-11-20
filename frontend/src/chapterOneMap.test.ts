@@ -25,4 +25,10 @@ describe('chapterOneMap', () => {
   it('marks the next corridor as adjacent', () => {
     expect(mapNodeState('The Sunken Corridor', hero, locations)).toBe('adjacent');
   });
+
+  it('locks the Bell Warden pit until level 3 when the vault is open', () => {
+    const flags = { vault_unlocked: true };
+    expect(routeOpen("The Bell Warden's Pit", flags, 2)).toBe(false);
+    expect(routeOpen("The Bell Warden's Pit", flags, 3)).toBe(true);
+  });
 });

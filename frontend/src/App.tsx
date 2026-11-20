@@ -37,7 +37,7 @@ import {
   shouldInvalidateSessionToken,
 } from './authSession';
 import { canGoBackFrom, goBackScreen, navigateScreen } from './navigationHistory';
-import { isFallenError } from './game/gameActions';
+import { isFallenError, questStepCompletionLine } from './game/gameActions';
 import { formatTurnDelta } from './game/turnDelta';
 import { formatJournalStreamResult, mergeJournalAfterRefresh } from './journalFormat';
 import {
@@ -240,6 +240,7 @@ function AppContent() {
     characterRef.current = character;
   }, [character]);
   const [turnDelta, setTurnDelta] = useState<string | null>(null);
+  const [questToast, setQuestToast] = useState<string | null>(null);
   const [levelUpNotice, setLevelUpNotice] = useState<LevelUpNotice | null>(null);
   const [showDefeatOverlay, setShowDefeatOverlay] = useState(false);
   const [combatVictory, setCombatVictory] = useState<CombatVictoryRewards | null>(null);
@@ -599,6 +600,7 @@ function AppContent() {
     setError(null);
     setLastRetryableAction(null);
     setTurnDelta(null);
+    setQuestToast(null);
     const snapshot = character;
     const pendingEventId = -Date.now();
     let committed = false;
@@ -646,6 +648,12 @@ function AppContent() {
           const levelNotice = noticeFromLevelUp(snapshot, result.character, result.level_up_facts);
           if (levelNotice) pendingLevelUp = levelNotice;
           updateCharacter(result.character);
+          const completedStep = questStepCompletionLine(
+            snapshot.quest_flags ?? {},
+            result.character.quest_flags ?? {},
+            t,
+          );
+          if (completedStep) setQuestToast(completedStep);
           const narrationBlob = `${result.events.join('\n')} ${streamedNarration}`;
           if (/critical hit|misses|miss\b/i.test(narrationBlob)) {
             haptic(/miss/i.test(narrationBlob) ? 'warning' : 'heavy');
@@ -1039,6 +1047,7 @@ function AppContent() {
             turnPhase={turnPhase}
             error={error}
             turnDelta={turnDelta}
+            questToast={questToast}
             narrationStatus={narrationStatus}
             onAction={takeAction}
             onResumePending={resumePendingTurn}
