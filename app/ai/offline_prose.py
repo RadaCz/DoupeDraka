@@ -135,6 +135,11 @@ def breath_pause_prose(context: NarrationContext, *, language: str) -> str:
     place_cs = _place_phrase_cs(context)
     atm = _atmosphere_line(context, language=language)
     if language == "cs":
+        from .offline_cs_narration import location_prose_v2_cs
+
+        beat = location_prose_v2_cs(context, breath=True)
+        if beat:
+            return beat
         return choose(
             (
                 f"{lead}Zastavíš se na okamžik a necháš tep utichnout. V {place_cs} se nic nového neblíží.",
@@ -187,6 +192,11 @@ def empty_search_prose(context: NarrationContext, *, language: str) -> str:
     atm = _atmosphere_line(context, language=language)
     place = _place_phrase_cs(context)
     if language == "cs":
+        from .offline_cs_narration import location_prose_v2_cs
+
+        beat = location_prose_v2_cs(context, explore=True)
+        if beat:
+            return beat
         return choose(
             (
                 f"{lead}Odhrneš vrstvu shnilé slámy. Pod ní jsou jen vlhké třísky a černá plíseň. V {place} se nic nepohnulo — ale pach mokré hlíny je stále silnější.",
@@ -222,11 +232,15 @@ def _enemy_from_appears(events: Iterable[str]) -> str | None:
 def combat_opening_prose(context: NarrationContext, *, language: str) -> str | None:
     """First beat when combat starts (enemy spawn / initiative) before any attack roll."""
     joined = " ".join(context.events).lower()
-    if "attack roll" in joined:
+    if "attack roll" in joined or "attack with" in joined:
         return None
     if not any("an enemy appears:" in event.lower() for event in context.events):
         if "initiative:" not in joined:
             return None
+    if language == "cs":
+        from .offline_cs_narration import combat_opening_v2_cs
+
+        return combat_opening_v2_cs(context)
     seed = variety_seed(context)
     lead = familiarity_lead(context, language=language)
     raw_foe = _enemy_from_appears(context.events) or _enemy_label(context, context.events)
@@ -310,6 +324,10 @@ def _enemy_label(context: NarrationContext, events: Iterable[str]) -> str:
 
 def combat_prose_from_events(context: NarrationContext, *, language: str) -> str | None:
     """Natural-language combat beat when attack-roll facts are present."""
+    if language == "cs":
+        from .offline_cs_narration import combat_prose_v2_cs
+
+        return combat_prose_v2_cs(context)
     joined = " ".join(context.events)
     facts = joined.lower()
     if "attack roll" not in facts:
@@ -393,7 +411,7 @@ def combat_prose_from_events(context: NarrationContext, *, language: str) -> str
             return choose(
                 (
                     f"{lead}Tvůj útok nezadrží protivníka — {foe} se otočí a zasáhne tebe.",
-                    f"{lead}Útočíš, ale {foe} se prosměkne a oplatí ránu.",
+                    f"{lead}Útočíš, ale {foe} proklouzne a oplatí ránu.",
                 ),
                 seed,
             )

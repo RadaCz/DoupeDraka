@@ -1,6 +1,6 @@
 """Czech prose for the offline narrator (engine facts stay English)."""
 
-from ..display_localization import display_creature, display_spell
+from ..display_localization import display_spell
 from .base import NarrationContext
 from .offline_prose import (
     breath_pause_prose,
@@ -10,6 +10,7 @@ from .offline_prose import (
     rest_recovery_prose,
     shrine_bell_return_prose,
 )
+from .offline_cs_narration import combat_prose_v2_cs, npc_talk_prose_v2_cs
 from .offline_variety import generic_scene_prose, variety_seed
 
 
@@ -53,18 +54,6 @@ def narrate_offline_cs(context: NarrationContext) -> str:
         return "Nib přiznává krádež a vkládá ti do rukou ukradený chrámový zvon."
     if "return the shrine bell to caldus" in facts:
         return shrine_bell_return_prose(context, language="cs")
-    if "an enemy appears:" in facts:
-        raw_enemy = next(
-            (event.split("An enemy appears:", 1)[1].split("(", 1)[0].strip()
-             for event in context.events if "An enemy appears:" in event),
-            "nepřítel",
-        )
-        enemy = display_creature(raw_enemy, "cs")
-        return choose((
-            f"Ticho praská — {enemy} vstoupí do tvé cesty. Ještě neútočil. Co uděláš?",
-            f"Náhle se vynoří {enemy}. Stvoření čeká na tvůj první tah.",
-            f"Hledání odhalí nebezpečí: {enemy} stojí v cestě, ale zatím neútočí.",
-        ))
     if "no loose coin left to find" in facts or "pick over stones and debris" in facts:
         return choose((
             "Prohledáš sutiny, ale volné mince tu už nejsou.",
@@ -98,6 +87,9 @@ def narrate_offline_cs(context: NarrationContext) -> str:
         return empty_search_prose(context, language="cs")
     if "catch your breath" in facts:
         return breath_pause_prose(context, language="cs")
+    npc_beat = npc_talk_prose_v2_cs(context)
+    if npc_beat:
+        return npc_beat
     opening = combat_opening_prose(context, language="cs")
     if opening:
         return opening
@@ -106,10 +98,10 @@ def narrate_offline_cs(context: NarrationContext) -> str:
         return combat
     if "you rest and recover" in facts:
         return rest_recovery_prose(context, language="cs")
-    if "break away and escape" in facts:
-        return "Najdeš skulinku a utečeš dřív, než tě nepřítel zastaví."
-    if "fail to break away" in facts:
-        return "Nepřítel drží pozici a ty se nemůžeš vyprostit."
+    if "break away and escape" in facts or "fail to break away" in facts:
+        flee = combat_prose_v2_cs(context)
+        if flee:
+            return flee
     if "check:" in facts:
         succeeded = any("— success" in event.lower() for event in context.events)
         if succeeded:
