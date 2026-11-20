@@ -11,6 +11,7 @@ import {
   isReactionWindow,
   lastCombatBeat,
 } from './combatActions';
+import { displayCreature } from '../i18n/gameDisplay';
 import { combatAtmosphereLine, canonicalPlayLocation, combatIntroProse, isPreStrikeCombatBeat } from './combatDisplay';
 import { CombatIcon, EnemySilhouette } from './combatIcons';
 import {
@@ -106,7 +107,9 @@ export function CombatArena({
             {enemy ? <EnemySilhouette foeType={enemy.name} /> : <CombatIcon name="attack" />}
           </span>
           <div className="combat-enemy-copy">
-            <h1 id="combat-enemy-name">{enemy?.name ?? t('Unknown foe')}</h1>
+            <h1 id="combat-enemy-name">
+              {enemy ? displayCreature(enemy.name, locale) : t('Unknown foe')}
+            </h1>
             {enemy && (
               <p className="combat-enemy-stats">
                 <span>{t('HP')} {enemy.hp}/{enemy.max_hp}</span>
