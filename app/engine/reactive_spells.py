@@ -119,12 +119,27 @@ def apply_pending_attack_damage(
     from .conditions import player_paralyzed
     from .concentration import concentration_save_after_damage, end_concentration_if_incapacitated
 
+    from .turn_resolution import attack_outcome, beat_damage_to_player, beat_enemy_attack_roll
+
     natural = int(pending["natural"])
     attack_total = int(pending["attack_total"])
     ac = character.armor_class
+    label = pending.get("label") or "attack"
+    name = pending.get("monster_name") or monster.name
     if not attack_roll_hits(ac, natural=natural, attack_total=attack_total):
-        label = pending.get("label") or "attack"
-        name = pending.get("monster_name") or monster.name
+        engine._record_resolution_beat(
+            beat_enemy_attack_roll(
+                monster_name=name,
+                natural=natural,
+                attack_modifier=attack_total - natural,
+                attack_total=attack_total,
+                target_ac=ac,
+                outcome=attack_outcome(natural=natural, hit=False),
+                character=character,
+                monster=monster,
+                label=label,
+            )
+        )
         return [f"{name}'s {label} misses after your defenses (attack {attack_total} vs AC {ac})."]
 
     dice = str(pending["damage_dice"])
@@ -137,8 +152,20 @@ def apply_pending_attack_damage(
         events.append("Melee hit against a paralyzed foe — critical damage.")
     damage = engine.roll(dice, bonus, critical)
     character.hp = max(0, character.hp - damage.total)
-    name = pending.get("monster_name") or monster.name
-    label = pending.get("label") or "attack"
+    engine._record_resolution_beat(
+        beat_damage_to_player(
+            monster_name=name,
+            attack_total=attack_total,
+            natural=natural,
+            target_ac=ac,
+            damage=damage,
+            damage_dice=dice,
+            character=character,
+            monster=monster,
+            label=label,
+            outcome=attack_outcome(natural=natural, hit=True),
+        )
+    )
     events.append(
         f"{name}'s {label} hits you for {damage.total}. Your HP: {character.hp}/{character.max_hp}."
     )

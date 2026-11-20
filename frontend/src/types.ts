@@ -204,6 +204,62 @@ export interface HeroPreset {
   role: string;
 }
 
+export interface ParticipantHp {
+  hp_current: number;
+  hp_max: number;
+  name?: string;
+}
+
+export interface TurnResolutionRoll {
+  natural?: number;
+  modifier: number;
+  total: number;
+}
+
+export interface TurnResolutionBeat {
+  kind:
+    | 'attack'
+    | 'movement'
+    | 'healing'
+    | 'saving_throw'
+    | 'reaction'
+    | 'defend'
+    | 'disengage'
+    | 'flee'
+    | 'spell_damage'
+    | string;
+  actor?: string;
+  actor_name?: string;
+  hero?: ParticipantHp;
+  enemy?: ParticipantHp;
+  attack_roll?: TurnResolutionRoll;
+  target_ac?: number;
+  outcome?: string;
+  damage?: number | Record<string, unknown>;
+  damage_rolled?: number;
+  half_damage_on_success?: boolean;
+  distance_ft?: { from: number; to: number };
+  healing?: number;
+  roll?: TurnResolutionRoll;
+  dc?: number;
+  ability?: string;
+  success?: boolean;
+  name?: string;
+  cast?: boolean;
+  declined?: boolean;
+  action?: string;
+  bonus_action?: boolean;
+  spell_name?: string;
+  subtype?: 'auto_hit' | 'saving_throw' | string;
+  auto_hit?: boolean;
+  darts?: Array<Record<string, unknown>>;
+  [key: string]: unknown;
+}
+
+export interface TurnResolution {
+  beats: TurnResolutionBeat[];
+}
+
 export interface JournalEvent {
   id: number;
   action: string;
@@ -211,6 +267,7 @@ export interface JournalEvent {
   created_at: string;
   /** Present on some API payloads and legacy test fixtures. */
   character_id?: string;
+  resolution?: TurnResolution;
 }
 
 export interface Spell {
