@@ -204,6 +204,38 @@ export interface HeroPreset {
   role: string;
 }
 
+export interface ParticipantHp {
+  hp_current: number;
+  hp_max: number;
+  name?: string;
+}
+
+export interface TurnResolutionBeat {
+  kind: string;
+  actor?: string;
+  actor_name?: string;
+  hero?: ParticipantHp;
+  enemy?: ParticipantHp;
+  attack_roll?: { natural: number; modifier: number; total: number };
+  target_ac?: number;
+  outcome?: string;
+  damage?: Record<string, unknown>;
+  distance_ft?: { from: number; to: number };
+  healing?: number;
+  roll?: { natural: number; modifier: number; total: number };
+  dc?: number;
+  ability?: string;
+  success?: boolean;
+  name?: string;
+  cast?: boolean;
+  declined?: boolean;
+  [key: string]: unknown;
+}
+
+export interface TurnResolution {
+  beats: TurnResolutionBeat[];
+}
+
 export interface JournalEvent {
   id: number;
   action: string;
@@ -211,6 +243,7 @@ export interface JournalEvent {
   created_at: string;
   /** Present on some API payloads and legacy test fixtures. */
   character_id?: string;
+  resolution?: TurnResolution;
 }
 
 export interface Spell {

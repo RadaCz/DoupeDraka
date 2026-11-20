@@ -136,7 +136,31 @@ ACTION_ABILITIES = (
 
 class GameEngine:
     """Rules only — no database, Telegram, or LLM calls here."""
-    def __init__(self, rng: random.Random | None = None): self.rng = rng or random.Random()
+    def __init__(self, rng: random.Random | None = None):
+        self.rng = rng or random.Random()
+        self._resolution_beats: list[dict] = []
+
+    def _begin_turn_resolution(self) -> None:
+        self._resolution_beats = []
+
+    def _record_resolution_beat(self, beat: dict) -> None:
+        self._resolution_beats.append(beat)
+
+    def _finalize_turn_result(
+        self,
+        result: TurnResult,
+        *,
+        character: CharacterState | None = None,
+        monster: MonsterState | None = None,
+    ) -> TurnResult:
+        from .turn_resolution import finalize_turn_resolution
+
+        return finalize_turn_resolution(
+            result,
+            self._resolution_beats,
+            character=character,
+            monster=monster,
+        )
     @staticmethod
     def modifier(score: int) -> int: return (score - 10) // 2
 
@@ -557,9 +581,25 @@ class GameEngine:
             shield_reaction_offer_available,
         )
 
+        from .turn_resolution import attack_outcome, beat_enemy_attack_roll
+
         refresh_armor_class(character)
         ac = character.armor_class
+        attack_modifier = attack_total - natural
         if not attack_roll_hits(ac, natural=natural, attack_total=attack_total):
+            self._record_resolution_beat(
+                beat_enemy_attack_roll(
+                    monster_name=monster.name,
+                    natural=natural,
+                    attack_modifier=attack_modifier,
+                    attack_total=attack_total,
+                    target_ac=ac,
+                    outcome=attack_outcome(natural=natural, hit=False),
+                    character=character,
+                    monster=monster,
+                    label=label,
+                )
+            )
             if label == "ranged attack":
                 adv_note = " (long range)" if range_disadv and not attack_disadvantage else ""
                 return [f"{monster.name}'s {label} misses{adv_note}."]
@@ -584,6 +624,19 @@ class GameEngine:
             critical=critical,
             damage_dice=dice,
             damage_bonus=damage_bonus,
+        )
+        self._record_resolution_beat(
+            beat_enemy_attack_roll(
+                monster_name=monster.name,
+                natural=natural,
+                attack_modifier=attack_modifier,
+                attack_total=attack_total,
+                target_ac=ac,
+                outcome=attack_outcome(natural=natural, hit=True),
+                character=character,
+                monster=monster,
+                label=label,
+            )
         )
         if shield_reaction_offer_available(character):
             return open_shield_reaction_window(character, pending)
@@ -1037,9 +1090,24 @@ class GameEngine:
         ok, lines = apply_player_movement(character, delta_ft)
         if not ok:
             return TurnResult(action, lines, False, costs_adventure_mana=False), monster
+        after_ft = max(0, int(character.combat_distance_ft or 0))
+        from .turn_resolution import beat_movement, beat_reaction_opportunity
+
+        self._record_resolution_beat(
+            beat_movement(
+                actor="hero",
+                distance_ft={"from": before_ft, "to": after_ft},
+                character=character,
+                monster=monster,
+            )
+        )
         oa_events = self._maybe_opportunity_after_player_move(
             character, monster, before_ft=before_ft, delta_ft=delta_ft,
         )
+        if oa_events and any("opportunity" in line.casefold() for line in oa_events):
+            self._record_resolution_beat(
+                beat_reaction_opportunity(actor="enemy", character=character, monster=monster)
+            )
         lines.extend(oa_events)
         combat_over = character.hp <= 0 or not character.in_combat
         return TurnResult(action, lines, True, combat_over, costs_adventure_mana=False), (
@@ -1069,6 +1137,11 @@ class GameEngine:
         character.hp += amount
         character.inventory.remove(potion)
         sync_item_instances(character)
+        from .turn_resolution import beat_healing
+
+        self._record_resolution_beat(
+            beat_healing(actor="hero", amount=amount, character=character, monster=monster)
+        )
         events = [
             f"You drink a healing potion and recover {amount} HP. Your HP: {character.hp}/{character.max_hp}.",
         ]
@@ -1975,9 +2048,26 @@ class GameEngine:
         invis_end: list[str] = []
         if concentration_active(character) and character.concentration_effect == "invisible":
             invis_end = clear_concentration(character, reason="you attacked")
+        from .turn_resolution import attack_outcome, beat_attack, beat_reaction_opportunity
+
         if natural == 1:
             character.combat_flags["hidden"] = False
             character.combat_flags["attack_advantage"] = False
+            self._record_resolution_beat(
+                beat_attack(
+                    actor="hero",
+                    actor_name=character.name,
+                    natural=natural,
+                    attack_modifier=bonus,
+                    attack_total=attack_roll.total,
+                    target_ac=monster.armor_class,
+                    outcome=attack_outcome(natural=natural, hit=False),
+                    character=character,
+                    monster=monster,
+                    weapon=weapon_label,
+                    opportunity=opportunity,
+                )
+            )
             return invis_end + [
                 f"Attack with {weapon_label}: {attack_roll.total} (d20 +{bonus}) — critical miss.{lucky_note}{ammo_note}"
             ], class_facts
@@ -1985,6 +2075,21 @@ class GameEngine:
         if not hit:
             character.combat_flags["hidden"] = False
             character.combat_flags["attack_advantage"] = False
+            self._record_resolution_beat(
+                beat_attack(
+                    actor="hero",
+                    actor_name=character.name,
+                    natural=natural,
+                    attack_modifier=bonus,
+                    attack_total=attack_roll.total,
+                    target_ac=monster.armor_class,
+                    outcome=attack_outcome(natural=natural, hit=False),
+                    character=character,
+                    monster=monster,
+                    weapon=weapon_label,
+                    opportunity=opportunity,
+                )
+            )
             return invis_end + [
                 f"Attack with {weapon_label}: {attack_roll.total} (d20 +{bonus}) vs AC {monster.armor_class} — miss.{lucky_note}",
             ], class_facts
@@ -1993,6 +2098,28 @@ class GameEngine:
             class_facts["dueling_bonus"] = 2
         damage = self.roll(weapon.damage, dmg_mod, natural == 20)
         monster.hp = max(0, monster.hp - max(1, damage.total))
+        self._record_resolution_beat(
+            beat_attack(
+                actor="hero",
+                actor_name=character.name,
+                natural=natural,
+                attack_modifier=bonus,
+                attack_total=attack_roll.total,
+                target_ac=monster.armor_class,
+                outcome=attack_outcome(natural=natural, hit=True),
+                character=character,
+                monster=monster,
+                weapon=weapon_label,
+                damage=damage,
+                damage_dice=weapon.damage,
+                damage_type=getattr(weapon, "damage_type", None),
+                opportunity=opportunity,
+            )
+        )
+        if opportunity:
+            self._record_resolution_beat(
+                beat_reaction_opportunity(actor="hero", character=character, monster=monster)
+            )
         events = [
             f"Attack with {weapon_label}: {attack_roll.total} (d20 +{bonus}) — hit.{lucky_note}{ammo_note}",
             f"Damage {damage.total} ({weapon.damage} + modifier); {monster.name} has {monster.hp}/{monster.max_hp} HP.",
@@ -2264,6 +2391,7 @@ class GameEngine:
         )
 
     def resolve_action(self, character: CharacterState, action: str, monster: MonsterState | None) -> tuple[TurnResult, MonsterState | None]:
+        self._begin_turn_resolution()
         if character.hp <= 0:
             return TurnResult(action, [f"{character.name} has fallen and can no longer act."], False), monster
         text = action.lower().strip()

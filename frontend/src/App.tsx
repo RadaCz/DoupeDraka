@@ -21,6 +21,7 @@ import type {
   JournalEvent,
   ReferenceCatalog,
   Spell,
+  TurnResolution,
 } from './types';
 import { ApiError } from './apiErrors';
 import {
@@ -94,6 +95,7 @@ interface ActionResponse {
   energy_tenths: number;
   tier: string;
   level_up_facts?: { new_level?: number; hp_gained?: number } | null;
+  resolution?: TurnResolution | null;
 }
 
 interface StreamActionEvent {
