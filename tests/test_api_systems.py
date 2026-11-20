@@ -144,7 +144,13 @@ def test_spell_library_endpoint():
     spells = response.json()
     assert len(spells) == 319
     assert len({spell["name"] for spell in spells}) == 319
-    assert all({"name", "level", "school", "range", "text"} <= spell.keys() for spell in spells)
+    assert all({"name", "level", "school", "range", "text", "effect_modeled"} <= spell.keys() for spell in spells)
+    by_name = {spell["name"]: spell for spell in spells}
+    assert by_name["Guidance"]["effect_modeled"] is False
+    assert by_name["Mage Hand"]["effect_modeled"] is False
+    assert by_name["Sleep"]["effect_modeled"] is False
+    assert by_name["Magic Missile"]["effect_modeled"] is True
+    assert by_name["Cure Wounds"]["effect_modeled"] is True
 
 
 def test_combat_calculator_endpoint():

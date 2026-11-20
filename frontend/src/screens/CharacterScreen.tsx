@@ -22,6 +22,7 @@ import { backgroundFeatureFor, backgroundFeatureUsed } from '../character/backgr
 import { classFeatureLines } from '../character/classFeatures';
 import { characterRaceFeatureRows } from '../character/raceTraits';
 import { heroSpellRows } from '../spells/spellbook';
+import { SpellNarrativeOnlyTag } from '../spells/SpellNarrativeOnlyTag';
 
 export function CharacterScreen({
   character,
@@ -355,7 +356,7 @@ export function CharacterScreen({
                 <div className="char-v2-spell-tags">
                   {known && <span className="char-v2-tag">{t('Known')}</span>}
                   {prepared && <span className="char-v2-tag prepared">{t('Prepared')}</span>}
-                  {!spell.effect_modeled && <span className="char-v2-tag warn">{t('Not modeled in MVP')}</span>}
+                  {!spell.effect_modeled && <SpellNarrativeOnlyTag />}
                 </div>
               </li>
             ))}

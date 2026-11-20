@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { ClassReference, HeroPreset, RaceReference, ReferenceCatalog } from './types';
+import type { ClassReference, HeroPreset, RaceReference, ReferenceCatalog, Spell } from './types';
+import { SpellNarrativeOnlyTag } from './spells/SpellNarrativeOnlyTag';
 import { useI18n } from './i18n';
 import {
   ABILITY_KEYS,
@@ -41,6 +42,7 @@ export interface CharacterDraft {
 interface CharacterWizardProps {
   catalog: ReferenceCatalog;
   presets: HeroPreset[];
+  spells?: Spell[];
   busy: boolean;
   error: string | null;
   onCreate: (draft: CharacterDraft) => void;
@@ -70,6 +72,7 @@ function abilityText(values: Record<string, number>) {
 export function CharacterWizard({
   catalog,
   presets,
+  spells = [],
   busy,
   error,
   onCreate,
@@ -78,6 +81,12 @@ export function CharacterWizard({
 }: CharacterWizardProps) {
   const { t } = useI18n();
   const meta = catalog.character_creation;
+  const spellModeled = useMemo(() => {
+    const byName = new Map<string, boolean>();
+    for (const spell of spells) byName.set(spell.name, spell.effect_modeled);
+    return byName;
+  }, [spells]);
+  const storyOnlySpell = (name: string) => spellModeled.get(name) === false;
   const [step, setStep] = useState(0);
   const [raceKey, setRaceKey] = useState('');
   const [classKey, setClassKey] = useState('');
@@ -507,7 +516,8 @@ export function CharacterWizard({
                   className={`option-pill ${cantrips.includes(spell) ? 'selected' : ''}`}
                   onClick={() => setCantrips(current => current.includes(spell) ? current.filter(item => item !== spell) : [...current, spell].slice(0, meta.spell_pick_limits[classKey].cantrips))}
                 >
-                  {spell}
+                  <span className="wizard-spell-pill-label">{spell}</span>
+                  {storyOnlySpell(spell) && <SpellNarrativeOnlyTag className="char-v2-tag warn wizard-spell-tag" />}
                 </button>
               ))}
             </div>
@@ -529,7 +539,8 @@ export function CharacterWizard({
                       : [...current, spell].slice(0, limit));
                   }}
                 >
-                  {spell}
+                  <span className="wizard-spell-pill-label">{spell}</span>
+                  {storyOnlySpell(spell) && <SpellNarrativeOnlyTag className="char-v2-tag warn wizard-spell-tag" />}
                 </button>
               ))}
             </div>
