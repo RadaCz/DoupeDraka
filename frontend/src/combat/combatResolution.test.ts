@@ -22,9 +22,9 @@ describe('AC16-4 resolution chips', () => {
       ],
     };
     const chips = chipsFromResolution(resolution, 'cs');
-    expect(chips.some(c => c.label.includes('longsword'))).toBe(true);
+    expect(chips.some(c => c.label.includes('dlouhý meč'))).toBe(true);
     expect(chips.some(c => c.label.includes('zásah'))).toBe(true);
-    expect(chips.some(c => c.label.includes('Poškození 8'))).toBe(true);
+    expect(chips.some(c => c.label.includes('poškození 8'))).toBe(true);
   });
 
   it('shows Fire Bolt as spell attack label, not a weapon', () => {
@@ -38,7 +38,7 @@ describe('AC16-4 resolution chips', () => {
     };
     expect(attackResolutionUsesSpellName(beat)).toBe(true);
     const chips = beatToChips(beat, 'cs');
-    expect(chips[0]?.label.startsWith('Fire Bolt:')).toBe(true);
+    expect(chips[0]?.label.startsWith('Ohnivý paprsek:')).toBe(true);
     expect(chips[0]?.label).not.toMatch(/longsword|zbraň/i);
   });
 
@@ -46,11 +46,11 @@ describe('AC16-4 resolution chips', () => {
     const resolution: TurnResolution = {
       beats: [
         { kind: 'movement', distance_ft: { from: 15, to: 5 } },
-        { kind: 'reaction', name: 'shield', cast: true },
+        { kind: 'reaction', name: 'shield', cast: true, ac: 19 },
       ],
     };
     const chips = chipsFromResolution(resolution, 'cs');
     expect(chips.some(c => c.label.includes('15 → 5'))).toBe(true);
-    expect(chips.some(c => c.label.includes('Shield'))).toBe(true);
+    expect(chips.some(c => c.label.includes('Štít seslán, OČ 19'))).toBe(true);
   });
 });

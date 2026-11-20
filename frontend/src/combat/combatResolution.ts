@@ -1,5 +1,10 @@
 import type { Locale } from '../i18n';
-import { displayCreature } from '../i18n/gameDisplay';
+import {
+  displayAbilityAbbrev,
+  displayCreature,
+  displaySpell,
+  displayWeaponLabel,
+} from '../i18n/gameDisplay';
 import type { Character, TurnResolution, TurnResolutionBeat } from '../types';
 import { readCombatTactics } from './combatRange';
 
@@ -13,9 +18,9 @@ export interface ResolutionChip {
 
 function attackSourceLabel(beat: TurnResolutionBeat, locale: Locale): string {
   const spell = typeof beat.spell_name === 'string' ? beat.spell_name.trim() : '';
-  if (spell) return spell;
+  if (spell) return displaySpell(spell, locale);
   const weapon = typeof beat.weapon === 'string' ? beat.weapon.trim() : '';
-  if (weapon) return weapon;
+  if (weapon) return displayWeaponLabel(weapon, locale);
   return locale === 'cs' ? 'Útok' : 'Attack';
 }
 
@@ -54,6 +59,21 @@ function hpChip(
   return { id, label, tone: hp / max <= 0.25 ? 'warn' : 'neutral' };
 }
 
+function formatDamageCs(amount: number): string {
+  return `poškození ${amount}`;
+}
+
+function shieldCastChip(beat: TurnResolutionBeat, locale: Locale): ResolutionChip {
+  if (locale !== 'cs') {
+    const ac = beat.ac;
+    const suffix = ac != null ? ` (+${ac} AC)` : ' (+5 AC)';
+    return { id: 'shield', label: `Shield cast${suffix}`, tone: 'hit' };
+  }
+  const ac = beat.ac;
+  const label = ac != null ? `Štít seslán, OČ ${ac}` : 'Štít seslán';
+  return { id: 'shield', label, tone: 'hit' };
+}
+
 export function beatToChips(beat: TurnResolutionBeat, locale: Locale): ResolutionChip[] {
   const chips: ResolutionChip[] = [];
   const kind = beat.kind;
@@ -77,13 +97,14 @@ export function beatToChips(beat: TurnResolutionBeat, locale: Locale): Resolutio
     if (dmg != null && dmg > 0) {
       chips.push({
         id: `${kind}-dmg`,
-        label: locale === 'cs' ? `Poškození ${dmg}` : `Damage ${dmg}`,
+        label: locale === 'cs' ? formatDamageCs(dmg) : `Damage ${dmg}`,
         tone: 'hit',
       });
     }
     const enemy = beat.enemy;
     if (enemy?.name) {
-      const chip = hpChip('enemy-hp', enemy.name, enemy.hp_current, enemy.hp_max, locale);
+      const foe = displayCreature(enemy.name, locale);
+      const chip = hpChip('enemy-hp', foe, enemy.hp_current, enemy.hp_max, locale);
       if (chip) chips.push(chip);
     }
     const hero = beat.hero;
@@ -120,7 +141,7 @@ export function beatToChips(beat: TurnResolutionBeat, locale: Locale): Resolutio
   if (kind === 'saving_throw') {
     const total = beat.roll?.total;
     const dc = beat.dc;
-    const ability = beat.ability ?? '';
+    const ability = displayAbilityAbbrev(String(beat.ability ?? ''), locale);
     const ok = beat.success;
     if (total != null && dc != null) {
       const verdict = ok
@@ -129,7 +150,7 @@ export function beatToChips(beat: TurnResolutionBeat, locale: Locale): Resolutio
       chips.push({
         id: 'save',
         label: locale === 'cs'
-          ? `Záchranný hod ${ability}: ${total} vs ST ${dc} — ${verdict}`
+          ? `Záchranný hod ${ability}: ${total} vs OČ ${dc} — ${verdict}`
           : `${ability} save ${total} vs DC ${dc} — ${verdict}`,
         tone: ok ? 'hit' : 'miss',
       });
@@ -140,14 +161,14 @@ export function beatToChips(beat: TurnResolutionBeat, locale: Locale): Resolutio
   if (kind === 'reaction') {
     if (beat.name === 'shield') {
       if (beat.cast) {
-        chips.push({ id: 'shield', label: locale === 'cs' ? 'Shield seslán (+5 OČ)' : 'Shield cast (+5 AC)', tone: 'hit' });
+        chips.push(shieldCastChip(beat, locale));
       } else if (beat.declined) {
         chips.push({ id: 'shield-no', label: locale === 'cs' ? 'Reakce nevyužita' : 'Reaction declined', tone: 'neutral' });
       }
     } else if (beat.name === 'opportunity_attack') {
       chips.push({
         id: 'oa',
-        label: locale === 'cs' ? 'Útok příležitosti' : 'Opportunity attack',
+        label: locale === 'cs' ? 'Příležitostný útok' : 'Opportunity attack',
         tone: 'warn',
       });
     }
@@ -185,7 +206,7 @@ export function beatToChips(beat: TurnResolutionBeat, locale: Locale): Resolutio
       chips.push({
         id: 'flee-roll',
         label: locale === 'cs'
-          ? `Hod ${beat.roll.total} vs ST ${beat.dc}`
+          ? `Hod ${beat.roll.total} vs OČ ${beat.dc}`
           : `Roll ${beat.roll.total} vs DC ${beat.dc}`,
         tone: 'neutral',
       });
@@ -194,13 +215,15 @@ export function beatToChips(beat: TurnResolutionBeat, locale: Locale): Resolutio
   }
 
   if (kind === 'spell_damage') {
-    const spell = beat.spell_name ?? (locale === 'cs' ? 'Kouzlo' : 'Spell');
+    const spell = beat.spell_name
+      ? displaySpell(beat.spell_name, locale)
+      : (locale === 'cs' ? 'Kouzlo' : 'Spell');
     const dmg = typeof beat.damage === 'number' ? beat.damage : undefined;
     if (beat.subtype === 'auto_hit') {
       chips.push({
         id: 'spell-auto',
         label: locale === 'cs'
-          ? `${spell}: automatický zásah${dmg != null ? `, ${dmg} dmg` : ''}`
+          ? `${spell}: automatický zásah${dmg != null ? `, ${formatDamageCs(dmg)}` : ''}`
           : `${spell}: auto hit${dmg != null ? `, ${dmg} damage` : ''}`,
         tone: 'hit',
       });
@@ -209,14 +232,15 @@ export function beatToChips(beat: TurnResolutionBeat, locale: Locale): Resolutio
       chips.push({
         id: 'spell-save',
         label: locale === 'cs'
-          ? `${spell}: záchrana ${ok ? 'úspěšná' : 'neúspěšná'}${dmg != null ? `, ${dmg} dmg` : ''}`
+          ? `${spell}: záchrana ${ok ? 'úspěšná' : 'neúspěšná'}${dmg != null ? `, ${formatDamageCs(dmg)}` : ''}`
           : `${spell}: save ${ok ? 'success' : 'fail'}${dmg != null ? `, ${dmg} damage` : ''}`,
         tone: ok ? 'neutral' : 'hit',
       });
     }
     const enemy = beat.enemy;
     if (enemy?.name && enemy.hp_current != null) {
-      const chip = hpChip('enemy-hp', enemy.name, enemy.hp_current, enemy.hp_max, locale);
+      const foe = displayCreature(enemy.name, locale);
+      const chip = hpChip('enemy-hp', foe, enemy.hp_current, enemy.hp_max, locale);
       if (chip) chips.push(chip);
     }
     return chips;
@@ -246,7 +270,7 @@ export function suggestNextCombatAction(
   const tactics = readCombatTactics(character);
   const wr = tactics?.weapon_range;
   if (wr?.can_attack === false && wr.denial) {
-    return locale === 'cs' ? 'Přibliž se, abys mohl útočit.' : 'Close distance to attack.';
+    return locale === 'cs' ? 'Přibliž se na dosah útoku.' : 'Close distance to attack.';
   }
   if (!isPlayerTurn(character)) {
     return locale === 'cs' ? 'Počkej na tah protivníka.' : 'Wait for the enemy turn.';

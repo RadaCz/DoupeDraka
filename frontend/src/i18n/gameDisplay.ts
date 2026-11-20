@@ -86,6 +86,42 @@ export function displayInventoryLabel(canonical: string, locale: Locale): string
   return ITEM_LABEL_CS[key] ?? canonical;
 }
 
+const SPELL_CS: Record<string, string> = (chapterCatalog as { spells?: Record<string, string> }).spells ?? {};
+
+export function displaySpell(name: string, locale: Locale): string {
+  if (locale !== 'cs') return name;
+  const trimmed = name.trim();
+  return SPELL_CS[trimmed] ?? SPELL_CS[trimmed.replace(/\s+/g, ' ')] ?? trimmed;
+}
+
+/** Weapon label from resolution beats (may include “thrown …” or English item keys). */
+export function displayWeaponLabel(weapon: string, locale: Locale): string {
+  if (locale !== 'cs') return weapon;
+  const trimmed = weapon.trim();
+  if (/^your weapon$/i.test(trimmed)) return 'tvoje zbraň';
+  const thrown = /^thrown\s+/i.test(trimmed);
+  const core = thrown ? trimmed.replace(/^thrown\s+/i, '') : trimmed;
+  const label = displayInventoryLabel(core, locale);
+  if (thrown) return `hozená ${label}`;
+  return label;
+}
+
+const ABILITY_ABBREV_CS: Record<string, string> = {
+  strength: 'SIL',
+  dexterity: 'OBR',
+  constitution: 'ODL',
+  intelligence: 'INT',
+  wisdom: 'MDR',
+  charisma: 'CHA',
+};
+
+export function displayAbilityAbbrev(ability: string | undefined, locale: Locale): string {
+  if (!ability?.trim()) return '';
+  if (locale !== 'cs') return ability;
+  const key = ability.trim().toLowerCase();
+  return ABILITY_ABBREV_CS[key] ?? ability;
+}
+
 function combatResultCs(result: string): string {
   const lower = result.toLowerCase();
   if (lower.includes('critical hit')) return 'kritický zásah';
