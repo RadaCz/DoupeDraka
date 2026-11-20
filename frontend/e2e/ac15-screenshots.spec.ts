@@ -51,6 +51,21 @@ for (const width of WIDTHS) {
     await page.getByRole('button', { name: /Continue adventure|Pokračovat v dobrodružství/i }).click();
 
     await expect(page.getByText(/Kde jsi a co chceš/i)).toBeVisible({ timeout: 20_000 });
+    const questHint = page.locator('.play-scene-quest-hint').first();
+    await expect(questHint).toBeVisible();
+    const hintMetrics = await questHint.evaluate(el => {
+      const style = getComputedStyle(el);
+      return {
+        fontSize: parseFloat(style.fontSize),
+        scrollHeight: el.scrollHeight,
+        clientHeight: el.clientHeight,
+        lineClamp: style.webkitLineClamp || style.getPropertyValue('-webkit-line-clamp'),
+        overflow: style.overflow,
+      };
+    });
+    expect(hintMetrics.fontSize).toBeGreaterThanOrEqual(14);
+    expect(hintMetrics.scrollHeight).toBeLessThanOrEqual(hintMetrics.clientHeight + 1);
+    expect(hintMetrics.lineClamp).not.toBe('2');
     await waitForAdventureComposerReady(page);
     await page.screenshot({
       path: `${ARTIFACTS}/ac15-play-scene-${width}px.png`,

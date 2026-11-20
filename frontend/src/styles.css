@@ -1659,13 +1659,20 @@ summary:focus-visible {
   }
 
   .play-scene-arrival,
-  .play-scene-quest-hint,
   .play-npc-blurb {
     font-size: 11px;
     -webkit-line-clamp: 2;
     display: -webkit-box;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+
+  .play-scene-quest-hint {
+    font-size: 14px;
+    display: block;
+    overflow: visible;
+    -webkit-line-clamp: unset;
+    -webkit-box-orient: unset;
   }
 }
 
@@ -1788,14 +1795,22 @@ summary:focus-visible {
     margin: 0;
   }
 
-  .play-scene-intro-compact .play-scene-arrival,
-  .play-scene-intro-compact .play-scene-quest-hint {
+  .play-scene-intro-compact .play-scene-arrival {
     font-size: 10px;
     line-height: 1.35;
     -webkit-line-clamp: 2;
     display: -webkit-box;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+
+  .play-scene-intro-compact .play-scene-quest-hint {
+    font-size: 14px;
+    line-height: 1.35;
+    display: block;
+    overflow: visible;
+    -webkit-line-clamp: unset;
+    -webkit-box-orient: unset;
   }
 }
 

@@ -154,8 +154,7 @@ export function MapScreen({
             const a = CHAPTER_ONE_LAYOUT[edge.from];
             const b = CHAPTER_ONE_LAYOUT[edge.to];
             if (!a || !b) return null;
-            const level = character.level ?? 1;
-            const locked = !routeOpen(edge.to, quests, level) || !routeOpen(edge.from, quests, level);
+            const locked = !routeOpen(edge.to, quests) || !routeOpen(edge.from, quests);
             return (
               <line
                 key={`${edge.from}-${edge.to}`}

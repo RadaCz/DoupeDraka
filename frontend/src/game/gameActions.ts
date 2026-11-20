@@ -145,16 +145,16 @@ export function resolveQuestTravelAction(
   if (destination === character.location) return null;
   const node = locations.find(item => item.name === character.location);
   if (!node) return null;
-  if (node.connections.includes(destination) && routeOpen(destination, quests, character.level ?? 1)) {
+  if (node.connections.includes(destination) && routeOpen(destination, quests)) {
     return {
       label: t(`Travel to ${destination}`),
       action: `travel to ${destination}`,
     };
   }
   for (const route of node.connections) {
-    if (!routeOpen(route, quests, character.level ?? 1)) continue;
+    if (!routeOpen(route, quests)) continue;
     const hop = locations.find(item => item.name === route);
-    if (hop?.connections.includes(destination) && routeOpen(destination, quests, character.level ?? 1)) {
+    if (hop?.connections.includes(destination) && routeOpen(destination, quests)) {
       return {
         label: t(`Travel to ${route}`),
         action: `travel to ${route}`,
@@ -259,7 +259,7 @@ export function suggestedActions(
   actions.push({ label: t('Inspect the stonework'), action: 'inspect the stonework' });
   const node = locations.find(location => location.name === character.location);
   const questsFlags = character.quest_flags ?? {};
-  const nextLocation = node?.connections.find(route => routeOpen(route, questsFlags, character.level ?? 1));
+  const nextLocation = node?.connections.find(route => routeOpen(route, questsFlags));
   if (nextLocation) {
     actions.push({ label: t(`Travel to ${nextLocation}`), action: `travel to ${nextLocation}` });
     return [...actions.slice(0, 2), actions[actions.length - 1]];
@@ -526,9 +526,13 @@ export function actionRejectionCoach(
   const primary = primaryPlayChipKey(character, events, locations, t, hasSpells, hasPotion);
   const alt = chips.find(c => c.key === primary) ?? chips[0] ?? null;
   let reasonKey = trimmed;
-  if (/quest step cannot/i.test(trimmed)) reasonKey = 'That quest step cannot be resolved here.';
-  if (/cannot be resolved here/i.test(trimmed)) reasonKey = 'That action cannot be resolved here. Try a clearer command or a UI chip.';
-  if (/No one here answers/i.test(trimmed)) {
+  if (/That route is not open/i.test(trimmed)) {
+    reasonKey = 'This route is not open yet.';
+  } else if (/quest step cannot/i.test(trimmed)) {
+    reasonKey = 'That quest step cannot be resolved here.';
+  } else if (/cannot be resolved here/i.test(trimmed)) {
+    reasonKey = 'That action cannot be resolved here. Try a clearer command or a UI chip.';
+  } else if (/No one here answers/i.test(trimmed)) {
     reasonKey = 'No one here answers to that. Name an NPC (Caldus, Nib) or use a suggested conversation chip.';
   }
   return { reasonKey, alternative: alt ?? null };

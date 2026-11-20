@@ -26,9 +26,22 @@ describe('chapterOneMap', () => {
     expect(mapNodeState('The Sunken Corridor', hero, locations)).toBe('adjacent');
   });
 
-  it('locks the Bell Warden pit until level 3 when the vault is open', () => {
+  it('opens the Bell Warden pit for travel once the vault is unlocked (level is boss-only)', () => {
     const flags = { vault_unlocked: true };
-    expect(routeOpen("The Bell Warden's Pit", flags, 2)).toBe(false);
-    expect(routeOpen("The Bell Warden's Pit", flags, 3)).toBe(true);
+    expect(routeOpen("The Bell Warden's Pit", flags)).toBe(true);
+    const atVault = {
+      ...hero,
+      level: 2,
+      location: 'The Vault of Echoes',
+      visited_locations: ['The Whispering Cellar', 'The Vault of Echoes'],
+      quest_flags: { vault_unlocked: true },
+    } as Character;
+    const vaultLocations: LocationReference[] = [
+      { name: 'The Whispering Cellar', connections: ['The Sunken Corridor'] },
+      { name: 'The Sunken Corridor', connections: ['The Whispering Cellar', 'The Vault of Echoes'] },
+      { name: 'The Vault of Echoes', connections: ['The Sunken Corridor', "The Bell Warden's Pit"] },
+      { name: "The Bell Warden's Pit", connections: ['The Vault of Echoes'] },
+    ];
+    expect(mapNodeState("The Bell Warden's Pit", atVault, vaultLocations)).toBe('adjacent');
   });
 });

@@ -21,10 +21,9 @@ export function pitBlockedByLevel(level: number, quests: Record<string, boolean>
   return Boolean(quests.vault_unlocked) && level < BELL_WARDEN_MIN_LEVEL;
 }
 
-export function routeOpen(route: string, quests: Record<string, boolean>, level = 1) {
+export function routeOpen(route: string, quests: Record<string, boolean>) {
   if (route === 'The Vault of Echoes' || route === BELL_WARDEN_PIT) {
     if (!quests.vault_unlocked) return false;
-    if (route === BELL_WARDEN_PIT && pitBlockedByLevel(level, quests)) return false;
     return true;
   }
   return true;
@@ -33,11 +32,7 @@ export function routeOpen(route: string, quests: Record<string, boolean>, level 
 export function mapLockReason(
   route: string,
   quests: Record<string, boolean>,
-  level = 1,
 ): string | null {
-  if (route === BELL_WARDEN_PIT && quests.vault_unlocked && pitBlockedByLevel(level, quests)) {
-    return 'From level 3';
-  }
   if (route === 'The Vault of Echoes' || route === BELL_WARDEN_PIT) {
     if (quests.vault_unlocked) return null;
     if (quests.bell_quest_complete) {
@@ -64,17 +59,17 @@ export function mapNodeState(
   if (!CHAPTER_ONE_LAYOUT[place]) return 'hidden';
 
   const isVaultRoute = place === 'The Vault of Echoes' || place === BELL_WARDEN_PIT;
-  if (isVaultRoute && !routeOpen(place, quests, character.level ?? 1)) {
+  if (isVaultRoute && !routeOpen(place, quests)) {
     return visited.has(current) || visited.has('The Sunken Corridor') ? 'locked' : 'hidden';
   }
 
   if (visited.has(place)) return 'visited';
 
   const neighborOfCurrent = node?.connections.includes(place) ?? false;
-  if (neighborOfCurrent && routeOpen(place, quests, character.level ?? 1)) return 'adjacent';
+  if (neighborOfCurrent && routeOpen(place, quests)) return 'adjacent';
 
   const anyVisitedConnects = locations.some(
-    loc => visited.has(loc.name) && loc.connections.includes(place) && routeOpen(place, quests, character.level ?? 1),
+    loc => visited.has(loc.name) && loc.connections.includes(place) && routeOpen(place, quests),
   );
   if (anyVisitedConnects) return 'known';
 

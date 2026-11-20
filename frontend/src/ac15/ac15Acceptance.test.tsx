@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react';
 import { describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import { CHAPTER_ONE_LAYOUT } from '../chapterOneMap';
 import {
   actionRejectionCoach,
@@ -8,10 +8,12 @@ import {
   primaryPlayChipKey,
   questStepCompletionLine,
   resolveNpcTopicChips,
+  resolveQuestTravelAction,
 } from '../game/gameActions';
+import { ActionComposer } from '../screens/sharedPlayUI';
 import { HomeScreen } from '../GameScreens';
 import { PlaySceneIntroCard } from '../screens/sharedPlayUI';
-import { LocaleProvider } from '../i18n';
+import { LocaleProvider, useI18n } from '../i18n';
 import { displayCreature, displayLocation } from '../i18n/gameDisplay';
 import { characterStub } from '../test/characterStub';
 import type { LocationReference } from '../types';
@@ -96,24 +98,79 @@ describe('AC15-4 Czech display labels', () => {
 });
 
 describe('AC15-5 rejected action coach', () => {
-  it('maps engine rejection to a Czech reason and one alternate chip', () => {
+  const pitProgressFlags = {
+    bell_quest_accepted: true,
+    bell_acquired: true,
+    bell_found: true,
+    bell_quest_complete: true,
+    vault_hint_given: true,
+    vault_unlocked: true,
+    vault_first_descent_story_awarded: true,
+  };
+
+  const vaultPitLocations: LocationReference[] = [
+    { name: 'The Vault of Echoes', connections: ["The Bell Warden's Pit", 'The Sunken Corridor'], arrival_beat: 'Damp.' },
+    { name: "The Bell Warden's Pit", connections: ['The Vault of Echoes'], arrival_beat: 'Chains.' },
+    { name: 'The Sunken Corridor', connections: ['The Vault of Echoes'], arrival_beat: 'Water.' },
+  ];
+
+  it('maps engine rejection to Czech catalog keys and renders without English', () => {
     const hero = characterStub({
       id: '1',
       name: 'A',
       character_class: 'fighter',
       location: 'The Whispering Cellar',
     });
-    const coach = actionRejectionCoach(
-      'That action cannot be resolved here.',
-      hero,
-      [],
-      locations,
-      (s: string) => s,
-      false,
-      false,
-    );
-    expect(coach?.reasonKey).toMatch(/cannot be resolved/i);
-    expect(coach?.alternative?.action).toBeTruthy();
+    const cases: [string, string, string][] = [
+      [
+        'That quest step cannot be resolved here.',
+        'That quest step cannot be resolved here.',
+        'Tenhle krok úkolu se tady splnit nedá.',
+      ],
+      [
+        'That action cannot be resolved here.',
+        'That action cannot be resolved here. Try a clearer command or a UI chip.',
+        'Tohle se tady udělat nedá. Zkus jinou akci nebo klepni na nabídku.',
+      ],
+      [
+        'That route is not open. Nearby destinations: The Sunken Corridor.',
+        'This route is not open yet.',
+        'Tahle cesta ještě není otevřená.',
+      ],
+    ];
+    for (const [engineMsg, expectedKey, csText] of cases) {
+      const coach = actionRejectionCoach(engineMsg, hero, [], locations, s => s, false, false);
+      expect(coach?.reasonKey).toBe(expectedKey);
+      renderCs(
+        <ActionComposer
+          character={hero}
+          spells={[]}
+          events={[]}
+          locations={locations}
+          busy={false}
+          error={engineMsg}
+          narrationStatus={null}
+          onAction={() => undefined}
+          onOpenSheet={() => undefined}
+        />,
+      );
+      expect(screen.getByRole('status')).toHaveTextContent(csText);
+      expect(screen.getByRole('status').textContent).not.toMatch(/cannot be resolved|Try a clearer|not open yet\./i);
+      cleanup();
+    }
+  });
+
+  it('offers pit travel at level 2 when the vault is open', () => {
+    const hero = characterStub({
+      id: '1',
+      name: 'A',
+      character_class: 'fighter',
+      level: 2,
+      location: 'The Vault of Echoes',
+      quest_flags: pitProgressFlags,
+    });
+    const travel = resolveQuestTravelAction(hero, vaultPitLocations, s => s);
+    expect(travel?.action).toBe("travel to The Bell Warden's Pit");
   });
 });
 
@@ -163,6 +220,15 @@ describe('AC15 scene intro and quest toast helpers', () => {
       (s: string) => s,
     );
     expect(line).toMatch(/Completed:|bell/i);
+  });
+
+  it('uses the Designer-approved Czech label for the Caldus vault topic', () => {
+    function VaultTopicLabel() {
+      const { t } = useI18n();
+      return <span>{t('Ask Caldus about the Vault')}</span>;
+    }
+    renderCs(<VaultTopicLabel />);
+    expect(screen.getByText('Zeptat se Calda na Komnatu ozvěn')).toBeInTheDocument();
   });
 
   it('lists up to three NPC topics at the shrine', () => {

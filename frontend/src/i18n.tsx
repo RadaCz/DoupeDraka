@@ -638,7 +638,10 @@ const cs: Record<string, string> = {
   'Travel to The Shrine of the Forgotten': 'Cesta ke Svatyni zapomenutych',
   'Travel to The Goblin Market': 'Cesta na Goblini trh',
   'Talk to Caldus': 'Promluvit s Caldusem',
-  'Ask Caldus about the Vault': 'Zeptej se Calduse na Kryptu ozvěn',
+  'Ask Caldus about the Vault': 'Zeptat se Calda na Komnatu ozvěn',
+  'That quest step cannot be resolved here.': 'Tenhle krok úkolu se tady splnit nedá.',
+  'That action cannot be resolved here. Try a clearer command or a UI chip.':
+    'Tohle se tady udělat nedá. Zkus jinou akci nebo klepni na nabídku.',
   'A stolen shrine bell is missing somewhere below. Use Travel or the current objective to head toward the shrine.':
     'Někde pod zemí zmizel chrámový zvon. Vydej se ke svatyni přes Cesta nebo aktuální úkol.',
   'Ask Nib about the shrine bell': 'Zeptat se Niba na chrámový zvon',
