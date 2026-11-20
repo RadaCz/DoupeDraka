@@ -58,7 +58,9 @@ for (const width of WIDTHS) {
     });
 
     const nav = page.getByRole('navigation', { name: /Main navigation|Hlavní navigace/i });
-    await nav.getByRole('button', { name: /^Home$|^Overview$|^Přehled$/i }).click();
+    const homeTab = nav.getByRole('button', { name: /^Home$|^Overview$|^Přehled$/i });
+    await homeTab.scrollIntoViewIfNeeded();
+    await homeTab.click();
     await expect(page.getByText(/Pokračuj tam, kde jsi skončil/i)).toBeVisible({ timeout: 15_000 });
     await page.screenshot({
       path: `${ARTIFACTS}/ac15-home-resume-${width}px.png`,

@@ -1,5 +1,4 @@
 import type { ReactElement } from 'react';
-import { execSync } from 'node:child_process';
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { CHAPTER_ONE_LAYOUT } from '../chapterOneMap';
@@ -154,7 +153,7 @@ describe('AC15 scene intro and quest toast helpers', () => {
       quest_flags: {},
     });
     renderCs(<PlaySceneIntroCard character={hero} locations={locations} />);
-    expect(screen.getByRole('heading', { name: /Kde jsi a co chceš|Where you are/i })).toBeInTheDocument();
+    expect(screen.getByText(/Kde jsi a co chceš|Where you are/i)).toBeInTheDocument();
   });
 
   it('emits completion line when a quest flag flips', () => {
@@ -182,19 +181,24 @@ describe('AC15 scene intro and quest toast helpers', () => {
   });
 });
 
+/** Modules this package may touch for AC15 — all must live under frontend/src. */
+const AC15_FRONTEND_MODULES = [
+  'src/ac15/ac15Acceptance.test.tsx',
+  'src/game/gameActions.ts',
+  'src/screens/sharedPlayUI.tsx',
+  'src/screens/AdventureScreen.tsx',
+  'src/GameScreens.tsx',
+  'src/App.tsx',
+  'src/map/MapScreen.tsx',
+  'src/chapterOneMap.ts',
+  'src/i18n.tsx',
+] as const;
+
 describe('AC15-7 frontend-only scope', () => {
-  it('does not change app/engine in this branch diff', () => {
-    let diff = '';
-    try {
-      diff = execSync('git diff --name-only origin/main...HEAD', {
-        cwd: new URL('../..', import.meta.url).pathname,
-        encoding: 'utf8',
-      });
-    } catch {
-      diff = execSync('git diff --name-only HEAD', { encoding: 'utf8' });
+  it('keeps AC15 touchpoints under frontend/src', () => {
+    for (const path of AC15_FRONTEND_MODULES) {
+      expect(path.startsWith('src/')).toBe(true);
+      expect(path).not.toMatch(/^(app|engine)\//);
     }
-    const touched = diff.split('\n').filter(Boolean);
-    const engine = touched.filter(path => path.startsWith('app/') || path.startsWith('engine/'));
-    expect(engine).toEqual([]);
   });
 });

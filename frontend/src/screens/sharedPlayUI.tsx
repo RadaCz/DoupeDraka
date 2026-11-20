@@ -125,7 +125,7 @@ export function PlaySceneChrome({
             {playerTurn ? t('Your turn — choose an action.') : t('Enemy turn — wait for the outcome.')}
           </p>
         )}
-        {questObjective && !coaching && (
+        {questObjective && !coaching && events.length > 0 && (
           <p className="play-quest-strip" role="status">
             <span className="eyebrow">{t('CURRENT OBJECTIVE')}</span>
             <span>{t(questObjective.label)}</span>
@@ -140,16 +140,18 @@ export function PlaySceneChrome({
 export function PlaySceneIntroCard({
   character,
   locations,
+  onOpenQuests,
 }: {
   character: Character;
   locations: LocationReference[];
+  onOpenQuests?: () => void;
 }) {
   const { t, locale } = useI18n();
   const beat = locationDescription(character.location, locations);
   const { active } = visibleQuestTimeline(character.quest_flags ?? {}, undefined);
   if (character.in_combat) return null;
   return (
-    <article className="play-scene-intro-card" aria-labelledby="play-scene-intro-title">
+    <article className="play-scene-intro-card play-scene-intro-compact" aria-labelledby="play-scene-intro-title">
       <h2 id="play-scene-intro-title" className="play-scene-intro-heading">{t('Where you are and what you want')}</h2>
       <p className="play-scene-place">{displayLocation(character.location, locale)}</p>
       {beat && <p className="play-scene-arrival">{displayArrivalBeat(beat, locale)}</p>}
@@ -158,6 +160,11 @@ export function PlaySceneIntroCard({
           <strong>{t(active.label)}</strong>
           <span> — {t(active.hint)}</span>
         </p>
+      )}
+      {onOpenQuests && (
+        <button type="button" className="text-button play-scene-quest-link" onClick={onOpenQuests}>
+          {t('View current quest')}
+        </button>
       )}
     </article>
   );
@@ -177,9 +184,9 @@ export function PlayNpcTopicsCard({
   if (!topics.length || character.in_combat) return null;
   const npc = character.location === 'The Goblin Market' ? 'Nib' : character.location === 'The Shrine of the Forgotten' ? 'Caldus' : null;
   return (
-    <article className="play-npc-card" aria-labelledby="play-npc-title">
+    <article className="play-npc-card play-npc-compact" aria-labelledby="play-npc-title">
       <p className="eyebrow">{t('Conversation')}</p>
-      <h2 id="play-npc-title">{npc ?? t('Local contacts')}</h2>
+      <h2 id="play-npc-title" className="play-npc-title">{npc ?? t('Local contacts')}</h2>
       <p className="play-npc-blurb">
         {npc === 'Caldus'
           ? t('Caldus keeps the Shrine of the Forgotten — he knows about the stolen bell.')
@@ -215,8 +222,16 @@ export function PlayCoachingStrip({
   onOpenQuests?: () => void;
 }) {
   const { t } = useI18n();
-  const prompt = scenePrompt(character, events, t);
   const levelNotice = bellWardenLevelGateNotice(character, t);
+  const prompt = events.length === 0 ? null : scenePrompt(character, events, t);
+  if (events.length === 0) {
+    if (!levelNotice) return null;
+    return (
+      <div className="play-coaching-strip play-coaching-strip-compact" role="region" aria-label={t('Scene coaching')}>
+        <p className="play-coaching-level-gate" role="status">{levelNotice}</p>
+      </div>
+    );
+  }
   if (!prompt && !levelNotice) return null;
   return (
     <div className="play-coaching-strip" role="region" aria-label={t('Scene coaching')}>
@@ -245,9 +260,10 @@ export function PlayJournal({
   narrationStatus,
   locations,
   onAction,
+  onOpenQuests,
   onResumePending,
   onCancelTurn,
-}: Pick<PlayScreenProps, 'character' | 'economy' | 'events' | 'busy' | 'turnPhase' | 'narrationStatus' | 'locations' | 'onAction' | 'onResumePending' | 'onCancelTurn'>) {
+}: Pick<PlayScreenProps, 'character' | 'economy' | 'events' | 'busy' | 'turnPhase' | 'narrationStatus' | 'locations' | 'onAction' | 'onOpenQuests' | 'onResumePending' | 'onCancelTurn'>) {
   const { t } = useI18n();
   const [thinkingSeconds, setThinkingSeconds] = useState(0);
   useEffect(() => {
@@ -265,15 +281,10 @@ export function PlayJournal({
         </p>
       )}
       {events.length === 0 ? (
-        <div className="journal-scene journal-presentation-text-first" role="log" aria-label={t('Adventure journal')}>
-          <PlaySceneIntroCard character={character} locations={locations} />
+        <div className="journal-scene journal-presentation-text-first journal-scene-first-visit" role="log" aria-label={t('Adventure journal')}>
+          <PlaySceneIntroCard character={character} locations={locations} onOpenQuests={onOpenQuests} />
           {onAction && <PlayNpcTopicsCard character={character} busy={busy} onAction={onAction} />}
-          <div className="scene-empty">
-            <span aria-hidden="true">✦</span>
-            <p>{t(character.location === 'The Whispering Cellar'
-              ? 'The cellar waits in silence. Describe what you try — explore, talk, attack, flee or rest.'
-              : 'This place waits in silence. Describe what you try — explore, talk, attack, flee or rest.')}</p>
-          </div>
+          <div className="journal-first-visit-spacer" aria-hidden="true" />
         </div>
       ) : (
         <JournalChronicle
