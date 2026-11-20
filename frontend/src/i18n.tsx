@@ -636,7 +636,7 @@ const cs: Record<string, string> = {
   'Search the area': 'Prohledat okoli',
   'Travel to The Sunken Corridor': 'Cesta do Potopene chodby',
   'Travel to The Shrine of the Forgotten': 'Cesta ke Svatyni zapomenutych',
-  'Travel to The Goblin Market': 'Cesta na Goblini trh',
+  'Travel to The Goblin Market': 'Cesta na Gobliní trh',
   'Talk to Caldus': 'Promluvit s Caldusem',
   'Ask Caldus about the Vault': 'Zeptat se Calda na Komnatu ozvěn',
   'That quest step cannot be resolved here.': 'Tenhle krok úkolu se tady splnit nedá.',
