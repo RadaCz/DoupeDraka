@@ -23,7 +23,7 @@ export function clearBrowserSessionToken(): void {
 }
 
 export async function loginWithPassword(username: string, password: string): Promise<string> {
-  const api = import.meta.env.VITE_API_URL || '/api';
+  const api = import.meta.env.VITE_API_URL ?? '';
   const response = await fetch(`${api}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -37,7 +37,7 @@ export async function loginWithPassword(username: string, password: string): Pro
 }
 
 export async function registerBrowserAccount(username: string, password: string): Promise<string> {
-  const api = import.meta.env.VITE_API_URL || '/api';
+  const api = import.meta.env.VITE_API_URL ?? '';
   const created = await fetch(`${api}/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

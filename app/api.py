@@ -81,12 +81,9 @@ import hashlib
 
 app = FastAPI(title="Solo D&D Engine", version="0.1.0")
 
-@app.middleware("http")
-async def legacy_v1_prefix(request: Request, call_next):
-    """Keep old clients working while exposing a stable /v1 URL contract."""
-    if request.scope.get("path", "").startswith("/v1/"):
-        request.scope["path"] = request.scope["path"][3:]
-    return await call_next(request)
+from .http_middleware import strip_api_and_v1_prefix
+
+app.middleware("http")(strip_api_and_v1_prefix)
 limiter = Limiter(key_func=client_ip_for_rate_limit)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
@@ -1402,3 +1399,10 @@ async def revive_character(character_id: str, user: User = Depends(get_user_by_t
             raise HTTPException(409, "Character changed while reviving; retry")
         await session.commit()
         return {"character": asdict(character), "gold_lost": lost}
+
+
+from .frontend_static import mount_frontend_app, resolve_frontend_dist
+
+_frontend_dist = resolve_frontend_dist()
+if _frontend_dist is not None:
+    mount_frontend_app(app, _frontend_dist)

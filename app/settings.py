@@ -4,6 +4,8 @@ from urllib.parse import urlparse
 from pydantic import AliasChoices, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict, NoDecode
 
+from .database_url import normalize_database_url
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -14,6 +16,13 @@ class Settings(BaseSettings):
         protected_namespaces=(),
     )
     database_url: str = "sqlite+aiosqlite:///./data/dnd.db"
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def _normalize_database_url(cls, value: object) -> object:
+        if isinstance(value, str):
+            return normalize_database_url(value)
+        return value
     db_pool_size: int = Field(default=10, validation_alias=AliasChoices("DB_POOL_SIZE", "db_pool_size"))
     db_max_overflow: int = Field(default=20, validation_alias=AliasChoices("DB_MAX_OVERFLOW", "db_max_overflow"))
     db_bootstrap: str = Field(

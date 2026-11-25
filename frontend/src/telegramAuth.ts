@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+const API_URL = import.meta.env.VITE_API_URL ?? '';
 
 let telegramAuthInFlight: { initData: string; promise: Promise<string> } | null = null;
 let cachedTelegramAuth: { initData: string; token: string } | null = null;
