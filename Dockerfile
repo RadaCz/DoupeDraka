@@ -3,6 +3,8 @@ FROM node:20-bookworm-slim AS frontend-builder
 WORKDIR /frontend
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
+# Vite imports ../../../localization/*.json from frontend/src (repo-root path).
+COPY localization /localization
 COPY frontend/ ./
 # Empty default: API calls hit the same origin (Railway single service).
 ARG VITE_API_URL=

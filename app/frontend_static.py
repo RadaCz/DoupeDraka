@@ -22,6 +22,18 @@ def frontend_base_path() -> str:
     return raw.rstrip("/") or ""
 
 
+def safe_dist_file(dist_dir: Path, spa_path: str) -> Path | None:
+    """Return a file under *dist_dir* or None (caller serves index.html)."""
+    if not spa_path or spa_path.endswith("/"):
+        return None
+    candidate = (dist_dir / spa_path).resolve()
+    if not candidate.is_relative_to(dist_dir):
+        return None
+    if candidate.is_file():
+        return candidate
+    return None
+
+
 def resolve_frontend_dist(dist: Path | None = None) -> Path | None:
     root = (dist or default_frontend_dist()).resolve()
     if (root / "index.html").is_file():
@@ -55,7 +67,7 @@ def mount_frontend_app(app: FastAPI, dist_dir: Path) -> None:
             return JSONResponse(status_code=404, content={"detail": "Not Found"})
         if spa_path.startswith("api/") or spa_path == "api":
             return JSONResponse(status_code=404, content={"detail": "Not Found"})
-        candidate = dist_dir / spa_path
-        if candidate.is_file():
-            return FileResponse(candidate)
+        safe = safe_dist_file(dist_dir, spa_path)
+        if safe is not None:
+            return FileResponse(safe)
         return FileResponse(index_path, media_type="text/html")

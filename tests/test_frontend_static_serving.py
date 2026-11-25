@@ -90,6 +90,26 @@ def test_static_asset_served(spa_client):
     assert "console.log" in response.text
 
 
+def test_spa_fallback_blocks_path_traversal(spa_client, tmp_path):
+    client, dist = spa_client
+    secret = tmp_path / "secret.txt"
+    secret.write_text("BOT_TOKEN=leaked", encoding="utf-8")
+    attempts = [
+        "../secret.txt",
+        "assets/../../secret.txt",
+        "..%2f..%2fsecret.txt",
+        "%2e%2e%2fsecret.txt",
+        "%2e%2e/secret.txt",
+        "foo%2F..%2F..%2Fsecret.txt",
+    ]
+    for path in attempts:
+        response = client.get(f"/{path}")
+        assert response.status_code == 200
+        assert "text/html" in response.headers.get("content-type", "")
+        assert "BOT_TOKEN=leaked" not in response.text
+        assert "ok" in response.text
+
+
 def test_mount_skipped_without_index():
     app = FastAPI()
 
