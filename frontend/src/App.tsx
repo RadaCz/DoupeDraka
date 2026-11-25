@@ -81,7 +81,7 @@ import {
 } from './pendingTurn';
 import './styles.css';
 
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+const API_URL = import.meta.env.VITE_API_URL ?? '';
 const ACTIVE_CHARACTER_KEY = 'active_character_id';
 let sessionToken: string | null = null;
 

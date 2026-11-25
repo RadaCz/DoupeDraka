@@ -265,6 +265,26 @@ docker compose up --build
 API: http://localhost:8000
 Frontend: http://localhost:5173
 
+## Railway (jedna služba)
+
+Produkční image z kořenového `Dockerfile` buildí Mini App i API v jednom kontejneru.
+Při startu proběhne `alembic upgrade head` a pak `uvicorn` na `0.0.0.0:${PORT}`.
+Kořenová URL (`GET /`) servíruje statický frontend; API zůstává na stejných cestách
+(`/health`, `/auth/telegram`, …). Klienti s prefixem `/api` (Vite dev proxy) fungují díky
+přepisu cesty v middleware.
+
+**Proměnné prostředí (typické):**
+
+| Proměnná | Poznámka |
+|----------|----------|
+| `DATABASE_URL` | Railway Postgres často `postgres://…` — aplikace převede na `postgresql+asyncpg://…` |
+| `PORT` | Nastavuje Railway; výchozí `8000` lokálně |
+| `DB_BOOTSTRAP` | V produkci `none` (schéma jen přes Alembic) |
+| `BOT_TOKEN` | Ověření Telegram `initData` v Mini App |
+| `LLM_PROVIDER`, API klíče | Volitelné; výchozí offline vypravěč |
+
+Ověření po nasazení: `GET /health` (JSON), `GET /` (HTML Mini App), `GET /docs` (OpenAPI).
+
 ## Production Deployment
 
 Full stack (PostgreSQL 16, API, static frontend, Telegram bot) with persistent DB
