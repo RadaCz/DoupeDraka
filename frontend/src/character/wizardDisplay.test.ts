@@ -21,6 +21,7 @@ describe('wizardDisplay', () => {
   it('maps catalog foot speeds to Czech metres on race cards', () => {
     expect(formatWizardSpeedFt(30, 'cs')).toBe('9 m');
     expect(formatWizardSpeedFt(25, 'cs')).toBe('7,5 m');
+    expect(formatWizardSpeedFt(60, 'cs')).toBe('18 m');
     expect(formatWizardSpeedFt(30, 'en')).toBe('30 ft.');
   });
 
