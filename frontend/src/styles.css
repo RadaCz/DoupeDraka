@@ -1454,6 +1454,10 @@ summary:focus-visible {
   background: var(--green);
 }
 
+.wizard-page > .wizard-next.primary {
+  padding-bottom: calc(12px + var(--e2e-safe-bottom, env(safe-area-inset-bottom, 0px)));
+}
+
 .wizard-note {
   margin: 14px 0 0;
   text-align: center;

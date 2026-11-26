@@ -44,6 +44,8 @@ const PHASE_TIMEOUT_MS = {
   [DEDICATED_SPECS.ghoul]: GHOUL_PLAYWRIGHT_TEST_TIMEOUT_MS + RUNNER_PHASE_TEARDOWN_BUFFER_MS,
   [DEDICATED_SPECS.savingThrow]: 120_000,
   [DEDICATED_SPECS.spellSave]: 120_000,
+  'e2e/playtest-5-screenshots.spec.ts': 720_000,
+  'e2e/playtest-5-mobile-ui.spec.ts': 300_000,
   'e2e-smoke': 480_000,
   visual: 180_000,
 };

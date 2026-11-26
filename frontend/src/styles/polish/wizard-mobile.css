@@ -1,0 +1,79 @@
+/* Character wizard — mobile playtest layout (safe area, spells, races, forms) */
+
+:root {
+  --wizard-chrome-top: calc(
+    var(--app-safe-top, env(safe-area-inset-top, 0px)) + 54px + 72px
+  );
+}
+
+.wizard-page {
+  padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  scroll-padding-top: var(--wizard-chrome-top);
+}
+
+.wizard-page > .wizard-next.primary {
+  min-height: 48px;
+  margin-top: auto;
+}
+
+.race-grid .selection-card {
+  scroll-margin-top: var(--wizard-chrome-top);
+}
+
+.race-ability-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-width: 0;
+}
+
+.race-ability-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: #222e24;
+  color: #b6c4b1;
+  font-size: 12px;
+  font-family: 'DM Mono', monospace;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.option-fieldset .option-pill:has(.wizard-spell-pill-label) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 6px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 8px 6px;
+  text-align: center;
+}
+
+.wizard-spell-pill-label {
+  min-width: 0;
+  flex: 1 1 5rem;
+  font-size: max(12px, 0.72rem);
+  line-height: 1.3;
+}
+
+.wizard-spell-tag.char-v2-tag {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  font-size: max(12px, 0.65rem);
+  line-height: 1.25;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
+textarea.form-input {
+  min-height: calc(3 * 1.45em + 20px);
+  font-size: 14px;
+  line-height: 1.45;
+  resize: vertical;
+}

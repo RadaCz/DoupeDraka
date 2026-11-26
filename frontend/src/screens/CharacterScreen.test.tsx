@@ -99,4 +99,27 @@ describe('CharacterScreen V2', () => {
     expect(screen.getByRole('heading', { name: /Your adventurers/i })).toBeInTheDocument();
     unmount();
   });
+
+  it('labels darkvision as Jen v příběhu on the character sheet (cs)', () => {
+    localStorage.setItem('app_locale', 'cs');
+    const elf: Character = {
+      ...hero,
+      race: 'elf',
+      race_features: {
+        race: 'elf',
+        darkvision_ft: 60,
+        traits: [{ id: 'darkvision', name: 'Darkvision', modeled: true, deferred: false }],
+      },
+    };
+    render(
+      <LocaleProvider>
+        <CharacterScreen character={elf} characters={[elf]} spells={spells} onSelect={() => {}} onCreate={() => {}} />
+      </LocaleProvider>,
+    );
+    const section = screen.getByRole('heading', { name: /rasové vlastnosti/i }).closest('section');
+    expect(section).toBeTruthy();
+    const row = (section as HTMLElement).querySelector('.char-v2-spell-row');
+    expect(row?.textContent ?? '').toMatch(/vidění ve tmě/i);
+    expect(row?.textContent ?? '').toMatch(/jen v příběhu/i);
+  });
 });

@@ -10,6 +10,17 @@ describe('raceTraits', () => {
     expect(raceTraitStatus({ name: 'Extra', text: '', modeled: false }, t)).toBe('Reference only');
   });
 
+  it('shows darkvision as narrative-only even when modeled in catalog', () => {
+    expect(
+      raceTraitStatus({
+        name: 'Darkvision',
+        text: '',
+        trait_id: 'darkvision',
+        modeled: true,
+      }, t),
+    ).toBe('Reference only');
+  });
+
   it('hides deferred traits from player-facing lists', () => {
     const traits = [
       { name: 'A', text: '', modeled: true },
