@@ -14,7 +14,7 @@ import {
   STANDARD_ARRAY,
   type AbilityKey,
 } from './character/creation';
-import { raceTraitStatus } from './character/raceTraits';
+import { displayRaceTraits, raceTraitStatus } from './character/raceTraits';
 
 export interface CharacterDraft {
   name: string;
@@ -391,7 +391,7 @@ export function CharacterWizard({
                 onClick={() => setBackgroundKey(item.key ?? '')}
               >
                 <strong>{t(item.name)}</strong>
-                <small>{item.skill_proficiencies.join(', ')}</small>
+                <small>{item.skill_proficiencies.map(skill => t(skill)).join(', ')}</small>
               </button>
             ))}
           </div>
@@ -426,7 +426,7 @@ export function CharacterWizard({
           <p className="eyebrow">{t('STEP 5 · SKILLS')}</p>
           <h1 id="wizard-title">{t('Class skill proficiencies')}</h1>
           <p className="wizard-note">
-            {t('Background grants')}: {background?.skill_proficiencies.join(', ')}
+            {t('Background grants')}: {background?.skill_proficiencies.map(skill => t(skill)).join(', ')}
           </p>
           <div className="option-row compact-options">
             {(meta.class_skill_picks[classKey]?.options ?? [])
@@ -438,7 +438,7 @@ export function CharacterWizard({
                   className={`option-pill ${classSkills.includes(skill) ? 'selected' : ''}`}
                   onClick={() => toggleClassSkill(skill)}
                 >
-                  {skill}
+                  {t(skill)}
                 </button>
               ))}
           </div>
@@ -457,7 +457,7 @@ export function CharacterWizard({
                       return [...current, skill];
                     })}
                   >
-                    {skill}
+                    {t(skill)}
                   </button>
                 ))}
               </div>
@@ -594,7 +594,9 @@ export function CharacterWizard({
               <div key={row.key}><small>{t(row.key)}</small><strong>{row.total}</strong><span>{row.modifier}</span></div>
             ))}
           </div>
-          <p className="wizard-note">{t('Skills')}: {[...(background.skill_proficiencies ?? []), ...classSkills].join(', ')}</p>
+          <p className="wizard-note">
+            {t('Skills')}: {[...(background?.skill_proficiencies ?? []), ...classSkills].map(skill => t(skill)).join(', ')}
+          </p>
           {spellCaster && (
             <p className="wizard-note">{t('Spells')}: {[...cantrips, ...levelOneSpells].join(', ')}</p>
           )}
@@ -659,7 +661,7 @@ function RaceTraitsPanel({
         <strong>{t('Ability increases')}:</strong> {abilityText(race.ability_increase)}
       </p>
       <ul className="char-v2-spell-list wizard-trait-list">
-        {race.traits.map(trait => (
+        {displayRaceTraits(race.traits).map(trait => (
           <li key={trait.trait_id ?? trait.name} className="char-v2-spell-row">
             <div className="char-v2-spell-head">
               <strong>{t(trait.name)}</strong>

@@ -12,6 +12,11 @@ export function modeledRaceTraits(traits: RaceTraitRow[] | undefined): RaceTrait
   return (traits ?? []).filter(trait => trait.modeled);
 }
 
+/** Player-facing trait list — deferred MVP traits are hidden (no “Odloženo” label). */
+export function displayRaceTraits(traits: RaceTraitRow[] | undefined): RaceTraitRow[] {
+  return (traits ?? []).filter(trait => !trait.deferred);
+}
+
 export function characterRaceFeatureRows(character: Character): Array<{ id: string; name: string; modeled: boolean; deferred: boolean }> {
   return character.race_features?.traits ?? [];
 }

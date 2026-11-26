@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { characterRaceFeatureRows, modeledRaceTraits, raceTraitStatus } from './raceTraits';
+import { characterRaceFeatureRows, displayRaceTraits, modeledRaceTraits, raceTraitStatus } from './raceTraits';
 
 const t = (label: string) => label;
 
@@ -8,6 +8,14 @@ describe('raceTraits', () => {
     expect(raceTraitStatus({ name: 'Lucky', text: '', modeled: true }, t)).toBe('Active in engine');
     expect(raceTraitStatus({ name: 'Trance', text: '', deferred: true }, t)).toBe('Deferred in MVP');
     expect(raceTraitStatus({ name: 'Extra', text: '', modeled: false }, t)).toBe('Reference only');
+  });
+
+  it('hides deferred traits from player-facing lists', () => {
+    const traits = [
+      { name: 'A', text: '', modeled: true },
+      { name: 'B', text: '', deferred: true },
+    ];
+    expect(displayRaceTraits(traits).map(row => row.name)).toEqual(['A']);
   });
 
   it('filters modeled catalog traits', () => {
