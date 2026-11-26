@@ -4,6 +4,8 @@ import {
   clearPendingAction,
   idempotencyKeyForTurn,
   readPendingAction,
+  resolvePendingTurnKey,
+  type StoredPendingAction,
 } from './pendingTurn';
 
 afterEach(() => {
@@ -18,6 +20,19 @@ describe('pendingTurn idempotency', () => {
     clearPendingAction();
     const third = idempotencyKeyForTurn('hero-1', 'look around');
     expect(third).not.toBe(first);
+  });
+
+  it('reuses held pending state on retry without minting a new key', () => {
+    const held: StoredPendingAction = {
+      characterId: 'hero-1',
+      action: 'look around',
+      idempotencyKey: 'stable-key-abc',
+    };
+    const resolved = resolvePendingTurnKey('hero-1', 'look around', held);
+    expect(resolved.idempotencyKey).toBe('stable-key-abc');
+    expect(readPendingAction()?.idempotencyKey).toBe('stable-key-abc');
+    const again = resolvePendingTurnKey('hero-1', 'look around', held);
+    expect(again.idempotencyKey).toBe('stable-key-abc');
   });
 
   it('isolates pending turns per character and action', () => {

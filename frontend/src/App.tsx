@@ -75,8 +75,9 @@ import { LocaleProvider, useI18n } from './i18n';
 import { presentPlayerFacingError } from './i18n/playerFacingErrors';
 import {
   clearPendingAction,
-  idempotencyKeyForTurn,
   readPendingAction,
+  resolvePendingTurnKey,
+  type StoredPendingAction,
   type TurnPhase,
 } from './pendingTurn';
 import './styles.css';
@@ -226,6 +227,7 @@ function AppContent() {
   const [telegramLinkBusy, setTelegramLinkBusy] = useState(false);
   const [busy, setBusy] = useState(false);
   const [turnPhase, setTurnPhase] = useState<TurnPhase>('idle');
+  const [pendingTurn, setPendingTurn] = useState<StoredPendingAction | null>(null);
   const [calculating, setCalculating] = useState(false);
   const [calculation, setCalculation] = useState<Record<string, unknown> | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -266,10 +268,16 @@ function AppContent() {
   }, [refreshEvents]);
 
   useEffect(() => {
-    if (!character) return;
+    if (!character) {
+      setPendingTurn(null);
+      return;
+    }
     const pending = readPendingAction();
     if (pending?.characterId === character.id) {
+      setPendingTurn(pending);
       setTurnPhase('recovering');
+    } else {
+      setPendingTurn(null);
     }
   }, [character?.id]);
 
@@ -621,7 +629,9 @@ function AppContent() {
         : event));
     };
     try {
-      const idempotencyKey = idempotencyKeyForTurn(character.id, action);
+      const pending = resolvePendingTurnKey(character.id, action, pendingTurn);
+      setPendingTurn(pending);
+      const idempotencyKey = pending.idempotencyKey;
       await streamRequest(`/characters/${character.id}/actions/stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey },
@@ -692,6 +702,7 @@ function AppContent() {
           if (pendingLevelUp) setLevelUpNotice(pendingLevelUp);
           haptic('success');
           clearPendingAction();
+          setPendingTurn(null);
           setTurnPhase('idle');
         }
       });
@@ -699,6 +710,7 @@ function AppContent() {
       if (streamCompleted) {
         await refreshCharacter(character.id);
         clearPendingAction();
+        setPendingTurn(null);
         setTurnPhase('idle');
       }
     } catch (reason) {
@@ -708,6 +720,7 @@ function AppContent() {
         try {
           await refreshEvents(character.id);
           clearPendingAction();
+          setPendingTurn(null);
           setTurnPhase('idle');
         } catch (refreshError) {
           setError(refreshError instanceof Error ? presentError(refreshError.message) : t('Could not load the saved journal.'));

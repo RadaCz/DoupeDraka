@@ -725,8 +725,8 @@ const cs: Record<string, string> = {
   'Sending your action…': 'Odesílám tvoji akci…',
   'The dice have spoken. The narrator continues…': 'Kostky padly. Vypravěč pokračuje…',
   'Restoring the saved result…': 'Obnovuji uložený výsledek…',
-  'A turn may have been interrupted. Retry with the same idempotency key.': 'Tah mohl byt prerusen. Opakuj akci se stejnym klicem.',
-  'Recover last action': 'Obnovit posledni akci',
+  'Your last action may not have finished. You can try again without losing progress.':
+    'Poslední akce se možná nedokončila. Můžeš to zkusit znovu — nic se neztratí.',
   'Each search uses one six-sided die: a 1 brings an enemy; other results may reveal clues, quiet, or 1–4 gold coins. After a fight or escape, your next search is safe. Rejected actions cost no Adventure Mana.': 'Každý průzkum háží jednou šestistrannou kostkou: při 1 se objeví nepřítel, jiný výsledek může odhalit stopy, klid nebo 1–4 zlaté mince. Po boji nebo útěku je další průzkum bezpečný. Odmítnuté akce nestojí dobrodružnou manu.',
   'Action words guide ability checks: strength for force, dexterity for stealth, constitution to endure, intelligence to inspect, wisdom to notice, and charisma to persuade.': 'Slova v akci určují vlastnost pro hod: sila pro silove akce, obratnost pro plížení, odolnost pro vydrz, inteligence pro prohlížení, moudrost pro všímání a charisma pro přesvědčování.',
   'CHARACTER': 'POSTAVA',
@@ -1095,7 +1095,9 @@ const cs: Record<string, string> = {
   'Character changed while updating; retry': 'Postava se změnila při aktualizaci — zkus to znovu.',
   'Character changed while reviving; retry': 'Postava se změnila při oživení — zkus to znovu.',
   'Concurrent idempotency conflict; retry': 'Konflikt souběžných požadavků — zkus to znovu.',
-  'Idempotency key belongs to another account': 'Klíč idempotence patří jinému účtu.',
+  'Idempotency key belongs to another account': 'Tah se nepodařilo dokončit — zkus to znovu.',
+  'Idempotency key belongs to another character': 'Tah se nepodařilo dokončit — zkus to znovu.',
+  'Idempotency key was used for a different action': 'Tah se nepovedl sloučit — zkus to znovu.',
   'Pro tier is not available in this build.': 'Úroveň Pro v této verzi není dostupná.',
   'Paid narration tiers require a configured external provider; use lite.':
     'Placené úrovně vypravěče vyžadují externího poskytovatele — použij Lite.',

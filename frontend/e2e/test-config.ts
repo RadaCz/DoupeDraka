@@ -26,4 +26,5 @@ export const E2E_TELEGRAM_ID = {
   backgroundFeatures: 778_000_000,
   rogueCunning: 779_000_000,
   clericChannel: 779_100_000,
+  idempotencyRetry: 779_200_000,
 } as const;

@@ -296,10 +296,14 @@ export function PlayJournal({
         />
       )}
       {turnPhase === 'recovering' && !busy && onResumePending && (
-        <p className="storyteller-status" role="status">
-          {t('A turn may have been interrupted. Retry with the same idempotency key.')}
-          <button type="button" className="link-button" onClick={onResumePending}>{t('Recover last action')}</button>
-        </p>
+        <div className="pending-turn-recovery" role="status">
+          <p className="pending-turn-recovery-message">
+            {t('Your last action may not have finished. You can try again without losing progress.')}
+          </p>
+          <div className="pending-turn-recovery-actions">
+            <button type="button" className="ghost" onClick={onResumePending}>{t('Try again')}</button>
+          </div>
+        </div>
       )}
       {busy && (
         <div className="thinking" role="status">
