@@ -77,6 +77,23 @@
   overflow-wrap: anywhere;
 }
 
+.char-v2-vitals-primary,
+.char-v2-vitals-secondary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+}
+
+.char-v2-vitals-primary {
+  margin-top: 12px;
+}
+
+.char-v2-vitals-secondary {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-subtle);
+}
+
 .char-v2-vitals-strip {
   display: flex;
   flex-wrap: wrap;
@@ -92,14 +109,15 @@
 }
 
 .char-v2-vital small {
-  font-size: 0.62rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--muted);
 }
 
 .char-v2-vital strong {
-  font-size: 0.95rem;
+  font-size: 14px;
+  line-height: 1.35;
 }
 
 .char-v2-vital-wide {
@@ -164,7 +182,7 @@
 
 .char-v2-section-lead {
   margin: 0;
-  font-size: 0.82rem;
+  font-size: 14px;
   line-height: 1.45;
   color: var(--muted);
 }
@@ -239,9 +257,22 @@
   background: color-mix(in srgb, var(--accent-verb) 10%, var(--surface-deep));
 }
 
-.char-v2-equipped-icon {
-  font-size: 1.5rem;
-  line-height: 1;
+.char-v2-equipped-svg {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  color: var(--text-soft);
+}
+
+.character-screen.character-v2 .roster-card {
+  min-height: 44px;
+}
+
+.char-v2-roster-check,
+.char-v2-roster-chevron {
+  width: 20px;
+  height: 20px;
+  display: block;
 }
 
 .char-v2-equipped-copy {
@@ -331,7 +362,7 @@
 
 .char-v2-spell-text {
   margin: 6px 0 0;
-  font-size: 0.82rem;
+  font-size: 14px;
   line-height: 1.45;
   color: var(--text-soft);
   display: -webkit-box;

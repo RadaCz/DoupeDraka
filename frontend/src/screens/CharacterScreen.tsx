@@ -4,6 +4,7 @@ import { useI18n } from '../i18n';
 import { displayInventoryLabel, displayLocation } from '../i18n/gameDisplay';
 import { formatWizardSpeedFt } from '../character/wizardDisplay';
 import { displaySpellName } from '../spells/spellDisplay';
+import { IconChevron, IconCheck, IconShield, IconWeapon } from '../components/characterIcons';
 import { HpBar, SpellSlots, titleCase } from '../components/characterVitals';
 import { CharacterInventoryPanel } from '../character/CharacterInventoryPanel';
 import {
@@ -15,9 +16,10 @@ import {
   equippedWeaponInstance,
   formatModifier,
   formatSavingThrowProficiencies,
+  formatExperienceDisplay,
+  formatExperienceVitalsValue,
   proficiencyBonus,
   isAtMaxMvpLevel,
-  MAX_MVP_LEVEL,
   xpProgress,
 } from '../character/characterSheet';
 import { backgroundFeatureFor, backgroundFeatureUsed } from '../character/backgroundFeatures';
@@ -25,6 +27,7 @@ import { classFeatureLines } from '../character/classFeatures';
 import { characterRaceFeatureRows, displayRaceTraits, raceTraitStatus } from '../character/raceTraits';
 import { heroSpellRows } from '../spells/spellbook';
 import { SpellNarrativeOnlyTag } from '../spells/SpellNarrativeOnlyTag';
+import { MVP_RULESET_DISPLAY_FALLBACK } from '../game/mvpRulesetDisplay';
 
 export function CharacterScreen({
   character,
@@ -36,7 +39,8 @@ export function CharacterScreen({
   onInventoryAction,
   busy,
   error,
-  maxLevel = MAX_MVP_LEVEL,
+  maxLevel,
+  xpPerLevel,
 }: {
   character: Character | null;
   characters: Character[];
@@ -47,8 +51,10 @@ export function CharacterScreen({
   onInventoryAction?: (action: string) => void;
   busy?: boolean;
   error?: string;
-  /** Chapter-1 closed beta cap from `/reference` ruleset.max_level. */
+  /** Chapter level cap from `/reference` → `ruleset.max_level`. */
   maxLevel?: number;
+  /** XP threshold per level from `/reference` → `ruleset.xp_per_level`. */
+  xpPerLevel?: number;
 }) {
   const { t, locale } = useI18n();
 
@@ -93,9 +99,13 @@ export function CharacterScreen({
   const equippedWeapon = equippedWeaponInstance(character.item_instances);
   const equippedArmor = equippedArmorInstance(character.item_instances);
   const equippedShield = equippedShieldInstance(character.item_instances);
-  const xp = xpProgress(character.xp);
-  const atLevelCap = isAtMaxMvpLevel(character.level, maxLevel);
+  const resolvedMaxLevel = maxLevel ?? MVP_RULESET_DISPLAY_FALLBACK.maxLevel;
+  const resolvedXpPerLevel = xpPerLevel ?? MVP_RULESET_DISPLAY_FALLBACK.xpPerLevel;
+  const atLevelCap = isAtMaxMvpLevel(character.level, resolvedMaxLevel);
+  const xp = xpProgress(character.xp, resolvedXpPerLevel, atLevelCap);
   const hasSpellcasting = Object.values(character.max_spell_slots ?? {}).some(count => count > 0);
+  const vitalsXp = formatExperienceVitalsValue(character.xp, resolvedXpPerLevel, atLevelCap);
+  const experienceDisplay = formatExperienceDisplay(character.xp, resolvedXpPerLevel, atLevelCap, t);
 
   return (
     <section className="screen character-screen character-v2" aria-busy={busy || undefined}>
@@ -107,17 +117,20 @@ export function CharacterScreen({
             <p className="char-v2-subtitle">
               {t(titleCase(character.race))} · {t(titleCase(character.character_class))}
               {character.background ? ` · ${t(titleCase(character.background.replace(/_/g, ' ')))}` : ''}
-              {' · '}{t('Level')} {character.level}
             </p>
             <p className="char-v2-location" title={character.location}>
               <span aria-hidden="true">⌖</span> {displayLocation(character.location, locale)}
             </p>
           </div>
         </div>
-        <div className="char-v2-vitals-strip">
-          <span className="char-v2-vital"><small>{t('HP')}</small><strong>{character.hp}/{character.max_hp}</strong></span>
-          <span className="char-v2-vital"><small>{t('AC')}</small><strong>{character.armor_class}</strong></span>
-          <span className="char-v2-vital"><small>{t('Gold')}</small><strong>{character.gold} {t('gp')}</strong></span>
+        <div className="char-v2-vitals-primary" aria-label={t('Hero vitals')}>
+          <span className="char-v2-vital"><small>{t('Hit points short')}</small><strong className="tabular-nums">{character.hp}/{character.max_hp}</strong></span>
+          <span className="char-v2-vital"><small>{t('AC')}</small><strong className="tabular-nums">{character.armor_class}</strong></span>
+          <span className="char-v2-vital"><small>{t('Level')}</small><strong className="tabular-nums">{character.level}</strong></span>
+          <span className="char-v2-vital"><small>{t('ZK')}</small><strong className="tabular-nums">{vitalsXp}</strong></span>
+        </div>
+        <div className="char-v2-vitals-secondary">
+          <span className="char-v2-vital"><small>{t('Gold')}</small><strong className="tabular-nums">{character.gold} {t('gp')}</strong></span>
           {hasSpellcasting && (
             <span className="char-v2-vital char-v2-vital-wide">
               <small>{t('Spell slots')}</small>
@@ -174,7 +187,7 @@ export function CharacterScreen({
         <div className="char-v2-equipped-row">
           {equippedWeapon ? (
             <article className="char-v2-equipped-card">
-              <span className="char-v2-equipped-icon" aria-hidden="true">⚔</span>
+              <IconWeapon />
               <div className="char-v2-equipped-copy">
                 <small>{t('Weapon')}</small>
                 <strong>{displayInventoryLabel(equippedWeapon.name, locale)}</strong>
@@ -188,7 +201,7 @@ export function CharacterScreen({
           )}
           {equippedArmor ? (
             <article className="char-v2-equipped-card">
-              <span className="char-v2-equipped-icon" aria-hidden="true">🛡</span>
+              <IconShield />
               <div className="char-v2-equipped-copy">
                 <small>{t('Armor')}</small>
                 <strong>{displayInventoryLabel(equippedArmor.name, locale)}</strong>
@@ -199,7 +212,7 @@ export function CharacterScreen({
           )}
           {equippedShield ? (
             <article className="char-v2-equipped-card">
-              <span className="char-v2-equipped-icon" aria-hidden="true">🛡</span>
+              <IconShield />
               <div className="char-v2-equipped-copy">
                 <small>{t('Shield')}</small>
                 <strong>{displayInventoryLabel(equippedShield.name, locale)}</strong>
@@ -221,24 +234,31 @@ export function CharacterScreen({
       <section className="char-v2-section" aria-labelledby="char-progress-heading">
         <h2 id="char-progress-heading" className="char-v2-section-title">{t('Progress')}</h2>
         <article className="char-v2-progress-card">
-          <div className="char-v2-progress-row">
-            <span><small>{t('Level')}</small><strong>{character.level}</strong></span>
-            <span><small>{t('EXPERIENCE')}</small><strong className="tabular-nums">{character.xp} XP</strong></span>
-          </div>
           {atLevelCap ? (
-            <p className="char-v2-xp-caption" data-testid="level-cap-note">
-              {t('Chapter 1 level cap reached')}: {t('Level')} {maxLevel}.{' '}
-              {t('Levels above 3 are locked until Extra Attack and level-3 spells are modeled.')}
-            </p>
-          ) : (
             <>
-              <div className="char-v2-xp-track" role="progressbar" aria-valuenow={xp.current} aria-valuemin={0} aria-valuemax={xp.threshold} aria-label={t('Experience toward next level')}>
+              <p className="char-v2-xp-caption tabular-nums">{experienceDisplay}</p>
+              <p className="char-v2-xp-caption" data-testid="level-cap-note">
+                {t('In chapter 1, the highest level is {max_level}.').replace('{max_level}', String(resolvedMaxLevel))}
+              </p>
+            </>
+          ) : xp.showBar ? (
+            <>
+              <div
+                className="char-v2-xp-track"
+                role="progressbar"
+                aria-valuenow={xp.current}
+                aria-valuemin={0}
+                aria-valuemax={xp.threshold}
+                aria-label={t('Experience toward next level')}
+              >
                 <span style={{ width: `${Math.min(100, (xp.current / xp.threshold) * 100)}%` }} />
               </div>
               <p className="char-v2-xp-caption tabular-nums">
-                {t('Experience toward next level')}: {xp.current} / {xp.threshold} XP
+                {formatExperienceDisplay(xp.xp, xp.threshold, false, t)}
               </p>
             </>
+          ) : (
+            <p className="char-v2-xp-caption tabular-nums">{experienceDisplay}</p>
           )}
         </article>
       </section>
@@ -389,7 +409,9 @@ export function CharacterScreen({
                   <strong>{item.name}</strong>
                   <small>{t(titleCase(item.race))} {t(titleCase(item.character_class))} · {t('Lv.')} {item.level}</small>
                 </span>
-                <span className="choice-arrow" aria-hidden="true">{item.id === character.id ? '✓' : '›'}</span>
+                <span className="choice-arrow" aria-hidden="true">
+                  {item.id === character.id ? <IconCheck /> : <IconChevron />}
+                </span>
               </button>
             ))}
           </div>

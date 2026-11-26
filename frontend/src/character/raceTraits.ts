@@ -1,6 +1,7 @@
 import type { Character, RaceReference } from '../types';
 
 export type RaceTraitRow = RaceReference['traits'][number];
+export type EngineRaceTrait = NonNullable<Character['race_features']>['traits'][number];
 
 type TraitIdentity = Pick<RaceTraitRow, 'name' | 'modeled' | 'deferred'> & {
   text?: string;

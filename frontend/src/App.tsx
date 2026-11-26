@@ -37,6 +37,7 @@ import {
   shouldInvalidateSessionToken,
 } from './authSession';
 import { canGoBackFrom, goBackScreen, navigateScreen } from './navigationHistory';
+import { MVP_RULESET_DISPLAY_FALLBACK } from './game/mvpRulesetDisplay';
 import { isFallenError, questStepCompletionLine } from './game/gameActions';
 import { formatTurnDelta } from './game/turnDelta';
 import { formatJournalStreamResult, mergeJournalAfterRefresh } from './journalFormat';
@@ -1021,6 +1022,8 @@ function AppContent() {
             economy={economy}
             events={events}
             questCatalog={catalog?.quests}
+            xpPerLevel={catalog?.ruleset?.xp_per_level ?? MVP_RULESET_DISPLAY_FALLBACK.xpPerLevel}
+            maxLevel={catalog?.ruleset?.max_level ?? MVP_RULESET_DISPLAY_FALLBACK.maxLevel}
             onContinue={() => navigate('game')}
             onCreate={() => navigate('create')}
             onPreset={createPreset}
@@ -1113,7 +1116,8 @@ function AppContent() {
             character={character}
             characters={characters}
             spells={spells}
-            maxLevel={catalog?.ruleset?.max_level ?? 3}
+            maxLevel={catalog?.ruleset?.max_level ?? MVP_RULESET_DISPLAY_FALLBACK.maxLevel}
+            xpPerLevel={catalog?.ruleset?.xp_per_level ?? MVP_RULESET_DISPLAY_FALLBACK.xpPerLevel}
             onSelect={selectCharacter}
             onCreate={() => navigate('create')}
             onOpenTools={() => navigate('tools')}

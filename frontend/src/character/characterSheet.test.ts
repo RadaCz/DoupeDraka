@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Character } from '../types';
+import * as characterSheet from './characterSheet';
 import {
   abilityModifier,
   canWieldInventoryItem,
@@ -9,6 +10,8 @@ import {
   inventoryCounts,
   potionUseBlocked,
   proficiencyBonus,
+  formatExperienceDisplay,
+  formatExperienceVitalsValue,
   xpProgress,
 } from './characterSheet';
 
@@ -61,8 +64,22 @@ describe('characterSheet', () => {
     expect(line).toContain('Constitution');
   });
 
-  it('tracks XP progress toward engine threshold', () => {
-    expect(xpProgress(35)).toEqual({ current: 35, threshold: 100 });
+  it('tracks XP progress when ruleset exposes xp_per_level', () => {
+    expect(xpProgress(35, 100)).toEqual({ xp: 35, current: 35, threshold: 100, showBar: true });
+    expect(xpProgress(35, null).showBar).toBe(false);
+    expect(xpProgress(99, 100, true).showBar).toBe(false);
+  });
+
+  it('formats vitals vs display lines for cap and sub-cap levels', () => {
+    const t = (s: string) => (s === 'ZK' ? 'ZK' : s);
+    expect(formatExperienceVitalsValue(40, 100, false)).toBe('40 / 100');
+    expect(formatExperienceVitalsValue(99, 100, true)).toBe('99');
+    expect(formatExperienceDisplay(40, 100, false, t)).toBe('40 / 100 ZK');
+    expect(formatExperienceDisplay(99, 100, true, t)).toBe('99 ZK');
+  });
+
+  it('does not export XP_PER_LEVEL constant', () => {
+    expect('XP_PER_LEVEL' in characterSheet).toBe(false);
   });
 
   it('knows wieldable vs decorative weapons', () => {

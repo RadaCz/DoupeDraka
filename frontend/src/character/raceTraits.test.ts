@@ -4,10 +4,9 @@ import { characterRaceFeatureRows, displayRaceTraits, modeledRaceTraits, raceTra
 const t = (label: string) => label;
 
 describe('raceTraits', () => {
-  it('labels modeled vs deferred traits', () => {
-    expect(raceTraitStatus({ name: 'Lucky', text: '', modeled: true }, t)).toBe('Active in engine');
-    expect(raceTraitStatus({ name: 'Trance', text: '', deferred: true }, t)).toBe('Deferred in MVP');
-    expect(raceTraitStatus({ name: 'Extra', text: '', modeled: false }, t)).toBe('Reference only');
+  it('labels modeled vs story-only traits', () => {
+    expect(raceTraitStatus({ modeled: true, name: 'Lucky' }, t)).toBe('Active in engine');
+    expect(raceTraitStatus({ modeled: false, name: 'Brave' }, t)).toBe('Reference only');
   });
 
   it('shows darkvision as narrative-only even when modeled in catalog', () => {
@@ -46,5 +45,26 @@ describe('raceTraits', () => {
       },
     } as never);
     expect(rows[0]?.name).toBe('Darkvision');
+  });
+
+  it('keeps deferred traits in engine rows but hides them from display lists', () => {
+    const engineTraits = [
+      { id: 'lucky', name: 'Lucky', modeled: true, deferred: false },
+      { id: 'trance', name: 'Trance', modeled: false, deferred: true },
+    ];
+    const rows = characterRaceFeatureRows({
+      race_features: { race: 'elf', traits: engineTraits },
+    } as never);
+    expect(rows.map(row => row.id)).toEqual(['lucky', 'trance']);
+    const visible = displayRaceTraits(
+      rows.map(trait => ({
+        name: trait.name,
+        text: '',
+        trait_id: trait.id,
+        modeled: trait.modeled,
+        deferred: trait.deferred,
+      })),
+    );
+    expect(visible.map(row => row.trait_id)).toEqual(['lucky']);
   });
 });

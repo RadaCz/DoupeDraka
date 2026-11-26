@@ -33,10 +33,13 @@ def validate_mvp_creation(race: str, character_class: str) -> None:
 
 
 def public_summary() -> dict:
+    from .service import XP_THRESHOLD
+
     return {
         "edition": RULESET_EDITION,
         "label": RULESET_LABEL,
         "max_level": MAX_MVP_LEVEL,
+        "xp_per_level": XP_THRESHOLD,
         "mvp_races": sorted(MVP_RACES),
         "mvp_classes": sorted(MVP_CLASSES),
         "notes": (
