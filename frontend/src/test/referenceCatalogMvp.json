@@ -1,0 +1,988 @@
+{
+  "races": [
+    {
+      "key": "human",
+      "name": "Human",
+      "speed": 30,
+      "ability_increase": {
+        "strength": 1,
+        "dexterity": 1,
+        "constitution": 1,
+        "intelligence": 1,
+        "wisdom": 1,
+        "charisma": 1
+      },
+      "subraces": [],
+      "traits": [
+        {
+          "name": "Versatile",
+          "text": "One extra language of your choice.",
+          "trait_id": "versatile",
+          "modeled": true,
+          "deferred": false
+        }
+      ],
+      "mvp_playable": true
+    },
+    {
+      "key": "elf",
+      "name": "Elf",
+      "speed": 30,
+      "ability_increase": {
+        "dexterity": 2
+      },
+      "subraces": [
+        "high_elf",
+        "wood_elf",
+        "dark_elf"
+      ],
+      "traits": [
+        {
+          "name": "Darkvision",
+          "text": "You can see in dim light within 60 ft. as if it were bright light.",
+          "trait_id": "darkvision",
+          "modeled": true,
+          "deferred": false
+        },
+        {
+          "name": "Keen Senses",
+          "text": "You have proficiency in the Perception skill.",
+          "trait_id": "keen_senses",
+          "modeled": true,
+          "deferred": false
+        },
+        {
+          "name": "Fey Ancestry",
+          "text": "You have advantage on saves against being charmed, and magic cannot put you to sleep.",
+          "trait_id": "fey_ancestry",
+          "modeled": true,
+          "deferred": false
+        },
+        {
+          "name": "Trance",
+          "text": "Elves do not sleep; you meditate for 4 hours to gain a long rest.",
+          "trait_id": "trance",
+          "modeled": false,
+          "deferred": true
+        }
+      ],
+      "mvp_playable": true
+    },
+    {
+      "key": "dwarf",
+      "name": "Dwarf",
+      "speed": 25,
+      "ability_increase": {
+        "constitution": 2
+      },
+      "subraces": [
+        "hill_dwarf",
+        "mountain_dwarf"
+      ],
+      "traits": [
+        {
+          "name": "Darkvision",
+          "text": "You can see in dim light within 60 ft. as if it were bright light.",
+          "trait_id": "darkvision",
+          "modeled": true,
+          "deferred": false
+        },
+        {
+          "name": "Dwarven Resilience",
+          "text": "Advantage on saves against poison, plus resistance to poison damage.",
+          "trait_id": "dwarven_resilience",
+          "modeled": true,
+          "deferred": false
+        },
+        {
+          "name": "Dwarven Combat Training",
+          "text": "Proficiency with battleaxe, handaxe, light hammer and warhammer.",
+          "trait_id": "dwarven_combat_training",
+          "modeled": false,
+          "deferred": true
+        },
+        {
+          "name": "Stonecunning",
+          "text": "Double proficiency bonus on History checks about stonework.",
+          "trait_id": "stonecunning",
+          "modeled": true,
+          "deferred": false
+        }
+      ],
+      "mvp_playable": true
+    },
+    {
+      "key": "halfling",
+      "name": "Halfling",
+      "speed": 25,
+      "ability_increase": {
+        "dexterity": 2
+      },
+      "subraces": [
+        "lightfoot",
+        "stout"
+      ],
+      "traits": [
+        {
+          "name": "Lucky",
+          "text": "When you roll a 1 on an attack, ability check or save, you can reroll it once.",
+          "trait_id": "lucky",
+          "modeled": true,
+          "deferred": false
+        },
+        {
+          "name": "Brave",
+          "text": "You have advantage on saves against being frightened.",
+          "trait_id": "brave",
+          "modeled": true,
+          "deferred": false
+        },
+        {
+          "name": "Halfling Nimbleness",
+          "text": "You can move through the space of any creature larger than you.",
+          "trait_id": "halfling_nimbleness",
+          "modeled": false,
+          "deferred": true
+        }
+      ],
+      "mvp_playable": true
+    },
+    {
+      "key": "dragonborn",
+      "name": "Dragonborn",
+      "speed": 30,
+      "ability_increase": {
+        "strength": 2,
+        "charisma": 1
+      },
+      "subraces": [
+        "black",
+        "blue",
+        "brass",
+        "bronze",
+        "copper",
+        "gold",
+        "green",
+        "red",
+        "silver",
+        "white"
+      ],
+      "traits": [
+        {
+          "name": "Draconic Ancestry",
+          "text": "Choose a dragon type; it sets your breath weapon and damage resistance.",
+          "trait_id": "draconic_ancestry",
+          "modeled": false,
+          "deferred": true
+        },
+        {
+          "name": "Breath Weapon",
+          "text": "Exhale energy in a line or cone; the target saves for half damage.",
+          "trait_id": "breath_weapon",
+          "modeled": false,
+          "deferred": true
+        },
+        {
+          "name": "Damage Resistance",
+          "text": "You have resistance to the damage type of your ancestry.",
+          "trait_id": "damage_resistance",
+          "modeled": false,
+          "deferred": true
+        }
+      ],
+      "mvp_playable": false
+    },
+    {
+      "key": "gnome",
+      "name": "Gnome",
+      "speed": 25,
+      "ability_increase": {
+        "intelligence": 2
+      },
+      "subraces": [
+        "forest_gnome",
+        "rock_gnome"
+      ],
+      "traits": [
+        {
+          "name": "Darkvision",
+          "text": "You can see in dim light within 60 ft. as if it were bright light.",
+          "trait_id": "darkvision",
+          "modeled": false,
+          "deferred": true
+        },
+        {
+          "name": "Gnome Cunning",
+          "text": "Advantage on INT, WIS and CHA saves against magic.",
+          "trait_id": "gnome_cunning",
+          "modeled": false,
+          "deferred": true
+        }
+      ],
+      "mvp_playable": false
+    },
+    {
+      "key": "half_elf",
+      "name": "Half-Elf",
+      "speed": 30,
+      "ability_increase": {
+        "charisma": 2
+      },
+      "subraces": [],
+      "traits": [
+        {
+          "name": "Darkvision",
+          "text": "You can see in dim light within 60 ft. as if it were bright light.",
+          "trait_id": "darkvision",
+          "modeled": false,
+          "deferred": true
+        },
+        {
+          "name": "Fey Ancestry",
+          "text": "Advantage on saves against being charmed, and magic cannot put you to sleep.",
+          "trait_id": "fey_ancestry",
+          "modeled": false,
+          "deferred": true
+        },
+        {
+          "name": "Skill Versatility",
+          "text": "Proficiency in two skills of your choice.",
+          "trait_id": "skill_versatility",
+          "modeled": false,
+          "deferred": true
+        }
+      ],
+      "mvp_playable": false
+    },
+    {
+      "key": "half_orc",
+      "name": "Half-Orc",
+      "speed": 30,
+      "ability_increase": {
+        "strength": 2,
+        "constitution": 1
+      },
+      "subraces": [],
+      "traits": [
+        {
+          "name": "Darkvision",
+          "text": "You can see in dim light within 60 ft. as if it were bright light.",
+          "trait_id": "darkvision",
+          "modeled": false,
+          "deferred": true
+        },
+        {
+          "name": "Relentless Endurance",
+          "text": "When reduced to 0 HP you drop to 1 HP instead, once per long rest.",
+          "trait_id": "relentless_endurance",
+          "modeled": false,
+          "deferred": true
+        },
+        {
+          "name": "Savage Attacks",
+          "text": "On a critical hit you roll one of the weapon's damage dice again.",
+          "trait_id": "savage_attacks",
+          "modeled": false,
+          "deferred": true
+        }
+      ],
+      "mvp_playable": false
+    },
+    {
+      "key": "tiefling",
+      "name": "Tiefling",
+      "speed": 30,
+      "ability_increase": {
+        "charisma": 2,
+        "intelligence": 1
+      },
+      "subraces": [],
+      "traits": [
+        {
+          "name": "Darkvision",
+          "text": "You can see in dim light within 60 ft. as if it were bright light.",
+          "trait_id": "darkvision",
+          "modeled": false,
+          "deferred": true
+        },
+        {
+          "name": "Hellish Resistance",
+          "text": "You have resistance to fire damage.",
+          "trait_id": "hellish_resistance",
+          "modeled": false,
+          "deferred": true
+        },
+        {
+          "name": "Infernal Legacy",
+          "text": "You know Thaumaturgy; at level 3 Hellish Rebuke, at level 5 Darkness.",
+          "trait_id": "infernal_legacy",
+          "modeled": false,
+          "deferred": true
+        }
+      ],
+      "mvp_playable": false
+    }
+  ],
+  "classes": [
+    {
+      "key": "barbarian",
+      "name": "Barbarian",
+      "hit_die": 12,
+      "primary": "strength",
+      "saving_throws": [
+        "strength",
+        "constitution"
+      ],
+      "armor": [
+        "light",
+        "medium",
+        "shields"
+      ],
+      "weapons": [
+        "simple",
+        "martial"
+      ],
+      "subclasses": [
+        {
+          "name": "Path of the Berserker",
+          "text": "Enter a frenzy while raging, gaining a bonus-action melee attack and risking exhaustion."
+        }
+      ],
+      "mvp_playable": false
+    },
+    {
+      "key": "bard",
+      "name": "Bard",
+      "hit_die": 8,
+      "primary": "charisma",
+      "saving_throws": [
+        "dexterity",
+        "charisma"
+      ],
+      "armor": [
+        "light"
+      ],
+      "weapons": [
+        "simple",
+        "hand crossbows",
+        "longswords",
+        "rapiers",
+        "shortswords"
+      ],
+      "subclasses": [
+        {
+          "name": "College of Lore",
+          "text": "Gain extra skill proficiencies and use Cutting Words to hinder foes."
+        }
+      ],
+      "mvp_playable": false
+    },
+    {
+      "key": "cleric",
+      "name": "Cleric",
+      "hit_die": 8,
+      "primary": "wisdom",
+      "saving_throws": [
+        "wisdom",
+        "charisma"
+      ],
+      "armor": [
+        "light",
+        "medium",
+        "shields"
+      ],
+      "weapons": [
+        "simple"
+      ],
+      "subclasses": [
+        {
+          "name": "Life Domain",
+          "text": "Strengthen healing magic and gain heavy armor proficiency."
+        }
+      ],
+      "mvp_playable": true
+    },
+    {
+      "key": "druid",
+      "name": "Druid",
+      "hit_die": 8,
+      "primary": "wisdom",
+      "saving_throws": [
+        "intelligence",
+        "wisdom"
+      ],
+      "armor": [
+        "light",
+        "medium",
+        "shields"
+      ],
+      "weapons": [
+        "clubs",
+        "daggers",
+        "darts",
+        "javelins",
+        "maces",
+        "quarterstaffs",
+        "scimitars",
+        "sickles",
+        "slings",
+        "spears"
+      ],
+      "subclasses": [
+        {
+          "name": "Circle of the Land",
+          "text": "Recover spell slots on a short rest and learn extra terrain-based spells."
+        }
+      ],
+      "mvp_playable": false
+    },
+    {
+      "key": "fighter",
+      "name": "Fighter",
+      "hit_die": 10,
+      "primary": "strength",
+      "saving_throws": [
+        "strength",
+        "constitution"
+      ],
+      "armor": [
+        "light",
+        "medium",
+        "heavy",
+        "shields"
+      ],
+      "weapons": [
+        "simple",
+        "martial"
+      ],
+      "subclasses": [
+        {
+          "name": "Champion",
+          "text": "Brutally simple: wider critical range and better athletics."
+        }
+      ],
+      "mvp_playable": true
+    },
+    {
+      "key": "ranger",
+      "name": "Ranger",
+      "hit_die": 10,
+      "primary": "dexterity",
+      "saving_throws": [
+        "strength",
+        "dexterity"
+      ],
+      "armor": [
+        "light",
+        "medium",
+        "shields"
+      ],
+      "weapons": [
+        "simple",
+        "martial"
+      ],
+      "subclasses": [
+        {
+          "name": "Hunter",
+          "text": "Colossus Slayer and Horde Breaker: steady, reliable damage."
+        }
+      ],
+      "mvp_playable": false
+    },
+    {
+      "key": "rogue",
+      "name": "Rogue",
+      "hit_die": 8,
+      "primary": "dexterity",
+      "saving_throws": [
+        "dexterity",
+        "intelligence"
+      ],
+      "armor": [
+        "light"
+      ],
+      "weapons": [
+        "simple",
+        "hand crossbows",
+        "longswords",
+        "rapiers",
+        "shortswords"
+      ],
+      "subclasses": [
+        {
+          "name": "Thief",
+          "text": "Use Fast Hands and Second-Story Work to excel at quick tasks and climbing."
+        }
+      ],
+      "mvp_playable": true
+    },
+    {
+      "key": "warlock",
+      "name": "Warlock",
+      "hit_die": 8,
+      "primary": "charisma",
+      "saving_throws": [
+        "wisdom",
+        "charisma"
+      ],
+      "armor": [
+        "light"
+      ],
+      "weapons": [
+        "simple"
+      ],
+      "subclasses": [
+        {
+          "name": "The Fiend",
+          "text": "Gain temporary hit points when you reduce a hostile creature to 0 hit points."
+        }
+      ],
+      "mvp_playable": false
+    },
+    {
+      "key": "paladin",
+      "name": "Paladin",
+      "hit_die": 10,
+      "primary": "strength",
+      "saving_throws": [
+        "wisdom",
+        "charisma"
+      ],
+      "armor": [
+        "light",
+        "medium",
+        "heavy",
+        "shields"
+      ],
+      "weapons": [
+        "simple",
+        "martial"
+      ],
+      "subclasses": [
+        {
+          "name": "Oath of Devotion",
+          "text": "Sacred Weapon and Turn the Unholy; the classic knight."
+        }
+      ],
+      "mvp_playable": false
+    },
+    {
+      "key": "monk",
+      "name": "Monk",
+      "hit_die": 8,
+      "primary": "dexterity",
+      "saving_throws": [
+        "strength",
+        "dexterity"
+      ],
+      "armor": [],
+      "weapons": [
+        "simple",
+        "shortswords"
+      ],
+      "subclasses": [
+        {
+          "name": "Way of the Open Hand",
+          "text": "Flurry of Blows that knocks targets prone or pushes them."
+        }
+      ],
+      "mvp_playable": false
+    },
+    {
+      "key": "sorcerer",
+      "name": "Sorcerer",
+      "hit_die": 6,
+      "primary": "charisma",
+      "saving_throws": [
+        "constitution",
+        "charisma"
+      ],
+      "armor": [],
+      "weapons": [
+        "daggers",
+        "darts",
+        "slings",
+        "quarterstaffs",
+        "light crossbows"
+      ],
+      "subclasses": [
+        {
+          "name": "Draconic Bloodline",
+          "text": "Draconic resilience raises your AC and grants extra HP."
+        }
+      ],
+      "mvp_playable": false
+    },
+    {
+      "key": "wizard",
+      "name": "Wizard",
+      "hit_die": 6,
+      "primary": "intelligence",
+      "saving_throws": [
+        "intelligence",
+        "wisdom"
+      ],
+      "armor": [],
+      "weapons": [
+        "daggers",
+        "darts",
+        "slings",
+        "quarterstaffs",
+        "light crossbows"
+      ],
+      "subclasses": [
+        {
+          "name": "School of Evocation",
+          "text": "Shape your blasts around allies and add INT to damage."
+        }
+      ],
+      "mvp_playable": true
+    }
+  ],
+  "character_creation": {
+    "ruleset": {
+      "edition": "SRD 5.1",
+      "label": "Doup\u011bDraka Ruleset v1",
+      "max_level": 3,
+      "mvp_races": [
+        "dwarf",
+        "elf",
+        "halfling",
+        "human"
+      ],
+      "mvp_classes": [
+        "cleric",
+        "fighter",
+        "rogue",
+        "wizard"
+      ],
+      "notes": "Reference catalogs may list additional SRD entries; only mvp_* options are fully supported in chapter 1. Subclass and lineage picks are flavor text. Levels above 3 are locked until Extra Attack, Uncanny Dodge, Destroy Undead, and level-3 spell lists are implemented."
+    },
+    "standard_array": [
+      15,
+      14,
+      13,
+      12,
+      10,
+      8
+    ],
+    "ability_order": [
+      "strength",
+      "dexterity",
+      "constitution",
+      "intelligence",
+      "wisdom",
+      "charisma"
+    ],
+    "skill_abilities": {
+      "Acrobatics": "dexterity",
+      "Animal Handling": "wisdom",
+      "Arcana": "intelligence",
+      "Athletics": "strength",
+      "Deception": "charisma",
+      "History": "intelligence",
+      "Insight": "wisdom",
+      "Intimidation": "charisma",
+      "Investigation": "intelligence",
+      "Medicine": "wisdom",
+      "Nature": "intelligence",
+      "Perception": "wisdom",
+      "Performance": "charisma",
+      "Persuasion": "charisma",
+      "Religion": "intelligence",
+      "Sleight of Hand": "dexterity",
+      "Stealth": "dexterity",
+      "Survival": "wisdom"
+    },
+    "backgrounds": [
+      {
+        "key": "acolyte",
+        "mvp_playable": true,
+        "name": "Acolyte",
+        "skill_proficiencies": [
+          "Insight",
+          "Religion"
+        ],
+        "languages": 2,
+        "equipment": [
+          "holy symbol",
+          "prayer book",
+          "vestments",
+          "common clothes",
+          "pouch with 15 gp"
+        ],
+        "feature": {
+          "name": "Shelter of the Faithful",
+          "text": "Temple shelter at the Shrine reveals the thief's route."
+        }
+      },
+      {
+        "key": "criminal",
+        "mvp_playable": true,
+        "name": "Criminal",
+        "skill_proficiencies": [
+          "Deception",
+          "Stealth"
+        ],
+        "languages": 0,
+        "equipment": [
+          "crowbar",
+          "dark common clothes",
+          "hood",
+          "pouch with 15 gp"
+        ],
+        "feature": {
+          "name": "Criminal Contact",
+          "text": "A contact at the Goblin Market confirms stolen goods and bells."
+        }
+      },
+      {
+        "key": "folk_hero",
+        "mvp_playable": true,
+        "name": "Folk Hero",
+        "skill_proficiencies": [
+          "Animal Handling",
+          "Survival"
+        ],
+        "languages": 0,
+        "equipment": [
+          "artisan's tools",
+          "shovel",
+          "iron pot",
+          "common clothes",
+          "pouch with 10 gp"
+        ],
+        "feature": {
+          "name": "Rustic Hospitality",
+          "text": "Common folk aid you in the Sunken Corridor."
+        }
+      },
+      {
+        "key": "sage",
+        "mvp_playable": true,
+        "name": "Sage",
+        "skill_proficiencies": [
+          "Arcana",
+          "History"
+        ],
+        "languages": 2,
+        "equipment": [
+          "ink",
+          "quill",
+          "small knife",
+          "letter from a colleague",
+          "common clothes",
+          "pouch with 10 gp"
+        ],
+        "feature": {
+          "name": "Researcher",
+          "text": "Scholarly training reveals lore in the Vault of Echoes."
+        }
+      },
+      {
+        "key": "soldier",
+        "mvp_playable": true,
+        "name": "Soldier",
+        "skill_proficiencies": [
+          "Athletics",
+          "Intimidation"
+        ],
+        "languages": 0,
+        "equipment": [
+          "insignia of rank",
+          "trophy",
+          "deck of cards",
+          "common clothes",
+          "pouch with 10 gp"
+        ],
+        "feature": {
+          "name": "Military Rank",
+          "text": "Bandits recognize rank at the Bandit Camp."
+        }
+      },
+      {
+        "key": "hermit",
+        "mvp_playable": true,
+        "name": "Hermit",
+        "skill_proficiencies": [
+          "Medicine",
+          "Religion"
+        ],
+        "languages": 1,
+        "equipment": [
+          "scroll case",
+          "winter blanket",
+          "herbalism kit",
+          "common clothes",
+          "pouch with 5 gp"
+        ],
+        "feature": {
+          "name": "Discovery",
+          "text": "A personal revelation lights the Underground River."
+        }
+      }
+    ],
+    "class_skill_picks": {
+      "fighter": {
+        "options": [
+          "Acrobatics",
+          "Animal Handling",
+          "Athletics",
+          "History",
+          "Insight",
+          "Intimidation",
+          "Perception",
+          "Survival"
+        ],
+        "count": 2
+      },
+      "rogue": {
+        "options": [
+          "Acrobatics",
+          "Athletics",
+          "Deception",
+          "Insight",
+          "Intimidation",
+          "Investigation",
+          "Perception",
+          "Performance",
+          "Persuasion",
+          "Sleight of Hand",
+          "Stealth"
+        ],
+        "count": 4
+      },
+      "cleric": {
+        "options": [
+          "History",
+          "Insight",
+          "Medicine",
+          "Persuasion",
+          "Religion"
+        ],
+        "count": 2
+      },
+      "wizard": {
+        "options": [
+          "Arcana",
+          "History",
+          "Insight",
+          "Investigation",
+          "Medicine",
+          "Religion"
+        ],
+        "count": 2
+      }
+    },
+    "equipment_packages": {
+      "fighter": {
+        "guardian": [
+          "shortsword",
+          "shield",
+          "traveler's clothes"
+        ],
+        "duelist": [
+          "longsword",
+          "shortsword",
+          "traveler's clothes"
+        ],
+        "archer": [
+          "longbow",
+          "shortsword",
+          "20 arrows",
+          "traveler's clothes"
+        ]
+      },
+      "rogue": {
+        "scout": [
+          "shortbow",
+          "shortsword",
+          "dagger",
+          "20 arrows",
+          "thieves' tools",
+          "traveler's clothes"
+        ]
+      },
+      "cleric": {
+        "warpriest": [
+          "mace",
+          "shield",
+          "traveler's clothes"
+        ]
+      },
+      "wizard": {
+        "scholar": [
+          "dagger",
+          "spellbook",
+          "traveler's clothes"
+        ]
+      }
+    },
+    "spell_pick_limits": {
+      "wizard": {
+        "cantrips": 3,
+        "level_one_known": 4
+      },
+      "cleric": {
+        "cantrips": 3,
+        "level_one_prepared": 4
+      }
+    },
+    "spell_options": {
+      "wizard": {
+        "cantrips": [
+          "Dancing Lights",
+          "Fire Bolt",
+          "Light",
+          "Mage Hand",
+          "Mending",
+          "Message",
+          "Minor Illusion",
+          "Prestidigitation"
+        ],
+        "level_one": [
+          "Burning Hands",
+          "Mage Armor",
+          "Magic Missile",
+          "Shield"
+        ]
+      },
+      "cleric": {
+        "cantrips": [
+          "Guidance",
+          "Light",
+          "Mending",
+          "Resistance",
+          "Sacred Flame",
+          "Spare the Dying",
+          "Thaumaturgy"
+        ],
+        "level_one": [
+          "Bless",
+          "Cure Wounds",
+          "Healing Word",
+          "Shield of Faith"
+        ]
+      }
+    },
+    "personality_fields": [
+      "alignment",
+      "ideal",
+      "bond",
+      "flaw",
+      "backstory"
+    ],
+    "fighting_styles": [
+      "defense",
+      "dueling"
+    ],
+    "cleric_domains_mvp": [
+      "life"
+    ],
+    "rogue_expertise_picks": 2
+  },
+  "backgrounds": [],
+  "feats": [],
+  "draconic_ancestry": {},
+  "locations": []
+}

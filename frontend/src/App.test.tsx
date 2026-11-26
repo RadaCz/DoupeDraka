@@ -737,7 +737,7 @@ describe('Telegram Mini App', () => {
 
     expect(screen.getAllByRole('button', { name: 'Zkusit znovu' }).length).toBeGreaterThanOrEqual(1);
     expect(screen.queryByText(/stejným klíčem|stejnym klicem|idempotenc/i)).not.toBeInTheDocument();
-    expect(screen.getByText(/Poslední akce se možná nedokončila/i)).toBeInTheDocument();
+    expect(screen.getByText('Poslední akce se možná nedokončila. Zkus to znovu – nic se nezapočítá dvakrát.')).toBeInTheDocument();
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Zkusit znovu' })[0]);
     await waitFor(() => {
@@ -748,6 +748,8 @@ describe('Telegram Mini App', () => {
     expect(streamPosts[0].body?.action).toBe('prozkoumat chodbu');
     expect(streamPosts[1].body?.action).toBe('prozkoumat chodbu');
 
-    await waitFor(() => expect(screen.queryByText(/Poslední akce se možná nedokončila/i)).not.toBeInTheDocument());
+    await waitFor(() => expect(
+      screen.queryByText('Poslední akce se možná nedokončila. Zkus to znovu – nic se nezapočítá dvakrát.'),
+    ).not.toBeInTheDocument());
   });
 });

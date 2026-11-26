@@ -36,6 +36,15 @@ const FORBIDDEN_ASCII_CS = [
   'nastroje',
   'obtiznost',
   'goblini',
+  'Rasove',
+  'Navyseni',
+  'Tulak',
+  'Carodej',
+  'Temnobys',
+  'Odlozeno',
+  'Bojovnik',
+  'clovek',
+  'vycvik',
 ];
 
 function extractCsValues(i18nSource: string): string[] {
