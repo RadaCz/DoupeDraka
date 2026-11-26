@@ -12,6 +12,34 @@ import {
 const API = 'http://127.0.0.1:8001';
 const OUT = resolve(dirname(fileURLToPath(import.meta.url)), '../../docs/pr-screenshots/18-1');
 
+/** Hide fixed chrome and grow the viewport so element screenshots include full sheet content. */
+async function prepareFullSheetCapture(page: import('@playwright/test').Page, width: number) {
+  const metrics = await page.evaluate(() => {
+    const sheet = document.querySelector('.character-screen.character-v2') as HTMLElement | null;
+    const main = document.querySelector('.main-content') as HTMLElement | null;
+    const nav = document.querySelector('.bottom-nav') as HTMLElement | null;
+    if (nav) nav.style.display = 'none';
+    if (main) {
+      main.style.overflow = 'visible';
+      main.style.height = 'auto';
+      main.style.maxHeight = 'none';
+      main.style.minHeight = `${main.scrollHeight}px`;
+      main.scrollTop = 0;
+    }
+    document.body.style.paddingBottom = '0';
+    return {
+      sheetHeight: sheet?.scrollHeight ?? 900,
+      mainScroll: main?.scrollHeight ?? 900,
+    };
+  });
+  const viewportHeight = Math.min(
+    Math.max(metrics.sheetHeight + 48, metrics.mainScroll + 24, 900),
+    8000,
+  );
+  await page.setViewportSize({ width, height: viewportHeight });
+  await page.evaluate(() => window.scrollTo(0, 0));
+}
+
 async function seedHero(request: APIRequestContext, telegramId: number, name: string) {
   const initData = signedTelegramInitData(telegramId);
   const token = await apiTelegramToken(request, initData);
@@ -65,10 +93,9 @@ for (const width of [320, 375, 430] as const) {
     await page.locator('.char-v2-vitals-primary').screenshot({
       path: `${OUT}/after-vitals-${width}px.png`,
     });
-    await page.screenshot({
-      path: `${OUT}/after-character-${width}px.png`,
-      fullPage: true,
-    });
+    const sheet = page.locator('.character-screen.character-v2');
+    await prepareFullSheetCapture(page, width);
+    await sheet.screenshot({ path: `${OUT}/after-character-${width}px.png` });
   });
 }
 
@@ -118,12 +145,17 @@ test('PR screenshot after character 375px at level cap', async ({ page, request 
   await expect(page.getByTestId('level-cap-note')).toBeVisible({ timeout: 20_000 });
   await expect(page.locator('.char-v2-vitals-primary')).toContainText('99');
   await expect(page.locator('.char-v2-vitals-primary')).not.toContainText('/ 100');
-  await page.locator('.char-v2-identity').screenshot({
-    path: `${OUT}/after-character-375-cap.png`,
+  await page.locator('.char-v2-vitals-primary').screenshot({
+    path: `${OUT}/after-vitals-375-cap.png`,
   });
   await nav.getByRole('button', { name: /^Home$|^Overview$|^Přehled$/i }).click();
   await expect(page.getByText(/Pokračuj tam, kde jsi skončil/i)).toBeVisible();
   await page.locator('.hero-card-footer').screenshot({
     path: `${OUT}/after-home-375-cap.png`,
   });
+  await nav.getByRole('button', { name: /^Character$|^Postava$/i }).click();
+  await expect(page.getByTestId('level-cap-note')).toBeVisible({ timeout: 20_000 });
+  const sheet = page.locator('.character-screen.character-v2');
+  await prepareFullSheetCapture(page, width);
+  await sheet.screenshot({ path: `${OUT}/after-character-375-cap.png` });
 });

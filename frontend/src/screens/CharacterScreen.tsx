@@ -232,9 +232,12 @@ export function CharacterScreen({
         <h2 id="char-progress-heading" className="char-v2-section-title">{t('Progress')}</h2>
         <article className="char-v2-progress-card">
           {atLevelCap && maxLevel != null ? (
-            <p className="char-v2-xp-caption" data-testid="level-cap-note">
-              {t('In chapter 1, the highest level is {max_level}.').replace('{max_level}', String(maxLevel))}
-            </p>
+            <>
+              <p className="char-v2-xp-caption tabular-nums">{experienceDisplay}</p>
+              <p className="char-v2-xp-caption" data-testid="level-cap-note">
+                {t('In chapter 1, the highest level is {max_level}.').replace('{max_level}', String(maxLevel))}
+              </p>
+            </>
           ) : xp.showBar ? (
             <>
               <div

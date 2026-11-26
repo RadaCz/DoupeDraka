@@ -67,6 +67,7 @@ describe('AC18-1 Character sheet (cs)', () => {
       />,
     );
     expect(screen.getAllByText(/^99$/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('99 ZK')).toBeInTheDocument();
     expect(screen.queryByText(/99 \/ 100/)).not.toBeInTheDocument();
     expect(document.querySelector('.char-v2-xp-track')).not.toBeInTheDocument();
     expect(screen.getByTestId('level-cap-note')).toHaveTextContent(/V 1\. kapitole je nejvyšší 3\. úroveň/);
