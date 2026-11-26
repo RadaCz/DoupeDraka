@@ -77,7 +77,7 @@ for (const width of WIDTHS) {
     await composer.fill('prozkoumat sklep');
     await page.getByRole('button', { name: /send action|odeslat akci/i }).click();
 
-    await expect(page.getByText(/Poslední akce se možná nedokončila/i)).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByText('Poslední akce se možná nedokončila. Zkus to znovu – nic se nezapočítá dvakrát.')).toBeVisible({ timeout: 20_000 });
     await expect(page.getByRole('button', { name: 'Zkusit znovu' }).first()).toBeVisible();
     await expect(page.getByText(/stejným klíčem|idempotenc/i)).toHaveCount(0);
 

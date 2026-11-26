@@ -34,6 +34,9 @@ const sampleCharacter: Character = {
   verbose: true,
 };
 
+const PENDING_TURN_RECOVERY_CS =
+  'Poslední akce se možná nedokončila. Zkus to znovu – nic se nezapočítá dvakrát.';
+
 describe('PlayJournal pending recovery', () => {
   it('shows Czech recovery copy and Zkusit znovu without idempotency jargon', () => {
     localStorage.setItem('app_locale', 'cs');
@@ -54,7 +57,8 @@ describe('PlayJournal pending recovery', () => {
       </LocaleProvider>,
     );
 
-    expect(screen.getByText(/Poslední akce se možná nedokončila/i)).toBeInTheDocument();
+    expect(screen.getByText(PENDING_TURN_RECOVERY_CS)).toBeInTheDocument();
+    expect(PENDING_TURN_RECOVERY_CS).toContain('\u2013');
     expect(screen.queryByText(/klíčem|klicem|idempotenc/i)).not.toBeInTheDocument();
     const retry = screen.getByRole('button', { name: 'Zkusit znovu' });
     expect(retry).toHaveClass('ghost');

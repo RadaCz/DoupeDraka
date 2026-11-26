@@ -726,7 +726,7 @@ const cs: Record<string, string> = {
   'The dice have spoken. The narrator continues…': 'Kostky padly. Vypravěč pokračuje…',
   'Restoring the saved result…': 'Obnovuji uložený výsledek…',
   'Your last action may not have finished. You can try again without losing progress.':
-    'Poslední akce se možná nedokončila. Můžeš to zkusit znovu — nic se neztratí.',
+    'Poslední akce se možná nedokončila. Zkus to znovu – nic se nezapočítá dvakrát.',
   'Each search uses one six-sided die: a 1 brings an enemy; other results may reveal clues, quiet, or 1–4 gold coins. After a fight or escape, your next search is safe. Rejected actions cost no Adventure Mana.': 'Každý průzkum háží jednou šestistrannou kostkou: při 1 se objeví nepřítel, jiný výsledek může odhalit stopy, klid nebo 1–4 zlaté mince. Po boji nebo útěku je další průzkum bezpečný. Odmítnuté akce nestojí dobrodružnou manu.',
   'Action words guide ability checks: strength for force, dexterity for stealth, constitution to endure, intelligence to inspect, wisdom to notice, and charisma to persuade.': 'Slova v akci určují vlastnost pro hod: sila pro silove akce, obratnost pro plížení, odolnost pro vydrz, inteligence pro prohlížení, moudrost pro všímání a charisma pro přesvědčování.',
   'CHARACTER': 'POSTAVA',
