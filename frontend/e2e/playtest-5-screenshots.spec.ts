@@ -43,7 +43,7 @@ for (const width of WIDTHS) {
     for (let i = 0; i < 4; i += 1) {
       await page.getByRole('button', { name: WIZARD_CONTINUE_BTN }).click();
     }
-    await expect(page.locator('.wizard-spell-tag').first()).toBeVisible();
+    await expect(page.locator('.wizard-spell-tag-line').first()).toBeVisible();
     const file = `${phase}-spells-${width}px.png`;
     await page.screenshot({ path: join(OUT_DIR, file), fullPage: true });
     await testInfo.attach(file, { path: join(OUT_DIR, file), contentType: 'image/png' });

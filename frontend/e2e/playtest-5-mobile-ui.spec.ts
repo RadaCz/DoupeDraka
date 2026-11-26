@@ -34,9 +34,9 @@ for (const width of WIDTHS) {
     for (let i = 0; i < 4; i += 1) {
       await page.getByRole('button', { name: WIZARD_CONTINUE_BTN }).click();
     }
-    const pillWithTag = page.locator('.option-pill:has(.wizard-spell-tag)').first();
+    const pillWithTag = page.locator('.option-pill:has(.wizard-spell-tag-line)').first();
     await expect(pillWithTag).toBeVisible();
-    const tag = pillWithTag.locator('.wizard-spell-tag');
+    const tag = pillWithTag.locator('.wizard-spell-tag-line');
     await expect(tag).toContainText(STORY_SPELL_LABEL);
     const pillBox = await pillWithTag.boundingBox();
     const tagBox = await tag.boundingBox();

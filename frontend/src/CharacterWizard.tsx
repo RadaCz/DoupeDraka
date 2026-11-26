@@ -20,6 +20,7 @@ import {
   formatAbilityIncreases,
   formatWizardSpeedFt,
 } from './character/wizardDisplay';
+import { displaySpellName } from './spells/spellDisplay';
 
 export interface CharacterDraft {
   name: string;
@@ -300,7 +301,7 @@ export function CharacterWizard({
       <div className="wizard-progress" aria-label={`${t('Step')} ${step + 1} ${t('of')} ${STEPS.length}`}>
         {STEPS.map((item, index) => (
           <div className={`wizard-progress-step ${index <= step ? 'active' : ''}`} key={item}>
-            <span>{index < step ? '✓' : `0${index + 1}`}</span>
+            <span>{index < step ? '✓' : String(index + 1).padStart(2, '0')}</span>
             <small>{t(item)}</small>
           </div>
         ))}
@@ -520,8 +521,8 @@ export function CharacterWizard({
                   className={`option-pill ${cantrips.includes(spell) ? 'selected' : ''}`}
                   onClick={() => setCantrips(current => current.includes(spell) ? current.filter(item => item !== spell) : [...current, spell].slice(0, meta.spell_pick_limits[classKey].cantrips))}
                 >
-                  <span className="wizard-spell-pill-label">{spell}</span>
-                  {storyOnlySpell(spell) && <SpellNarrativeOnlyTag className="char-v2-tag warn wizard-spell-tag" />}
+                  <span className="wizard-spell-pill-label">{displaySpellName(spell, locale, t)}</span>
+                  {storyOnlySpell(spell) && <SpellNarrativeOnlyTag className="char-v2-tag warn wizard-spell-tag-line" />}
                 </button>
               ))}
             </div>
@@ -543,8 +544,8 @@ export function CharacterWizard({
                       : [...current, spell].slice(0, limit));
                   }}
                 >
-                  <span className="wizard-spell-pill-label">{spell}</span>
-                  {storyOnlySpell(spell) && <SpellNarrativeOnlyTag className="char-v2-tag warn wizard-spell-tag" />}
+                  <span className="wizard-spell-pill-label">{displaySpellName(spell, locale, t)}</span>
+                  {storyOnlySpell(spell) && <SpellNarrativeOnlyTag className="char-v2-tag warn wizard-spell-tag-line" />}
                 </button>
               ))}
             </div>

@@ -4,9 +4,10 @@ import { useI18n } from '../i18n';
 import { titleCase } from '../components/characterVitals';
 import { highestSpellLevel } from './spellbook';
 import { SpellNarrativeOnlyTag } from './SpellNarrativeOnlyTag';
+import { displaySpellName } from './spellDisplay';
 
 export function SrdSpellReference({ character, spells }: { character: Character | null; spells: Spell[] }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [search, setSearch] = useState('');
   const [spellLevel, setSpellLevel] = useState('all');
   const [scope, setScope] = useState<'level' | 'catalog'>('level');
@@ -50,7 +51,7 @@ export function SrdSpellReference({ character, spells }: { character: Character 
             <summary>
               <span className="spell-level">{spell.level === 0 ? 'C' : spell.level}</span>
               <span className="spell-name">
-                <strong>{spell.name}</strong>
+                <strong>{displaySpellName(spell.name, locale, t)}</strong>
                 <small>{t(titleCase(spell.school))} · {spell.range}</small>
               </span>
               {spell.effect_modeled ? <span className="char-v2-tag">{t('Engine modeled')}</span> : <SpellNarrativeOnlyTag />}

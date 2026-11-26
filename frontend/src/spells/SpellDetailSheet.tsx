@@ -8,6 +8,7 @@ import {
   spellEngineKind,
 } from './spellbook';
 import { SpellNarrativeOnlyTag } from './SpellNarrativeOnlyTag';
+import { displaySpellName } from './spellDisplay';
 
 const KIND_LABEL: Record<string, string> = {
   attack: 'Attack spell',
@@ -32,7 +33,7 @@ export function SpellDetailSheet({
   onClose: () => void;
   onCast: (action: string) => void;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const block = castBlockReasonKey(character, spell, Boolean(busy));
   const blockMessage = block ? t(CAST_BLOCK_MESSAGES[block]) : null;
   const kind = spellEngineKind(spell);
@@ -44,7 +45,7 @@ export function SpellDetailSheet({
       <div className="inventory-detail-card spell-detail-card" onClick={event => event.stopPropagation()}>
         <p className="spellbook-detail-eyebrow">{spell.level === 0 ? t('Cantrip') : `${t('Level')} ${spell.level}`}</p>
         <h2 id="spell-detail-title">
-          {spell.name}
+          {displaySpellName(spell.name, locale, t)}
           {!spell.effect_modeled && (
             <>
               {' '}

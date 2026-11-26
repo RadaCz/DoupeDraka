@@ -67,7 +67,7 @@ const EN_DOC_KEYS = [
   'You can move through the space of any creature larger than you.',
 ];
 
-const DEFERRED_HIDDEN = ['Trans', 'Trpasličí bojový výcvik', 'Hobití mrštnost', 'Odloženo', 'Odlozeno'];
+const DEFERRED_HIDDEN = ['Trans', 'Trpasličí bojový výcvik', 'Hobití mrštnost', 'Odloženo', 'Odlozeno', 'Skills'];
 
 function renderWizard() {
   return render(
@@ -123,6 +123,13 @@ describe('CharacterWizard cs localization (LOC tvorba postavy)', () => {
       assertDeferredHidden(text);
     });
   }
+
+  it('wizard stepper uses Dovednosti instead of English Skills', () => {
+    startStepByStep();
+    const stepper = document.querySelector('.wizard-progress');
+    expect(stepper?.textContent ?? '').toMatch(/dovednosti/i);
+    expect(stepper?.textContent ?? '').not.toMatch(/\bSkills\b/);
+  });
 
   it('step 1 race grid uses Czech metres and ability abbreviations', () => {
     startStepByStep();

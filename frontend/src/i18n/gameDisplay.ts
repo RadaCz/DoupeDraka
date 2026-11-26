@@ -33,6 +33,7 @@ const ITEM_LABEL_CS: Record<string, string> = {
   'shrine bell': 'chrámový zvon',
   'echo shard': 'střep ozvěny',
   shield: 'štít',
+  'chain mail': 'kroužková zbroj',
   ...(chapterCatalog.items as Record<string, string>),
 };
 
