@@ -13,6 +13,8 @@ export const PLAYER_FACING_API_ERRORS: Record<string, string> = {
   'Character changed while reviving; retry': 'Character changed while reviving; retry',
   'Concurrent idempotency conflict; retry': 'Concurrent idempotency conflict; retry',
   'Idempotency key belongs to another account': 'Idempotency key belongs to another account',
+  'Idempotency key belongs to another character': 'Idempotency key belongs to another character',
+  'Idempotency key was used for a different action': 'Idempotency key was used for a different action',
   'Pro tier is not available in this build.': 'Pro tier is not available in this build.',
   'Paid narration tiers require a configured external provider; use lite.':
     'Paid narration tiers require a configured external provider; use lite.',

@@ -28,12 +28,36 @@ export function clearPendingAction(): void {
   sessionStorage.removeItem(PENDING_ACTION_KEY);
 }
 
-export function idempotencyKeyForTurn(characterId: string, action: string): string {
-  const existing = readPendingAction();
-  if (existing && existing.characterId === characterId && existing.action === action) {
-    return existing.idempotencyKey;
+function mintIdempotencyKey(): string {
+  return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+/**
+ * Resolve the pending turn receipt for this action. Reuses `held` from React state on
+ * retry so re-renders cannot rotate the idempotency key mid-recovery.
+ */
+export function resolvePendingTurnKey(
+  characterId: string,
+  action: string,
+  held: StoredPendingAction | null,
+): StoredPendingAction {
+  if (held?.characterId === characterId && held.action === action) {
+    writePendingAction(held);
+    return held;
   }
-  const key = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  writePendingAction({ characterId, action, idempotencyKey: key });
-  return key;
+  const stored = readPendingAction();
+  if (stored?.characterId === characterId && stored.action === action) {
+    return stored;
+  }
+  const pending: StoredPendingAction = {
+    characterId,
+    action,
+    idempotencyKey: mintIdempotencyKey(),
+  };
+  writePendingAction(pending);
+  return pending;
+}
+
+export function idempotencyKeyForTurn(characterId: string, action: string): string {
+  return resolvePendingTurnKey(characterId, action, null).idempotencyKey;
 }

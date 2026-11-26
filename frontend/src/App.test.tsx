@@ -142,16 +142,28 @@ function jsonResponse(body: unknown, status = 200) {
 function setupApp(
   initialCharacters: Character[] = [],
   initialHistory: Record<string, JournalEvent[]> = {},
-  options?: { streamStatus?: number },
+  options?: { streamStatus?: number; streamFailures?: number },
 ) {
   let characters = [...initialCharacters];
   const history = { ...initialHistory };
-  const requests: Array<{ url: string; method: string; body: Record<string, unknown> | null }> = [];
+  const requests: Array<{
+    url: string;
+    method: string;
+    body: Record<string, unknown> | null;
+    headers: Record<string, string>;
+  }> = [];
+  let streamAttempts = 0;
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = new URL(String(input), 'http://localhost');
     const method = init?.method ?? 'GET';
     const body = typeof init?.body === 'string' ? JSON.parse(init.body) as Record<string, unknown> : null;
-    requests.push({ url: `${url.pathname}${url.search}`, method, body });
+    const headers: Record<string, string> = {};
+    if (init?.headers) {
+      new Headers(init.headers as HeadersInit).forEach((value, key) => {
+        headers[key.toLowerCase()] = value;
+      });
+    }
+    requests.push({ url: `${url.pathname}${url.search}`, method, body, headers });
 
     if (url.pathname === '/api/auth/telegram') return jsonResponse({ access_token: 'memory-only-token' });
     if (url.pathname === '/api/characters' && method === 'GET') return jsonResponse(characters);
@@ -220,6 +232,13 @@ function setupApp(
 
     const actionMatch = url.pathname.match(/^\/api\/characters\/([^/]+)\/actions\/stream$/);
     if (actionMatch && method === 'POST') {
+      streamAttempts += 1;
+      if (options?.streamFailures && streamAttempts <= options.streamFailures) {
+        return jsonResponse(
+          { detail: 'Concurrent idempotency conflict; retry' },
+          options.streamStatus ?? 409,
+        );
+      }
       if (options?.streamStatus === 402) {
         return jsonResponse(
           { detail: 'Not enough narrator credits for this turn. Top up to continue.' },
@@ -695,5 +714,40 @@ describe('Telegram Mini App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Více' }));
     fireEvent.click(await screen.findByRole('button', { name: /dalsiho dobrodruha|dalšího dobrodruha/i }));
     expect(document.getElementById('wizard-title')).toHaveTextContent(/begin|zacit|začít/i);
+  });
+
+  it('retries a failed turn with the same Idempotency-Key and mints a new key after success', async () => {
+    localStorage.setItem('app_locale', 'cs');
+    localStorage.setItem('active_character_id', mockCharacter.id);
+    const requests = setupApp([mockCharacter], {}, { streamFailures: 1, streamStatus: 500 });
+    render(<App />);
+    await screen.findByRole('heading', { name: /Vítej zpět, rada/i });
+    fireEvent.click(screen.getByRole('button', { name: /Pokračovat/i }));
+    await screen.findByRole('heading', { name: /Šeptající sklep/i });
+
+    fireEvent.change(screen.getByLabelText(/tvoje akce/i), { target: { value: 'prozkoumat chodbu' } });
+    fireEvent.click(screen.getByRole('button', { name: /odeslat akci/i }));
+    await waitFor(() => {
+      expect(requests.filter(item => item.url.endsWith('/actions/stream'))).toHaveLength(1);
+    });
+
+    const idemHeader = (item: (typeof requests)[number]) => item.headers['idempotency-key'];
+    const firstKey = requests.find(item => item.url.endsWith('/actions/stream') && idemHeader(item));
+    expect(firstKey).toBeTruthy();
+
+    expect(screen.getAllByRole('button', { name: 'Zkusit znovu' }).length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByText(/stejným klíčem|stejnym klicem|idempotenc/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/Poslední akce se možná nedokončila/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Zkusit znovu' })[0]);
+    await waitFor(() => {
+      expect(requests.filter(item => item.url.endsWith('/actions/stream'))).toHaveLength(2);
+    });
+    const streamPosts = requests.filter(item => item.url.endsWith('/actions/stream'));
+    expect(idemHeader(streamPosts[0])).toBe(idemHeader(streamPosts[1]));
+    expect(streamPosts[0].body?.action).toBe('prozkoumat chodbu');
+    expect(streamPosts[1].body?.action).toBe('prozkoumat chodbu');
+
+    await waitFor(() => expect(screen.queryByText(/Poslední akce se možná nedokončila/i)).not.toBeInTheDocument());
   });
 });
