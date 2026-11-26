@@ -336,7 +336,8 @@ export function CharacterScreen({
           <p className="char-v2-section-lead">
             {character.skill_proficiencies.map(skill => {
               const expert = character.expertise_skills?.includes(skill);
-              return expert ? `${skill} (${t('expertise')})` : skill;
+              const label = t(skill);
+              return expert ? `${label} (${t('expertise')})` : label;
             }).join(' · ')}
           </p>
         </section>

@@ -34,6 +34,11 @@ const ITEM_LABEL_CS: Record<string, string> = {
   'echo shard': 'střep ozvěny',
   shield: 'štít',
   'chain mail': 'kroužková zbroj',
+  "artisan's tools": 'řemeslnické nářadí',
+  'common clothes': 'obyčejné oblečení',
+  'iron pot': 'železný hrnec',
+  shovel: 'lopata',
+  'pouch with 10 gp': 'měšec s 10 zl',
   ...(chapterCatalog.items as Record<string, string>),
 };
 
