@@ -301,7 +301,7 @@ export function CharacterWizard({
       <div className="wizard-progress" aria-label={`${t('Step')} ${step + 1} ${t('of')} ${STEPS.length}`}>
         {STEPS.map((item, index) => (
           <div className={`wizard-progress-step ${index <= step ? 'active' : ''}`} key={item}>
-            <span>{index < step ? '✓' : `0${index + 1}`}</span>
+            <span>{index < step ? '✓' : String(index + 1).padStart(2, '0')}</span>
             <small>{t(item)}</small>
           </div>
         ))}
