@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { ClassReference, HeroPreset, RaceReference, ReferenceCatalog, Spell } from './types';
 import { SpellNarrativeOnlyTag } from './spells/SpellNarrativeOnlyTag';
-import { useI18n } from './i18n';
+import { useI18n, type Locale } from './i18n';
 import {
   ABILITY_KEYS,
   assignedAbilities,
@@ -15,6 +15,11 @@ import {
   type AbilityKey,
 } from './character/creation';
 import { displayRaceTraits, raceTraitStatus } from './character/raceTraits';
+import {
+  formatAbilityIncreaseLabel,
+  formatAbilityIncreases,
+  formatWizardSpeedFt,
+} from './character/wizardDisplay';
 
 export interface CharacterDraft {
   name: string;
@@ -63,12 +68,6 @@ const STEPS = [
   'Review',
 ];
 
-function abilityText(values: Record<string, number>) {
-  return Object.entries(values)
-    .map(([ability, value]) => `${ability.slice(0, 3).toUpperCase()} +${value}`)
-    .join(' · ');
-}
-
 export function CharacterWizard({
   catalog,
   presets,
@@ -79,7 +78,11 @@ export function CharacterWizard({
   onPreset,
   onCancel,
 }: CharacterWizardProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+  const abilityText = useMemo(
+    () => (values: Record<string, number>) => formatAbilityIncreases(values, t),
+    [t],
+  );
   const meta = catalog.character_creation;
   const spellModeled = useMemo(() => {
     const byName = new Map<string, boolean>();
@@ -356,6 +359,7 @@ export function CharacterWizard({
             raceKey={raceKey}
             setRaceKey={setRaceKey}
             playableOnly
+            locale={locale}
             t={t}
             abilityText={abilityText}
           />
@@ -680,6 +684,7 @@ function RaceGrid({
   raceKey,
   setRaceKey,
   playableOnly,
+  locale,
   t,
   abilityText,
 }: {
@@ -687,6 +692,7 @@ function RaceGrid({
   raceKey: string;
   setRaceKey: (key: string) => void;
   playableOnly: boolean;
+  locale: Locale;
   t: (label: string) => string;
   abilityText: (values: Record<string, number>) => string;
 }) {
@@ -703,8 +709,14 @@ function RaceGrid({
             disabled={planned}
             onClick={() => setRaceKey(item.key)}
           >
-            <span className="card-title-row"><strong>{t(item.name)}</strong><small>{item.speed} ft.</small></span>
-            <span className="card-stat">{abilityText(item.ability_increase)}</span>
+            <span className="card-title-row"><strong>{t(item.name)}</strong><small>{formatWizardSpeedFt(item.speed, locale)}</small></span>
+            <span className="race-ability-badges" aria-label={abilityText(item.ability_increase)}>
+              {Object.entries(item.ability_increase).map(([ability, value]) => (
+                <span className="race-ability-badge" key={ability}>
+                  {formatAbilityIncreaseLabel(ability, value, t)}
+                </span>
+              ))}
+            </span>
           </button>
         );
       })}

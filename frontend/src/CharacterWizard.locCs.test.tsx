@@ -124,6 +124,27 @@ describe('CharacterWizard cs localization (LOC tvorba postavy)', () => {
     });
   }
 
+  it('step 1 race grid uses Czech metres and ability abbreviations', () => {
+    startStepByStep();
+    const grid = screen.getByRole('button', { name: /elf/i }).closest('.race-grid');
+    expect(grid).toBeTruthy();
+    const text = (grid as HTMLElement).textContent ?? '';
+    expect(text).toMatch(/9 m/);
+    expect(text).toMatch(/7,5 m/);
+    expect(text).not.toMatch(/\bft\./i);
+    expect(text).not.toMatch(/\bSTR\b|\bDEX\b|\bCON\b|\bWIS\b/);
+    expect(text).toMatch(/OBR \+2/);
+  });
+
+  it('darkvision trait is labeled Jen v příběhu in wizard', () => {
+    startStepByStep();
+    fireEvent.click(screen.getByRole('button', { name: /elf/i }));
+    const row = screen.getByText(/vidění ve tmě/i).closest('.char-v2-spell-row');
+    expect(row).toBeTruthy();
+    expect((row as HTMLElement).textContent ?? '').toMatch(/jen v příběhu/i);
+    expect((row as HTMLElement).textContent ?? '').not.toMatch(/platí ve hře/i);
+  });
+
   for (const raceKey of ['human', 'elf', 'dwarf', 'halfling'] as const) {
     for (const classKey of ['fighter', 'rogue', 'cleric', 'wizard'] as const) {
       it(`skills step ${raceKey} × ${classKey} translates class skill options`, () => {

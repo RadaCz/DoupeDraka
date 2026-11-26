@@ -38,7 +38,7 @@
   line-height: 1.45;
 }
 
-.wizard-next .primary {
+.wizard-next.primary {
   min-height: 48px;
   width: 100%;
 }

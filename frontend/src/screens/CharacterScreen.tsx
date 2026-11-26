@@ -20,7 +20,7 @@ import {
 } from '../character/characterSheet';
 import { backgroundFeatureFor, backgroundFeatureUsed } from '../character/backgroundFeatures';
 import { classFeatureLines } from '../character/classFeatures';
-import { characterRaceFeatureRows } from '../character/raceTraits';
+import { characterRaceFeatureRows, raceTraitStatus } from '../character/raceTraits';
 import { heroSpellRows } from '../spells/spellbook';
 import { SpellNarrativeOnlyTag } from '../spells/SpellNarrativeOnlyTag';
 
@@ -84,12 +84,6 @@ export function CharacterScreen({
   const xp = xpProgress(character.xp);
   const atLevelCap = isAtMaxMvpLevel(character.level, maxLevel);
   const hasSpellcasting = Object.values(character.max_spell_slots ?? {}).some(count => count > 0);
-
-  const engineTraitStatus = (trait: { modeled: boolean; deferred: boolean }) => {
-    if (trait.deferred) return t('Deferred in MVP');
-    if (trait.modeled) return t('Active in engine');
-    return t('Reference only');
-  };
 
   return (
     <section className="screen character-screen character-v2" aria-busy={busy || undefined}>
@@ -276,7 +270,7 @@ export function CharacterScreen({
               <li key={trait.id} className="char-v2-spell-row">
                 <div className="char-v2-spell-head">
                   <strong>{t(trait.name)}</strong>
-                  <small>{engineTraitStatus(trait)}</small>
+                  <small>{raceTraitStatus({ ...trait, trait_id: trait.id }, t)}</small>
                 </div>
               </li>
             ))}
