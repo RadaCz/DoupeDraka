@@ -10,6 +10,12 @@ from .ai.base import NarrationContext, NarrationRequest
 from .ai.offline import OfflineProvider, narrate_offline as render_offline
 from .ai.ollama import PROVIDER_ERRORS
 from .ai.completion_meta import set_completion_meta
+from .ai.fallback_logging import (
+    llm_narration_intentionally_disabled,
+    log_offline_builtin,
+    log_offline_fallback_from_exception,
+    log_offline_not_configured,
+)
 from .ai.registry import narration_gateway_for, paid_narration_gateway_for
 from .ai.stream_frames import StreamReplaceFrame
 from .engine.models import SAFE_RESPAWN_LOCATION
@@ -134,6 +140,7 @@ class Narrator:
         )
         request = self._request(context)
         if billing_tier == "lite":
+            log_offline_builtin(billing_tier=billing_tier)
             set_completion_meta(
                 "offline",
                 "offline",
@@ -142,6 +149,10 @@ class Narrator:
             )
             return await OfflineProvider().complete(request), "offline"
         if not gateway.has_online_providers:
+            if llm_narration_intentionally_disabled(settings.llm_provider):
+                log_offline_builtin(billing_tier="normal_disabled")
+            else:
+                log_offline_not_configured(provider=settings.llm_provider or "unknown")
             set_completion_meta(
                 "offline",
                 "offline",
@@ -153,7 +164,8 @@ class Narrator:
         try:
             async with _provider_gate(settings.llm_max_concurrency):
                 narration, status = await gateway.complete(request)
-        except PROVIDER_ERRORS:
+        except PROVIDER_ERRORS as exc:
+            log_offline_fallback_from_exception(provider="narrator", exc=exc)
             set_completion_meta(
                 "offline",
                 "offline",
@@ -176,11 +188,16 @@ class Narrator:
         )
         request = self._request(context)
         if billing_tier == "lite":
+            log_offline_builtin(billing_tier=billing_tier)
             set_completion_meta("offline", "offline")
             async for chunk in OfflineProvider().stream(request):
                 yield chunk
             return
         if not gateway.has_online_providers:
+            if llm_narration_intentionally_disabled(settings.llm_provider):
+                log_offline_builtin(billing_tier="normal_disabled")
+            else:
+                log_offline_not_configured(provider=settings.llm_provider or "unknown")
             offline = (await OfflineProvider().complete(request)).strip()
             if offline:
                 yield StreamReplaceFrame(offline)
