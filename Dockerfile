@@ -23,6 +23,7 @@ COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/pytho
 COPY --from=builder /usr/local/bin/uvicorn /usr/local/bin/uvicorn
 COPY --from=builder /usr/local/bin/alembic /usr/local/bin/alembic
 COPY app ./app
+COPY localization ./localization
 COPY alembic ./alembic
 COPY alembic.ini .
 COPY --from=frontend-builder /frontend/dist ./frontend/dist
