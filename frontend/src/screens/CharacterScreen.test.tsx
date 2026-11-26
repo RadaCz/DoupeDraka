@@ -100,7 +100,7 @@ describe('CharacterScreen V2', () => {
     unmount();
   });
 
-  it('labels darkvision as Jen v příběhu on the character sheet (cs)', () => {
+  it('shows darkvision range in meters and narrative hint on the character sheet (cs)', () => {
     localStorage.setItem('app_locale', 'cs');
     const elf: Character = {
       ...hero,
@@ -116,10 +116,8 @@ describe('CharacterScreen V2', () => {
         <CharacterScreen character={elf} characters={[elf]} spells={spells} onSelect={() => {}} onCreate={() => {}} />
       </LocaleProvider>,
     );
-    const section = screen.getByRole('heading', { name: /rasové vlastnosti/i }).closest('section');
-    expect(section).toBeTruthy();
-    const row = (section as HTMLElement).querySelector('.char-v2-spell-row');
-    expect(row?.textContent ?? '').toMatch(/vidění ve tmě/i);
-    expect(row?.textContent ?? '').toMatch(/jen v příběhu/i);
+    expect(screen.getByTestId('char-darkvision-lead')).toHaveTextContent(
+      'Vidění ve tmě: 18 m. Zatím se projevuje jen v příběhu.',
+    );
   });
 });

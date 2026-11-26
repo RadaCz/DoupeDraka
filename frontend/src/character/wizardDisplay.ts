@@ -1,17 +1,27 @@
 import type { Locale } from '../i18n';
 
-/** Czech wizard speed labels — API/engine values stay in feet. */
-const WIZARD_SPEED_CS_M: Record<number, string> = {
+/** Czech distance labels — API/engine values stay in feet (5 ft = 1,5 m). */
+const WIZARD_DISTANCE_CS_M: Record<number, string> = {
   30: '9 m',
   25: '7,5 m',
+  60: '18 m',
 };
 
-export function formatWizardSpeedFt(speedFt: number, locale: Locale): string {
+function formatFeetAsDistance(ft: number, locale: Locale): string {
   if (locale === 'cs') {
-    const mapped = WIZARD_SPEED_CS_M[speedFt];
+    const mapped = WIZARD_DISTANCE_CS_M[ft];
     if (mapped) return mapped;
+    const meters = ft * 0.3;
+    const label = Number.isInteger(meters)
+      ? String(meters)
+      : meters.toLocaleString('cs', { maximumFractionDigits: 1 });
+    return `${label} m`;
   }
-  return `${speedFt} ft.`;
+  return `${ft} ft.`;
+}
+
+export function formatWizardSpeedFt(speedFt: number, locale: Locale): string {
+  return formatFeetAsDistance(speedFt, locale);
 }
 
 const ABILITY_EN_ABBR: Record<string, string> = {

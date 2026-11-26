@@ -134,7 +134,8 @@ for (const width of WIDTHS) {
     await expect(raceSection).toBeVisible();
     const raceText = await raceSection.textContent();
     expect(raceText ?? '').toMatch(/vidění ve tmě/i);
-    expect(raceText ?? '').toMatch(/jen v příběhu/i);
+    expect(raceText ?? '').toMatch(/18\s*m/i);
+    expect(raceText ?? '').toMatch(/zatím se projevuje jen v příběhu/i);
 
     await exposeMainContentScroll(page);
     const sheetText = await sheet.textContent();

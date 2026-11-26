@@ -51,6 +51,14 @@ const FORBIDDEN_ASCII_CS = [
   'Jmeno',
   'Vybaveni',
   'Ozvena',
+  'Zbrane',
+  'Vybava',
+  'mas',
+  'Spotrebni',
+  'predmety',
+  'Ostatni',
+  'kratky',
+  'mec',
 ];
 
 function extractCsValues(i18nSource: string): string[] {

@@ -271,9 +271,12 @@ export function CharacterScreen({
         <section className="char-v2-section" aria-labelledby="char-race-heading">
           <h2 id="char-race-heading" className="char-v2-section-title">{t('Racial traits')}</h2>
           {character.race_features?.darkvision_ft != null && (
-            <p className="char-v2-section-lead">
-              {t('Darkvision')}: <strong className="tabular-nums">{character.race_features.darkvision_ft} {t('ft.')}</strong>
-              {' — '}
+            <p className="char-v2-section-lead" data-testid="char-darkvision-lead">
+              {t('Darkvision')}:{' '}
+              <strong className="tabular-nums">
+                {formatWizardSpeedFt(character.race_features.darkvision_ft, locale)}
+              </strong>
+              {locale === 'cs' ? '. ' : ' — '}
               <span className="char-v2-muted-hint">{t('Used when the engine models light and vision.')}</span>
             </p>
           )}
