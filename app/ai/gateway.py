@@ -18,6 +18,7 @@ from .completion_meta import model_for_provider, set_completion_meta
 from .provider_call_stats import take_provider_call_stats
 from .gateway_metrics import record_fallback as record_gateway_fallback
 from .gateway_metrics import record_provider_success
+from .fallback_logging import log_offline_fallback_from_exception
 from .offline import OfflineProvider
 from .stream_frames import StreamReplaceFrame
 
@@ -77,6 +78,8 @@ class NarrationGateway:
 
     async def complete(self, request: NarrationRequest) -> tuple[str, str]:
         """Return (text, status) where status is narrated or fallback."""
+        last_exc: BaseException | None = None
+        last_failed_provider = "unknown"
         for index, entry in enumerate(self.providers):
             take_provider_call_stats()
             try:
@@ -86,12 +89,15 @@ class NarrationGateway:
                     self._record_success_meta(entry, delivered=True)
                     return text.strip(), "narrated"
             except _RETRYABLE as exc:
+                last_exc = exc
+                last_failed_provider = entry.name
                 reason = type(exc).__name__
                 if self.paid_strict or index + 1 >= len(self.providers):
                     fallback = "offline"
                 else:
                     fallback = self.providers[index + 1].name
-                logger.warning("%s failed (%s); falling back to %s", entry.name, exc, fallback)
+                if fallback != "offline":
+                    logger.warning("%s failed (%s); falling back to %s", entry.name, exc, fallback)
                 self._telemetry_fallback(entry.name, fallback, error_kind=reason)
                 record_gateway_fallback(entry.name, fallback)
                 if self.paid_strict:
@@ -99,6 +105,8 @@ class NarrationGateway:
         text = await self.offline.complete(request)
         record_provider_success("offline")
         failed = self.providers[0].name if self.providers else "unknown"
+        if last_exc is not None:
+            log_offline_fallback_from_exception(provider=last_failed_provider, exc=last_exc)
         set_completion_meta(
             "offline",
             "offline",
@@ -110,6 +118,8 @@ class NarrationGateway:
 
     async def stream(self, request: NarrationRequest) -> AsyncIterator[str | StreamReplaceFrame]:
         """Stream narration; switch providers only before the first token."""
+        last_exc: BaseException | None = None
+        last_failed_provider = "unknown"
         for index, entry in enumerate(self.providers):
             take_provider_call_stats()
             try:
@@ -120,11 +130,7 @@ class NarrationGateway:
                 self._record_success_meta(entry, delivered=True)
                 return
             except ProviderStreamAbortedError as exc:
-                logger.warning(
-                    "%s failed mid-stream (%s); replacing buffer with offline fallback",
-                    entry.name,
-                    exc,
-                )
+                log_offline_fallback_from_exception(provider=entry.name, exc=exc)
                 self._telemetry_fallback(entry.name, "offline", error_kind=type(exc).__name__)
                 record_gateway_fallback(entry.name, "offline")
                 fallback = (await self.offline.complete(request)).strip()
@@ -139,11 +145,14 @@ class NarrationGateway:
                 yield StreamReplaceFrame(fallback)
                 return
             except _RETRYABLE as exc:
+                last_exc = exc
+                last_failed_provider = entry.name
                 if self.paid_strict or index + 1 >= len(self.providers):
                     fallback = "offline"
                 else:
                     fallback = self.providers[index + 1].name
-                logger.warning("%s failed (%s); falling back to %s", entry.name, exc, fallback)
+                if fallback != "offline":
+                    logger.warning("%s failed (%s); falling back to %s", entry.name, exc, fallback)
                 self._telemetry_fallback(entry.name, fallback, error_kind=type(exc).__name__)
                 record_gateway_fallback(entry.name, fallback)
                 if self.paid_strict:
@@ -151,6 +160,8 @@ class NarrationGateway:
         offline_text = (await self.offline.complete(request)).strip()
         record_provider_success("offline")
         failed = self.providers[0].name if self.providers else "unknown"
+        if last_exc is not None:
+            log_offline_fallback_from_exception(provider=last_failed_provider, exc=last_exc)
         set_completion_meta(
             "offline",
             "offline",
