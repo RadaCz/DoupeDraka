@@ -89,10 +89,10 @@ describe('Story-only spell label (task 22)', () => {
     );
     const storyTags = screen.getAllByText(STORY_LABEL);
     expect(storyTags).toHaveLength(3);
-    expect(screen.getByText('Mage Hand').closest('button')?.textContent).toContain(STORY_LABEL);
+    expect(screen.getByText('Mágova ruka').closest('button')?.textContent).toContain(STORY_LABEL);
     expect(screen.getByText('Sleep').closest('button')?.textContent).toContain(STORY_LABEL);
-    expect(screen.getByText('Magic Missile').closest('button')?.textContent).not.toContain(STORY_LABEL);
-    expect(screen.getByText('Fire Bolt').closest('button')?.textContent).not.toContain(STORY_LABEL);
+    expect(screen.getByText('Magická střela').closest('button')?.textContent).not.toContain(STORY_LABEL);
+    expect(screen.getByText('Ohnivá střela').closest('button')?.textContent).not.toContain(STORY_LABEL);
   });
 
   it('shows the label for Cleric Guidance but not Cure Wounds on the character sheet', () => {
@@ -107,9 +107,9 @@ describe('Story-only spell label (task 22)', () => {
         />
       </LocaleProvider>,
     );
-    expect(screen.getByText('Guidance').closest('li')?.textContent).toContain(STORY_LABEL);
-    expect(screen.getByText('Cure Wounds').closest('li')?.textContent).not.toContain(STORY_LABEL);
-    expect(screen.getByText('Bless').closest('li')?.textContent).not.toContain(STORY_LABEL);
+    expect(screen.getByText('Vedení').closest('li')?.textContent).toContain(STORY_LABEL);
+    expect(screen.getByText('Léčení ran').closest('li')?.textContent).not.toContain(STORY_LABEL);
+    expect(screen.getByText('Požehnání').closest('li')?.textContent).not.toContain(STORY_LABEL);
   });
 
   it('omits unmodeled spells from the combat abilities panel', () => {
@@ -128,9 +128,9 @@ describe('Story-only spell label (task 22)', () => {
       </LocaleProvider>,
     );
     fireEvent.click(screen.getByRole('button', { name: /Schopnosti|Combat abilities/i }));
-    expect(screen.getByRole('button', { name: 'Fire Bolt' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Magic Missile' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Mage Hand' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Ohnivá střela' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Magická střela' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Mágova ruka' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Light' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Sleep' })).not.toBeInTheDocument();
   });

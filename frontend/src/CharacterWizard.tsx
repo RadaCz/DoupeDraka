@@ -20,6 +20,7 @@ import {
   formatAbilityIncreases,
   formatWizardSpeedFt,
 } from './character/wizardDisplay';
+import { displaySpellName } from './spells/spellDisplay';
 
 export interface CharacterDraft {
   name: string;
@@ -520,8 +521,8 @@ export function CharacterWizard({
                   className={`option-pill ${cantrips.includes(spell) ? 'selected' : ''}`}
                   onClick={() => setCantrips(current => current.includes(spell) ? current.filter(item => item !== spell) : [...current, spell].slice(0, meta.spell_pick_limits[classKey].cantrips))}
                 >
-                  <span className="wizard-spell-pill-label">{spell}</span>
-                  {storyOnlySpell(spell) && <SpellNarrativeOnlyTag className="char-v2-tag warn wizard-spell-tag" />}
+                  <span className="wizard-spell-pill-label">{displaySpellName(spell, locale, t)}</span>
+                  {storyOnlySpell(spell) && <SpellNarrativeOnlyTag className="char-v2-tag warn wizard-spell-tag-line" />}
                 </button>
               ))}
             </div>
@@ -543,8 +544,8 @@ export function CharacterWizard({
                       : [...current, spell].slice(0, limit));
                   }}
                 >
-                  <span className="wizard-spell-pill-label">{spell}</span>
-                  {storyOnlySpell(spell) && <SpellNarrativeOnlyTag className="char-v2-tag warn wizard-spell-tag" />}
+                  <span className="wizard-spell-pill-label">{displaySpellName(spell, locale, t)}</span>
+                  {storyOnlySpell(spell) && <SpellNarrativeOnlyTag className="char-v2-tag warn wizard-spell-tag-line" />}
                 </button>
               ))}
             </div>

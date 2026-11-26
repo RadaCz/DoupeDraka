@@ -13,6 +13,7 @@ import {
 } from './spellbook';
 import { SpellDetailSheet } from './SpellDetailSheet';
 import { SpellNarrativeOnlyTag } from './SpellNarrativeOnlyTag';
+import { displaySpellName } from './spellDisplay';
 
 type Props = {
   character: Character;
@@ -23,7 +24,7 @@ type Props = {
 };
 
 export function SpellbookPanel({ character, spells, busy = false, onCast, lastCast = '' }: Props) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<Spell | null>(null);
   const rows = useMemo(() => heroSpellRows(character, spells), [character, spells]);
@@ -76,7 +77,7 @@ export function SpellbookPanel({ character, spells, busy = false, onCast, lastCa
                 >
                   <span className="spellbook-level">{spell.level === 0 ? 'C' : spell.level}</span>
                   <span className="spellbook-row-copy">
-                    <strong>{spell.name}</strong>
+                    <strong>{displaySpellName(spell.name, locale, t)}</strong>
                     <small>
                       {t(titleCase(spell.school))} · {spell.range}
                     </small>

@@ -2,6 +2,8 @@ import { useMemo } from 'react';
 import type { Character, Spell } from '../types';
 import { useI18n } from '../i18n';
 import { displayInventoryLabel, displayLocation } from '../i18n/gameDisplay';
+import { formatWizardSpeedFt } from '../character/wizardDisplay';
+import { displaySpellName } from '../spells/spellDisplay';
 import { HpBar, SpellSlots, titleCase } from '../components/characterVitals';
 import { CharacterInventoryPanel } from '../character/CharacterInventoryPanel';
 import {
@@ -20,7 +22,7 @@ import {
 } from '../character/characterSheet';
 import { backgroundFeatureFor, backgroundFeatureUsed } from '../character/backgroundFeatures';
 import { classFeatureLines } from '../character/classFeatures';
-import { characterRaceFeatureRows, raceTraitStatus } from '../character/raceTraits';
+import { characterRaceFeatureRows, displayRaceTraits, raceTraitStatus } from '../character/raceTraits';
 import { heroSpellRows } from '../spells/spellbook';
 import { SpellNarrativeOnlyTag } from '../spells/SpellNarrativeOnlyTag';
 
@@ -63,7 +65,17 @@ export function CharacterScreen({
     [character],
   );
   const raceTraits = useMemo(
-    () => (character ? characterRaceFeatureRows(character) : []),
+    () => (character
+      ? displayRaceTraits(
+        characterRaceFeatureRows(character).map(trait => ({
+          name: trait.name,
+          text: '',
+          trait_id: trait.id,
+          modeled: trait.modeled,
+          deferred: trait.deferred,
+        })),
+      )
+      : []),
     [character],
   );
 
@@ -119,7 +131,7 @@ export function CharacterScreen({
           <p className="char-v2-section-lead">
             <span>{t('Proficiency bonus')}: <strong className="tabular-nums">+{proficiencyBonus(character.level)}</strong></span>
             {' · '}
-            <span>{t('Speed')}: <strong className="tabular-nums">{character.speed ?? 30} {t('ft.')}</strong></span>
+            <span>{t('Speed')}: <strong className="tabular-nums">{formatWizardSpeedFt(character.speed ?? 30, locale)}</strong></span>
           </p>
           {character.saving_throw_proficiencies && character.saving_throw_proficiencies.length > 0 && (
             <p className="char-v2-section-lead">
@@ -163,7 +175,7 @@ export function CharacterScreen({
           {equippedWeapon ? (
             <article className="char-v2-equipped-card">
               <span className="char-v2-equipped-icon" aria-hidden="true">⚔</span>
-              <div>
+              <div className="char-v2-equipped-copy">
                 <small>{t('Weapon')}</small>
                 <strong>{displayInventoryLabel(equippedWeapon.name, locale)}</strong>
                 {equippedWeapon.attack_bonus > 0 && (
@@ -177,7 +189,7 @@ export function CharacterScreen({
           {equippedArmor ? (
             <article className="char-v2-equipped-card">
               <span className="char-v2-equipped-icon" aria-hidden="true">🛡</span>
-              <div>
+              <div className="char-v2-equipped-copy">
                 <small>{t('Armor')}</small>
                 <strong>{displayInventoryLabel(equippedArmor.name, locale)}</strong>
               </div>
@@ -188,7 +200,7 @@ export function CharacterScreen({
           {equippedShield ? (
             <article className="char-v2-equipped-card">
               <span className="char-v2-equipped-icon" aria-hidden="true">🛡</span>
-              <div>
+              <div className="char-v2-equipped-copy">
                 <small>{t('Shield')}</small>
                 <strong>{displayInventoryLabel(equippedShield.name, locale)}</strong>
               </div>
@@ -267,10 +279,10 @@ export function CharacterScreen({
           )}
           <ul className="char-v2-spell-list">
             {raceTraits.map(trait => (
-              <li key={trait.id} className="char-v2-spell-row">
+              <li key={trait.trait_id ?? trait.name} className="char-v2-spell-row">
                 <div className="char-v2-spell-head">
                   <strong>{t(trait.name)}</strong>
-                  <small>{raceTraitStatus({ ...trait, trait_id: trait.id }, t)}</small>
+                  <small>{raceTraitStatus(trait, t)}</small>
                 </div>
               </li>
             ))}
@@ -343,7 +355,7 @@ export function CharacterScreen({
             {spellRows.map(({ spell, known, prepared }) => (
               <li key={spell.name} className={`char-v2-spell-row${spell.effect_modeled ? '' : ' muted'}`}>
                 <div className="char-v2-spell-head">
-                  <strong>{spell.name}</strong>
+                  <strong>{displaySpellName(spell.name, locale, t)}</strong>
                   <small>{spell.level === 0 ? t('Cantrip') : t(`Level ${spell.level}`)}</small>
                 </div>
                 <p className="char-v2-spell-text">{spell.text || t('No description in the reference yet.')}</p>

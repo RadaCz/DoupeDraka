@@ -1,5 +1,6 @@
 import type { Locale } from '../i18n';
 import { castSpellAction, modeledCombatSpells as modeledSpellsFromBook } from '../spells/spellbook';
+import { displaySpellName } from '../spells/spellDisplay';
 import type { Character, JournalEvent, Spell } from '../types';
 import type { CombatIconName } from './combatIcons';
 import {
@@ -398,7 +399,7 @@ export function buildCombatActionDeck(
       {
         id: `spell-${spell.name}`,
         kind: 'spell',
-        label: spell.name,
+        label: displaySpellName(spell.name, locale, t),
         description: t('Channel a prepared spell.'),
         icon: 'spell',
         action: castSpellAction(spell.name, enemy),

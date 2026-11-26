@@ -19,6 +19,7 @@ import { JournalChronicle } from '../journal/JournalChronicle';
 import { visibleQuestTimeline } from '../questProgress';
 import { DAMAGE_TARGET_SPELLS } from '../spells/spellbook';
 import { SpellNarrativeOnlyTag } from '../spells/SpellNarrativeOnlyTag';
+import { displaySpellName } from '../spells/spellDisplay';
 
 export interface PlayScreenProps {
   character: Character;
@@ -377,7 +378,7 @@ export function ActionComposer(props: PlayScreenProps) {
   const {
     character, events, spells, locations, busy, error, onAction, onOpenMap, onOpenSheet,
   } = props;
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const actionInputRef = useRef<HTMLInputElement>(null);
   const menuToggleRef = useRef<HTMLButtonElement>(null);
   const actionSheetRef = useRef<HTMLDivElement>(null);
@@ -625,7 +626,7 @@ export function ActionComposer(props: PlayScreenProps) {
                       actionInputRef.current?.focus();
                     }}
                   >
-                    <strong>{spell.name}</strong>
+                    <strong>{displaySpellName(spell.name, locale, t)}</strong>
                     <small>{spell.level === 0 ? t('Cantrip') : t(`Level ${spell.level}`)}</small>
                     {!spell.effect_modeled && <SpellNarrativeOnlyTag className="char-v2-tag warn composer-spell-tag" />}
                   </button>

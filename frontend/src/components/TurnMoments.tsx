@@ -32,11 +32,6 @@ export function LevelUpModal({
             {t('New abilities: {list}.').replace('{list}', notice.classFeatures.join(', '))}
           </p>
         ) : null}
-        {notice.classFeaturesDeferred?.length ? (
-          <p className="turn-moment-body turn-moment-muted">
-            {t('Coming later: {list}.').replace('{list}', notice.classFeaturesDeferred.join(', '))}
-          </p>
-        ) : null}
         {notice.spellSlotSummary ? (
           <p className="turn-moment-body">
             {t('Spell slots: {summary}.').replace('{summary}', notice.spellSlotSummary)}
