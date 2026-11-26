@@ -27,6 +27,7 @@ import { classFeatureLines } from '../character/classFeatures';
 import { characterRaceFeatureRows, displayRaceTraits, raceTraitStatus } from '../character/raceTraits';
 import { heroSpellRows } from '../spells/spellbook';
 import { SpellNarrativeOnlyTag } from '../spells/SpellNarrativeOnlyTag';
+import { MVP_RULESET_DISPLAY_FALLBACK } from '../game/mvpRulesetDisplay';
 
 export function CharacterScreen({
   character,
@@ -98,11 +99,13 @@ export function CharacterScreen({
   const equippedWeapon = equippedWeaponInstance(character.item_instances);
   const equippedArmor = equippedArmorInstance(character.item_instances);
   const equippedShield = equippedShieldInstance(character.item_instances);
-  const atLevelCap = isAtMaxMvpLevel(character.level, maxLevel);
-  const xp = xpProgress(character.xp, xpPerLevel, atLevelCap);
+  const resolvedMaxLevel = maxLevel ?? MVP_RULESET_DISPLAY_FALLBACK.maxLevel;
+  const resolvedXpPerLevel = xpPerLevel ?? MVP_RULESET_DISPLAY_FALLBACK.xpPerLevel;
+  const atLevelCap = isAtMaxMvpLevel(character.level, resolvedMaxLevel);
+  const xp = xpProgress(character.xp, resolvedXpPerLevel, atLevelCap);
   const hasSpellcasting = Object.values(character.max_spell_slots ?? {}).some(count => count > 0);
-  const vitalsXp = formatExperienceVitalsValue(character.xp, xpPerLevel, atLevelCap);
-  const experienceDisplay = formatExperienceDisplay(character.xp, xpPerLevel, atLevelCap, t);
+  const vitalsXp = formatExperienceVitalsValue(character.xp, resolvedXpPerLevel, atLevelCap);
+  const experienceDisplay = formatExperienceDisplay(character.xp, resolvedXpPerLevel, atLevelCap, t);
 
   return (
     <section className="screen character-screen character-v2" aria-busy={busy || undefined}>
@@ -231,11 +234,11 @@ export function CharacterScreen({
       <section className="char-v2-section" aria-labelledby="char-progress-heading">
         <h2 id="char-progress-heading" className="char-v2-section-title">{t('Progress')}</h2>
         <article className="char-v2-progress-card">
-          {atLevelCap && maxLevel != null ? (
+          {atLevelCap ? (
             <>
               <p className="char-v2-xp-caption tabular-nums">{experienceDisplay}</p>
               <p className="char-v2-xp-caption" data-testid="level-cap-note">
-                {t('In chapter 1, the highest level is {max_level}.').replace('{max_level}', String(maxLevel))}
+                {t('In chapter 1, the highest level is {max_level}.').replace('{max_level}', String(resolvedMaxLevel))}
               </p>
             </>
           ) : xp.showBar ? (

@@ -70,7 +70,31 @@ describe('AC18-1 Character sheet (cs)', () => {
     expect(screen.getByText('99 ZK')).toBeInTheDocument();
     expect(screen.queryByText(/99 \/ 100/)).not.toBeInTheDocument();
     expect(document.querySelector('.char-v2-xp-track')).not.toBeInTheDocument();
-    expect(screen.getByTestId('level-cap-note')).toHaveTextContent(/V 1\. kapitole je nejvyšší 3\. úroveň/);
+    expect(screen.getByTestId('level-cap-note')).toHaveTextContent('V 1. kapitole je nejvyšší 3. úroveň.');
+    cleanup();
+  });
+
+  it('shows chapter cap sentence when maxLevel prop omitted (ruleset fallback)', () => {
+    const hero = characterStub({
+      id: '1',
+      name: 'Mira',
+      character_class: 'fighter',
+      level: 3,
+      xp: 200,
+      location: 'The Whispering Cellar',
+    });
+    renderCs(
+      <CharacterScreen
+        character={hero}
+        characters={[hero]}
+        spells={spells}
+        onSelect={() => undefined}
+        onCreate={() => undefined}
+      />,
+    );
+    expect(screen.getByTestId('level-cap-note')).toHaveTextContent('V 1. kapitole je nejvyšší 3. úroveň.');
+    expect(screen.getByText('200 ZK')).toBeInTheDocument();
+    expect(document.querySelector('.char-v2-xp-track')).not.toBeInTheDocument();
     cleanup();
   });
 

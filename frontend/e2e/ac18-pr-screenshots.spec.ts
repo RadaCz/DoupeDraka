@@ -8,6 +8,9 @@ import {
   signedTelegramInitData,
   apiTelegramToken,
 } from './telegram.ts';
+import { installMvpRulesetReferenceMock } from './ac18-reference-mock.ts';
+
+const LEVEL_CAP_NOTE = 'V 1. kapitole je nejvyšší 3. úroveň.';
 
 const API = 'http://127.0.0.1:8001';
 const OUT = resolve(dirname(fileURLToPath(import.meta.url)), '../../docs/pr-screenshots/18-1');
@@ -68,6 +71,7 @@ for (const width of [320, 375, 430] as const) {
     const { initData, fighterId } = await seedHero(request, telegramId, `AC18 ${width}`);
     await page.setViewportSize({ width, height: 812 });
     await mockTelegramWebApp(page, initData);
+    await installMvpRulesetReferenceMock(page);
     await page.addInitScript(() => {
       try { localStorage.setItem('app_locale', 'cs'); } catch { /* ignore */ }
     });
@@ -107,10 +111,11 @@ test('PR screenshot after character 375px at level cap', async ({ page, request 
   const { initData, fighterId } = await seedHero(request, telegramId, 'AC18 cap');
   await page.setViewportSize({ width, height: 900 });
   await mockTelegramWebApp(page, initData);
+  await installMvpRulesetReferenceMock(page);
   await page.addInitScript(() => {
     try { localStorage.setItem('app_locale', 'cs'); } catch { /* ignore */ }
   });
-  const capPatch = (body: Record<string, unknown>) => ({ ...body, level: 3, xp: 99 });
+  const capPatch = (body: Record<string, unknown>) => ({ ...body, level: 3, xp: 200 });
   await page.route('**/characters**', async route => {
     if (route.request().method() !== 'GET') {
       await route.continue();
@@ -142,9 +147,11 @@ test('PR screenshot after character 375px at level cap', async ({ page, request 
   await expect(page.getByRole('heading', { name: HOME_HEADING })).toBeVisible({ timeout: 25_000 });
   const nav = page.getByRole('navigation', { name: /Main navigation|Hlavní navigace/i });
   await nav.getByRole('button', { name: /^Character$|^Postava$/i }).click();
-  await expect(page.getByTestId('level-cap-note')).toBeVisible({ timeout: 20_000 });
-  await expect(page.locator('.char-v2-vitals-primary')).toContainText('99');
+  const capNote = page.getByTestId('level-cap-note');
+  await expect(capNote).toHaveText(LEVEL_CAP_NOTE, { timeout: 20_000 });
+  await expect(page.locator('.char-v2-vitals-primary')).toContainText('200');
   await expect(page.locator('.char-v2-vitals-primary')).not.toContainText('/ 100');
+  await capNote.scrollIntoViewIfNeeded();
   await page.locator('.char-v2-vitals-primary').screenshot({
     path: `${OUT}/after-vitals-375-cap.png`,
   });
@@ -154,7 +161,8 @@ test('PR screenshot after character 375px at level cap', async ({ page, request 
     path: `${OUT}/after-home-375-cap.png`,
   });
   await nav.getByRole('button', { name: /^Character$|^Postava$/i }).click();
-  await expect(page.getByTestId('level-cap-note')).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByTestId('level-cap-note')).toHaveText(LEVEL_CAP_NOTE, { timeout: 20_000 });
+  await page.getByTestId('level-cap-note').scrollIntoViewIfNeeded();
   const sheet = page.locator('.character-screen.character-v2');
   await prepareFullSheetCapture(page, width);
   await sheet.screenshot({ path: `${OUT}/after-character-375-cap.png` });
