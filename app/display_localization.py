@@ -3,19 +3,32 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
+logger = logging.getLogger(__name__)
+
 _CATALOG_PATH = Path(__file__).resolve().parent.parent / "localization" / "chapter_one_display.json"
 
 LocationCase = Literal["nom", "gen", "dat", "acc", "loc", "ins"]
 
+_EMPTY_CATALOG: dict = {}
+
 
 @lru_cache(maxsize=1)
 def _catalog() -> dict:
-    return json.loads(_CATALOG_PATH.read_text(encoding="utf-8"))
+    try:
+        return json.loads(_CATALOG_PATH.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError, OSError) as exc:
+        logger.warning(
+            "Chapter display catalog missing or invalid at %s: %s",
+            _CATALOG_PATH,
+            exc,
+        )
+        return dict(_EMPTY_CATALOG)
 
 
 def _location_entry(name: str) -> dict | str | None:
