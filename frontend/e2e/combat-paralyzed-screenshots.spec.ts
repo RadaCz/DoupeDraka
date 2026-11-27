@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -21,6 +21,29 @@ const CONTINUE_BTN = /^Continue$|^Pokračovat$/i;
 const COMBAT_ACTIONS = /combat actions|bojové akce/i;
 
 test.describe.configure({ mode: 'serial' });
+
+async function assertControlFullyInViewportWithoutScroll(page: Page, control: Locator) {
+  await expect(control).toBeVisible();
+  const scrollState = await page.evaluate(() => ({
+    scrollY: window.scrollY,
+    pageScrollable: document.documentElement.scrollHeight > window.innerHeight + 1,
+  }));
+  expect(scrollState.scrollY).toBe(0);
+  expect(scrollState.pageScrollable).toBe(false);
+
+  const box = await control.boundingBox();
+  expect(box).not.toBeNull();
+  const safeBottom = await page.evaluate(() => {
+    const raw = getComputedStyle(document.documentElement).getPropertyValue('--app-safe-bottom').trim();
+    if (!raw) return 0;
+    return Number.parseFloat(raw) || 0;
+  });
+  const viewport = page.viewportSize();
+  expect(viewport).not.toBeNull();
+  const maxBottom = viewport!.height - safeBottom;
+  expect(box!.y).toBeGreaterThanOrEqual(0);
+  expect(box!.y + box!.height).toBeLessThanOrEqual(maxBottom + 0.5);
+}
 
 for (const width of WIDTHS) {
   test(`paralyzed combat UI ${width}px`, async ({ page, request }, testInfo) => {
@@ -83,8 +106,12 @@ for (const width of WIDTHS) {
     const deck = page.getByRole('group', { name: COMBAT_ACTIONS });
     await expect(deck).toBeVisible({ timeout: 30_000 });
     await expect(deck.getByText(/Tento tah nemůžeš jednat/i)).toBeVisible();
-    await expect(deck.getByRole('button', { name: CONTINUE_BTN })).toBeVisible();
+    const continueBtn = deck.getByRole('button', { name: CONTINUE_BTN });
+    await expect(continueBtn).toBeVisible();
     await expect(deck.getByRole('button', { name: /^Útok\b|^Attack\b/i })).toHaveCount(0);
+    if (width === 320) {
+      await assertControlFullyInViewportWithoutScroll(page, continueBtn);
+    }
 
     const outfile = join(SCREENSHOT_DIR, `combat-paralyzed-${width}px.png`);
     await page.locator('.combat-screen.combat-v2').screenshot({ path: outfile });
