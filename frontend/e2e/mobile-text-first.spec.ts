@@ -57,8 +57,8 @@ test.describe('text-first mobile layout', () => {
     const composer = page.locator('.action-composer-text-first');
 
     const actions = [
-      'look around',
-      'search the area',
+      'listen for movement',
+      'inspect the stonework',
       'inspect the old door',
     ];
 

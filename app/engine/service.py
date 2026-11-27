@@ -80,6 +80,7 @@ from .models import (
     MonsterState,
     RollResult,
     TurnResult,
+    combat_action_denied,
 )
 from .spells import (
     CASTER_CLASSES,
@@ -432,11 +433,9 @@ class GameEngine:
 
     def _require_player_combat_turn(self, character: CharacterState, action: str) -> TurnResult | None:
         if character.in_combat and character.combat_turn != "player":
-            return TurnResult(
+            return combat_action_denied(
                 action,
-                ["It is not your turn yet — wait until initiative returns to you."],
-                False,
-                costs_adventure_mana=False,
+                "It is not your turn yet — wait until initiative returns to you.",
             )
         return None
 
@@ -446,12 +445,7 @@ class GameEngine:
         if player_action_blocked(character):
             return (
                 [],
-                TurnResult(
-                    action,
-                    ["You are paralyzed and cannot act."],
-                    False,
-                    costs_adventure_mana=False,
-                ),
+                combat_action_denied(action, "You are paralyzed and cannot act."),
             )
         return [], None
 
@@ -789,7 +783,7 @@ class GameEngine:
         ok, reason = spend_reaction(character)
         if not ok:
             character.spell_slots[slot_level] = character.spell_slots.get(slot_level, 0) + 1
-            return TurnResult(action, [reason], False, costs_adventure_mana=False), monster
+            return combat_action_denied(action, reason), monster
         events = list(slot_lines)
         events.extend(activate_shield_buff(character))
         pending = dict(character.combat_reaction_pending)
@@ -1049,7 +1043,7 @@ class GameEngine:
                     monster,
                 )
             if _flag(character, FLAG_ACTION_USED):
-                return TurnResult(action, lines, False, costs_adventure_mana=False), monster
+                return combat_action_denied(action, lines), monster
         blocked = self._require_player_combat_turn(character, action)
         if blocked:
             return blocked, monster
@@ -1058,7 +1052,7 @@ class GameEngine:
             return self._finish_paralyzed_player_turn(character, action, monster)
         ok, reason = reserve_combat_cost(character, "action")
         if not ok:
-            return TurnResult(action, [reason], False, costs_adventure_mana=False), monster
+            return combat_action_denied(action, reason), monster
         set_disengaged(character, True)
         from .turn_resolution import beat_disengage
 
@@ -1093,11 +1087,11 @@ class GameEngine:
         if blocked_turn:
             return self._finish_paralyzed_player_turn(character, action, monster)
         if delta_ft == 0:
-            return TurnResult(action, ["Specify a positive distance in feet."], False, costs_adventure_mana=False), monster
+            return combat_action_denied(action, "Specify a positive distance in feet."), monster
         before_ft = max(0, int(character.combat_distance_ft or 0))
         ok, lines = apply_player_movement(character, delta_ft)
         if not ok:
-            return TurnResult(action, lines, False, costs_adventure_mana=False), monster
+            return combat_action_denied(action, lines), monster
         after_ft = max(0, int(character.combat_distance_ft or 0))
         from .turn_resolution import beat_movement, beat_reaction_opportunity
 
@@ -1134,7 +1128,7 @@ class GameEngine:
 
             ok, reason = reserve_combat_cost(character, "action")
             if not ok:
-                return TurnResult(action, [reason], False, costs_adventure_mana=False), monster
+                return combat_action_denied(action, reason), monster
         potion = next((item for item in character.inventory if "potion" in item.casefold()), None)
         if potion is None:
             return TurnResult(action, ["You have no usable potion."], False), monster
@@ -1367,12 +1361,10 @@ class GameEngine:
                     "slot_consumed": False, "effect": {"type": "unavailable"},
                     "target_hp_after": monster.hp if monster else None, "save_result": None,
                 }
-                return TurnResult(
-                    action,
-                    [f"You have no level {level} spell slots available. No slot was spent."],
-                    False,
-                    spell_facts=facts,
-                ), monster
+                denial = f"You have no level {level} spell slots available. No slot was spent."
+                if character.in_combat:
+                    return combat_action_denied(action, denial, spell_facts=facts), monster
+                return TurnResult(action, [denial], False, spell_facts=facts), monster
 
         damage_kind = kind in {"spell_attack", "multi_attack", "auto_damage", "save_damage"}
         if damage_kind:
@@ -1442,19 +1434,22 @@ class GameEngine:
 
         ok_pair, pair_reason = validate_spell_turn_pairing(character, selected)
         if not ok_pair:
+            pair_facts = {
+                "spell_name": selected,
+                "spell_level": level,
+                "slot_level": None,
+                "slot_consumed": False,
+                "effect": {"type": "action_denied"},
+                "target_hp_after": monster.hp if monster else None,
+                "save_result": None,
+            }
+            if character.in_combat:
+                return combat_action_denied(action, pair_reason, spell_facts=pair_facts), monster
             return TurnResult(
                 action,
                 [pair_reason],
                 False,
-                spell_facts={
-                    "spell_name": selected,
-                    "spell_level": level,
-                    "slot_level": None,
-                    "slot_consumed": False,
-                    "effect": {"type": "action_denied"},
-                    "target_hp_after": monster.hp if monster else None,
-                    "save_result": None,
-                },
+                spell_facts=pair_facts,
                 costs_adventure_mana=False,
             ), monster
 
@@ -1468,21 +1463,16 @@ class GameEngine:
             combat_cost = spell_combat_cost(selected)
             ok, reason = reserve_combat_cost(character, combat_cost)
             if not ok:
-                return TurnResult(
-                    action,
-                    [reason],
-                    False,
-                    spell_facts={
-                        "spell_name": selected,
-                        "spell_level": level,
-                        "slot_level": None,
-                        "slot_consumed": False,
-                        "effect": {"type": "action_denied"},
-                        "target_hp_after": monster.hp if monster else None,
-                        "save_result": None,
-                    },
-                    costs_adventure_mana=False,
-                ), monster
+                denied_facts = {
+                    "spell_name": selected,
+                    "spell_level": level,
+                    "slot_level": None,
+                    "slot_consumed": False,
+                    "effect": {"type": "action_denied"},
+                    "target_hp_after": monster.hp if monster else None,
+                    "save_result": None,
+                }
+                return combat_action_denied(action, reason, spell_facts=denied_facts), monster
 
         ability_bonus = self._spell_attack_bonus(character)
         upcast = max(0, (slot_level or level) - level)
@@ -2265,7 +2255,7 @@ class GameEngine:
             if character.in_combat and monster:
                 cost_ok, cost_reason = reserve_combat_cost(character, "action")
                 if not cost_ok:
-                    return TurnResult(action, [cost_reason], False, costs_adventure_mana=False), monster
+                    return combat_action_denied(action, cost_reason), monster
             if feature == "turn_undead" or TURN_UNDEAD_PATTERN.search(text):
                 ok, lines, class_facts = use_turn_undead(self, character, monster)
             else:
@@ -2283,7 +2273,14 @@ class GameEngine:
                     return TurnResult(
                         action, events, changed, class_facts=class_facts, save_facts=enemy_save,
                     ), monster if character.in_combat else None
-            return TurnResult(action, events, changed, class_facts=class_facts, costs_adventure_mana=False), (
+            return TurnResult(
+                action,
+                events,
+                changed,
+                class_facts=class_facts,
+                costs_adventure_mana=False,
+                action_rejected=character.in_combat and not changed,
+            ), (
                 None if not character.in_combat or (monster and monster.hp <= 0) else monster
             )
 
@@ -2301,7 +2298,13 @@ class GameEngine:
                         class_facts=class_facts,
                         save_facts=enemy_save,
                     ), monster if character.in_combat else None
-            return TurnResult(action, events, changed, class_facts=class_facts), monster
+            return TurnResult(
+                action,
+                events,
+                changed,
+                class_facts=class_facts,
+                action_rejected=character.in_combat and not changed,
+            ), monster
 
         return TurnResult(action, ["That class feature cannot be used here."], False), monster
 
@@ -2376,16 +2379,14 @@ class GameEngine:
         range_ctx = evaluate_player_attack_range(character, weapon, thrown=thrown)
         if not range_ctx.allowed:
             return (
-                TurnResult(action, [range_ctx.denial], False, costs_adventure_mana=False),
+                combat_action_denied(action, range_ctx.denial),
                 monster,
             )
         if weapon.weapon_type == "ranged" and not has_ammunition(character, weapon):
             return (
-                TurnResult(
+                combat_action_denied(
                     action,
-                    [f"You have no ammunition for {weapon.name}."],
-                    False,
-                    costs_adventure_mana=False,
+                    f"You have no ammunition for {weapon.name}.",
                 ),
                 monster,
             )
@@ -2393,7 +2394,7 @@ class GameEngine:
 
         ok, reason = reserve_combat_cost(character, "action")
         if not ok:
-            return TurnResult(action, [reason], False, costs_adventure_mana=False), monster
+            return combat_action_denied(action, reason), monster
         attack_events, attack_facts = self.attack(character, monster, thrown=thrown)
         events.extend(attack_events)
         attack_class_facts = attack_facts
@@ -2456,7 +2457,7 @@ class GameEngine:
         if intent.kind not in (CAST, DECLINE_REACTION):
             blocked, msg = pending_blocks_unrelated_action(character)
             if blocked:
-                return TurnResult(action, [msg], False, costs_adventure_mana=False), monster
+                return combat_action_denied(action, msg), monster
 
         if intent.kind == DECLINE_REACTION:
             return self._resolve_decline_reaction(character, action, monster)
@@ -2520,7 +2521,7 @@ class GameEngine:
 
             ok, reason = reserve_combat_cost(character, "action")
             if not ok:
-                return TurnResult(action, [reason], False, costs_adventure_mana=False), monster
+                return combat_action_denied(action, reason), monster
             character.dodging = True
             events = ["You dodge and gain disadvantage protection against the next enemy attack."]
             from .turn_resolution import beat_defend
@@ -2680,7 +2681,7 @@ class GameEngine:
 
                 ok, reason = reserve_combat_cost(character, "action")
                 if not ok:
-                    return TurnResult(action, [reason], False, costs_adventure_mana=False), monster
+                    return combat_action_denied(action, reason), monster
             check, success, lucky = self.ability_check(character, "dexterity", FLEE_DC)
             from .turn_resolution import beat_flee
 

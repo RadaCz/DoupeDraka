@@ -98,3 +98,12 @@ class TurnResult:
     class_facts: dict = field(default_factory=dict)
     resolution: dict = field(default_factory=dict)
     costs_adventure_mana: bool = True
+    # Combat/economy denial before a roll or spend — must not journal (spec B1 / audit N5).
+    action_rejected: bool = False
+
+
+def combat_action_denied(action: str, events: list[str] | str, **kwargs) -> TurnResult:
+    """Rejected combat turn: denial text only, no journal row."""
+    lines = [events] if isinstance(events, str) else list(events)
+    kwargs.setdefault("costs_adventure_mana", False)
+    return TurnResult(action, lines, False, action_rejected=True, **kwargs)

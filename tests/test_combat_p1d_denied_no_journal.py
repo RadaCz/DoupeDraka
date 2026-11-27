@@ -163,6 +163,24 @@ def test_denied_combat_actions_do_not_journal_or_increment_turn_count(api_db):
 
 
 @pytest.mark.integration
+def test_non_combat_no_state_change_still_journals(api_db):
+    """Narrative / unknown commands are not combat rejections — they journal even without state_changed."""
+    headers = _auth_headers("p1d-narr")
+    character_id = _new_character(headers)
+    response = client.post(
+        f"/characters/{character_id}/actions",
+        json={"action": "listen for movement"},
+        headers=headers,
+    )
+    assert response.status_code == 200
+    body = response.json()
+    joined = " ".join(body.get("events", [])).casefold()
+    assert "does not understand" in joined or "try travel" in joined
+    assert asyncio.run(_count_events(character_id)) == 1
+    assert asyncio.run(_turn_count(character_id)) == 1
+
+
+@pytest.mark.integration
 def test_successful_combat_attack_still_journals_and_increments_turn_count(api_db):
     headers = _auth_headers("p1d-ok")
     character_id = _new_character(headers)

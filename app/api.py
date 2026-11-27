@@ -1286,7 +1286,7 @@ async def commit_action_turn(
             fallback = Narrator.narrate_offline(context)
             resolution_payload = result.resolution if result.resolution else {}
             event_id = None
-            if result.state_changed:
+            if not result.action_rejected:
                 event = EventRecord(
                     character_id=character_id,
                     action=text,
