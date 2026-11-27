@@ -129,7 +129,7 @@ for (const width of WIDTHS) {
     await fireBolt.scrollIntoViewIfNeeded();
 
     const outfile = path.join(REPO_SHOTS, `combat-p0a-spell-range-${width}px.png`);
-    await combat.screenshot({ path: outfile, fullPage: true });
+    await combat.screenshot({ path: outfile });
     await testInfo.attach(`combat-p0a-spell-range-${width}px`, { path: outfile, contentType: 'image/png' });
   });
 }

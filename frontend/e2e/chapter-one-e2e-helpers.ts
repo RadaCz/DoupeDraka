@@ -125,6 +125,12 @@ export type CharacterSnapshot = {
     movement_remaining_ft?: number;
     speed_ft?: number;
     weapon_range?: { allowed?: boolean; weapon_type?: string };
+    spells?: Array<{
+      name: string;
+      range_ft: number | null;
+      can_cast: boolean;
+      denial?: string | null;
+    }>;
   };
   combat_flags?: Record<string, boolean>;
   combat_reaction_pending?: Record<string, unknown>;
