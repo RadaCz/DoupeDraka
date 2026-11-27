@@ -49,6 +49,7 @@ const PHASE_TIMEOUT_MS = {
   'e2e/playtest-6-screenshots.spec.ts': 720_000,
   'e2e/playtest-6-mobile-spells.spec.ts': 360_000,
   'e2e/playtest-7-screenshots.spec.ts': 720_000,
+  'e2e/combat-p0a-spell-range-screenshots.spec.ts': 720_000,
   'e2e-smoke': 480_000,
   visual: 180_000,
 };

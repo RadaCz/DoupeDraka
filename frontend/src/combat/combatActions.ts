@@ -11,6 +11,7 @@ import {
   type EconomySlot,
 } from './combatEconomy';
 import { readCombatTactics } from './combatRange';
+import { formatSpellRangeDenial, spellRangeRow } from './combatSpellRange';
 
 export type CombatActionKind =
   | 'attack'
@@ -415,21 +416,29 @@ export function buildCombatActionDeck(
 
   const abilityActions: CombatActionItem[] = [
     ...buildClassFeatureActions(character, playerTurn, economy, t),
-    ...modeled.map(spell => wrap(
-      character,
-      playerTurn,
-      economy,
-      t,
-      {
-        id: `spell-${spell.name}`,
-        kind: 'spell',
-        label: displaySpellName(spell.name, locale, t),
-        description: t('Channel a prepared spell.'),
-        icon: 'spell',
-        action: castSpellAction(spell.name, enemy),
-        economySlot: spellEconomySlot(spell.name),
-      },
-    )),
+    ...modeled.map(spell => {
+      const rangeRow = spellRangeRow(character, spell.name);
+      const outOfRange = rangeRow?.can_cast === false;
+      return wrap(
+        character,
+        playerTurn,
+        economy,
+        t,
+        {
+          id: `spell-${spell.name}`,
+          kind: 'spell',
+          label: displaySpellName(spell.name, locale, t),
+          description: t('Channel a prepared spell.'),
+          icon: 'spell',
+          action: castSpellAction(spell.name, enemy),
+          economySlot: spellEconomySlot(spell.name),
+        },
+        outOfRange,
+        outOfRange && rangeRow
+          ? formatSpellRangeDenial(rangeRow, locale, t, positioning?.distance_ft)
+          : undefined,
+      );
+    }),
   ];
 
   const itemActions: CombatActionItem[] = [

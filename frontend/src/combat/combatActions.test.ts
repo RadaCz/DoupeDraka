@@ -97,6 +97,29 @@ describe('combatActions', () => {
     expect(modeledCombatSpells(wizard, spells).map(s => s.name)).toEqual(['Fire Bolt']);
   });
 
+  it('disables out-of-range modeled spells from combat_tactics.spells', () => {
+    const wizard = {
+      ...fighter,
+      known_spells: ['Fire Bolt'],
+      prepared_spells: ['Fire Bolt'],
+      combat_tactics: {
+        distance_ft: 121,
+        spells: [
+          {
+            name: 'Fire Bolt',
+            range_ft: 120,
+            can_cast: false,
+            denial: 'Fire Bolt has a range of 120 ft. The enemy is 121 ft away.',
+          },
+        ],
+      },
+    };
+    const deck = buildCombatActionDeck(wizard, spells, t, 'cs');
+    const fireBolt = deck.abilityActions.find(a => a.id === 'spell-Fire Bolt');
+    expect(fireBolt?.disabled).toBe(true);
+    expect(fireBolt?.disabledReason).toContain('36,3 m');
+  });
+
   it('builds cast action with target for damage spells', () => {
     expect(castSpellAction('Fire Bolt', 'Goblin scout')).toBe('cast Fire Bolt at Goblin scout');
     expect(castSpellAction('Shield', 'Goblin scout')).toBe('cast Shield');
