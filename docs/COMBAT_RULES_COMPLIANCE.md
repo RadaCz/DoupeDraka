@@ -75,8 +75,8 @@ Data na **main** — engine **nepřepočítává** vzdálenost před castem; slo
 | Úspěch: opuštění souboje | **SPLNĚNO** | `_exit_combat`, `combat_over`, monster `None`: `service.py:2709–2714`. | `test_engine.py::test_fleeing_ends_the_fight_and_clears_the_combatant` |
 | Neúspěch: Action spotřebována | **SPLNĚNO** | `reserve_combat_cost(..., "action")` **před** hodem: `2681–2683`; při fail `state_changed=True`, monster zůstane. | `test_combat_reject_before_roll_p0c.py::test_failed_flee_roll_still_consumes_action` |
 | Zrušení před hodem: žádný hod / Action | **SPLNĚNO** | Blokace mimo tah hráče nebo bez action: `2676–2683`, `test_combat_reject_before_roll_p0c` — `flee_enemy_turn`, `flee_action_already_used`. | výše |
-| Neúspěch **neukončí celý tah** automaticky | **SPLNĚNO** | Větev Flee **nevolá** `_maybe_advance_enemy_after_player_action` (`service.py:2674–2698` vs. např. cast `1715`). Po neúspěchu `combat_turn` zůstává `"player"` (ověřeno runtime: L2 rogue může použít bonus). UI má Flee chip (`combatActions.ts:378–383`). | `test_engine.py::test_failed_flee_keeps_the_fight_going`; runtime ověření v tomto auditu (bez dedikovaného E2E) |
-| Idempotence | **ČÁSTEČNĚ** | Obecné `Idempotency-Key` + `ActionReceipt` v API (`api.py:1172–1179`, `commit_action_turn`). Žádný test specificky pro `flee`. | `tests/test_idempotency_receipt_binding.py` — obecné, ne flee |
+| Neúspěch **neukončí celý tah** automaticky | **SPLNĚNO** | Větev Flee **nevolá** `_maybe_advance_enemy_after_player_action` (`service.py:2674–2698` vs. např. cast `1715`). Po neúspěchu `combat_turn` zůstává `"player"` (ověřeno runtime: L2 rogue může použít bonus). UI má Flee chip (`combatActions.ts:378–383`). | `test_engine.py::test_failed_flee_keeps_the_fight_going`; `tests/test_combat_flee_approved_rules.py` (pohyb/bonus po fail); E2E `frontend/e2e/combat-flee-failed-turn.spec.ts` |
+| Idempotence | **SPLNĚNO** | Obecné `Idempotency-Key` + `ActionReceipt` v API (`api.py:1172–1179`, `commit_action_turn`). | `tests/test_combat_flee_approved_rules.py::test_api_flee_same_idempotency_key_replays_without_double_commit`; obecně `tests/test_idempotency_receipt_binding.py` |
 
 **Poznámka:** `_finalize_turn_result` jen připojí beats (`turn_resolution.py:358–382`); neposouvá nepřítele po flee fail.
 
@@ -176,7 +176,7 @@ Většina chování **už sedí**; PR jen pro mezery a důkazy.
 |---|--------|---------|
 | 1 | Dash | CHYBÍ univerzální Action; rogue bonus OK; pohyb OK |
 | 2 | Dosah kouzel | CHYBÍ na main; #35 pokrývá většinu včetně BH 15 ft jako distance-cap |
-| 3 | Útěk | SPLNĚNO jádro; idempotence částečně |
+| 3 | Útěk | SPLNĚNO (včetně idempotence a E2E po neúspěchu) |
 | 4 | Ranged disadvantage | Částečně (jen ranged zbraně) |
 
 *Dokument pouze audituje; žádný produkční kód v tomto PR se nemění.*
