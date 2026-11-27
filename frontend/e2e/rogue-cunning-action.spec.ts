@@ -52,9 +52,9 @@ test('Sprint 36 — Rogue Cunning Action Dash, Disengage, Hide', async ({ reques
   await postGameAction(request, token, rogueId, 'dash');
   const afterSecondDash = await fetchCharacterState(request, token, rogueId);
   expect(afterSecondDash.combat_flags?.bonus_action_used).toBe(true);
-  expect(
-    (afterSecondDash.combat_tactics?.movement_remaining_ft ?? afterSecondDash.combat_movement_remaining_ft ?? 0),
-  ).toBe(moveAfter);
+  expect(afterSecondDash.combat_flags?.action_used).toBe(true);
+  const moveSecond = afterSecondDash.combat_tactics?.movement_remaining_ft ?? afterSecondDash.combat_movement_remaining_ft ?? 0;
+  expect(moveSecond).toBeGreaterThanOrEqual(moveAfter + speed - 1);
 
   await postGameAction(request, token, rogueId, 'end turn');
   await closeCombatTurnIfStalled(request, token, rogueId);

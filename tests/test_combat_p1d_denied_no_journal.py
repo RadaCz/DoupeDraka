@@ -181,6 +181,26 @@ def test_denied_combat_actions_do_not_journal_or_increment_turn_count(api_db):
     turns = asyncio.run(_turn_count(character_id))
     _assert_denial_persisted(headers, character_id, "flee", events_before=events, turns_before=turns)
 
+    def sprint_setup(hero):
+        _combat_seed(hero)
+        spend_action(hero)
+
+    _seed_hero(character_id, sprint_setup)
+    events = asyncio.run(_count_events(character_id))
+    turns = asyncio.run(_turn_count(character_id))
+    _assert_denial_persisted(headers, character_id, "sprint", events_before=events, turns_before=turns)
+
+    _seed_hero(
+        character_id,
+        lambda h: (
+            setattr(h, "in_combat", False),
+            setattr(h, "combat_turn", "player"),
+        ),
+    )
+    events = asyncio.run(_count_events(character_id))
+    turns = asyncio.run(_turn_count(character_id))
+    _assert_denial_persisted(headers, character_id, "sprint", events_before=events, turns_before=turns)
+
 
 @pytest.mark.integration
 def test_non_combat_no_state_change_still_journals(api_db):

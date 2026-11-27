@@ -60,6 +60,47 @@ describe('combatActions', () => {
     expect(attack?.description).not.toMatch(/Strike|with your weapon/i);
   });
 
+  it('offers Sprint action in tactics when player turn and action available', () => {
+    const deck = buildCombatActionDeck(fighter, spells, t);
+    const sprint = deck.tactics.find(a => a.id === 'sprint');
+    expect(sprint?.action).toBe('sprint');
+    expect(sprint?.disabled).toBe(false);
+    expect(sprint?.economySlot).toBe('action');
+    const spent = buildCombatActionDeck(
+      { ...fighter, combat_flags: { action_used: true, bonus_action_used: false } },
+      spells,
+      t,
+    ).tactics.find(a => a.id === 'sprint');
+    expect(spent?.disabled).toBe(true);
+  });
+
+  it('shows Czech Sprint description in meters', () => {
+    const csT = (s: string) => ({
+      'Action: gain {distance} more movement this turn.': 'Akce: získáš dalších {distance} pohybu v tomto tahu.',
+      Sprint: 'Sprint',
+    }[s] ?? s);
+    const deck = buildCombatActionDeck(fighter, spells, csT, 'cs');
+    const sprint = deck.tactics.find(a => a.id === 'sprint');
+    expect(sprint?.description).toBe('Akce: získáš dalších 9 m pohybu v tomto tahu.');
+    expect(sprint?.icon).toBe('sprint');
+  });
+
+  it('orders tactics advance, step back, sprint, disengage', () => {
+    const ids = buildCombatActionDeck(fighter, spells, t).tactics.map(a => a.id);
+    expect(ids.slice(0, 4)).toEqual(['advance', 'step_back', 'sprint', 'disengage']);
+  });
+
+  it('rogue keeps bonus Dash in abilities and Sprint in tactics', () => {
+    const rogue = {
+      ...fighter,
+      character_class: 'rogue' as const,
+      level: 2,
+    };
+    const deck = buildCombatActionDeck(rogue, spells, t);
+    expect(deck.abilityActions.some(a => a.id === 'cunning_dash' && a.economySlot === 'bonus')).toBe(true);
+    expect(deck.tactics.some(a => a.id === 'sprint')).toBe(true);
+  });
+
   it('builds combat deck with tactics and potion panel', () => {
     const deck = buildCombatActionDeck(fighter, spells, t);
     expect(deck.main).toHaveLength(4);
@@ -149,6 +190,7 @@ describe('combatActions', () => {
     expect(deck.paralyzedTurn?.continue.label).toBe('Continue');
     expect(deck.paralyzedTurn?.continue.action).toBe('end turn');
     expect(deck.paralyzedTurn?.continue.disabled).toBe(false);
+    expect(deck.tactics.some(a => a.id === 'sprint')).toBe(false);
   });
 
   it('Czech paralyzed turn copy', () => {

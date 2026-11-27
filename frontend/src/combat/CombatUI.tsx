@@ -21,6 +21,7 @@ import {
 } from './combatResolution';
 import { economyDenialReason, readCombatEconomy, spellEconomySlot } from './combatEconomy';
 import { CombatBattlefieldTrack } from './CombatBattlefieldTrack';
+import { formatWizardSpeedFt } from '../character/wizardDisplay';
 import { rangeDisadvantageLabel, readCombatTactics } from './combatRange';
 import type { CombatActionItem } from './combatActions';
 
@@ -33,19 +34,20 @@ function economyChipLabel(
 }
 
 export function CombatTacticsStrip({ character }: { character: Character }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const tactics = readCombatTactics(character);
   if (!character.in_combat || !tactics) return null;
   const wr = tactics.weapon_range;
   const dis = rangeDisadvantageLabel(wr?.disadvantage_reason, t);
+  const fmtDist = (ft: number) => (locale === 'cs' ? formatWizardSpeedFt(ft, locale) : `${ft} ${t('ft.')}`);
   return (
     <div className="combat-tactics-strip" role="status" aria-label={t('Battlefield')}>
       <p className="combat-tactics-line">
-        <span>{t('Distance')}: <strong>{tactics.distance_ft} {t('ft.')}</strong></span>
+        <span>{t('Distance')}: <strong>{fmtDist(tactics.distance_ft ?? 0)}</strong></span>
         {tactics.movement_remaining_ft != null && (
           <>
             {' · '}
-            <span>{t('Movement left')}: <strong>{tactics.movement_remaining_ft} {t('ft.')}</strong></span>
+            <span>{t('Movement left')}: <strong>{fmtDist(tactics.movement_remaining_ft)}</strong></span>
           </>
         )}
       </p>

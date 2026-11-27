@@ -19,10 +19,17 @@ export const ACTION_TEXTBOX = /your action|tvoje akce/i;
 export const SEND_ACTION_BTN = /send action|odeslat akci/i;
 export const SENDING_ACTION_STATUS = /sending your action|odesílám tvoji akci/i;
 
-export function signedTelegramInitData(userId: number) {
+export function signedTelegramInitData(
+  userId: number,
+  userOverrides?: { language_code?: string },
+) {
   const fields = {
     auth_date: Math.floor(Date.now() / 1000).toString(),
-    user: JSON.stringify({ id: userId, first_name: `E2E ${userId}`, language_code: 'en' }),
+    user: JSON.stringify({
+      id: userId,
+      first_name: `E2E ${userId}`,
+      language_code: userOverrides?.language_code ?? 'en',
+    }),
   };
   const checkString = Object.keys(fields)
     .sort()

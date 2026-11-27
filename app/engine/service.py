@@ -1069,6 +1069,68 @@ class GameEngine:
             monster,
         )
 
+    def _resolve_sprint(
+        self,
+        character: CharacterState,
+        action: str,
+        monster: MonsterState | None,
+    ) -> tuple[TurnResult, MonsterState | None]:
+        from .class_features import use_dash_action
+
+        if not character.in_combat or monster is None:
+            return combat_action_denied(action, "You can only Dash during a fight."), monster
+        blocked = self._require_player_combat_turn(character, action)
+        if blocked:
+            return blocked, monster
+        blocked_turn = self._begin_player_combat_action(character, action)[1]
+        if blocked_turn:
+            return blocked_turn, monster
+
+        ok, lines, class_facts = use_dash_action(character)
+        if ok:
+            return (
+                TurnResult(action, lines, True, class_facts=class_facts, costs_adventure_mana=False),
+                monster,
+            )
+        return combat_action_denied(action, lines), monster
+
+    def _resolve_dash(
+        self,
+        character: CharacterState,
+        action: str,
+        monster: MonsterState | None,
+    ) -> tuple[TurnResult, MonsterState | None]:
+        from .class_features import use_cunning_dash, use_dash_action
+        from .combat_action_economy import FLAG_ACTION_USED, FLAG_BONUS_USED, _flag
+
+        if not character.in_combat or monster is None:
+            return combat_action_denied(action, "You can only Dash during a fight."), monster
+
+        if character.character_class == "rogue" and character.level >= 2 and not _flag(character, FLAG_BONUS_USED):
+            ok, lines, class_facts = use_cunning_dash(character)
+            if ok:
+                return (
+                    TurnResult(action, lines, True, class_facts=class_facts, costs_adventure_mana=False),
+                    monster,
+                )
+            if _flag(character, FLAG_ACTION_USED):
+                return combat_action_denied(action, lines), monster
+
+        blocked = self._require_player_combat_turn(character, action)
+        if blocked:
+            return blocked, monster
+        blocked_turn = self._begin_player_combat_action(character, action)[1]
+        if blocked_turn:
+            return blocked_turn, monster
+
+        ok, lines, class_facts = use_dash_action(character)
+        if ok:
+            return (
+                TurnResult(action, lines, True, class_facts=class_facts, costs_adventure_mana=False),
+                monster,
+            )
+        return combat_action_denied(action, lines), monster
+
     def _resolve_combat_move(
         self,
         character: CharacterState,
@@ -2210,7 +2272,6 @@ class GameEngine:
             try_hide_in_combat,
             use_action_surge,
             use_arcane_recovery,
-            use_cunning_dash,
             use_preserve_life,
             use_second_wind,
             use_turn_undead,
@@ -2220,6 +2281,7 @@ class GameEngine:
             ACTION_SURGE_PATTERN,
             ARCANE_RECOVERY_PATTERN,
             DASH_COMBAT_PATTERN,
+            SPRINT_COMBAT_PATTERN,
             HIDE_COMBAT_PATTERN,
             PRESERVE_LIFE_PATTERN,
             SECOND_WIND_PATTERN,
@@ -2227,6 +2289,11 @@ class GameEngine:
         )
 
         text = action.casefold()
+        if feature == "dash_action" or SPRINT_COMBAT_PATTERN.search(text):
+            return self._resolve_sprint(character, action, monster)
+        if feature == "cunning_dash" or DASH_COMBAT_PATTERN.search(text):
+            return self._resolve_dash(character, action, monster)
+
         if monster and character.in_combat:
             blocked = self._require_player_combat_turn(character, action)
             if blocked:
@@ -2254,13 +2321,6 @@ class GameEngine:
 
         if feature == "action_surge" or ACTION_SURGE_PATTERN.search(text):
             ok, lines, class_facts = use_action_surge(character)
-            events.extend(lines)
-            changed = ok
-            if ok:
-                return TurnResult(action, events, changed, class_facts=class_facts, costs_adventure_mana=False), monster
-
-        if feature == "cunning_dash" or DASH_COMBAT_PATTERN.search(text):
-            ok, lines, class_facts = use_cunning_dash(character)
             events.extend(lines)
             changed = ok
             if ok:

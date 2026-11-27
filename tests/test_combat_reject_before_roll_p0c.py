@@ -251,19 +251,18 @@ def _prep_flee_action_spent(game: GameEngine) -> tuple[CharacterState, MonsterSt
     return hero, monster
 
 
-def _prep_dash_non_rogue(game: GameEngine) -> tuple[CharacterState, MonsterState]:
+def _prep_sprint_action_spent(game: GameEngine) -> tuple[CharacterState, MonsterState]:
     hero = game.create_character(1, "Fighter", "human", "fighter")
     _enter_player_turn(hero)
+    spend_action(hero)
     monster = _goblin()
     _attach_combatant(hero, monster)
     return hero, monster
 
 
-def _prep_dash_bonus_spent(game: GameEngine) -> tuple[CharacterState, MonsterState]:
-    hero = game.create_character(1, "Rogue", "human", "rogue")
-    hero.level = 2
-    _enter_player_turn(hero)
-    spend_bonus_action(hero)
+def _prep_sprint_out_of_combat(game: GameEngine) -> tuple[CharacterState, MonsterState]:
+    hero = game.create_character(1, "Fighter", "human", "fighter")
+    hero.in_combat = False
     monster = _goblin()
     _attach_combatant(hero, monster)
     return hero, monster
@@ -359,8 +358,8 @@ _REJECT_CASES: list[RejectBeforeRollCase] = [
     RejectBeforeRollCase("cast_action_already_used", "cast Sacred Flame", _prep_cast_action_spent),
     RejectBeforeRollCase("flee_enemy_turn", "flee", _prep_flee_enemy_turn),
     RejectBeforeRollCase("flee_action_already_used", "flee", _prep_flee_action_spent),
-    RejectBeforeRollCase("dash_non_rogue", "dash", _prep_dash_non_rogue),
-    RejectBeforeRollCase("dash_rogue_bonus_spent", "dash", _prep_dash_bonus_spent),
+    RejectBeforeRollCase("sprint_action_spent", "sprint", _prep_sprint_action_spent),
+    RejectBeforeRollCase("sprint_out_of_combat", "sprint", _prep_sprint_out_of_combat),
     RejectBeforeRollCase("disengage_rogue_pools_spent", "disengage", _prep_disengage_pools_spent),
     RejectBeforeRollCase("action_surge_spent", "action surge", _prep_action_surge_spent),
     RejectBeforeRollCase("action_surge_before_first_action", "action surge", _prep_action_surge_before_action),

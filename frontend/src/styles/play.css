@@ -1191,6 +1191,13 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+.combat-action-grid-tactics .combat-action-label {
+  max-width: 100%;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+  hyphens: auto;
+}
+
 .combat-tactics-heading {
   margin: 8px 0 4px;
   font-size: 0.75rem;
