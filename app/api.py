@@ -965,11 +965,11 @@ async def action(
     if replayed:
         logger.info(f"Replayed committed turn for character {character_id}")
         return response
-    assert context is not None and event_id is not None
+    assert context is not None
     if narration_mock_requested(request):
         response.narration_status = "fallback"
         delivery_provider, delivery_model = None, None
-    else:
+    elif event_id is not None:
         response.narration, response.narration_status, delivery_provider, delivery_model = await narrate_committed(
             context,
             event_id,
@@ -978,6 +978,9 @@ async def action(
             character_id=character_id,
             billing_tier=billing_tier,
         )
+    else:
+        response.narration_status = "fallback"
+        delivery_provider, delivery_model = None, None
     attach_narration_layers(response, context)
     await reconcile_narrator_billing(
         user_id=user.id,
@@ -1038,7 +1041,7 @@ async def action_stream(
             )
             return
 
-        assert context is not None and event_id is not None
+        assert context is not None
         chunks: list[str] = []
         stream_live_deltas = normalize_narration_language(context.language) != "cs"
         mock = narration_mock_requested(request)
@@ -1092,6 +1095,19 @@ async def action_stream(
                 narration_provider=delivery_provider,
                 narration_model=delivery_model,
             )
+
+        if event_id is None:
+            await finalize_turn()
+            yield sse_message(
+                "complete",
+                {
+                    "narration": response.narration,
+                    "narration_status": response.narration_status,
+                    "energy_tenths": response.energy_tenths,
+                    "energy": response.energy,
+                },
+            )
+            return
 
         try:
             if mock:
@@ -1271,18 +1287,20 @@ async def commit_action_turn(
                 raise
             fallback = Narrator.narrate_offline(context)
             resolution_payload = result.resolution if result.resolution else {}
-            event = EventRecord(
-                character_id=character_id,
-                action=text,
-                result=journal_result(fallback, context.events),
-                resolution_json=resolution_payload,
-            )
-            session.add(event)
-            await session.flush()
-            event_id = event.id
-            character.turn_count += 1
+            event_id = None
+            if not result.action_rejected:
+                event = EventRecord(
+                    character_id=character_id,
+                    action=text,
+                    result=journal_result(fallback, context.events),
+                    resolution_json=resolution_payload,
+                )
+                session.add(event)
+                await session.flush()
+                event_id = event.id
+                character.turn_count += 1
+                character = await maybe_archive_journal(session, character_id, character)
             capture_engine_rng(character, game)
-            character = await maybe_archive_journal(session, character_id, character)
             record.payload = encode_character_state(asdict(character))
             append_analytics(
                 session,
