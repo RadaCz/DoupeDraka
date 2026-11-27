@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { formatSpellRangeDenial, spellRangeRow } from './combatSpellRange';
+import { formatSpellRangeDenial, spellRangeRow, type CombatSpellTacticRow } from './combatSpellRange';
 import type { Character } from '../types';
 
-const t = (s: string) => (
-  s === 'Sacred Flame' ? 'Posvátný plamen' : s
-);
+const t = (s: string) => {
+  if (s === 'Sacred Flame') return 'Posvátný plamen';
+  if (s === 'Burning Hands') return 'Hořící ruce';
+  return s;
+};
 
 describe('combatSpellRange', () => {
   const character = {
@@ -42,5 +44,20 @@ describe('combatSpellRange', () => {
     const text = formatSpellRangeDenial(row, 'cs', t, undefined);
     expect(text).toBe('Posvátný plamen má dosah 18 m.');
     expect(text).not.toMatch(/Nepřítel/);
+  });
+
+  it('formats Burning Hands cone denial in Czech without generic reach copy', () => {
+    const row: CombatSpellTacticRow = {
+      name: 'Burning Hands',
+      range_ft: 15,
+      can_cast: false,
+      denial: 'Burning Hands has a range of 15 ft. The enemy is 60 ft away.',
+    };
+    expect(formatSpellRangeDenial(row, 'cs', t, 60)).toBe(
+      'Hořící ruce zasáhnou jen do 4,5 m od tebe.',
+    );
+    expect(formatSpellRangeDenial(row, 'cs', t, undefined)).toBe(
+      'Hořící ruce zasáhnou jen do 4,5 m od tebe.',
+    );
   });
 });

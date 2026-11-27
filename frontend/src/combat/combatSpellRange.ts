@@ -37,7 +37,11 @@ export function formatSpellRangeDenial(
   }
   const spellLabel = displaySpellName(row.name, locale, t);
   const rangeLabel = formatWizardSpeedFt(row.range_ft, locale);
+  const burningHandsCone = row.name.trim().toLowerCase() === 'burning hands';
   if (locale === 'cs') {
+    if (burningHandsCone) {
+      return `${spellLabel} zasáhnou jen do ${rangeLabel} od tebe.`;
+    }
     if (typeof distanceFt === 'number' && Number.isFinite(distanceFt)) {
       const distanceLabel = formatWizardSpeedFt(distanceFt, locale);
       return `${spellLabel} má dosah ${rangeLabel}. Nepřítel je ${distanceLabel} daleko.`;
