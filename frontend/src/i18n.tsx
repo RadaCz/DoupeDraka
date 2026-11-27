@@ -132,6 +132,7 @@ const cs: Record<string, string> = {
   'Look for a chance to break away.': 'Hledej skulinu k úniku.',
   'Wait for the enemy to act.': 'Počkej, až protivník jedná.',
   'You are paralyzed and cannot act.': 'Jsi paralyzován a nemůžeš jednat.',
+  'You are paralyzed this turn and cannot act.': 'Jsi paralyzovaný. Tento tah nemůžeš jednat.',
   'Action economy': 'Ekonomika akcí',
   'Action': 'Akce',
   'Bonus action': 'Bonusová akce',

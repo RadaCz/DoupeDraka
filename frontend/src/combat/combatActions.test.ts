@@ -136,4 +136,34 @@ describe('combatActions', () => {
   it('legacy buildCombatActions flattens deck entries', () => {
     expect(buildCombatActions(fighter, spells, t).length).toBeGreaterThan(4);
   });
+
+  it('paralyzed player turn exposes only Continue (end turn)', () => {
+    const paralyzed = {
+      ...fighter,
+      conditions: [{ condition_id: 'paralyzed', source_id: 'ghoul' }],
+    };
+    const deck = buildCombatActionDeck(paralyzed, spells, t);
+    expect(deck.main).toHaveLength(0);
+    expect(deck.tactics).toHaveLength(0);
+    expect(deck.paralyzedTurn?.message).toBe('You are paralyzed this turn and cannot act.');
+    expect(deck.paralyzedTurn?.continue.label).toBe('Continue');
+    expect(deck.paralyzedTurn?.continue.action).toBe('end turn');
+    expect(deck.paralyzedTurn?.continue.disabled).toBe(false);
+  });
+
+  it('Czech paralyzed turn copy', () => {
+    const paralyzed = {
+      ...fighter,
+      conditions: [{ condition_id: 'paralyzed' }],
+    };
+    const cs = (key: string) =>
+      ({
+        'You are paralyzed this turn and cannot act.': 'Jsi paralyzovaný. Tento tah nemůžeš jednat.',
+        Continue: 'Pokračovat',
+        'Pass to the enemy when you are done acting.': 'Předej tah protivníkovi.',
+      })[key] ?? key;
+    const deck = buildCombatActionDeck(paralyzed, spells, cs, 'cs');
+    expect(deck.paralyzedTurn?.message).toBe('Jsi paralyzovaný. Tento tah nemůžeš jednat.');
+    expect(deck.paralyzedTurn?.continue.label).toBe('Pokračovat');
+  });
 });
