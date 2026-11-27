@@ -1458,20 +1458,17 @@ class GameEngine:
 
             range_ctx = evaluate_spell_enemy_range(character, selected)
             if not range_ctx.allowed:
-                return TurnResult(
-                    action,
-                    [range_ctx.denial],
-                    False,
-                    spell_facts={
-                        "spell_name": selected,
-                        "spell_level": level,
-                        "slot_level": None,
-                        "slot_consumed": False,
-                        "effect": {"type": "spell_out_of_range"},
-                        "target_hp_after": monster.hp if monster else None,
-                        "save_result": None,
-                    },
-                    costs_adventure_mana=False,
+                out_of_range_facts = {
+                    "spell_name": selected,
+                    "spell_level": level,
+                    "slot_level": None,
+                    "slot_consumed": False,
+                    "effect": {"type": "spell_out_of_range"},
+                    "target_hp_after": monster.hp if monster else None,
+                    "save_result": None,
+                }
+                return combat_action_denied(
+                    action, range_ctx.denial, spell_facts=out_of_range_facts
                 ), monster
 
         opening_events: list[str] = []

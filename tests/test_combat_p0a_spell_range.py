@@ -75,6 +75,7 @@ def test_offensive_spell_beyond_range_no_cost(game: GameEngine, spell: str):
     slots_before = dict(hero.spell_slots)
     result, _ = game.resolve_action(hero, f"cast {spell}", monster)
     assert not result.state_changed
+    assert result.action_rejected
     assert hero.spell_slots == slots_before
     assert not hero.combat_flags.get("action_used")
     assert "ft away" in " ".join(result.events)
@@ -92,6 +93,7 @@ def test_sacred_flame_beyond_sixty_denied(game: GameEngine):
     slots = dict(hero.spell_slots)
     deny, _ = game.resolve_action(hero, "cast Sacred Flame", monster)
     assert not deny.state_changed
+    assert deny.action_rejected
     assert hero.spell_slots == slots
     assert "Sacred Flame" in deny.events[0]
 
@@ -107,6 +109,7 @@ def test_burning_hands_fifteen_vs_twenty(game: GameEngine):
     slots = dict(hero.spell_slots)
     deny, _ = game.resolve_action(hero, "cast Burning Hands", monster)
     assert not deny.state_changed
+    assert deny.action_rejected
     assert hero.spell_slots == slots
 
 
