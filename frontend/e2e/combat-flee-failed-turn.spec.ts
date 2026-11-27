@@ -28,7 +28,7 @@ test('Schválená pravidla §3 — neúspěšný útěk, hráč dál jedná', as
       race: 'halfling',
       character_class: 'rogue',
       background: 'criminal',
-      class_skills: ['Acrobatics', 'Stealth', 'Perception', 'Sleight of Hand'],
+      class_skills: ['Acrobatics', 'Perception', 'Sleight of Hand', 'Investigation'],
       abilities: { strength: 8, dexterity: 8, constitution: 14, intelligence: 10, wisdom: 12, charisma: 10 },
     },
   });
