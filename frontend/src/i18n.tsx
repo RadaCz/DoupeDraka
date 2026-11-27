@@ -577,7 +577,8 @@ const cs: Record<string, string> = {
   'New abilities: {list}.': 'Nové schopnosti: {list}.',
   'Coming later: {list}.': 'Připravuje se: {list}.',
   'Hide (bonus action). Dash and bonus Disengage are not modeled yet.':
-    'Schovat se (bonusová akce). Dash a bonusové Disengage zatím nejsou v enginu.',
+    'Schovat se (bonusová akce). Rogue má Dash přes Cunning Action; univerzální Sprint je akce.',
+  'Sprint': 'Sprint',
   'Spell slots: {summary}.': 'Kouzelné sloty: {summary}.',
   'Action Surge': 'Příval akce',
   'Take one additional action this turn (once per short rest).':

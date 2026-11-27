@@ -1,4 +1,5 @@
 import type { Locale } from '../i18n';
+import { formatWizardSpeedFt } from '../character/wizardDisplay';
 import { castSpellAction, modeledCombatSpells as modeledSpellsFromBook } from '../spells/spellbook';
 import { displaySpellName } from '../spells/spellDisplay';
 import type { Character, JournalEvent, Spell } from '../types';
@@ -310,9 +311,31 @@ export function buildCombatActionDeck(
     panelTarget: 'items',
   };
 
+  const speedFt = character.speed ?? 30;
+  const sprintDistance = formatWizardSpeedFt(speedFt, locale);
+
   const tacticActions: CombatActionItem[] = [];
   if (character.in_combat && playerTurn) {
     tacticActions.push(
+      wrap(
+        character,
+        playerTurn,
+        economy,
+        t,
+        {
+          id: 'sprint',
+          kind: 'movement',
+          label: t('Sprint'),
+          description: locale === 'cs'
+            ? `Akce: získáš pohyb ${sprintDistance} (přičte se k zbytku tahu).`
+            : `Action: gain ${sprintDistance} of movement (added to your turn budget).`,
+          icon: 'advance',
+          action: 'sprint',
+          economySlot: 'action',
+        },
+        paralyzed,
+        paralysisReason,
+      ),
       wrap(
         character,
         playerTurn,

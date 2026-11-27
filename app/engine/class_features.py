@@ -374,6 +374,35 @@ def rebuild_wizard_spellbook(character: CharacterState, level_one_spells: list[s
     character.prepared_spells = leveled[:limit]
 
 
+def grant_dash_movement_ft(character: CharacterState) -> int:
+    """Add movement equal to speed (feet). Caller must spend action/bonus first."""
+    bonus_ft = max(0, int(character.speed or 30))
+    character.combat_movement_remaining_ft = max(
+        0, int(character.combat_movement_remaining_ft or 0)
+    ) + bonus_ft
+    return bonus_ft
+
+
+def use_dash_action(character: CharacterState) -> tuple[bool, list[str], dict]:
+    from .combat_action_economy import spend_action
+
+    if not character.in_combat:
+        return False, ["You can only Dash during combat."], {}
+    ok, reason = spend_action(character)
+    if not ok:
+        return False, [reason], {}
+    bonus_ft = grant_dash_movement_ft(character)
+    facts = {"kind": "dash_action", "movement_granted_ft": bonus_ft}
+    return (
+        True,
+        [
+            f"Sprint grants {bonus_ft} ft of movement this turn "
+            f"({character.combat_movement_remaining_ft} ft remaining)."
+        ],
+        facts,
+    )
+
+
 def use_cunning_dash(character: CharacterState) -> tuple[bool, list[str], dict]:
     from .combat_action_economy import spend_bonus_action
 
@@ -384,10 +413,7 @@ def use_cunning_dash(character: CharacterState) -> tuple[bool, list[str], dict]:
     ok, reason = spend_bonus_action(character)
     if not ok:
         return False, [reason], {}
-    bonus_ft = max(0, int(character.speed or 30))
-    character.combat_movement_remaining_ft = max(
-        0, int(character.combat_movement_remaining_ft or 0)
-    ) + bonus_ft
+    bonus_ft = grant_dash_movement_ft(character)
     facts = {"kind": "cunning_dash", "movement_granted_ft": bonus_ft}
     return (
         True,

@@ -60,6 +60,37 @@ describe('combatActions', () => {
     expect(attack?.description).not.toMatch(/Strike|with your weapon/i);
   });
 
+  it('offers Sprint action in tactics when player turn and action available', () => {
+    const deck = buildCombatActionDeck(fighter, spells, t);
+    const sprint = deck.tactics.find(a => a.id === 'sprint');
+    expect(sprint?.action).toBe('sprint');
+    expect(sprint?.disabled).toBe(false);
+    expect(sprint?.economySlot).toBe('action');
+    const spent = buildCombatActionDeck(
+      { ...fighter, combat_flags: { action_used: true, bonus_action_used: false } },
+      spells,
+      t,
+    ).tactics.find(a => a.id === 'sprint');
+    expect(spent?.disabled).toBe(true);
+  });
+
+  it('shows Czech Sprint description in meters', () => {
+    const deck = buildCombatActionDeck(fighter, spells, t, 'cs');
+    const sprint = deck.tactics.find(a => a.id === 'sprint');
+    expect(sprint?.description).toContain('9 m');
+  });
+
+  it('rogue keeps bonus Dash in abilities and Sprint in tactics', () => {
+    const rogue = {
+      ...fighter,
+      character_class: 'rogue' as const,
+      level: 2,
+    };
+    const deck = buildCombatActionDeck(rogue, spells, t);
+    expect(deck.abilityActions.some(a => a.id === 'cunning_dash' && a.economySlot === 'bonus')).toBe(true);
+    expect(deck.tactics.some(a => a.id === 'sprint')).toBe(true);
+  });
+
   it('builds combat deck with tactics and potion panel', () => {
     const deck = buildCombatActionDeck(fighter, spells, t);
     expect(deck.main).toHaveLength(4);
