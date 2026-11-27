@@ -27,7 +27,7 @@ export function formatSpellRangeDenial(
   row: CombatSpellTacticRow,
   locale: Locale,
   t: (value: string) => string,
-  distanceFt?: number,
+  distanceFt?: number | null,
 ): string {
   if (locale === 'en' && row.denial) {
     return row.denial;
@@ -37,16 +37,15 @@ export function formatSpellRangeDenial(
   }
   const spellLabel = displaySpellName(row.name, locale, t);
   const rangeLabel = formatWizardSpeedFt(row.range_ft, locale);
-  const distFt = distanceFt ?? distanceFtFromDenial(row.denial) ?? row.range_ft + 1;
-  const distanceLabel = formatWizardSpeedFt(distFt, locale);
   if (locale === 'cs') {
-    return `${spellLabel} má dosah ${rangeLabel}. Nepřítel je ${distanceLabel} daleko.`;
+    if (typeof distanceFt === 'number' && Number.isFinite(distanceFt)) {
+      const distanceLabel = formatWizardSpeedFt(distanceFt, locale);
+      return `${spellLabel} má dosah ${rangeLabel}. Nepřítel je ${distanceLabel} daleko.`;
+    }
+    return `${spellLabel} má dosah ${rangeLabel}.`;
   }
-  return row.denial ?? `${row.name} has a range of ${row.range_ft} ft. The enemy is ${distFt} ft away.`;
-}
-
-function distanceFtFromDenial(denial: string | null | undefined): number | undefined {
-  if (!denial) return undefined;
-  const match = denial.match(/enemy is (\d+) ft away/i);
-  return match ? Number(match[1]) : undefined;
+  if (typeof distanceFt === 'number' && Number.isFinite(distanceFt)) {
+    return `${row.name} has a range of ${row.range_ft} ft. The enemy is ${distanceFt} ft away.`;
+  }
+  return row.denial ?? `${row.name} has a range of ${row.range_ft} ft.`;
 }

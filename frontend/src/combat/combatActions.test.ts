@@ -114,10 +114,10 @@ describe('combatActions', () => {
         ],
       },
     };
-    const deck = buildCombatActionDeck(wizard, spells, t);
+    const deck = buildCombatActionDeck(wizard, spells, t, 'cs');
     const fireBolt = deck.abilityActions.find(a => a.id === 'spell-Fire Bolt');
     expect(fireBolt?.disabled).toBe(true);
-    expect(fireBolt?.disabledReason).toContain('121 ft');
+    expect(fireBolt?.disabledReason).toContain('36,3 m');
   });
 
   it('builds cast action with target for damage spells', () => {
