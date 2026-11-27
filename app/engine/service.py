@@ -1458,6 +1458,27 @@ class GameEngine:
                 costs_adventure_mana=False,
             ), monster
 
+        if character.in_combat and monster and damage_kind:
+            from .combat_spell_range import evaluate_spell_enemy_range
+
+            range_ctx = evaluate_spell_enemy_range(character, selected)
+            if not range_ctx.allowed:
+                return TurnResult(
+                    action,
+                    [range_ctx.denial],
+                    False,
+                    spell_facts={
+                        "spell_name": selected,
+                        "spell_level": level,
+                        "slot_level": None,
+                        "slot_consumed": False,
+                        "effect": {"type": "spell_out_of_range"},
+                        "target_hp_after": monster.hp if monster else None,
+                        "save_result": None,
+                    },
+                    costs_adventure_mana=False,
+                ), monster
+
         opening_events: list[str] = []
         if damage_kind and monster and not character.in_combat:
             opening_events = self._open_combat_encounter(character, monster)

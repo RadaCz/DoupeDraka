@@ -13,6 +13,12 @@ export interface CombatTactics {
     disadvantage_reason?: string | null;
     denial?: string;
   };
+  spells?: Array<{
+    name: string;
+    range_ft: number | null;
+    can_cast: boolean;
+    denial?: string | null;
+  }>;
 }
 
 export function readCombatTactics(character: Character): CombatTactics | null {

@@ -32,11 +32,13 @@ def character_api_payload(character: CharacterState) -> dict:
     if character.in_combat:
         from .engine.combat_positioning import positioning_facts
         from .engine.combat_range import combat_range_facts
+        from .engine.combat_spell_range import combat_spell_tactics
         from .engine.equipment import equipped_weapon
 
         payload["combat_tactics"] = {
             **positioning_facts(character),
             "weapon_range": combat_range_facts(character, equipped_weapon(character)),
+            "spells": combat_spell_tactics(character),
         }
     return payload
 from .heroes import HEROES, get_hero
