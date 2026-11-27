@@ -67,6 +67,12 @@ export interface Character {
     movement_remaining_ft?: number;
     speed_ft?: number;
     weapon_range?: Record<string, unknown>;
+    spells?: Array<{
+      name: string;
+      range_ft: number | null;
+      can_cast: boolean;
+      denial?: string | null;
+    }>;
   };
 }
 

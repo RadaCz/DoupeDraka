@@ -151,6 +151,26 @@ def test_denied_combat_actions_do_not_journal_or_increment_turn_count(api_db):
         headers, wizard_id, "cast Magic Missile", events_before=events, turns_before=turns
     )
 
+    # Offensive spell beyond SRD range (P0a) — denial must not journal (P1d)
+    wizard_range_id = client.post(
+        "/characters",
+        json={"name": "Range", "race": "human", "character_class": "wizard"},
+        headers=headers,
+    ).json()["id"]
+
+    def wizard_out_of_spell_range(hero):
+        _combat_seed(hero, distance_ft=121)
+        hero.spell_slots = {1: 2}
+        hero.known_spells = ["Fire Bolt"]
+        hero.prepared_spells = ["Fire Bolt"]
+
+    _seed_hero(wizard_range_id, wizard_out_of_spell_range)
+    events = asyncio.run(_count_events(wizard_range_id))
+    turns = asyncio.run(_turn_count(wizard_range_id))
+    _assert_denial_persisted(
+        headers, wizard_range_id, "cast Fire Bolt", events_before=events, turns_before=turns
+    )
+
     # Flee denied when action already spent
     def flee_setup(hero):
         _combat_seed(hero)
