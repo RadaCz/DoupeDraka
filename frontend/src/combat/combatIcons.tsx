@@ -4,6 +4,7 @@ export type CombatIconName =
   | 'abilities'
   | 'items'
   | 'advance'
+  | 'sprint'
   | 'retreat'
   | 'disengage'
   | 'flee'
@@ -63,6 +64,13 @@ export function CombatIcon({ name, className }: { name: CombatIconName; classNam
         <svg {...common}>
           <path d="M5 12 H17" />
           <path d="M13 8 L17 12 L13 16" />
+        </svg>
+      );
+    case 'sprint':
+      return (
+        <svg {...common}>
+          <path d="M6 17 L8 11 L11 14 L14 8 L17 11 L19 17" />
+          <path d="M6 17 H19" />
         </svg>
       );
     case 'retreat':

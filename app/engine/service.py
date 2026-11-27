@@ -1075,6 +1075,34 @@ class GameEngine:
             monster,
         )
 
+    def _resolve_sprint(
+        self,
+        character: CharacterState,
+        action: str,
+        monster: MonsterState | None,
+    ) -> tuple[TurnResult, MonsterState | None]:
+        from .class_features import use_dash_action
+
+        if not character.in_combat or monster is None:
+            return (
+                TurnResult(action, ["You can only Dash during a fight."], False, costs_adventure_mana=False),
+                monster,
+            )
+        blocked = self._require_player_combat_turn(character, action)
+        if blocked:
+            return blocked, monster
+        blocked_turn = self._begin_player_combat_action(character, action)[1]
+        if blocked_turn:
+            return self._finish_paralyzed_player_turn(character, action, monster)
+
+        ok, lines, class_facts = use_dash_action(character)
+        if ok:
+            return (
+                TurnResult(action, lines, True, class_facts=class_facts, costs_adventure_mana=False),
+                monster,
+            )
+        return TurnResult(action, lines, False, costs_adventure_mana=False), monster
+
     def _resolve_dash(
         self,
         character: CharacterState,
@@ -2251,6 +2279,7 @@ class GameEngine:
             ACTION_SURGE_PATTERN,
             ARCANE_RECOVERY_PATTERN,
             DASH_COMBAT_PATTERN,
+            SPRINT_COMBAT_PATTERN,
             HIDE_COMBAT_PATTERN,
             PRESERVE_LIFE_PATTERN,
             SECOND_WIND_PATTERN,
@@ -2289,6 +2318,9 @@ class GameEngine:
             changed = ok
             if ok:
                 return TurnResult(action, events, changed, class_facts=class_facts, costs_adventure_mana=False), monster
+
+        if feature == "dash_action" or SPRINT_COMBAT_PATTERN.search(text):
+            return self._resolve_sprint(character, action, monster)
 
         if feature == "cunning_dash" or DASH_COMBAT_PATTERN.search(text):
             return self._resolve_dash(character, action, monster)

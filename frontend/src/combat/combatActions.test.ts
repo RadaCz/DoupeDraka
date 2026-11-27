@@ -75,9 +75,19 @@ describe('combatActions', () => {
   });
 
   it('shows Czech Sprint description in meters', () => {
-    const deck = buildCombatActionDeck(fighter, spells, t, 'cs');
+    const csT = (s: string) => ({
+      'Action: gain {distance} more movement this turn.': 'Akce: získáš dalších {distance} pohybu v tomto tahu.',
+      Sprint: 'Sprint',
+    }[s] ?? s);
+    const deck = buildCombatActionDeck(fighter, spells, csT, 'cs');
     const sprint = deck.tactics.find(a => a.id === 'sprint');
-    expect(sprint?.description).toContain('9 m');
+    expect(sprint?.description).toBe('Akce: získáš dalších 9 m pohybu v tomto tahu.');
+    expect(sprint?.icon).toBe('sprint');
+  });
+
+  it('orders tactics advance, step back, sprint, disengage', () => {
+    const ids = buildCombatActionDeck(fighter, spells, t).tactics.map(a => a.id);
+    expect(ids.slice(0, 4)).toEqual(['advance', 'step_back', 'sprint', 'disengage']);
   });
 
   it('rogue keeps bonus Dash in abilities and Sprint in tactics', () => {

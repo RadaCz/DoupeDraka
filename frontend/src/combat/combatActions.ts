@@ -314,28 +314,14 @@ export function buildCombatActionDeck(
   const speedFt = character.speed ?? 30;
   const sprintDistance = formatWizardSpeedFt(speedFt, locale);
 
+  const sprintDescription = t('Action: gain {distance} more movement this turn.').replace(
+    '{distance}',
+    sprintDistance,
+  );
+
   const tacticActions: CombatActionItem[] = [];
   if (character.in_combat && playerTurn) {
     tacticActions.push(
-      wrap(
-        character,
-        playerTurn,
-        economy,
-        t,
-        {
-          id: 'sprint',
-          kind: 'movement',
-          label: t('Sprint'),
-          description: locale === 'cs'
-            ? `Akce: získáš pohyb ${sprintDistance} (přičte se k zbytku tahu).`
-            : `Action: gain ${sprintDistance} of movement (added to your turn budget).`,
-          icon: 'advance',
-          action: 'sprint',
-          economySlot: 'action',
-        },
-        paralyzed,
-        paralysisReason,
-      ),
       wrap(
         character,
         playerTurn,
@@ -367,6 +353,23 @@ export function buildCombatActionDeck(
         },
         moveStep <= 0 || paralyzed,
         paralysisReason ?? t('No movement remaining this turn.'),
+      ),
+      wrap(
+        character,
+        playerTurn,
+        economy,
+        t,
+        {
+          id: 'sprint',
+          kind: 'movement',
+          label: t('Sprint'),
+          description: sprintDescription,
+          icon: 'sprint',
+          action: 'sprint',
+          economySlot: 'action',
+        },
+        paralyzed,
+        paralysisReason,
       ),
       wrap(
         character,

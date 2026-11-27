@@ -95,6 +95,16 @@ def test_universal_sprint_action_adds_speed(klass: str):
     assert hero.combat_movement_remaining_ft == before + hero.speed
 
 
+def test_rogue_sprint_uses_action_not_bonus():
+    game = GameEngine(random.Random(13))
+    hero, monster = _combat_hero(game, "rogue", level=2)
+    assert not hero.combat_flags.get("bonus_action_used")
+    result, _ = game.resolve_action(hero, "sprint", monster)
+    assert result.state_changed
+    assert hero.combat_flags["action_used"]
+    assert not hero.combat_flags.get("bonus_action_used")
+
+
 def test_rogue_cunning_then_sprint_action_same_turn():
     game = GameEngine(random.Random(10))
     hero, monster = _combat_hero(game, "rogue", level=2)
