@@ -224,6 +224,27 @@ def test_rogue_bonus_dash_api(setup_db):
     assert not body["character"]["combat_flags"].get("action_used")
 
 
+def test_sprint_denial_sets_action_rejected():
+    game = GameEngine(random.Random(14))
+    hero, monster = _combat_hero(game, "fighter")
+    spend_action(hero)
+    result, _ = game.resolve_action(hero, "sprint", monster)
+    assert not result.state_changed
+    assert result.action_rejected
+
+    hero2, monster2 = _combat_hero(game, "fighter")
+    hero2.in_combat = False
+    result2, _ = game.resolve_action(hero2, "sprint", monster2)
+    assert result2.action_rejected
+
+    game3 = GameEngine(random.Random(15))
+    hero3, monster3 = _combat_hero(game3, "fighter")
+    hero3.conditions = [{"condition_id": "paralyzed", "source_id": "ghoul"}]
+    result3, _ = game3.resolve_action(hero3, "sprint", monster3)
+    assert result3.action_rejected
+    assert not hero3.combat_flags.get("action_used")
+
+
 def test_cunning_dash_still_bonus_only_for_rogue():
     game = GameEngine(random.Random(12))
     hero = create_hero("fighter")

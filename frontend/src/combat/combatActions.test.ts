@@ -167,6 +167,7 @@ describe('combatActions', () => {
     expect(deck.paralyzedTurn?.continue.label).toBe('Continue');
     expect(deck.paralyzedTurn?.continue.action).toBe('end turn');
     expect(deck.paralyzedTurn?.continue.disabled).toBe(false);
+    expect(deck.tactics.some(a => a.id === 'sprint')).toBe(false);
   });
 
   it('Czech paralyzed turn copy', () => {

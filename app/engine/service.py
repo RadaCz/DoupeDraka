@@ -1078,16 +1078,13 @@ class GameEngine:
         from .class_features import use_dash_action
 
         if not character.in_combat or monster is None:
-            return (
-                TurnResult(action, ["You can only Dash during a fight."], False, costs_adventure_mana=False),
-                monster,
-            )
+            return combat_action_denied(action, "You can only Dash during a fight."), monster
         blocked = self._require_player_combat_turn(character, action)
         if blocked:
             return blocked, monster
         blocked_turn = self._begin_player_combat_action(character, action)[1]
         if blocked_turn:
-            return self._finish_paralyzed_player_turn(character, action, monster)
+            return blocked_turn, monster
 
         ok, lines, class_facts = use_dash_action(character)
         if ok:
@@ -1095,7 +1092,7 @@ class GameEngine:
                 TurnResult(action, lines, True, class_facts=class_facts, costs_adventure_mana=False),
                 monster,
             )
-        return TurnResult(action, lines, False, costs_adventure_mana=False), monster
+        return combat_action_denied(action, lines), monster
 
     def _resolve_dash(
         self,
@@ -1107,10 +1104,7 @@ class GameEngine:
         from .combat_action_economy import FLAG_ACTION_USED, FLAG_BONUS_USED, _flag
 
         if not character.in_combat or monster is None:
-            return (
-                TurnResult(action, ["You can only Dash during a fight."], False, costs_adventure_mana=False),
-                monster,
-            )
+            return combat_action_denied(action, "You can only Dash during a fight."), monster
 
         if character.character_class == "rogue" and character.level >= 2 and not _flag(character, FLAG_BONUS_USED):
             ok, lines, class_facts = use_cunning_dash(character)
@@ -1120,14 +1114,14 @@ class GameEngine:
                     monster,
                 )
             if _flag(character, FLAG_ACTION_USED):
-                return TurnResult(action, lines, False, costs_adventure_mana=False), monster
+                return combat_action_denied(action, lines), monster
 
         blocked = self._require_player_combat_turn(character, action)
         if blocked:
             return blocked, monster
         blocked_turn = self._begin_player_combat_action(character, action)[1]
         if blocked_turn:
-            return self._finish_paralyzed_player_turn(character, action, monster)
+            return blocked_turn, monster
 
         ok, lines, class_facts = use_dash_action(character)
         if ok:
@@ -1135,7 +1129,7 @@ class GameEngine:
                 TurnResult(action, lines, True, class_facts=class_facts, costs_adventure_mana=False),
                 monster,
             )
-        return TurnResult(action, lines, False, costs_adventure_mana=False), monster
+        return combat_action_denied(action, lines), monster
 
     def _resolve_combat_move(
         self,
@@ -2277,6 +2271,11 @@ class GameEngine:
         )
 
         text = action.casefold()
+        if feature == "dash_action" or SPRINT_COMBAT_PATTERN.search(text):
+            return self._resolve_sprint(character, action, monster)
+        if feature == "cunning_dash" or DASH_COMBAT_PATTERN.search(text):
+            return self._resolve_dash(character, action, monster)
+
         if monster and character.in_combat:
             blocked = self._require_player_combat_turn(character, action)
             if blocked:
@@ -2308,12 +2307,6 @@ class GameEngine:
             changed = ok
             if ok:
                 return TurnResult(action, events, changed, class_facts=class_facts, costs_adventure_mana=False), monster
-
-        if feature == "dash_action" or SPRINT_COMBAT_PATTERN.search(text):
-            return self._resolve_sprint(character, action, monster)
-
-        if feature == "cunning_dash" or DASH_COMBAT_PATTERN.search(text):
-            return self._resolve_dash(character, action, monster)
 
         channel_feature = feature in ("preserve_life", "turn_undead") or (
             PRESERVE_LIFE_PATTERN.search(text) and feature != "turn_undead"
