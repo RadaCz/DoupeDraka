@@ -23,6 +23,8 @@ from app.engine.encounters import build_monster
 from app.engine.equipment import load_character_state
 from app.engine.models import CharacterState, MonsterState, TurnResult
 from app.engine.service import GameEngine
+from sqlalchemy import func
+
 from tests.test_engine import stats
 
 pytestmark_api = pytest.mark.integration
@@ -34,6 +36,67 @@ def _game(seed: int = 31) -> GameEngine:
 
 def _finalize(game: GameEngine, hero, monster, result: TurnResult) -> TurnResult:
     return game._finalize_turn_result(result, character=hero, monster=monster)
+
+
+def _fighter_in_melee(game: GameEngine, *, dexterity: int = 10) -> tuple[CharacterState, MonsterState]:
+    hero = game.create_character(1, "Guard", "human", "fighter", stats(dexterity=dexterity))
+    hero.in_combat = True
+    hero.combat_turn = "player"
+    hero.combat_round = 1
+    hero.combat_flags = {
+        "action_used": False,
+        "bonus_action_used": False,
+        "reaction_used": False,
+    }
+    mark_player_turn_start(hero)
+    hero.combat_distance_ft = MELEE_REACH_FT
+    hero.combat_movement_remaining_ft = 30
+    monster = build_monster("normal", "goblin")
+    hero.combatant = {
+        "name": monster.name,
+        "hp": monster.hp,
+        "max_hp": monster.max_hp,
+        "armor_class": monster.armor_class,
+    }
+    return hero, monster
+
+
+def _combat_economy_snapshot(hero: CharacterState) -> dict:
+    flags = dict(hero.combat_flags or {})
+    return {
+        "action_used": flags.get("action_used"),
+        "bonus_action_used": flags.get("bonus_action_used"),
+        "reaction_used": flags.get("reaction_used"),
+        "movement_remaining_ft": hero.combat_movement_remaining_ft,
+        "combat_distance_ft": hero.combat_distance_ft,
+        "combat_turn": hero.combat_turn,
+        "turn_count": hero.turn_count,
+    }
+
+
+def _assert_combat_denied_after_failed_flee(
+    game: GameEngine,
+    hero: CharacterState,
+    monster: MonsterState,
+    action: str,
+) -> None:
+    before = _combat_economy_snapshot(hero)
+    result, monster_after = game.resolve_action(hero, action, monster)
+    assert result.action_rejected is True
+    assert result.state_changed is False
+    assert _combat_economy_snapshot(hero) == before
+    assert monster_after is monster
+
+
+def _fail_flee(game: GameEngine, hero: CharacterState, monster: MonsterState) -> None:
+    game.rng.randint = lambda a, b: 1 if a == 1 and b == 20 else 4
+    result, after = game.resolve_action(hero, "flee", monster)
+    assert result.state_changed is True
+    assert result.action_rejected is False
+    assert "fail to break away" in " ".join(result.events).casefold()
+    assert hero.combat_flags.get("action_used") is True
+    assert hero.combat_turn == "player"
+    assert after is monster
 
 
 def _rogue_in_melee(game: GameEngine, *, dexterity: int = 14) -> tuple[CharacterState, MonsterState]:
@@ -126,23 +189,52 @@ def test_after_failed_flee_player_can_move_bonus_action_and_end_turn():
     """Po neúspěšném útěku tah pokračuje — pohyb, bonus (Dash) a „end turn“ projdou."""
     game = _game(33)
     hero, monster = _rogue_in_melee(game)
-    game.rng.randint = lambda a, b: 1 if a == 1 and b == 20 else 4
-
-    _, monster = game.resolve_action(hero, "flee", monster)
-    assert hero.combat_flags.get("action_used")
-    assert hero.combat_turn == "player"
+    _fail_flee(game, hero, monster)
+    move_before = hero.combat_movement_remaining_ft
 
     move, monster = game.resolve_action(hero, "retreat 10 ft", monster)
     assert move.state_changed
+    assert not move.action_rejected
     assert hero.combat_distance_ft == MELEE_REACH_FT + 10
 
     dash, monster = game.resolve_action(hero, "dash", monster)
     assert dash.state_changed
+    assert not dash.action_rejected
     assert hero.combat_flags.get("bonus_action_used")
+    assert hero.combat_movement_remaining_ft == move_before - 10 + int(hero.speed or 30)
 
     end, monster = game.resolve_action(hero, "end turn", monster)
     assert end.state_changed
+    assert not end.action_rejected
     assert hero.combat_turn in ("enemy", "player", "reaction")
+
+
+def test_after_failed_flee_fighter_attack_flee_and_dash_are_action_rejected():
+    """Po spotřebované akci (neúspěšný útěk) blokovat další akce spotřebovávající Action / bonus Dash."""
+    game = _game(41)
+    hero, monster = _fighter_in_melee(game)
+    _fail_flee(game, hero, monster)
+    for blocked in ("attack goblin", "flee", "dash"):
+        _assert_combat_denied_after_failed_flee(game, hero, monster, blocked)
+
+
+def test_after_failed_flee_rogue_second_cunning_dash_rejected_when_bonus_spent():
+    game = _game(44)
+    hero, monster = _rogue_in_melee(game)
+    _fail_flee(game, hero, monster)
+    dash, monster = game.resolve_action(hero, "dash", monster)
+    assert dash.state_changed and hero.combat_flags.get("bonus_action_used")
+    _assert_combat_denied_after_failed_flee(game, hero, monster, "dash")
+    _assert_combat_denied_after_failed_flee(game, hero, monster, "attack goblin")
+
+
+def test_after_failed_flee_rogue_attack_denied_before_bonus_dash_still_allowed():
+    game = _game(45)
+    hero, monster = _rogue_in_melee(game)
+    _fail_flee(game, hero, monster)
+    _assert_combat_denied_after_failed_flee(game, hero, monster, "attack goblin")
+    dash, monster = game.resolve_action(hero, "dash", monster)
+    assert dash.state_changed and not dash.action_rejected
 
 
 def test_flee_reject_before_roll_documented_in_p0c_cases():
@@ -176,11 +268,15 @@ def flee_api_client(setup_db):
     return client, headers, char_id
 
 
-def _seed_player_combat(char_id: str) -> None:
+def _seed_player_combat(char_id: str, *, character_class: str = "rogue", dexterity: int | None = None) -> None:
     async def seed():
         async with Session() as session:
             record = await session.get(CharacterRecord, char_id)
             hero = load_character_state(decode_character_state(record.payload))
+            if character_class:
+                hero.character_class = character_class
+            if dexterity is not None:
+                hero.abilities["dexterity"] = dexterity
             hero.in_combat = True
             hero.combat_turn = "player"
             hero.combat_distance_ft = MELEE_REACH_FT
@@ -194,6 +290,19 @@ def _seed_player_combat(char_id: str) -> None:
             await session.commit()
 
     asyncio.run(seed())
+
+
+async def _journal_metrics(char_id: str) -> tuple[int, int]:
+    async with Session() as session:
+        events = int(
+            await session.scalar(
+                select(func.count()).select_from(EventRecord).where(EventRecord.character_id == char_id)
+            )
+            or 0
+        )
+        record = await session.get(CharacterRecord, char_id)
+        hero = load_character_state(decode_character_state(record.payload))
+        return events, hero.turn_count
 
 
 @pytest.mark.integration
@@ -229,3 +338,133 @@ def test_api_flee_same_idempotency_key_replays_without_double_commit(flee_api_cl
     assert events == 1
     assert receipts == 1
     assert version == 1
+
+
+@pytest.mark.integration
+def test_api_failed_flee_journals_and_increments_turn_count(flee_api_client) -> None:
+    """Neúspěšný hod Útěku není action_rejected — zapisuje se do deníku."""
+    client, headers, char_id = flee_api_client
+    _seed_player_combat(char_id, dexterity=8)
+    events_before, turns_before = asyncio.run(_journal_metrics(char_id))
+
+    failed = False
+    for _ in range(16):
+        response = client.post(f"/characters/{char_id}/actions", json={"action": "flee"}, headers=headers)
+        assert response.status_code == 200, response.text
+        body = response.json()
+        joined = " ".join(body.get("events", [])).casefold()
+        char = body["character"]
+        if char.get("in_combat") and char.get("combat_flags", {}).get("action_used"):
+            assert "fail to break away" in joined
+            failed = True
+            break
+        if not char.get("in_combat"):
+            _seed_player_combat(char_id, dexterity=8)
+
+    assert failed
+    events_after, turns_after = asyncio.run(_journal_metrics(char_id))
+    assert events_after == events_before + 1
+    assert turns_after == turns_before + 1
+
+
+@pytest.mark.integration
+def test_api_flee_denied_before_roll_does_not_journal(flee_api_client) -> None:
+    """Zrušení / odmítnutí Útěku před hodem — bez deníku a turn_count."""
+    client, headers, char_id = flee_api_client
+    _seed_player_combat(char_id)
+    events_before, turns_before = asyncio.run(_journal_metrics(char_id))
+
+    from app.engine.combat_action_economy import spend_action
+
+    async def spend():
+        async with Session() as session:
+            record = await session.get(CharacterRecord, char_id)
+            hero = load_character_state(decode_character_state(record.payload))
+            spend_action(hero)
+            record.payload = encode_character_state(asdict(hero))
+            await session.commit()
+
+    asyncio.run(spend())
+
+    response = client.post(f"/characters/{char_id}/actions", json={"action": "flee"}, headers=headers)
+    assert response.status_code == 200
+    assert "already used your action" in " ".join(response.json().get("events", [])).casefold()
+    events_after, turns_after = asyncio.run(_journal_metrics(char_id))
+    assert events_after == events_before
+    assert turns_after == turns_before
+
+
+@pytest.mark.integration
+def test_api_after_failed_flee_denied_attack_flee_dash_no_journal(flee_api_client) -> None:
+    client, headers, char_id = flee_api_client
+    _seed_player_combat(char_id, character_class="fighter", dexterity=8)
+    failed = False
+    for _ in range(16):
+        response = client.post(f"/characters/{char_id}/actions", json={"action": "flee"}, headers=headers)
+        body = response.json()
+        char = body["character"]
+        if char.get("in_combat") and char.get("combat_flags", {}).get("action_used"):
+            failed = True
+            break
+        if not char.get("in_combat"):
+            _seed_player_combat(char_id, character_class="fighter", dexterity=8)
+    assert failed
+
+    events_before, turns_before = asyncio.run(_journal_metrics(char_id))
+    for denied in ("attack goblin", "flee", "dash"):
+        response = client.post(
+            f"/characters/{char_id}/actions",
+            json={"action": denied},
+            headers=headers,
+        )
+        assert response.status_code == 200
+        assert asyncio.run(_journal_metrics(char_id)) == (events_before, turns_before)
+
+    move = client.post(
+        f"/characters/{char_id}/actions",
+        json={"action": "retreat 5 ft"},
+        headers=headers,
+    )
+    assert move.status_code == 200
+    assert move.json()["character"]["combat_turn"] == "player"
+    events_after_move, turns_after_move = asyncio.run(_journal_metrics(char_id))
+    assert events_after_move == events_before + 1
+    assert turns_after_move == turns_before + 1
+
+    end = client.post(f"/characters/{char_id}/actions", json={"action": "end turn"}, headers=headers)
+    assert end.status_code == 200
+
+
+@pytest.mark.integration
+def test_api_rogue_cunning_dash_after_failed_flee(flee_api_client) -> None:
+    """Rogue L2+: po neúspěšném útěku volná bonusová akce → Cunning Dash."""
+    client, headers, char_id = flee_api_client
+
+    async def level_two():
+        async with Session() as session:
+            record = await session.get(CharacterRecord, char_id)
+            hero = load_character_state(decode_character_state(record.payload))
+            hero.level = 2
+            record.payload = encode_character_state(asdict(hero))
+            await session.commit()
+
+    asyncio.run(level_two())
+    _seed_player_combat(char_id, dexterity=8)
+
+    failed = False
+    for _ in range(16):
+        response = client.post(f"/characters/{char_id}/actions", json={"action": "flee"}, headers=headers)
+        body = response.json()
+        char = body["character"]
+        if char.get("in_combat") and char.get("combat_flags", {}).get("action_used"):
+            failed = True
+            break
+        if not char.get("in_combat"):
+            _seed_player_combat(char_id, dexterity=8)
+    assert failed
+
+    dash = client.post(f"/characters/{char_id}/actions", json={"action": "dash"}, headers=headers)
+    assert dash.status_code == 200
+    flags = dash.json()["character"].get("combat_flags") or {}
+    assert flags.get("bonus_action_used") is True
+    assert dash.json()["character"]["combat_turn"] == "player"

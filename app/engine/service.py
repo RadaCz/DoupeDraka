@@ -2243,10 +2243,11 @@ class GameEngine:
 
         if feature == "cunning_dash" or DASH_COMBAT_PATTERN.search(text):
             ok, lines, class_facts = use_cunning_dash(character)
-            events.extend(lines)
-            changed = ok
             if ok:
-                return TurnResult(action, events, changed, class_facts=class_facts, costs_adventure_mana=False), monster
+                return TurnResult(
+                    action, lines, True, class_facts=class_facts, costs_adventure_mana=False
+                ), monster
+            return combat_action_denied(action, lines), monster
 
         channel_feature = feature in ("preserve_life", "turn_undead") or (
             PRESERVE_LIFE_PATTERN.search(text) and feature != "turn_undead"
