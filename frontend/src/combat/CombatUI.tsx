@@ -10,6 +10,7 @@ import {
   isPlayerCombatTurn,
   isReactionWindow,
   lastCombatBeat,
+  playerParalyzed,
 } from './combatActions';
 import { displayCreature } from '../i18n/gameDisplay';
 import { combatAtmosphereLine, canonicalPlayLocation, combatIntroProse, isPreStrikeCombatBeat } from './combatDisplay';
@@ -108,6 +109,8 @@ export function CombatArena({
         <p className={`combat-turn-pill ${playerTurn ? 'player' : 'enemy'}`} role="status">
           {isReactionWindow(character)
             ? t('Reaction — choose Shield or decline.')
+            : playerTurn && playerParalyzed(character)
+              ? t('You are paralyzed this turn and cannot act.')
             : playerTurn
               ? t('Your turn — choose an action.')
               : t('Enemy turn — wait for the outcome.')}
@@ -388,6 +391,30 @@ export function CombatActionDeck({
       : [];
 
   const renderDeck = reactionActions.length > 0;
+
+  if (deck.paralyzedTurn) {
+    const cont = deck.paralyzedTurn.continue;
+    return (
+      <div
+        className="combat-action-deck combat-action-deck-paralyzed"
+        role="group"
+        aria-label={t('Combat actions')}
+      >
+        <p className="combat-paralyzed-message" role="status">
+          {deck.paralyzedTurn.message}
+        </p>
+        <button
+          type="button"
+          className="combat-end-turn combat-paralyzed-continue primary"
+          disabled={busy}
+          data-combat-action-id={cont.id}
+          onClick={() => cont.action && fire(cont.action, cont.id)}
+        >
+          {cont.label}
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="combat-action-deck" role="group" aria-label={t('Combat actions')}>

@@ -1,6 +1,7 @@
 """Combat P0c — odmítnutí PŘED hodem nic nespotřebuje (docs/COMBAT_SPEC_B_C.md B1, audit D2).
 
-Produkční kód se nemění. Selhání invariantu = xfail(strict=True) s odkazem na nález.
+Paralyzovaný hráč: útok/pohyb nehodí útok, nespotřebuje ekonomiku tahu, ale
+_finish_paralyzed_player_turn (service.py) ukončí tah — opakovaný CON hod + nepřítel.
 """
 
 from __future__ import annotations
@@ -348,27 +349,9 @@ _REJECT_CASES: list[RejectBeforeRollCase] = [
     RejectBeforeRollCase("attack_out_of_range", "attack goblin", _prep_attack_out_of_range),
     RejectBeforeRollCase("attack_no_ammunition", "attack goblin", _prep_attack_no_ammo),
     RejectBeforeRollCase("attack_enemy_turn", "attack goblin", _prep_attack_enemy_turn),
-    RejectBeforeRollCase(
-        "attack_paralyzed",
-        "attack goblin",
-        _prep_attack_paralyzed,
-        xfail_reason=(
-            "COMBAT_SPEC_B_C.md B1 očekává state_changed=false před hodem; "
-            "engine volá _finish_paralyzed_player_turn (service.py:513-532) a ukončí tah hráče."
-        ),
-    ),
     RejectBeforeRollCase("advance_over_movement_budget", "advance 25 ft", _prep_move_over_budget),
     RejectBeforeRollCase("retreat_over_movement_budget", "retreat 25 ft", _prep_move_over_budget),
     RejectBeforeRollCase("combat_move_enemy_turn", "advance 10 ft", _prep_move_enemy_turn),
-    RejectBeforeRollCase(
-        "combat_move_paralyzed",
-        "advance 10 ft",
-        _prep_move_paralyzed,
-        xfail_reason=(
-            "COMBAT_SPEC_B_C.md B1 — paralyzovaný pohyb končí v _finish_paralyzed_player_turn "
-            "(service.py:1092-1094), ne čisté odmítnutí bez změny stavu."
-        ),
-    ),
     RejectBeforeRollCase("cast_no_spell_slots", "cast Cure Wounds", _prep_cast_no_slots),
     RejectBeforeRollCase("cast_enemy_turn", "cast Fire Bolt", _prep_cast_enemy_turn),
     RejectBeforeRollCase("cast_non_caster", "cast Fire Bolt", _prep_cast_non_caster),
@@ -406,6 +389,81 @@ def test_combat_rejection_before_roll_leaves_state_unchanged(case: RejectBeforeR
     game = _game()
     hero, monster = case.prepare(game)
     _assert_rejection_unchanged(game, hero, monster, case.action)
+
+
+def _player_action_economy(snapshot: dict[str, Any]) -> dict[str, Any]:
+    flags = dict(snapshot["flags"])
+    return {
+        "action_used": flags.get("action_used"),
+        "bonus_action_used": flags.get("bonus_action_used"),
+        "reaction_used": flags.get("reaction_used"),
+        "movement_remaining_ft": snapshot["movement_remaining_ft"],
+        "spell_slots": snapshot["spell_slots"],
+        "max_spell_slots": snapshot["max_spell_slots"],
+        "inventory": snapshot["inventory"],
+        "item_instances": snapshot["item_instances"],
+        "action_surge_available": snapshot["action_surge_available"],
+        "second_wind_available": snapshot["second_wind_available"],
+        "channel_divinity_available": snapshot["channel_divinity_available"],
+    }
+
+
+def _assert_paralyzed_combat_action_finishes_turn_without_spending(
+    game: GameEngine,
+    hero: CharacterState,
+    monster: MonsterState,
+    action: str,
+    *,
+    forbid_attack_roll: bool,
+) -> None:
+    before = _combat_snapshot(hero, monster)
+    economy_before = _player_action_economy(before)
+    result, monster_after = game.resolve_action(hero, action, monster)
+    assert result.state_changed
+    joined = " ".join(result.events).casefold()
+    assert any("paralyzed" in line.casefold() for line in result.events)
+    assert "end of your turn" in joined
+    assert "saving throw" in joined
+    if forbid_attack_roll:
+        assert "attack roll" not in joined
+        assert "damage" not in joined or "goblin scout's attack" in joined
+    after = _combat_snapshot(hero, monster_after)
+    assert _player_action_economy(after) == economy_before
+    assert before["combat_turn"] == "player"
+    assert after["combat_turn"] == "player"
+    assert after["combat_round"] > before["combat_round"]
+    assert any("goblin" in line.casefold() or "scout" in line.casefold() for line in result.events)
+
+
+@pytest.mark.parametrize(
+    ("prepare", "action", "forbid_attack_roll"),
+    [
+        (_prep_attack_paralyzed, "attack goblin", True),
+        (_prep_move_paralyzed, "advance 10 ft", False),
+    ],
+    ids=["attack_paralyzed", "combat_move_paralyzed"],
+)
+def test_paralyzed_player_blocked_action_finishes_turn(
+    prepare: Callable[[GameEngine], tuple[CharacterState, MonsterState]],
+    action: str,
+    forbid_attack_roll: bool,
+) -> None:
+    game = _game(17)
+    hero, monster = prepare(game)
+    _assert_paralyzed_combat_action_finishes_turn_without_spending(
+        game,
+        hero,
+        monster,
+        action,
+        forbid_attack_roll=forbid_attack_roll,
+    )
+
+
+def test_paralyzed_rejected_on_enemy_turn_is_idempotent() -> None:
+    game = _game(23)
+    hero, monster = _prep_attack_paralyzed(game)
+    hero.combat_turn = "enemy"
+    _assert_rejection_unchanged(game, hero, monster, "attack goblin")
 
 
 def test_failed_flee_roll_still_consumes_action() -> None:
