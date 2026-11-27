@@ -6,7 +6,7 @@ import { E2E_TELEGRAM_ID } from './test-config.ts';
 
 const API = 'http://127.0.0.1:8001';
 
-async function createFighter(request: Parameters<typeof test>[0]['request'], token: string, klass: string) {
+async function createFighter(request: Parameters<typeof postGameAction>[0], token: string, klass: string) {
   const created = await request.post(`${API}/characters`, {
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     data: {
@@ -41,7 +41,7 @@ test('universal Sprint via API — fighter, cleric, wizard', async ({ request },
     await startCellarCombat(request, token, id);
     const before = await fetchCharacterState(request, token, id);
     const moveBefore = before.combat_tactics?.movement_remaining_ft ?? before.combat_movement_remaining_ft ?? 0;
-    const speed = before.combat_tactics?.speed_ft ?? before.speed ?? 30;
+    const speed = before.combat_tactics?.speed_ft ?? 30;
 
     await postGameAction(request, token, id, 'sprint');
     const after = await fetchCharacterState(request, token, id);
