@@ -209,23 +209,13 @@ def test_after_failed_flee_player_can_move_bonus_action_and_end_turn():
     assert hero.combat_turn in ("enemy", "player", "reaction")
 
 
-def test_after_failed_flee_fighter_attack_flee_and_dash_are_action_rejected():
-    """Po spotřebované akci (neúspěšný útěk) blokovat další akce spotřebovávající Action / bonus Dash."""
+def test_after_failed_flee_second_attack_and_flee_are_action_rejected():
+    """Po neúspěšném útěku (action_used) zamítnout Útok a druhý Útěk; Sprint (Dash za Akci) je v #41."""
     game = _game(41)
     hero, monster = _fighter_in_melee(game)
     _fail_flee(game, hero, monster)
-    for blocked in ("attack goblin", "flee", "dash"):
+    for blocked in ("attack goblin", "flee"):
         _assert_combat_denied_after_failed_flee(game, hero, monster, blocked)
-
-
-def test_after_failed_flee_rogue_second_cunning_dash_rejected_when_bonus_spent():
-    game = _game(44)
-    hero, monster = _rogue_in_melee(game)
-    _fail_flee(game, hero, monster)
-    dash, monster = game.resolve_action(hero, "dash", monster)
-    assert dash.state_changed and hero.combat_flags.get("bonus_action_used")
-    _assert_combat_denied_after_failed_flee(game, hero, monster, "dash")
-    _assert_combat_denied_after_failed_flee(game, hero, monster, "attack goblin")
 
 
 def test_after_failed_flee_rogue_attack_denied_before_bonus_dash_still_allowed():
@@ -412,7 +402,7 @@ def test_api_after_failed_flee_denied_attack_flee_dash_no_journal(flee_api_clien
     assert failed
 
     events_before, turns_before = asyncio.run(_journal_metrics(char_id))
-    for denied in ("attack goblin", "flee", "dash"):
+    for denied in ("attack goblin", "flee"):
         response = client.post(
             f"/characters/{char_id}/actions",
             json={"action": denied},
