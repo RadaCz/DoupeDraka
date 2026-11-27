@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { Character } from '../types';
-import { CombatHeroStrip } from './CombatUI';
+import { CombatActionDeck, CombatHeroStrip } from './CombatUI';
 
 vi.mock('../i18n', () => ({
   useI18n: () => ({
@@ -39,6 +39,26 @@ const combatHero: Character = {
   verbose: false,
   conditions: [{ condition_id: 'paralyzed', source_id: 'ghoul' }],
 };
+
+describe('CombatActionDeck paralysis', () => {
+  it('shows only status message and Continue when paralyzed on player turn', async () => {
+    const onAction = vi.fn();
+    render(
+      <CombatActionDeck
+        character={{ ...combatHero, combat_turn: 'player' }}
+        spells={[]}
+        busy={false}
+        onAction={onAction}
+      />,
+    );
+    expect(screen.getByText('You are paralyzed this turn and cannot act.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Attack\b/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Advance/i })).not.toBeInTheDocument();
+    const cont = screen.getByRole('button', { name: /^Continue$/i });
+    cont.click();
+    expect(onAction).toHaveBeenCalledWith('end turn');
+  });
+});
 
 describe('CombatHeroStrip conditions', () => {
   it('renders engine condition chips', () => {
