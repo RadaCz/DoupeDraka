@@ -1246,6 +1246,28 @@
   border: 1px dashed color-mix(in srgb, var(--gold) 35%, var(--border-subtle));
 }
 
+.combat-action-deck-paralyzed {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.combat-paralyzed-message {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--gold) 25%, var(--border-subtle));
+  background: color-mix(in srgb, var(--surface) 88%, #000);
+  color: var(--text);
+  font-size: 0.9rem;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.combat-paralyzed-continue {
+  width: 100%;
+}
+
 .combat-end-turn {
   width: 100%;
   margin-top: 8px;

@@ -41,6 +41,8 @@ export interface CombatActionDeckModel {
   abilityActions: CombatActionItem[];
   itemActions: CombatActionItem[];
   endTurn?: CombatActionItem;
+  /** Player is paralyzed on their turn — show only status + Continue (end turn). */
+  paralyzedTurn?: { message: string; continue: CombatActionItem };
 }
 
 export function isReactionWindow(character: Character): boolean {
@@ -239,6 +241,28 @@ export function buildCombatActionDeck(
   const enemy = character.combatant?.name ?? t('the enemy');
   const playerTurn = isPlayerCombatTurn(character);
   const paralyzed = playerParalyzed(character);
+
+  if (paralyzed && playerTurn) {
+    return {
+      main: [],
+      tactics: [],
+      abilityActions: [],
+      itemActions: [],
+      paralyzedTurn: {
+        message: t('You are paralyzed this turn and cannot act.'),
+        continue: {
+          id: 'paralyzed_continue',
+          kind: 'class_feature',
+          label: t('Continue'),
+          description: t('Pass to the enemy when you are done acting.'),
+          icon: 'end-turn',
+          action: 'end turn',
+          disabled: false,
+        },
+      },
+    };
+  }
+
   const paralysisReason = paralyzed ? t('You are paralyzed and cannot act.') : undefined;
   const economy = readCombatEconomy(character);
   const positioning = readCombatTactics(character);
