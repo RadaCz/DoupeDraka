@@ -18,6 +18,7 @@ from sqlalchemy import select
 from app.api import app
 from app.db import ActionReceipt, CharacterRecord, EventRecord, Session, decode_character_state, encode_character_state, init_db
 from app.engine.class_features import mark_player_turn_start
+from app.engine.combat_action_economy import spend_action
 from app.engine.combat_positioning import MELEE_REACH_FT
 from app.engine.encounters import build_monster
 from app.engine.equipment import load_character_state
@@ -145,6 +146,28 @@ def test_after_failed_flee_player_can_move_bonus_action_and_end_turn():
     assert hero.combat_turn in ("enemy", "player", "reaction")
 
 
+def test_after_failed_flee_sprint_rejected_even_with_free_bonus_action():
+    """§3 + Sprint (Action): po neúspěšném útěku je Akce spotřebovaná — sprint odmítnut, bonus volný."""
+    game = _game(44)
+    hero, monster = _rogue_in_melee(game)
+    game.rng.randint = lambda a, b: 1 if a == 1 and b == 20 else 4
+
+    _, monster = game.resolve_action(hero, "flee", monster)
+    assert hero.combat_flags.get("action_used")
+    assert not hero.combat_flags.get("bonus_action_used")
+    assert hero.combat_turn == "player"
+
+    sprint, monster = game.resolve_action(hero, "sprint", monster)
+    assert sprint.action_rejected
+    assert not sprint.state_changed
+    assert not hero.combat_flags.get("bonus_action_used")
+
+    dash, monster = game.resolve_action(hero, "dash", monster)
+    assert dash.state_changed
+    assert dash.action_rejected is False
+    assert hero.combat_flags.get("bonus_action_used")
+
+
 def test_flee_reject_before_roll_documented_in_p0c_cases():
     """Zrušení před hodem pokrývá #36 — zde jen sanity grep, aby se sada nerozjela."""
     import tests.test_combat_reject_before_roll_p0c as p0c
@@ -194,6 +217,70 @@ def _seed_player_combat(char_id: str) -> None:
             await session.commit()
 
     asyncio.run(seed())
+
+
+@pytest.mark.integration
+def test_api_after_failed_flee_sprint_rejected_no_journal(flee_api_client):
+    """API: po spotřebované Akci (neúspěšný útěk) sprint nezvedne turn_count ani journal."""
+    client, headers, char_id = flee_api_client
+
+    async def seed_post_flee():
+        async with Session() as session:
+            record = await session.get(CharacterRecord, char_id)
+            hero = load_character_state(decode_character_state(record.payload))
+            hero.level = 2
+            hero.in_combat = True
+            hero.combat_turn = "player"
+            hero.combat_distance_ft = MELEE_REACH_FT
+            hero.combat_movement_remaining_ft = 30
+            hero.combat_round = 1
+            mark_player_turn_start(hero)
+            spend_action(hero)
+            monster = build_monster("normal", "goblin")
+            hero.combatant = asdict(monster)
+            record.payload = encode_character_state(asdict(hero))
+            await session.commit()
+
+    asyncio.run(seed_post_flee())
+
+    async def before_counts():
+        async with Session() as session:
+            from sqlalchemy import func
+
+            events = int(
+                await session.scalar(
+                    select(func.count()).select_from(EventRecord).where(EventRecord.character_id == char_id)
+                )
+                or 0
+            )
+            record = await session.get(CharacterRecord, char_id)
+            hero = load_character_state(decode_character_state(record.payload))
+            return events, hero.turn_count
+
+    events_before, turns_before = asyncio.run(before_counts())
+    resp = client.post(
+        f"/characters/{char_id}/actions",
+        json={"action": "sprint"},
+        headers=headers,
+    )
+    assert resp.status_code == 200
+    assert resp.json().get("events")
+    events_after, turns_after = asyncio.run(before_counts())
+    assert events_after == events_before
+    assert turns_after == turns_before
+    flags = resp.json()["character"]["combat_flags"]
+    assert flags.get("action_used") is True
+    assert not flags.get("bonus_action_used")
+
+    dash = client.post(
+        f"/characters/{char_id}/actions",
+        json={"action": "dash"},
+        headers=headers,
+    )
+    assert dash.status_code == 200
+    dash_flags = dash.json()["character"]["combat_flags"]
+    assert dash_flags.get("bonus_action_used") is True
+    assert dash_flags.get("action_used") is True
 
 
 @pytest.mark.integration
