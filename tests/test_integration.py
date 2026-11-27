@@ -141,7 +141,7 @@ def test_character_journal_is_owned_ordered_and_bounded(setup_db):
         headers=owner_headers,
     ).json()
 
-    for action_text in ("look around", "look around", "take a breather"):
+    for action_text in ("look around", "look around", "search the area"):
         response = client.post(
             f"/characters/{character['id']}/actions",
             json={"action": action_text},
@@ -153,7 +153,8 @@ def test_character_journal_is_owned_ordered_and_bounded(setup_db):
         f"/characters/{character['id']}/events?limit=2", headers=owner_headers
     )
     assert events.status_code == 200
-    assert [event["action"] for event in events.json()] == ["look around", "take a breather"]
+    # Repeated identical no-op turns (second look around) do not journal — spec COMBAT_SPEC_B_C B1 / audit N5.
+    assert [event["action"] for event in events.json()] == ["look around", "search the area"]
     assert all({"id", "action", "result", "created_at"} <= event.keys() for event in events.json())
     latest_result = events.json()[0]["result"]
     latest_lower = latest_result.lower()

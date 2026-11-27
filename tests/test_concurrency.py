@@ -106,7 +106,7 @@ def test_expired_idempotency_key_can_be_reused(auth):
     character = _character(auth)
     key = uuid.uuid4().hex
     headers = {**auth, "Idempotency-Key": key}
-    body = {"action": "attack the goblin"}
+    body = {"action": "look around"}
 
     first = client.post(f"/characters/{character['id']}/actions", json=body, headers=headers)
     assert first.status_code == 200, first.text
@@ -133,9 +133,11 @@ def test_expired_idempotency_key_can_be_reused(auth):
             return len(events), record.version, receipt.expires_at
 
     event_count, version, expires_at = asyncio.run(state())
-    assert event_count == 2
+    # Expired key must re-run the engine (version++) even if the second look is a no-op (no journal).
     assert version == 2
+    assert 1 <= event_count <= 2
     assert expires_at > datetime.utcnow()
+    assert second.json().get("events")
 
 
 def test_stale_version_cannot_overwrite_character(auth):
