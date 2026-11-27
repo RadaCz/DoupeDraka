@@ -360,6 +360,7 @@ def test_api_failed_flee_journals_and_increments_turn_count(flee_api_client) -> 
             break
         if not char.get("in_combat"):
             _seed_player_combat(char_id, dexterity=8)
+            events_before, turns_before = asyncio.run(_journal_metrics(char_id))
 
     assert failed
     events_after, turns_after = asyncio.run(_journal_metrics(char_id))
